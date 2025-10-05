@@ -31,3 +31,8 @@ git add .                           # stage all current changes
 git commit -m "[commit_message]"    # commit your edits with a message describing changes
 git push                            # push your changes to the remote repo
 ```
+
+### Resources
+
+- [Icon library](https://lucide.dev)
+- [Tailwind CSS reference](https://tailwindcss.com)

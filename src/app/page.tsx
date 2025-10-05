@@ -1,5 +1,9 @@
 import React from "react";
 
 export default function Home() {
-    return <>MHD</>;
+    return (
+        <>
+            <h1>MHD</h1>
+        </>
+    );
 }
