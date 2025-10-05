@@ -1,5 +1,5 @@
 import React from "react";
 
 export default function Home() {
-    return <>MHD</>;
+    return <>mass history day</>;
 }
