@@ -8,7 +8,8 @@
         "start": "next start",
         "lint": "eslint ./src",
         "format": "prettier --write .",
-        "format:check": "prettier --check ."
+        "format:check": "prettier --check .",
+        "prepare": "husky"
     },
     "dependencies": {
         "@next/eslint-plugin-next": "^15.5.4",
@@ -27,9 +28,14 @@
         "eslint-config-prettier": "^10.1.8",
         "eslint-plugin-react": "^7.37.5",
         "globals": "^16.4.0",
+        "husky": "^9.1.7",
+        "lint-staged": "^16.2.3",
         "prettier": "3.6.2",
         "tailwindcss": "^4",
         "typescript": "^5",
         "typescript-eslint": "^8.45.0"
+    },
+    "lint-staged": {
+        "*.{js,jsx,ts,tsx,json,css,md}": "prettier --write"
     }
 }
