@@ -34,5 +34,6 @@ git push                            # push your changes to the remote repo
 
 ### Resources
 
+- [Figma designs](https://www.figma.com/design/hxC6tNqUqfygC7GOz8fcPG/JumboCode-MHD-Website?node-id=88-4&t=IUVvK9gpNHKHO04m-1)
 - [Icon library](https://lucide.dev)
 - [Tailwind CSS reference](https://tailwindcss.com)
