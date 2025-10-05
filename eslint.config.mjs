@@ -2,36 +2,38 @@ import js from "@eslint/js";
 import globals from "globals";
 import tseslint from "typescript-eslint";
 import pluginReact from "eslint-plugin-react";
-import pluginNext from '@next/eslint-plugin-next';
+import pluginNext from "@next/eslint-plugin-next";
+import eslintConfigPrettier from "eslint-config-prettier/flat";
 
 export default [
     js.configs.recommended,
     ...tseslint.configs.recommended,
     pluginReact.configs.flat.recommended,
+    eslintConfigPrettier,
     {
         files: ["**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
-        languageOptions: { 
+        languageOptions: {
             globals: {
-                ...globals.browser, 
-                ...globals.node
-            }
-        }
+                ...globals.browser,
+                ...globals.node,
+            },
+        },
     },
     {
         plugins: {
-            '@next/next': pluginNext
+            "@next/next": pluginNext,
         },
         rules: {
             ...pluginNext.configs.recommended.rules,
-            ...pluginNext.configs['core-web-vitals'].rules,
-        }
+            ...pluginNext.configs["core-web-vitals"].rules,
+        },
     },
     {
-        "settings": {
-            "react": {
-                "version": "detect"
-            }
-        }
+        settings: {
+            react: {
+                version: "detect",
+            },
+        },
     },
     {
         rules: {

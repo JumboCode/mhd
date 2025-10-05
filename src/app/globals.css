@@ -1,11 +1,9 @@
 @import "tailwindcss";
 
 :root {
-
 }
 
 @media (prefers-color-scheme: dark) {
     :root {
-
     }
 }
