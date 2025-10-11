@@ -1,6 +1,5 @@
 "use client";
 
-import NavBarItem from "./NavBarItem";
 import Link from "next/link";
 
 export default function NavBar() {
