@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 @theme {
+    /* Font vars */
     --font-sans:
         var(--font-interstate), ui-sans-serif, system-ui, -apple-system,
         "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans",
@@ -11,6 +12,15 @@
         Times, serif;
     --font-display: var(--font-miller-display), var(--font-serif);
     --font-banner: var(--font-miller-banner), var(--font-serif);
+
+    /* Color vars */
+    --color-mhd-red: #af272f;
+    --color-mhd-black: #000000;
+    --color-alt: #efeee9;
+    --color-second-alt: #e0ded7;
+}
+
+:root {
 }
 
 @media (prefers-color-scheme: dark) {

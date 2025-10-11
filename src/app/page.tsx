@@ -1,8 +1,9 @@
-"use client";
-
-import React from "react";
-import Link from "next/link";
+import NavBar from "@/components/NavBar";
 
 export default function Home() {
-    return <>MHD</>;
+    return (
+        <div className="flex justify-center">
+            <NavBar />
+        </div>
+    );
 }

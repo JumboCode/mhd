@@ -21,9 +21,9 @@ export const millerDisplay = localFont({
 
 export const millerText = localFont({
     src: [
+        { path: "./millertext-romansc.otf", weight: "400", style: "normal" },
         { path: "./millertext-roman.otf", weight: "400", style: "normal" },
         { path: "./millertext-italic.otf", weight: "400", style: "italic" },
-        { path: "./millertext-romansc.otf", weight: "400", style: "normal" },
         { path: "./millertext-italicsc.otf", weight: "400", style: "italic" },
     ],
     variable: "--font-miller-text",
