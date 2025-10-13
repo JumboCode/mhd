@@ -8,7 +8,7 @@ export default function NavBar() {
                 <NavBarItem text="checkbox" />
                 <NavBarItem text="input" />
                 <NavBarItem text="slider" />
-                <NavBarItem text="tabs" />
+                <NavBarItem text="tooltip" />
             </div>
         </nav>
     );
