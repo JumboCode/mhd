@@ -1,7 +1,7 @@
-export default function TabsPage() {
+export default function TooltipPage() {
     return (
         <div className="min-h-screen flex justify-center items-center">
-            Insert tabs here
+            Insert tooltip here
         </div>
     );
 }
