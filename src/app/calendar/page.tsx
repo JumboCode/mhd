@@ -1,7 +1,7 @@
-export default function InputPage() {
+export default function CalendarPage() {
     return (
         <div className="min-h-screen flex justify-center items-center">
-            Insert input here
+            Insert calendar here
         </div>
     );
 }
