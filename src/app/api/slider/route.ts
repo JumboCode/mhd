@@ -43,7 +43,6 @@ export async function GET(req: NextRequest) {
 
         return NextResponse.json(characterData, { status: 200 });
     } catch (error) {
-        console.error("Error fetching character:", error);
         return NextResponse.json(
             { error: "Internal server error" },
             { status: 500 },
