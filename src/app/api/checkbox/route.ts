@@ -26,7 +26,6 @@ export async function GET(req: NextRequest) {
         // Ensure each category given from frontend are valid categories
         for (const category of categories) {
             if (!possibleCategories.includes(category.toLowerCase())) {
-                console.log("should be returning");
                 return NextResponse.json(
                     { error: `${category} is not a valid category` },
                     { status: 400 },
@@ -59,7 +58,7 @@ export async function GET(req: NextRequest) {
         return NextResponse.json(joke, { status: 200 });
     } catch (error) {
         return NextResponse.json(
-            { error: "Internal server error" },
+            { error: `Internal server error: ${error}` },
             { status: 500 },
         );
     }

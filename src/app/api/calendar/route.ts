@@ -10,10 +10,79 @@ type Episode = {
     showName: string;
 };
 
-function extractEpisodes(data: any[]): Episode[] {
-    return data.map((item) => {
-        const show = item._embedded?.show;
+type LargeEpisode = {
+    id: number;
+    url: string;
+    name: string;
+    season: number;
+    number: number;
+    type?: string;
+    airdate?: string;
+    airtime?: string;
+    airstamp?: string;
+    runtime?: number;
+    rating?: {
+        average: number | null;
+    };
+    image?: {
+        medium?: string;
+        original?: string;
+    } | null;
+    summary?: string | null;
+    show?: {
+        id: number;
+        url: string;
+        name: string;
+        type: string;
+        language: string;
+        genres?: string[];
+        status?: string;
+        runtime?: number | null;
+        averageRuntime?: number | null;
+        premiered?: string | null;
+        officialSite?: string | null;
+        schedule?: {
+            time: string;
+            days: string[];
+        };
+        rating?: {
+            average: number | null;
+        };
+        weight?: number;
+        network?: {
+            id: number;
+            name: string;
+            country?: {
+                name: string;
+                code: string;
+                timezone: string;
+            } | null;
+        } | null;
+        webChannel?: null;
+        externals?: {
+            tvrage?: number | null;
+            thetvdb?: number | null;
+            imdb?: string | null;
+        };
+        image?: {
+            medium?: string;
+            original?: string;
+        } | null;
+        summary?: string | null;
+        updated?: number;
+    };
+    _links?: {
+        self: {
+            href: string;
+        };
+        show: {
+            href: string;
+        };
+    };
+};
 
+function extractEpisodes(data: LargeEpisode[]): Episode[] {
+    return data.map((item) => {
         return {
             id: item.id,
             name: item.name,
@@ -83,7 +152,7 @@ export async function GET(req: NextRequest) {
         return NextResponse.json(episodes, { status: 200 });
     } catch (error) {
         return NextResponse.json(
-            { error: "Internal server error" },
+            { error: `Internal server error: ${error}` },
             { status: 500 },
         );
     }

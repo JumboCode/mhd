@@ -6,7 +6,7 @@ export async function GET(req: NextRequest) {
         const inputNumberParam = searchParams.get("input");
 
         // Input number must be included
-        if (inputNumberParam == null) {
+        if (inputNumberParam === null) {
             return NextResponse.json(
                 { error: "Missing input number" },
                 { status: 400 },
@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
         return NextResponse.json(triviaQuestion, { status: 200 });
     } catch (error) {
         return NextResponse.json(
-            { error: "Internal server error" },
+            { error: `Internal server error: ${error}` },
             { status: 500 },
         );
     }

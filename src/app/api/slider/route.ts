@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
         return NextResponse.json(characterData, { status: 200 });
     } catch (error) {
         return NextResponse.json(
-            { error: "Internal server error" },
+            { error: `Internal server error: ${error}` },
             { status: 500 },
         );
     }
