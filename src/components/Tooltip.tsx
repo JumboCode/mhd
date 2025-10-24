@@ -1,35 +1,85 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
+import {
+    useFloating,
+    flip,
+    shift,
+    autoUpdate,
+    arrow,
+    offset,
+} from "@floating-ui/react";
 import { CircleQuestionMark } from "lucide-react";
 
-export default function Tooltips({ text }: { text: string }) {
+export default function Tooltips() {
+    // Visibility variables
     const [isHover, setIsHover] = useState(false);
     const [isFocused, setIsFocused] = useState(false);
 
+    // Text from API fetch and timeout
+    const [tooltipText, setTooltipText] = useState("");
+    const showTimeout = useRef<NodeJS.Timeout | null>(null);
+
+    // Ref for arrow element
+    const arrowRef = useRef(null);
+
+    // Floating UI setup, calculats positioning of tooltip
+    // Referenced from floating UI code sandbox
+    const { refs, floatingStyles, placement, middlewareData } = useFloating({
+        open: isHover || isFocused,
+        whileElementsMounted: autoUpdate,
+        middleware: [
+            offset(10), // Have tooltip 10px away from ? icon
+            flip(), // Flip bottom/top on overflow
+            shift({ padding: 8 }), // Slide left/right on overflow
+            arrow({ element: arrowRef }), // Calculate where arrow should go
+        ],
+    });
+
+    // Fetch tooltip text only if it is not currently focused and while hovering
+    const fetchTooltip = () => {
+        fetch("/api/tooltip")
+            .then((res) => res.json())
+            .then((data) => setTooltipText(data.text));
+    };
+
+    // Handles click logic
     const handleOnFocus = () => {
         setIsFocused(true);
     };
 
+    // Handles click off logic
     const handleOnBlur = () => {
         setIsFocused(false);
     };
 
+    // Handles mouse enter logic
     const handleOnMouseEnter = () => {
-        setIsHover(true);
+        if (!isFocused) fetchTooltip();
+        showTimeout.current = setTimeout(() => setIsHover(true), 300);
     };
 
+    // Handles mouse leave logic
     const handleOnMouseLeave = () => {
         setIsHover(false);
     };
 
+    // Determines the side the arrow is on (for the speech box)
+    const side = placement.split("-")[0] == "top" ? "bottom" : "top";
+
     return (
-        <div className="relative inline-block">
+        // Main div, contains question mark and tooltip itself
+        // Tooltip visibility depends on hover/focus
+        // If neither is true, tooltip is hidden, question mark is always visible
+
+        // Speech box placement depends on positioning of question mark on page
+        // To reposition: top-4/bottom-4/left-4/right-4, leaves some space
+
+        <div className="fixed top-4 right-4 inline-block">
             <CircleQuestionMark
+                ref={refs.setReference}
                 className="m-1"
-                // makes element focusable
                 tabIndex={0}
-                // supresses aria error (lucide icons have aria-hidden as true)
                 aria-hidden={false}
                 onFocus={handleOnFocus}
                 onBlur={handleOnBlur}
@@ -37,16 +87,22 @@ export default function Tooltips({ text }: { text: string }) {
                 onMouseLeave={handleOnMouseLeave}
             />
             {(isHover || isFocused) && (
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-black text-white p-3 rounded-lg max-w-sm w-64 align-center">
-                    <p style={{ textAlign: "center" }}>{text}</p>
-
+                <div
+                    ref={refs.setFloating}
+                    style={floatingStyles}
+                    className="bg-black text-white p-3 rounded-lg w-64 break-words"
+                >
+                    <p className="text-center">{tooltipText}</p>
                     <div
-                        className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 
-                                border-l-[10px] border-l-transparent 
-                                border-r-[10px] border-r-transparent 
-                                border-t-[10px] border-t-black -mb-2 
-                                transform"
-                    ></div>
+                        ref={arrowRef}
+                        style={{
+                            position: "absolute",
+                            left: middlewareData.arrow?.x,
+                            top: middlewareData.arrow?.y,
+                            [side]: "-4px",
+                        }}
+                        className="w-2 h-2 rotate-45 bg-black"
+                    />
                 </div>
             )}
         </div>
