@@ -2,35 +2,74 @@
 
 import React from "react";
 import { useState } from "react";
-import { useEffect } from "react";
 
 export default function Input({}) {
     const [numInput, setNumInput] = useState<number | null>(null);
-    const [apiResponse, setApiResponse] = useState("");
-    const [isLoading, setIsLoading] = useState(false);
+    const [questionDisplay, setQuestionDisplay] = useState("");
+    const [answerDisplay, setAnswerDisplay] = useState("");
+    const [buttonStyle, setButtonStyle] = useState(
+        "bg-[#22405D] hover:bg-[#457baf] text-white rounded-md w-30 h-10 my-2 display-block",
+    );
 
+    // used to get rid of stuff like &quot; in the question string
+    function decodeHtmlEntities(str: string) {
+        const textarea = document.createElement("textarea");
+        textarea.innerHTML = str;
+        return textarea.value;
+    }
+
+    // doesn't allow user to enter non-digit values in the textbox
     const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const input = event.target;
         input.value = input.value.replace(/[^0-9.]/g, "");
         setNumInput(Number(input.value));
     };
 
-    const handleSubmit = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const styleClickedButton = (event: React.MouseEvent<HTMLButtonElement>) => {
+        setButtonStyle(
+            buttonStyle.replace(
+                "bg-[#22405D] hover:bg-[#457baf]",
+                "bg-[#1C334A]",
+            ),
+        );
+    };
+    const revertClickedButtonStyle = (
+        event: React.MouseEvent<HTMLButtonElement>,
+    ) => {
+        setButtonStyle(
+            buttonStyle.replace(
+                "bg-[#1C334A]",
+                "bg-[#22405D] hover:bg-[#457baf]",
+            ),
+        );
+    };
+
+    const handleSubmit = async (event: React.MouseEvent<HTMLButtonElement>) => {
+        setQuestionDisplay("Loading...");
+        setAnswerDisplay("");
         try {
             const response = await fetch(`/api/input-field?input=` + numInput);
             const data = await response.json();
+            const question = decodeHtmlEntities(data.results[0].question);
+            const answer = data.results[0].correct_answer;
             if (response.ok) {
-                setApiResponse(data);
+                if (data.results[0].type == "boolean") {
+                    setQuestionDisplay("True or False: " + question);
+                } else {
+                    setQuestionDisplay(question);
+                }
+                setAnswerDisplay(answer);
             } else {
-                setApiResponse("Error with your input, please try again");
+                setQuestionDisplay("Error with your input, please try again");
             }
         } catch (error) {
-            alert("error with api!");
+            setQuestionDisplay("Error with api response, please try again.");
         }
     };
 
     return (
-        <div className="flex flex-col gap-[25px] items-center w-[250px]">
+        <div className="flex flex-col gap-5 items-center w-[250px]">
+            <p className="font-bold w-full text-left">Type Something</p>
             <input
                 onChange={handleChange}
                 placeholder={"Input a number!"}
@@ -40,13 +79,19 @@ export default function Input({}) {
 
             <button
                 type="button"
-                className="bg-[#22405D] text-white rounded-[5px] w-[125px] h-[40px] hover:bg-[#457baf] display-block"
+                className={buttonStyle}
+                onMouseDown={styleClickedButton}
+                onMouseUp={revertClickedButtonStyle}
                 onClick={handleSubmit}
             >
                 Submit
             </button>
 
-            <p>{JSON.stringify(apiResponse)}</p>
+            <p className="flex justify-center h-28 my-4 text-[#AF272F]">
+                {questionDisplay}
+            </p>
+
+            <p className="flex justify-center h-4">{answerDisplay}</p>
         </div>
     );
 }
