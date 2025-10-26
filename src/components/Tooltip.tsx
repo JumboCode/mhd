@@ -68,13 +68,6 @@ export default function Tooltips() {
     const side = placement.split("-")[0] == "top" ? "bottom" : "top";
 
     return (
-        // Main div, contains question mark and tooltip itself
-        // Tooltip visibility depends on hover/focus
-        // If neither is true, tooltip is hidden, question mark is always visible
-
-        // Speech box placement depends on positioning of question mark on page
-        // To reposition: top-4/bottom-4/left-4/right-4, leaves some space
-
         <div className="fixed top-4 right-4 inline-block">
             <CircleQuestionMark
                 ref={refs.setReference}
@@ -86,25 +79,27 @@ export default function Tooltips() {
                 onMouseEnter={handleOnMouseEnter}
                 onMouseLeave={handleOnMouseLeave}
             />
-            {(isHover || isFocused) && (
+            <div
+                ref={refs.setFloating}
+                style={floatingStyles}
+                className={`bg-black text-white p-3 rounded-lg w-64 break-words transition-all duration-300 transform ${
+                    isHover || isFocused
+                        ? "opacity-100 translate-y-0"
+                        : "opacity-0 translate-y-1 pointer-events-none"
+                }`}
+            >
+                <p className="text-center">{tooltipText}</p>
                 <div
-                    ref={refs.setFloating}
-                    style={floatingStyles}
-                    className="bg-black text-white p-3 rounded-lg w-64 break-words"
-                >
-                    <p className="text-center">{tooltipText}</p>
-                    <div
-                        ref={arrowRef}
-                        style={{
-                            position: "absolute",
-                            left: middlewareData.arrow?.x,
-                            top: middlewareData.arrow?.y,
-                            [side]: "-4px",
-                        }}
-                        className="w-2 h-2 rotate-45 bg-black"
-                    />
-                </div>
-            )}
+                    ref={arrowRef}
+                    style={{
+                        position: "absolute",
+                        left: middlewareData.arrow?.x,
+                        top: middlewareData.arrow?.y,
+                        [side]: "-4px",
+                    }}
+                    className="w-2 h-2 rotate-45 bg-black"
+                />
+            </div>
         </div>
     );
 }
