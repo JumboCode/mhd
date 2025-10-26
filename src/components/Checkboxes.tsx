@@ -52,8 +52,6 @@ export default function Checkboxes() {
     }
 
     function checkboxToggled(label: string, checked: boolean) {
-        console.log(label);
-
         if (checked) {
             addCheckedItem(label);
         } else {
@@ -62,8 +60,8 @@ export default function Checkboxes() {
     }
 
     async function fetchJoke() {
-        var selectedCategoriesString = "any";
-        if (checkedItems.length != 0) {
+        let selectedCategoriesString = "any";
+        if (checkedItems.length !== 0) {
             selectedCategoriesString = checkedItems.join(",");
         }
 
