@@ -12,6 +12,7 @@
         "prepare": "husky"
     },
     "dependencies": {
+        "@floating-ui/dom": "^1.7.4",
         "@mantine/core": "^8.3.4",
         "@mantine/dates": "^8.3.5",
         "@mantine/hooks": "^8.3.4",
