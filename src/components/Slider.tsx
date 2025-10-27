@@ -8,9 +8,20 @@ type SliderProps = {
     max: number;
 };
 
+type Character = {
+    name: string;
+    height: number;
+    mass: number;
+    hair_color: string;
+    skin_color: string;
+    eye_color: string;
+    birth_year: string;
+    gender: string;
+};
+
 export default function Slider({ min, max }: SliderProps) {
     const [value, setValue] = useState(min);
-    const [display, setDisplay] = useState<any>();
+    const [display, setDisplay] = useState<Character>();
     const fillPercent = ((value - min) / (max - min)) * 100;
 
     async function fetchFromApi() {
