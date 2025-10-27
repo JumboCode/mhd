@@ -49,7 +49,7 @@ export default function Input() {
             const response = await fetch(`/api/input-field?input=` + numInput);
             const data = await response.json();
             const question = decodeHtmlEntities(data.results[0].question);
-            const answer = data.results[0].correct_answer;
+            const answer = decodeHtmlEntities(data.results[0].correct_answer);
             if (response.ok) {
                 if (data.results[0].type === "boolean") {
                     setQuestionDisplay("True or False: " + question);
