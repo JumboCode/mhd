@@ -8,23 +8,23 @@ export default function Checkboxes() {
 
     const [jokeText, setJokeText] = useState<string>();
 
-    function addCheckedItem(item: string) {
+    const addCheckedItem = (item: string) => {
         setCheckedItems((prev) => [...prev, item]);
-    }
+    };
 
-    function removeCheckedItem(item: string) {
+    const removeCheckedItem = (item: string) => {
         setCheckedItems((prev) => prev.filter((i) => i !== item));
-    }
+    };
 
-    function checkboxToggled(label: string, checked: boolean) {
+    const checkboxToggled = (label: string, checked: boolean) => {
         if (checked) {
             addCheckedItem(label);
         } else {
             removeCheckedItem(label);
         }
-    }
+    };
 
-    async function fetchJoke() {
+    const fetchJoke = async () => {
         let selectedCategoriesString = "any";
         if (checkedItems.length !== 0) {
             selectedCategoriesString = checkedItems.join(",");
@@ -42,7 +42,7 @@ export default function Checkboxes() {
         } catch (error) {
             setJokeText("Failed to fetch joke: " + error);
         }
-    }
+    };
 
     return (
         <div>

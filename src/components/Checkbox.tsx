@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 
-interface CheckboxProps {
+type CheckboxProps = {
     label: string;
     onToggle?: (label: string, checked: boolean) => void;
-}
+};
 
 export default function Checkbox({ label, onToggle }: CheckboxProps) {
     const [checked, setChecked] = useState(false);

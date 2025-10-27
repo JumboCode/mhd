@@ -12,11 +12,11 @@ export default function Input() {
     );
 
     // used to get rid of stuff like &quot; in the question string
-    function decodeHtmlEntities(str: string) {
+    const decodeHtmlEntities = (str: string) => {
         const textarea = document.createElement("textarea");
         textarea.innerHTML = str;
         return textarea.value;
-    }
+    };
 
     // doesn't allow user to enter non-digit values in the textbox
     const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
