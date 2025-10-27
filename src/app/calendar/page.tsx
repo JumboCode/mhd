@@ -1,7 +1,14 @@
-export default function SliderPage() {
+import React from "react";
+import Demo from "../../components/Calendar";
+import { MantineProvider } from "@mantine/core";
+import "@mantine/dates/styles.css";
+
+export default function MHDCalendar() {
     return (
-        <div className="min-h-screen flex justify-center items-center">
-            Insert calendar here
-        </div>
+        <MantineProvider>
+            <div className="min-h-screen flex justify-center items-center">
+                <Demo />
+            </div>
+        </MantineProvider>
     );
 }
