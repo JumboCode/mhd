@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 
 interface CheckboxProps {
     label: string;
@@ -75,8 +75,7 @@ export default function Checkboxes() {
             const joke = `${data.setup} ${data.delivery}`;
             setJokeText(joke);
         } catch (error) {
-            console.error("Error fetching joke:", error);
-            setJokeText("Failed to fetch joke");
+            setJokeText("Failed to fetch joke: " + error);
         }
     }
 
