@@ -1,12 +1,14 @@
 "use client";
 import React from "react";
-import { Calendar } from "@mantine/dates";
+import { Calendar } from "@mantine/dates"; // Calendar from Mantine library
 import dayjs from "dayjs";
 import { useState } from "react";
-import "@mantine/core/styles.css";
-import "@mantine/dates/styles.css";
+import "@mantine/core/styles.css"; // Mantine library for styling purposes
+import "@mantine/dates/styles.css"; // Another Mantine library for retunring
+// date values and formatting them in usable method.
 
 export default function Demo() {
+    // Returning dates for TV shows using dayjs and Mantine
     const [selectedDate, setSelectedDate] = useState<string[]>([]);
     const handleSelect = (date: string) => {
         const isSelected = selectedDate.some((s) =>
@@ -29,11 +31,12 @@ export default function Demo() {
         const shows = await res.text();
         setResponse(shows);
 
-        // reset selected date after submitting
+        // Reset selected date after submitting
         setSelectedDate([]);
     };
 
     return (
+        // Calendar Formatting using Mantine
         <div className="flex flex-col items-center justify-center min-h-screen">
             <div className="w-full max-w-[340px]">
                 <Calendar
@@ -54,7 +57,6 @@ export default function Demo() {
                 >
                     Submit
                 </button>
-
                 {response && <p className="mt-2 text-gray-700">{response}</p>}
             </div>
         </div>
