@@ -1,7 +1,9 @@
+import Input from "@/components/InputField";
+
 export default function InputFieldPage() {
     return (
-        <div className="min-h-screen flex justify-center items-center">
-            Insert input here
+        <div className="flex flex-col items-center justify-center min-h-screen">
+            <Input />
         </div>
     );
 }
