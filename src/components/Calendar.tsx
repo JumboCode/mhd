@@ -4,10 +4,10 @@ import { Calendar } from "@mantine/dates"; // Calendar from Mantine library
 import dayjs from "dayjs";
 import { useState } from "react";
 import "@mantine/core/styles.css"; // Mantine library for styling purposes
-import "@mantine/dates/styles.css"; // Another Mantine library for retunring
+import "@mantine/dates/styles.css"; // Another Mantine library for returning
 // date values and formatting them in usable method.
 
-export default function Demo() {
+export default function MHDCalendar() {
     // Returning dates for TV shows using dayjs and Mantine
     const [selectedDate, setSelectedDate] = useState<string[]>([]);
     const handleSelect = (date: string) => {

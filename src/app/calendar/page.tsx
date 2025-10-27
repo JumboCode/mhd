@@ -3,7 +3,7 @@ import Demo from "../../components/Calendar";
 import { MantineProvider } from "@mantine/core";
 import "@mantine/dates/styles.css";
 
-export default function Calendar() {
+export default function MHDCalendar() {
     return (
         <MantineProvider>
             <div className="min-h-screen flex justify-center items-center">
