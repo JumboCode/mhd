@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import {
     useFloating,
     flip,
@@ -65,7 +65,7 @@ export default function Tooltips() {
     };
 
     // Determines the side the arrow is on (for the speech box)
-    const side = placement.split("-")[0] == "top" ? "bottom" : "top";
+    const side = placement.split("-")[0] === "top" ? "bottom" : "top";
 
     return (
         <div className="fixed top-4 right-4 inline-block">
