@@ -86,25 +86,23 @@ export default function Tooltips() {
                 onMouseEnter={handleOnMouseEnter}
                 onMouseLeave={handleOnMouseLeave}
             />
-            {(isHover || isFocused) && (
+            <div
+                ref={refs.setFloating}
+                style={floatingStyles}
+                className={`bg-black text-white p-3 rounded-lg w-64 break-words transition-opacity duration-300 ${isHover || isFocused ? "opacity-100" : "opacity-0"}`}
+            >
+                <p className="text-center">{tooltipText}</p>
                 <div
-                    ref={refs.setFloating}
-                    style={floatingStyles}
-                    className="bg-black text-white p-3 rounded-lg w-64 break-words"
-                >
-                    <p className="text-center">{tooltipText}</p>
-                    <div
-                        ref={arrowRef}
-                        style={{
-                            position: "absolute",
-                            left: middlewareData.arrow?.x,
-                            top: middlewareData.arrow?.y,
-                            [side]: "-4px",
-                        }}
-                        className="w-2 h-2 rotate-45 bg-black"
-                    />
-                </div>
-            )}
+                    ref={arrowRef}
+                    style={{
+                        position: "absolute",
+                        left: middlewareData.arrow?.x,
+                        top: middlewareData.arrow?.y,
+                        [side]: "-4px",
+                    }}
+                    className="w-2 h-2 rotate-45 bg-black"
+                />
+            </div>
         </div>
     );
 }
