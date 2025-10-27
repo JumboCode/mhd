@@ -3,7 +3,7 @@
 import React from "react";
 import { useState } from "react";
 
-export default function Input({}) {
+export default function Input() {
     const [numInput, setNumInput] = useState<number | null>(null);
     const [questionDisplay, setQuestionDisplay] = useState("");
     const [answerDisplay, setAnswerDisplay] = useState("");
@@ -25,7 +25,7 @@ export default function Input({}) {
         setNumInput(Number(input.value));
     };
 
-    const styleClickedButton = (event: React.MouseEvent<HTMLButtonElement>) => {
+    const styleClickedButton = () => {
         setButtonStyle(
             buttonStyle.replace(
                 "bg-[#22405D] hover:bg-[#457baf]",
@@ -33,9 +33,7 @@ export default function Input({}) {
             ),
         );
     };
-    const revertClickedButtonStyle = (
-        event: React.MouseEvent<HTMLButtonElement>,
-    ) => {
+    const revertClickedButtonStyle = () => {
         setButtonStyle(
             buttonStyle.replace(
                 "bg-[#1C334A]",
@@ -44,7 +42,7 @@ export default function Input({}) {
         );
     };
 
-    const handleSubmit = async (event: React.MouseEvent<HTMLButtonElement>) => {
+    const handleSubmit = async () => {
         setQuestionDisplay("Loading...");
         setAnswerDisplay("");
         try {
@@ -53,7 +51,7 @@ export default function Input({}) {
             const question = decodeHtmlEntities(data.results[0].question);
             const answer = data.results[0].correct_answer;
             if (response.ok) {
-                if (data.results[0].type == "boolean") {
+                if (data.results[0].type === "boolean") {
                     setQuestionDisplay("True or False: " + question);
                 } else {
                     setQuestionDisplay(question);
@@ -63,7 +61,7 @@ export default function Input({}) {
                 setQuestionDisplay("Error with your input, please try again");
             }
         } catch (error) {
-            setQuestionDisplay("Error with api response, please try again.");
+            setQuestionDisplay("Error with api response: " + error);
         }
     };
 
