@@ -56,13 +56,16 @@ export const students = pgTable("students", {
 });
 
 // Ties a teacher to the years they participated
-export const yearlyTeacherData = pgTable("yearly_teacher_data", {
-    id: serial("id").primaryKey(),
-    teacherId: integer("teacher_id")
-        .notNull()
-        .references(() => teachers.id),
-    year: integer("year").notNull(),
-});
+export const yearlyTeacherParticipation = pgTable(
+    "yearly_teacher_partipication",
+    {
+        id: serial("id").primaryKey(),
+        teacherId: integer("teacher_id")
+            .notNull()
+            .references(() => teachers.id),
+        year: integer("year").notNull(),
+    },
+);
 
 // Ties a teacher to a school
 export const teacherSchools = pgTable("teacher_schools", {
