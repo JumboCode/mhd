@@ -63,6 +63,9 @@ export const yearlyTeacherParticipation = pgTable(
         teacherId: integer("teacher_id")
             .notNull()
             .references(() => teachers.id),
+        schoolId: integer("school_id")
+            .notNull()
+            .references(() => schools.id),
         year: integer("year").notNull(),
     },
 );
