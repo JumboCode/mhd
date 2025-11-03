@@ -6,7 +6,7 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-function main() {
+export function main() {
     try {
         const dataPath = path.join(
             __dirname,
@@ -65,7 +65,7 @@ function main() {
     }
 }
 
-function capitalization(name: string, delim: string): boolean {
+export function capitalization(name: string, delim: string): boolean {
     const words = name.split(delim);
     for (const word of words) {
         if (!isUpper(word[0])) return false;
@@ -76,11 +76,11 @@ function capitalization(name: string, delim: string): boolean {
     return true;
 }
 
-function grade(g: number): boolean {
+export function grade(g: number): boolean {
     return 1 <= g && g <= 12;
 }
 
-function zipcode(code: string): boolean {
+export function zipcode(code: string): boolean {
     if (code.length !== 5 && code.length !== 10) return false;
 
     for (let i = 0; i < 5; i++) {
@@ -96,17 +96,17 @@ function zipcode(code: string): boolean {
     return true;
 }
 
-function email(url: string): boolean {
+export function email(url: string): boolean {
     // Regex, parses segments separated by @ and .
     const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return url.length <= 254 && pattern.test(url);
 }
 
-function division(div: string): boolean {
+export function division(div: string): boolean {
     return div === "Junior" || div === "Senior" || div === "Elementary";
 }
 
-function gender(gender: string): boolean {
+export function gender(gender: string): boolean {
     // Can be configured differently later (once we have full list)
     return (
         gender === "M" ||
@@ -117,24 +117,24 @@ function gender(gender: string): boolean {
     );
 }
 
-function team(t: string): boolean {
+export function team(t: string): boolean {
     return t === "True" || t === "False";
 }
 
-function release(t: string): boolean {
+export function release(t: string): boolean {
     return t === "Yes" || t === "No";
 }
 
-// Helper functions
-function isUpper(c: string): boolean {
+// Helper exports
+export function isUpper(c: string): boolean {
     return c >= "A" && c <= "Z";
 }
 
-function isLower(c: string): boolean {
+export function isLower(c: string): boolean {
     return c >= "a" && c <= "z";
 }
 
-function isNum(c: string): boolean {
+export function isNum(c: string): boolean {
     return c >= "0" && c <= "9";
 }
 
