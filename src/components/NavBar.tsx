@@ -9,6 +9,7 @@ export default function NavBar() {
                 <NavBarItem text="input-field" />
                 <NavBarItem text="slider" />
                 <NavBarItem text="tooltip" />
+                <NavBarItem text="upload" />
             </div>
         </nav>
     );
