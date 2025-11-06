@@ -1,7 +1,7 @@
 <!-- Edit this file! -->
 
 ## Sprint
-<!-- Title and link the issue number here with an "#" -->
+<!-- Title and link the issue number here starting with an "#" -->
 
 
 ## Who worked on this sprint?
@@ -13,13 +13,14 @@
 
 ## New files created
 <!-- List, including path -->
+<!-- Remember to add headers to your code! -->
 
 
 ## Existing files modified
 <!-- List, including path -->
 
 
-## Acceptance Criteria Complete?
+## Acceptance Criteria
 <!-- Please include the acceptance criteria from the issue here -->
 
 
