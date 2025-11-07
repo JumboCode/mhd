@@ -1,3 +1,7 @@
+/**
+ * School Profile Page - Elki, Hansini
+ */
+
 "use client";
 
 import { useEffect, useState } from "react";
