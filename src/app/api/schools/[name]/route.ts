@@ -15,12 +15,9 @@ export async function GET(
 ) {
     try {
         const { name } = await params;
-
         const searchName = name.replace(/-/g, " ");
 
-        const allSchools = await db.select().from(schools);
-        console.log("all schools in database:", allSchools);
-
+        // match on lowercase formatted name
         const schoolResult = await db
             .select()
             .from(schools)
@@ -28,9 +25,12 @@ export async function GET(
             .limit(1);
 
         const school = schoolResult[0];
+
+        // get past year with javascript Date
         const currentYear = new Date().getFullYear();
         const pastYear = currentYear - 1;
 
+        // students by project year
         const studentCount = await db
             .select({ count: sql<number>`count(*)` })
             .from(students)
@@ -62,12 +62,11 @@ export async function GET(
                 ),
             );
 
+        // first year would be minimum year found in a school's projects
         const firstYearData = await db
             .select({ year: sql<number>`min(${projects.year})` })
             .from(projects)
             .where(eq(projects.schoolId, school.id));
-
-        console.log("fetch worked)");
 
         return NextResponse.json({
             name: school.name,
@@ -76,9 +75,11 @@ export async function GET(
             teacherCount: teacherCount[0]?.count || 0,
             projectCount: projectCount[0]?.count || 0,
             firstYear: firstYearData[0]?.year || null,
+            // instructional model not in database yet
             instructionalModel: "normal",
         });
     } catch (error) {
+        // indicate if attempting to fetch invalid school
         return NextResponse.json({
             name: "Invalid School",
             town: "N/A",
