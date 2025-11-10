@@ -42,11 +42,6 @@ export default function SpreadsheetState() {
         }
     }
 
-    function handleFile(file: File) {
-        setFile(file);
-        setCanNext(true);
-    }
-
     function checkFormat(callback: (formatted: boolean) => void) {
         if (!file) {
             return;

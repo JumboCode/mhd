@@ -1,10 +1,9 @@
 "use client";
 
-import React, { ReactEventHandler, useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect } from "react";
 
 type UploadProps = {
     fileInfo?: File;
-    //Might need this to be the json object itself instead of a string
     setFileInfo: React.Dispatch<React.SetStateAction<File | undefined>>;
 };
 

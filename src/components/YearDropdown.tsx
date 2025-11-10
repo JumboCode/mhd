@@ -14,7 +14,7 @@ export default function YearDropdown({
     const [year, setYear] = useState<number | null | undefined>(null);
 
     // Years from 2000 to 2025
-    const years = Array.from({ length: 26 }, (_, i) => 2000 + i);
+    const years = Array.from({ length: 26 }, (_, i) => 2025 - i);
 
     const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const selected = e.target.value ? Number(e.target.value) : null;
