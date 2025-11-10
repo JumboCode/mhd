@@ -14,6 +14,11 @@ export default function FileUpload({ fileInfo, setFileInfo }: UploadProps) {
     const [fileName, setFileName] = useState<string>("");
     const [isDragging, setIsDragging] = useState<boolean>(false);
 
+    useEffect(() => {
+        setFile(fileInfo);
+        setFileName(fileInfo?.name || "");
+    }, [fileInfo]);
+
     const handleClick = () => {
         if (fileInputRef.current) {
             fileInputRef.current.click();
@@ -49,6 +54,7 @@ export default function FileUpload({ fileInfo, setFileInfo }: UploadProps) {
         e.preventDefault();
         e.stopPropagation();
         handleFiles(e.dataTransfer.files);
+        setIsDragging(false);
     };
 
     useEffect(() => {
@@ -74,7 +80,8 @@ export default function FileUpload({ fileInfo, setFileInfo }: UploadProps) {
         >
             <button
                 onClick={handleClick}
-                className="flex flex-col items-center justify-center rounded-lg p-4 border border-black-500 bg-gray-100 border-dashed w-full h-75 p-16 hover:bg-gray-200"
+                className={`flex flex-col items-center justify-center rounded-lg p-4 border border-black-800 border-dashed w-full h-75 p-16 hover:bg-gray-300 
+                            ${isDragging ? "bg-gray-300" : "bg-gray-100"}`}
             >
                 <h2 className="font-bold">Upload spreadsheet document here:</h2>
                 <h2 className="">Click here or drop your XSLX document</h2>
