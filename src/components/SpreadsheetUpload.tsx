@@ -8,8 +8,8 @@ import * as XLSX from "xlsx";
 import React, { useRef } from "react";
 
 export default function SpreadsheetUpload() {
-    const [file, setFile] = useState<File | null>(null);
-    const [spreadsheetData, setSpreadsheetData] = useState<File | null>(null);
+    // const [file, setFile] = useState<File | null>(null);
+    const [spreadsheetData, setSpreadsheetData] = useState("");
 
     // Save the file
     const handleFileDrop = (event: React.DragEvent<HTMLInputElement>) => {
@@ -31,7 +31,23 @@ export default function SpreadsheetUpload() {
             // console.log(file.name.split('.').pop());
         }
         console.log("your dropped a file!!!");
-        setFile(file);
+        // setFile(file);
+
+        const reader = new FileReader();
+        reader.onload = (event: ProgressEvent<FileReader>) => {
+            //const data = await file.arrayBuffer();
+            const workbook = XLSX.read(event.target?.result, {
+                type: "binary",
+            });
+            const sheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[sheetName];
+            const json_data = XLSX.utils.sheet_to_json(worksheet, {
+                header: 1,
+            });
+            console.log(json_data);
+            setSpreadsheetData(JSON.stringify(json_data));
+        };
+        reader.readAsBinaryString(file);
     };
 
     const uploadFile = () => {
@@ -40,25 +56,25 @@ export default function SpreadsheetUpload() {
         // fileInputRef.current.click();
     };
 
-    const handleSubmit = () => {
-        if (!file) {
-            return;
-        }
-        const reader = new FileReader();
-        reader.onload = (event: ProgressEvent<FileReader>) => {
-            const data = event.target?.result;
-            if (data) {
-                //const data = await file.arrayBuffer();
-                const workbook = XLSX.read(file);
-                const sheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[sheetName];
-                const json_data = XLSX.utils.sheet_to_json(worksheet, {
-                    header: 1,
-                });
-                console.log(json_data);
+    const handleSubmit = async () => {
+        try {
+            const response = await fetch("/api/import", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: spreadsheetData,
+            });
+
+            const data = await response.json();
+            if (response.ok) {
+                alert("data sent successfully!");
             }
-        };
-        reader.readAsBinaryString(file);
+            console.log(data);
+        } catch (error) {
+            console.log(error);
+            alert("error: " + error);
+        }
     };
 
     //We find it a bit odd that the "drop box" doesn't darken / highlight if something it dragged onto it
