@@ -1,3 +1,15 @@
+/***************************************************************
+ *
+ *                SpreadsheetConfirmation.tsx
+ *
+ *         Author: Will O'Leary & Zander Barba
+ *           Date: 11/14/2025
+ *
+ *        Summary: Confirm process for a user uploaded spreadsheet,
+ *        displays some information about the data to be uploaded.
+ *
+ **************************************************************/
+
 "use client";
 
 import React, { useState, useEffect } from "react";

@@ -1,9 +1,21 @@
+/***************************************************************
+ *
+ *                SpreadsheetUpload.tsx
+ *
+ *         Author: Will O'Leary & Zander Barba
+ *           Date: 11/14/2025
+ *
+ *        Summary: UI for the file uploading process, includes
+ *        year selection and file selection
+ *
+ **************************************************************/
+
 "use client";
 
 import FileUpload from "@/components/FileUpload";
 import YearDropdown from "@/components/YearDropdown";
 
-import React, { ReactEventHandler, useState } from "react";
+import React from "react";
 
 type UploadProps = {
     file?: File;

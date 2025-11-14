@@ -1,3 +1,16 @@
+/***************************************************************
+ *
+ *                SpreadsheetState.tsx
+ *
+ *         Author: Will O'Leary & Zander Barba
+ *           Date: 11/14/2025
+ *
+ *        Summary: Manage the state of the spreadsheet uploading
+ *        pipeline, including the uploading, previewing, and
+ *        confirmation of data upload.
+ *
+ **************************************************************/
+
 "use client";
 
 import React, { ReactElement, useState, useEffect } from "react";

@@ -1,3 +1,14 @@
+/***************************************************************
+ *
+ *                SpreadsheetStatusBar.tsx
+ *
+ *         Author: Will O'Leary & Zander Barba
+ *           Date: 11/14/2025
+ *
+ *        Summary: Status bar for the spreadsheet upload pipeline
+ *
+ **************************************************************/
+
 "use client";
 
 import React from "react";

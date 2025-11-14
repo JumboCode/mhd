@@ -1,6 +1,19 @@
+/***************************************************************
+ *
+ *                SpreadsheetPreviewFail.tsx
+ *
+ *         Author: Will O'Leary & Zander Barba
+ *           Date: 11/14/2025
+ *
+ *        Summary: UI for a failed spreadsheet upload, displays
+ *        if the wrong type of data is uploaded, should include
+ *        some information about the spreadsheet.
+ *
+ **************************************************************/
+
 "use client";
 
-import React, { ReactEventHandler, useState } from "react";
+import React from "react";
 
 type PreviewProps = {
     file?: File;

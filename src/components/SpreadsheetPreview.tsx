@@ -1,3 +1,16 @@
+/***************************************************************
+ *
+ *                SpreadsheetPreview.tsx
+ *
+ *         Author: Will O'Leary & Zander Barba
+ *           Date: 11/14/2025
+ *
+ *        Summary: Given a xlsx file, give some information about
+ *        the contents of the file and display a preview of the
+ *        first 5 rows
+ *
+ **************************************************************/
+
 "use client";
 
 import React, { useState, useEffect } from "react";

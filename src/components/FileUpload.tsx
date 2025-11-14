@@ -1,3 +1,15 @@
+/***************************************************************
+ *
+ *                FileUpload.tsx
+ *
+ *         Author: Will O'Leary & Zander Barba
+ *           Date: 11/14/2025
+ *
+ *        Summary: Allow a user to upload a file through drag
+ *        and drop or selection.
+ *
+ **************************************************************/
+
 "use client";
 
 import React, { useRef, useState, useEffect } from "react";

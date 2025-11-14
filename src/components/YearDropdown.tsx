@@ -1,3 +1,15 @@
+/***************************************************************
+ *
+ *                YearDropdown.tsx
+ *
+ *         Author: Will O'Leary & Zander Barba
+ *           Date: 11/14/2025
+ *
+ *        Summary: Year Dropdown menu for the spreadsheet
+ *        uploading process
+ *
+ **************************************************************/
+
 "use client";
 
 import React, { useState, useEffect } from "react";
