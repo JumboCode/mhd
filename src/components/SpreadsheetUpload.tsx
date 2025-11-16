@@ -1,3 +1,9 @@
+/**
+ * SpreadSheetUpload.tsx (for data ingestion)
+ * by Anne Wu and Chiara Martello
+ * 11/16/25
+ * Uploads spreadsheet through on click or drag and drop to database
+ */
 "use client";
 
 import { TableColumnsSplit } from "lucide-react";
@@ -10,6 +16,8 @@ import React, { useRef } from "react";
 export default function SpreadsheetUpload() {
     // const [file, setFile] = useState<File | null>(null);
     const [spreadsheetData, setSpreadsheetData] = useState("");
+    const [year, setYear] = useState("2025");
+    const hiddenFileInput = useRef<HTMLInputElement>(null);
 
     // Save the file
     const handleFileDrop = (event: React.DragEvent<HTMLInputElement>) => {
@@ -22,20 +30,19 @@ export default function SpreadsheetUpload() {
         }
         //console.log(files);
         const fileExtension = "." + file.name.split(".").pop()?.toLowerCase();
+        console.log(fileExtension);
         if (
             fileExtension != ".xlsx" &&
             fileExtension != ".xlsm" &&
             fileExtension != ".xls"
         ) {
-            console.log("Invalid file!!!");
-            // console.log(file.name.split('.').pop());
+            alert("Please upload a .xlsx, .xlsm, or .xls file.");
+            return;
         }
         console.log("your dropped a file!!!");
-        // setFile(file);
 
         const reader = new FileReader();
         reader.onload = (event: ProgressEvent<FileReader>) => {
-            //const data = await file.arrayBuffer();
             const workbook = XLSX.read(event.target?.result, {
                 type: "binary",
             });
@@ -52,18 +59,51 @@ export default function SpreadsheetUpload() {
 
     const uploadFile = () => {
         console.log("upload file popup");
+        hiddenFileInput.current?.click();
         // const inputFile = useRef(null);
         // fileInputRef.current.click();
     };
 
-    const handleSubmit = async () => {
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const files = event.target.files;
+        // event.preventDefault();
+        // const selectedFile = event.target.files[0];
+        if (files && files.length > 0) {
+            const selectedFile = files[0];
+            console.log(selectedFile);
+
+            const reader = new FileReader();
+            reader.onload = (event: ProgressEvent<FileReader>) => {
+                const workbook = XLSX.read(event.target?.result, {
+                    type: "binary",
+                });
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+                const json_data = XLSX.utils.sheet_to_json(worksheet, {
+                    header: 1,
+                });
+                console.log(json_data);
+                setSpreadsheetData(JSON.stringify(json_data));
+            };
+            reader.readAsBinaryString(selectedFile);
+        }
+    };
+
+    const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        // console.log(year);
+
         try {
+            const myObject = {
+                formYear: year,
+                formData: spreadsheetData,
+            };
             const response = await fetch("/api/import", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                 },
-                body: spreadsheetData,
+                body: JSON.stringify(myObject),
             });
 
             const data = await response.json();
@@ -90,7 +130,10 @@ export default function SpreadsheetUpload() {
                 onSubmit={handleSubmit}
                 className="flex flex-col items-center h-screen content-center text-center"
             >
-                <select className="border-gray-400 border-1 rounded-md pl-2 pr-2 m-2 self-start justify-self-start">
+                <select
+                    onChange={(e) => setYear(e.target.value)}
+                    className="border-gray-400 border-1 rounded-md pl-2 pr-2 m-2 self-start justify-self-start"
+                >
                     <option value="2025">2025</option>
                     <option value="2024">2024</option>
                     <option value="2023">2023</option>
@@ -100,6 +143,8 @@ export default function SpreadsheetUpload() {
                     onDrop={handleFileDrop}
                     onDragOver={(e) => e.preventDefault()}
                     onClick={uploadFile}
+                    ref={hiddenFileInput}
+                    onChange={handleFileChange}
                     className="bg-[#EDEDED] flex flex-col items-center justify-center rounded-md w-full h-1/3 border-dashed border-gray-400 my-6 border-2"
                 >
                     <MdOutlineUploadFile className="w-full text-7xl pb-2" />
@@ -108,6 +153,15 @@ export default function SpreadsheetUpload() {
                         Click here or drop your XLSX document
                     </span>
                 </div>
+
+                <input
+                    ref={hiddenFileInput}
+                    type="file"
+                    id="file-input"
+                    className="hidden"
+                    onChange={handleFileChange}
+                    accept=".xlsx, .xlsm, .xls"
+                />
                 {/* <input
                 
                 className="w-full h-1/3"
