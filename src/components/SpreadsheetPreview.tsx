@@ -12,60 +12,61 @@
  **************************************************************/
 "use client";
 
-import React, { useState } from "react";
-import { ExcelRenderer } from "react-excel-renderer";
+import React, { useState, useEffect } from "react";
 import { DataTable } from "./data-table";
 import { CircleCheck, FileChartColumn } from "lucide-react";
 
 type PreviewProps = {
     file?: File;
+    spreadsheetData: any[][];
 };
 
-export default function SpreadsheetPreview({ file }: PreviewProps) {
+export default function SpreadsheetPreview({
+    file,
+    spreadsheetData,
+}: PreviewProps) {
     const [cols, setCols] = useState<any[]>([]);
     const [rows, setRows] = useState<any[][]>([]);
     const [numRows, setNumRows] = useState<number>(0);
     const [numCols, setNumCols] = useState<number>(0);
 
-    // Need cols e, n, r, t, u, v, x, y, AI, AL
-    ExcelRenderer(file, (err: any, resp: any) => {
-        if (err) {
-            console.log(err);
-        } else {
-            // Map of column indexes to their actual names
-            const columnNames: { [key: number]: string } = {
-                4: "City",
-                13: "Grade",
-                17: "Division",
-                19: "Teacher First",
-                20: "Teacher Last",
-                21: "Teacher Email",
-                23: "Project ID",
-                24: "Title",
-                34: "Team Project",
-                37: "School Name",
-            };
+    useEffect(() => {
+        if (!spreadsheetData || spreadsheetData.length === 0) return;
 
-            const desiredIndexes = [4, 13, 17, 19, 20, 21, 23, 24, 34, 37];
+        // Map of column indexes to their actual names
+        const columnNames: { [key: number]: string } = {
+            4: "City",
+            13: "Grade",
+            17: "Division",
+            19: "Teacher First",
+            20: "Teacher Last",
+            21: "Teacher Email",
+            23: "Project Id",
+            24: "Title",
+            34: "Team Project",
+            37: "School Name",
+        };
 
-            // Create columns with sequential accessorKeys (0, 1, 2, etc.)
-            const cols = desiredIndexes.map((colIndex, arrayIndex) => ({
-                id: String(arrayIndex),
-                accessorKey: String(arrayIndex),
-                header: columnNames[colIndex] || `Column ${colIndex}`,
-            }));
+        const desiredIndexes = [4, 13, 17, 19, 20, 21, 23, 24, 34, 37];
 
-            // Remap rows to only include the desired columns in order
-            const filteredRows = resp.rows
-                .slice(1, 6)
-                .map((row: any[]) => desiredIndexes.map((index) => row[index]));
+        // Create columns with sequential accessorKeys (0, 1, 2, etc.)
+        const cols = desiredIndexes.map((colIndex, arrayIndex) => ({
+            id: String(arrayIndex),
+            accessorKey: String(arrayIndex),
+            header: columnNames[colIndex] || `Column ${colIndex}`,
+        }));
 
-            setNumRows(resp.rows.length);
-            setNumCols(desiredIndexes.length);
-            setCols(cols);
-            setRows(filteredRows);
-        }
-    });
+        // Remap rows to only include the desired columns in order
+        // Skip the first row (index 0) as it contains headers, take rows 1-5
+        const filteredRows = spreadsheetData
+            .slice(1, 6)
+            .map((row: any[]) => desiredIndexes.map((index) => row[index]));
+
+        setNumRows(spreadsheetData.length - 1); // Subtract 1 for header row
+        setNumCols(desiredIndexes.length);
+        setCols(cols);
+        setRows(filteredRows);
+    }, [spreadsheetData]);
 
     return (
         <>
@@ -103,7 +104,7 @@ export default function SpreadsheetPreview({ file }: PreviewProps) {
                         </p>
                     </div>
                 </div>
-                <div className="whitespace-nowrap overflow-x-auto max-w-2xl">
+                <div className="whitespace-nowrap overflow-x-auto max-w-2xl mb-10">
                     <DataTable data={rows} columns={cols} />
                 </div>
             </div>

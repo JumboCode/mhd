@@ -23,6 +23,7 @@ import * as XLSX from "xlsx";
 
 export default function SpreadsheetState() {
     const [file, setFile] = useState<File | undefined>();
+    const [spreadsheetData, setSpreadsheetData] = useState<any[]>([]);
     const [year, setYear] = useState<number | null>();
     const [tab, setTab] = useState<ReactElement>(
         <SpreadsheetUpload
@@ -35,7 +36,7 @@ export default function SpreadsheetState() {
     const [tabIndex, setTabIndex] = useState(0);
     const [canNext, setCanNext] = useState<boolean>(false);
     const [canPrevious, setCanPrevious] = useState<boolean>(false);
-    const [isFormatted, setIsFormatted] = useState<boolean>(true);
+    const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
     const [nextText, setNextText] = useState("Next");
 
@@ -53,59 +54,77 @@ export default function SpreadsheetState() {
         }
     };
 
-    const checkFormat = (callback: (formatted: boolean) => void) => {
+    const parseSpreadsheet = (callback: (jsonData: any[][] | null) => void) => {
         if (!file) {
+            callback(null);
             return;
         }
 
         const reader = new FileReader();
-
-        reader.onload = function (e) {
-            if (!e.target?.result) {
-                callback(false);
+        reader.onload = (event: ProgressEvent<FileReader>) => {
+            if (!event.target?.result) {
+                callback(null);
                 return;
             }
 
-            const data = new Uint8Array(e.target.result as ArrayBuffer);
-            const workbook = XLSX.read(data, { type: "array" });
-
-            const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+            const workbook = XLSX.read(event.target.result, {
+                type: "binary",
+            });
+            const sheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[sheetName];
             const jsonData: any[][] = XLSX.utils.sheet_to_json(worksheet, {
                 header: 1,
-                defval: "",
             });
 
-            if (jsonData.length === 0) {
-                callback(false);
-                return;
-            }
-
-            const headers = jsonData[0] as string[];
-            const requiredColumns = [
-                "City",
-                "Grade",
-                "Division",
-                "Teacher First",
-                "Teacher Last",
-                "Teacher Email",
-                "Project Id",
-                "Title",
-                "Team Project",
-                "School Name",
-            ];
-
-            const hasAllColumns = requiredColumns.every((col) =>
-                headers.includes(col),
-            );
-
-            callback(hasAllColumns);
+            callback(jsonData);
         };
 
-        reader.readAsArrayBuffer(file);
+        reader.readAsBinaryString(file);
     };
 
-    const next = () => {
+    const handleSubmit = async () => {
+        if (spreadsheetData.length === 0) {
+            alert("No data to upload.");
+            return;
+        }
+
+        setIsSubmitting(true);
+
+        try {
+            const response = await fetch("/api/import", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    formYear: year,
+                    formData: JSON.stringify(spreadsheetData),
+                }),
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                alert(
+                    `Data uploaded successfully! Processed ${data.rowsProcessed || spreadsheetData.length - 1} rows.`,
+                );
+            } else {
+                const errorData = await response.json();
+                throw new Error(errorData.message || "Failed to upload data");
+            }
+        } catch (error) {
+            console.error("Upload error:", error);
+            alert("Error uploading data: " + error);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const next = async () => {
         if (canNext) {
+            // If on confirmation page (index 2), submit data
+            if (tabIndex === 2) {
+                await handleSubmit();
+            }
             switchTab((tabIndex + 1) % 3);
         }
     };
@@ -132,11 +151,44 @@ export default function SpreadsheetState() {
             setNextText("Next");
         } else if (tabIndex === 1) {
             setTabIndex(1);
-            checkFormat((formatted) => {
-                setIsFormatted(formatted);
 
-                if (formatted) {
-                    setTab(<SpreadsheetPreview file={file} />);
+            // Parse spreadsheet and check format
+            parseSpreadsheet((jsonData) => {
+                if (!jsonData || jsonData.length === 0) {
+                    setTab(<SpreadsheetPreviewFail />);
+                    setCanNext(false);
+                    return;
+                }
+
+                // Store the parsed data
+                setSpreadsheetData(jsonData);
+
+                // Check if format is valid
+                const headers = jsonData[0] as string[];
+                const requiredColumns = [
+                    "City",
+                    "Grade",
+                    "Division",
+                    "Teacher First",
+                    "Teacher Last",
+                    "Teacher Email",
+                    "Project Id",
+                    "Title",
+                    "Team Project",
+                    "School Name",
+                ];
+
+                const hasAllColumns = requiredColumns.every((col) =>
+                    headers.includes(col),
+                );
+
+                if (hasAllColumns) {
+                    setTab(
+                        <SpreadsheetPreview
+                            file={file}
+                            spreadsheetData={jsonData}
+                        />,
+                    );
                     setCanNext(true);
                 } else {
                     setTab(<SpreadsheetPreviewFail />);
@@ -148,7 +200,12 @@ export default function SpreadsheetState() {
             setCanPrevious(true);
         } else if (tabIndex === 2) {
             setTabIndex(2);
-            setTab(<SpreadsheetConfirmation file={file} year={year} />);
+            setTab(
+                <SpreadsheetConfirmation
+                    year={year}
+                    spreadsheetData={spreadsheetData}
+                />,
+            );
             setNextText("Finish");
             setCanNext(true);
         }
@@ -174,8 +231,9 @@ export default function SpreadsheetState() {
             <div className="flex justify-between w-full py-4">
                 {canPrevious && (
                     <button
-                        className="bg-blue-700 py-1 w-40 rounded-lg bg-white text-black border border-gray-300 hover:bg-gray-200 hover:cursor-pointer transition duration-300"
+                        className="py-1 w-40 rounded-lg bg-white text-black border border-gray-300 hover:bg-gray-200 hover:cursor-pointer transition duration-300"
                         onClick={previous}
+                        disabled={isSubmitting}
                     >
                         Previous
                     </button>
@@ -183,10 +241,11 @@ export default function SpreadsheetState() {
 
                 {canNext && (
                     <button
-                        className="ml-auto py-1 w-40 rounded-lg bg-blue-700 text-white hover:bg-blue-900 hover:cursor-pointer transition duration-300"
+                        className="ml-auto py-1 w-40 rounded-lg bg-blue-700 text-white hover:bg-blue-900 hover:cursor-pointer transition duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed"
                         onClick={next}
+                        disabled={isSubmitting}
                     >
-                        {nextText}
+                        {isSubmitting ? "Uploading..." : nextText}
                     </button>
                 )}
             </div>

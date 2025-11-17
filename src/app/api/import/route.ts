@@ -22,20 +22,6 @@ import {
     yearlySchoolParticipation,
 } from "@/lib/schema";
 
-// Column indices from Excel file
-const COLUMN_INDICES = {
-    CITY: 0,
-    GRADE: 1,
-    DIVISION: 2,
-    TEACHER_FIRST: 3,
-    TEACHER_LAST: 4,
-    TEACHER_EMAIL: 5,
-    PROJECT_ID: 6,
-    TITLE: 7,
-    TEAM: 8,
-    SCHOOL_NAME: 9,
-} as const;
-
 type RowData = Array<string | number | boolean | null>;
 
 export async function POST(req: NextRequest) {
@@ -44,20 +30,46 @@ export async function POST(req: NextRequest) {
         const year: number = jsonReq.formYear;
         const rawData: RowData[] = JSON.parse(jsonReq.formData);
 
-        // Extract only needed columns: city, grade, division, teacher first/last/email,
-        // project id, title, team, school name
-        const neededIndices = [4, 13, 17, 19, 20, 21, 23, 24, 34, 37];
+        if (rawData.length === 0) {
+            return NextResponse.json(
+                { message: "No data provided" },
+                { status: 400 },
+            );
+        }
+
+        // Get header row and find column indices
+        const headers = rawData[0] as string[];
+        const COLUMN_INDICES = {
+            CITY: headers.indexOf("City"),
+            GRADE: headers.indexOf("Grade"),
+            DIVISION: headers.indexOf("Division"),
+            TEACHER_FIRST: headers.indexOf("Teacher First"),
+            TEACHER_LAST: headers.indexOf("Teacher Last"),
+            TEACHER_EMAIL: headers.indexOf("Teacher Email"),
+            PROJECT_ID: headers.indexOf("Project Id"),
+            TITLE: headers.indexOf("Title"),
+            TEAM: headers.indexOf("Team Project"),
+            SCHOOL_NAME: headers.indexOf("School Name"),
+        };
+
+        // Validate all required columns exist
+        const missingColumns = Object.entries(COLUMN_INDICES)
+            .filter(([_, index]) => index === -1)
+            .map(([name]) => name);
+
+        if (missingColumns.length > 0) {
+            return NextResponse.json(
+                {
+                    message: `Missing required columns: ${missingColumns.join(", ")}`,
+                },
+                { status: 400 },
+            );
+        }
 
         // Remove header row and filter out empty rows
-        rawData.shift();
-        const filteredRows = rawData
-            .filter((row) => row.length > 0)
-            .map((row) =>
-                row.filter((_, index) => neededIndices.includes(index)),
-            );
+        const filteredRows = rawData.slice(1).filter((row) => row.length > 0);
 
         let insertedCount = 0;
-
         for (const row of filteredRows) {
             // TO DO: town is per student currently, doesn't work for regional schools
             let school = await db.query.schools.findFirst({
@@ -115,13 +127,6 @@ export async function POST(req: NextRequest) {
                         projects.entryId,
                         Number(row[COLUMN_INDICES.PROJECT_ID]),
                     ),
-                    eq(projects.title, row[COLUMN_INDICES.TITLE] as string),
-                    eq(
-                        projects.division,
-                        row[COLUMN_INDICES.DIVISION] as string,
-                    ),
-                    eq(projects.group, row[COLUMN_INDICES.TEAM] === "True"),
-                    eq(projects.year, year),
                 ),
             });
 

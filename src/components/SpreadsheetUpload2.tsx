@@ -1,5 +1,5 @@
 /**
- * SpreadSheetUpload.tsx (for data ingestion)
+ * SpreadsheetUpload2.tsx (for data ingestion)
  * by Anne Wu and Chiara Martello
  * 11/16/25
  * Uploads spreadsheet through click or drag and drop to database

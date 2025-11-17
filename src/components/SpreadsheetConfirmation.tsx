@@ -9,22 +9,20 @@
  *        displays some information about the data to be uploaded.
  *
  **************************************************************/
-
 "use client";
 
 import React, { useState, useEffect } from "react";
 import Checkbox from "./Checkbox";
 import { School, GraduationCap, User, FolderOpenDot } from "lucide-react";
-import * as XLSX from "xlsx";
 
 type ConfirmationProps = {
-    file?: File;
     year?: number | null;
+    spreadsheetData: any[][];
 };
 
 export default function SpreadsheetConfirmation({
-    file,
     year,
+    spreadsheetData,
 }: ConfirmationProps) {
     const [uniqueSchools, setUniqueSchools] = useState<number>(0);
     const [students, setStudents] = useState<number>(0);
@@ -32,54 +30,40 @@ export default function SpreadsheetConfirmation({
     const [numProjects, setNumProjects] = useState<number>(0);
 
     useEffect(() => {
-        if (!file) return;
+        if (!spreadsheetData || spreadsheetData.length === 0) {
+            setUniqueSchools(0);
+            setStudents(0);
+            setNumTeachers(0);
+            setNumProjects(0);
+            return;
+        }
 
-        const reader = new FileReader();
+        // Remove header row and filter out empty rows
+        const dataRows = spreadsheetData
+            .slice(1)
+            .filter((row) => row.length > 0);
 
-        reader.onload = function (e) {
-            if (!e.target?.result) return;
+        // Count students (column 1)
+        const studentsList = dataRows
+            .map((row) => row[1])
+            .filter((value) => value !== "" && value !== null);
+        setStudents(studentsList.length);
 
-            const data = new Uint8Array(e.target.result as ArrayBuffer);
-            const workbook = XLSX.read(data, { type: "array" });
+        // Count unique schools (column 37)
+        const schools = dataRows.map((row) => row[37]).filter(Boolean);
+        const uniqueSchoolsSet = new Set(schools);
+        setUniqueSchools(uniqueSchoolsSet.size);
 
-            const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+        // Count unique teachers (column 21 - email)
+        const teachers = dataRows.map((row) => row[21]).filter(Boolean);
+        const uniqueTeachersSet = new Set(teachers);
+        setNumTeachers(uniqueTeachersSet.size);
 
-            // Convert sheet to JSON with headers
-            const jsonData: any[][] = XLSX.utils.sheet_to_json(worksheet, {
-                header: 1,
-                defval: "",
-            });
-
-            if (jsonData.length === 0) {
-                setUniqueSchools(0);
-                return;
-            }
-
-            const students = jsonData
-                .slice(1)
-                .map((row) => row[1])
-                .filter((value) => value !== "");
-
-            setStudents(students.length);
-
-            const schools = jsonData.slice(1).map((row) => row[37]);
-            const schoolSet = Array.from(new Set(schools));
-
-            setUniqueSchools(schoolSet.length);
-
-            const teachers = jsonData.slice(1).map((row) => row[21]);
-            const teacherSet = Array.from(new Set(teachers));
-
-            setNumTeachers(teacherSet.length);
-
-            const projects = jsonData.slice(1).map((row) => row[23]);
-            const projectSet = Array.from(new Set(projects));
-
-            setNumProjects(projectSet.length);
-        };
-
-        reader.readAsArrayBuffer(file);
-    }, [file]);
+        // Count unique projects (column 23 - project ID)
+        const projects = dataRows.map((row) => row[23]).filter(Boolean);
+        const uniqueProjectsSet = new Set(projects);
+        setNumProjects(uniqueProjectsSet.size);
+    }, [spreadsheetData]);
 
     return (
         <div>
