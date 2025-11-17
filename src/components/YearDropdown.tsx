@@ -25,8 +25,8 @@ export default function YearDropdown({
 }: YearDropdownProps) {
     const [year, setYear] = useState<number | null | undefined>(null);
 
-    // Years from 2000 to 2025
-    const years = Array.from({ length: 26 }, (_, i) => 2025 - i);
+    // Years from 2016 to 2025
+    const years = Array.from({ length: 10 }, (_, i) => 2025 - i);
 
     const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const selected = e.target.value ? Number(e.target.value) : null;
@@ -42,7 +42,7 @@ export default function YearDropdown({
         <select
             value={year ?? ""}
             onChange={handleChange}
-            className="border rounded p-2 w-48"
+            className="border border-gray-300 rounded px-4 py-2 w-48 font-normal text-gray-600"
         >
             <option value="">Select a year</option>
             {years.map((y) => (

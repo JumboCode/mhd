@@ -39,23 +39,21 @@ export default function SpreadsheetState() {
 
     const [nextText, setNextText] = useState("Next");
 
-    (useEffect(() => {
+    useEffect(() => {
         checkForUploadNext();
-    }),
-        [file]);
+    }, [file]);
 
-    (useEffect(() => {
+    useEffect(() => {
         checkForUploadNext();
-    }),
-        [year]);
+    }, [year]);
 
-    function checkForUploadNext() {
+    const checkForUploadNext = () => {
         if (tabIndex === 0) {
             setCanNext(year != null && file != null);
         }
-    }
+    };
 
-    function checkFormat(callback: (formatted: boolean) => void) {
+    const checkFormat = (callback: (formatted: boolean) => void) => {
         if (!file) {
             return;
         }
@@ -104,21 +102,21 @@ export default function SpreadsheetState() {
         };
 
         reader.readAsArrayBuffer(file);
-    }
+    };
 
-    function next() {
+    const next = () => {
         if (canNext) {
             switchTab((tabIndex + 1) % 3);
         }
-    }
+    };
 
-    function previous() {
+    const previous = () => {
         if (canPrevious) {
             switchTab(tabIndex - 1);
         }
-    }
+    };
 
-    function switchTab(tabIndex: Number) {
+    const switchTab = (tabIndex: Number) => {
         if (tabIndex === 0) {
             setTabIndex(0);
             setTab(
@@ -150,45 +148,47 @@ export default function SpreadsheetState() {
             setCanPrevious(true);
         } else if (tabIndex === 2) {
             setTabIndex(2);
-            setTab(<SpreadsheetConfirmation file={file} />);
+            setTab(<SpreadsheetConfirmation file={file} year={year} />);
             setNextText("Finish");
             setCanNext(true);
         }
-    }
+    };
 
     return (
-        <div>
-            <div className="flex flex-col items-center justify-between mx-110 mt-25 h-150">
-                <div className="w-115">
+        <div className="flex flex-col items-center justify-between h-screen max-w-2xl mx-auto py-8 gap-12">
+            <div className="max-w-lg w-full">
+                <div className="mb-2">
                     <SpreadsheetStatusBar tabIndex={tabIndex} maxTabs={2} />
                 </div>
-                <div className="flex flex-row justify-between w-full font-semibold py-5 px-25">
-                    <p>Upload</p>
-                    <p>Preview</p>
-                    <p>Confirmation</p>
+                <div className="flex flex-row justify-between w-full font-semibold">
+                    <p className="text-left flex-1 -translate-x-4">Upload</p>
+                    <p className="text-center flex-1">Preview</p>
+                    <p className="text-right flex-1 translate-x-10">
+                        Confirmation
+                    </p>
                 </div>
+            </div>
 
-                <div className="h-full">{tab}</div>
+            <div className="flex-1">{tab}</div>
 
-                <div className="flex justify-between w-full">
-                    {canPrevious && (
-                        <button
-                            className="bg-blue-700 px-4 py-2 rounded-lg w-40 bg-white text-black border border-gray-300 hover:bg-gray-200"
-                            onClick={previous}
-                        >
-                            Previous
-                        </button>
-                    )}
+            <div className="flex justify-between w-full p-4">
+                {canPrevious && (
+                    <button
+                        className="bg-blue-700 py-1 w-40 rounded-lg bg-white text-black border border-gray-300 hover:bg-gray-200 hover:cursor-pointer transition duration-300"
+                        onClick={previous}
+                    >
+                        Previous
+                    </button>
+                )}
 
-                    {canNext && (
-                        <button
-                            className="bg-blue-700 px-4 py-2 rounded-lg w-40 bg-blue-700 text-white hover:bg-blue-900"
-                            onClick={next}
-                        >
-                            {nextText}
-                        </button>
-                    )}
-                </div>
+                {canNext && (
+                    <button
+                        className="ml-auto py-1 w-40 rounded-lg bg-blue-700 text-white hover:bg-blue-900 hover:cursor-pointer transition duration-300"
+                        onClick={next}
+                    >
+                        {nextText}
+                    </button>
+                )}
             </div>
         </div>
     );

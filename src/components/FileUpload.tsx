@@ -13,6 +13,7 @@
 "use client";
 
 import React, { useRef, useState, useEffect } from "react";
+import { FileUp as FileUploadIcon } from "lucide-react";
 
 type UploadProps = {
     fileInfo?: File;
@@ -91,11 +92,16 @@ export default function FileUpload({ fileInfo, setFileInfo }: UploadProps) {
         >
             <button
                 onClick={handleClick}
-                className={`flex flex-col items-center justify-center rounded-lg p-4 border border-black-800 border-dashed w-full h-75 p-16 hover:bg-gray-300 
-                            ${isDragging ? "bg-gray-300" : "bg-gray-100"}`}
+                className={`flex flex-col items-center justify-center gap-6 rounded-lg py-20 border-2 border-dashed border-gray-300 w-full hover:bg-gray-200 transition duration-300
+                    ${isDragging ? "bg-gray-300" : "bg-gray-100"}`}
             >
-                <h2 className="font-bold">Upload spreadsheet document here:</h2>
-                <h2 className="">Click here or drop your XSLX document</h2>
+                <FileUploadIcon size={64} />
+                <div className="flex flex-col gap-1">
+                    <h2 className="font-bold">
+                        Upload spreadsheet document here
+                    </h2>
+                    <h2 className="">Click here or drop your XLSX document</h2>
+                </div>
                 <input
                     type="file"
                     accept=".xlsx"
@@ -103,8 +109,7 @@ export default function FileUpload({ fileInfo, setFileInfo }: UploadProps) {
                     onChange={handleChange}
                     style={{ display: "none" }}
                 />
-
-                <p> {fileName} </p>
+                {fileName && <p>{fileName}</p>}
             </button>
         </div>
     );

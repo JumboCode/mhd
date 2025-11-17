@@ -14,13 +14,18 @@
 
 import React, { useState, useEffect } from "react";
 import Checkbox from "./Checkbox";
+import { School, GraduationCap, User, FolderOpenDot } from "lucide-react";
 import * as XLSX from "xlsx";
 
 type ConfirmationProps = {
     file?: File;
+    year?: number | null;
 };
 
-export default function SpreadsheetConfirmation({ file }: ConfirmationProps) {
+export default function SpreadsheetConfirmation({
+    file,
+    year,
+}: ConfirmationProps) {
     const [uniqueSchools, setUniqueSchools] = useState<number>(0);
     const [students, setStudents] = useState<number>(0);
     const [numTeachers, setNumTeachers] = useState<number>(0);
@@ -81,17 +86,31 @@ export default function SpreadsheetConfirmation({ file }: ConfirmationProps) {
             <div className="flex flex-col items-left justify-left p-8">
                 <h1 className="text-2xl font-bold mt-8">Confirmation</h1>
                 <p className="text-gray-600 my-5">
-                    You are about to override data - are you sure you want to do
-                    this? This action cannot be undone.
+                    You are about to override data for {year} - are you sure you
+                    want to do this? This action cannot be undone.
                 </p>
                 <ul className="ml-5 my-5">
-                    <li>{uniqueSchools} schools</li>
-                    <li>{students} students</li>
-                    <li>{numTeachers} teachers</li>
-                    <li>{numProjects} projects</li>
+                    <li className="flex">
+                        <School className="inline-block mr-2 mb-1" />
+                        <p>{uniqueSchools} schools</p>
+                    </li>
+                    <li className="flex">
+                        <GraduationCap className="inline-block mr-2 mb-1" />
+                        <p>{students} students</p>
+                    </li>
+                    <li className="flex">
+                        <User className="inline-block mr-2 mb-1" />
+                        <p>{numTeachers} teachers</p>
+                    </li>
+                    <li className="flex">
+                        <FolderOpenDot className="inline-block mr-2 mb-1" />
+                        <p>{numProjects} projects</p>
+                    </li>
+                    <li className="mt-10">
+                        <Checkbox label="I understand"></Checkbox>
+                    </li>
                 </ul>
                 <div className="mt-5"></div>
-                <Checkbox label="I understand"></Checkbox>
             </div>
         </div>
     );

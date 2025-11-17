@@ -10,12 +10,12 @@
  *        first 5 rows
  *
  **************************************************************/
-
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { ExcelRenderer } from "react-excel-renderer";
 import { DataTable } from "./data-table";
+import { CircleCheck, FileChartColumn } from "lucide-react";
 
 type PreviewProps = {
     file?: File;
@@ -27,57 +27,83 @@ export default function SpreadsheetPreview({ file }: PreviewProps) {
     const [numRows, setNumRows] = useState<number>(0);
     const [numCols, setNumCols] = useState<number>(0);
 
-    //Need cols e, n, r, t, u, v, x, y, AI, AL
+    // Need cols e, n, r, t, u, v, x, y, AI, AL
     ExcelRenderer(file, (err: any, resp: any) => {
         if (err) {
             console.log(err);
         } else {
+            // Map of column indexes to their actual names
+            const columnNames: { [key: number]: string } = {
+                4: "City",
+                13: "Grade",
+                17: "Division",
+                19: "Teacher First",
+                20: "Teacher Last",
+                21: "Teacher Email",
+                23: "Project ID",
+                24: "Title",
+                34: "Team Project",
+                37: "School Name",
+            };
+
             const desiredIndexes = [4, 13, 17, 19, 20, 21, 23, 24, 34, 37];
 
-            const cols = resp.cols
-                .filter((col: any) => desiredIndexes.includes(col.key))
-                .map((col: any) => ({
-                    id: String(col.key),
-                    accessorKey: String(col.key),
-                }));
+            // Create columns with sequential accessorKeys (0, 1, 2, etc.)
+            const cols = desiredIndexes.map((colIndex, arrayIndex) => ({
+                id: String(arrayIndex),
+                accessorKey: String(arrayIndex),
+                header: columnNames[colIndex] || `Column ${colIndex}`,
+            }));
+
+            // Remap rows to only include the desired columns in order
+            const filteredRows = resp.rows
+                .slice(1, 5)
+                .map((row: any[]) => desiredIndexes.map((index) => row[index]));
+
             setNumRows(resp.rows.length);
             setNumCols(desiredIndexes.length);
-
             setCols(cols);
-            setRows(resp.rows.slice(0, 5));
+            setRows(filteredRows);
         }
     });
 
     return (
         <>
-            <div className="flex flex-col items-center justify-center">
-                <h2 className="text-2xl font-bold mt-5">
-                    Your file looks good
-                </h2>
-                <div className="flex flex-col w-100 my-10 space-y-2">
-                    <div className="flex justify-between">
-                        <p className="font-bold">File:</p>
-                        <div className="bg-gray-200 px-5 rounded-lg">
-                            <p className="text-right">{file?.name ?? "None"}</p>
+            <div className="flex flex-col items-center gap-12">
+                <div className="flex flex-col items-center">
+                    <CircleCheck className="w-16 h-16 text-green-500" />
+                    <h2 className="text-xl font-bold mt-5">
+                        Your file looks good
+                    </h2>
+                </div>
+                <div className="flex flex-col gap-4">
+                    <div className="flex flex-col gap-2">
+                        <div className="flex gap-4 items-center">
+                            <p className="font-bold w-32">File</p>
+                            <div className="bg-gray-100 px-2 rounded border flex items-center gap-1">
+                                <FileChartColumn className="h-4 text-gray-600" />
+                                <p>{file?.name ?? "None"}</p>
+                            </div>
+                        </div>
+                        <div className="flex gap-4">
+                            <p className="font-bold w-32">Rows Found</p>
+                            <p>{numRows} rows</p>
+                        </div>
+                        <div className="flex gap-4">
+                            <p className="font-bold w-32">Columns</p>
+                            <p>
+                                {numCols} required columns were found and mapped
+                            </p>
                         </div>
                     </div>
-
-                    <div className="flex justify-between">
-                        <p className="font-bold">Rows found:</p>
-                        <p className="text-right">{numRows}</p>
+                    <div className="flex flex-col gap-2">
+                        <h2 className="text-xl font-bold mt-5 ">Data sample</h2>
+                        <p className="text-gray-600">
+                            Here are the first 5 rows from your file
+                        </p>
                     </div>
-
-                    <div className="flex justify-between">
-                        <p className="font-bold">Columns:</p>
-                        <p className="text-right">{numCols}</p>
-                    </div>
-
-                    <h2 className="text-xl font-bold mt-5 ">Data sample</h2>
-                    <p className="text-gray-600">
-                        Here are the first 5 rows from your file
-                    </p>
                 </div>
-                <div className="whitespace-nowrap overflow-x-auto max-w-[800px] mb-10">
+                <div className="whitespace-nowrap overflow-x-auto max-w-2xl mb-10">
                     <DataTable data={rows} columns={cols} />
                 </div>
             </div>

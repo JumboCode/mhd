@@ -33,16 +33,16 @@ export default function SpreadsheetUpload({
     return (
         <div>
             {/* Page Title */}
-            <div className="flex flex-col items-left justify-left pb-10">
-                <h1 className="text-2xl font-bold mt-8 mb-5">
-                    Upload Spreadsheet
-                </h1>
-                <h2 className="text-lg mb-5">
+            <div className="flex flex-col gap-4">
+                <h1 className="text-2xl font-bold">Upload Spreadsheet</h1>
+                <h2 className="text-md">
                     It's a new year! Time to upload the data required. You can
                     download the expected file format here.
                 </h2>
-                <h2 className="text-lg">Year</h2>
-                <YearDropdown selectedYear={year} onYearChange={setYear} />
+                <div className="flex flex-col gap-2">
+                    <h2 className="text-base mt-4">Year</h2>
+                    <YearDropdown selectedYear={year} onYearChange={setYear} />
+                </div>
                 <div className="m-5" />
                 <FileUpload fileInfo={file} setFileInfo={setFile} />
             </div>
