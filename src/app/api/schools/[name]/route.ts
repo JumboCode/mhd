@@ -1,3 +1,15 @@
+/***************************************************************
+ *
+ *                /api/schools/[name]/route.ts
+ *
+ *         Author: Elki Laranas & Hansini Gundavarapu
+ *           Date: 11/16/2025
+ *
+ *        Summary: Backend endpoint to fetch individual school profile
+ *                 data
+ *
+ **************************************************************/
+
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import {
@@ -7,30 +19,34 @@ import {
     yearlyTeacherParticipation,
 } from "@/lib/schema";
 import { eq, sql, and } from "drizzle-orm";
-import { equal } from "assert";
 
 export async function GET(
-    request: NextRequest,
+    req: NextRequest,
     { params }: { params: Promise<{ name: string }> },
 ) {
     try {
         const { name } = await params;
         const searchName = name.replace(/-/g, " ");
 
-        // match on lowercase formatted name
+        // Match on lowercase formatted name
         const schoolResult = await db
             .select()
             .from(schools)
             .where(sql`LOWER(${schools.name}) = LOWER(${searchName})`)
             .limit(1);
 
-        const school = schoolResult[0];
+        // Check if school exists
+        if (!schoolResult || schoolResult.length === 0) {
+            return NextResponse.json(
+                { error: "School not found" },
+                { status: 404 },
+            );
+        }
 
-        // get past year with javascript Date
+        const school = schoolResult[0];
         const currentYear = new Date().getFullYear();
         const pastYear = currentYear - 1;
 
-        // students by project year
         const studentCount = await db
             .select({ count: sql<number>`count(*)` })
             .from(students)
@@ -53,7 +69,7 @@ export async function GET(
             );
 
         const projectCount = await db
-            .select({ count: sql<number>`cast(count(*) as integer)` })
+            .select({ count: sql<number>`count(*)` })
             .from(projects)
             .where(
                 and(
@@ -62,7 +78,7 @@ export async function GET(
                 ),
             );
 
-        // first year would be minimum year found in a school's projects
+        // First year would be minimum year found in a school's projects
         const firstYearData = await db
             .select({ year: sql<number>`min(${projects.year})` })
             .from(projects)
@@ -71,23 +87,18 @@ export async function GET(
         return NextResponse.json({
             name: school.name,
             town: school.town,
-            studentCount: studentCount[0]?.count || 0,
-            teacherCount: teacherCount[0]?.count || 0,
-            projectCount: projectCount[0]?.count || 0,
-            firstYear: firstYearData[0]?.year || null,
-            // instructional model not in database yet
+            studentCount: studentCount[0]?.count ?? 0,
+            teacherCount: teacherCount[0]?.count ?? 0,
+            projectCount: projectCount[0]?.count ?? 0,
+            firstYear: firstYearData[0]?.year ?? null,
+            // TO DO: Instructional model not in database yet
             instructionalModel: "normal",
         });
     } catch (error) {
-        // indicate if attempting to fetch invalid school
-        return NextResponse.json({
-            name: "Invalid School",
-            town: "N/A",
-            studentCount: "N/A",
-            teacherCount: "N/A",
-            projectCount: "N/A",
-            firstYear: "N/A",
-            instructionalModel: "N/A",
-        });
+        console.error("Error fetching school data:", error);
+        return NextResponse.json(
+            { error: "Internal server error" },
+            { status: 500 },
+        );
     }
 }

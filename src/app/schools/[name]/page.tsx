@@ -1,14 +1,21 @@
-/**
- * School Profile Page - Elki, Hansini
- */
+/***************************************************************
+ *
+ *                schools/[name]/page.tsx
+ *
+ *         Author: Elki Laranas & Hansini Gundavarapu
+ *           Date: 11/16/2025
+ *
+ *        Summary: Page to display individual school profiles
+ *
+ **************************************************************/
 
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 
 // interface such that data can be blank if API is loading
-interface SchoolData {
+type SchoolData = {
     name: string;
     town: string;
     studentCount: string;
@@ -16,11 +23,13 @@ interface SchoolData {
     projectCount: string;
     firstYear: string;
     instructionalModel: string;
-}
+};
 
 export default function SchoolProfilePage() {
     const params = useParams();
     const schoolName = params.name as string;
+
+    const router = useRouter();
 
     // while API is loading, still display something
     const [schoolData, setSchoolData] = useState<SchoolData>({
@@ -51,199 +60,111 @@ export default function SchoolProfilePage() {
             });
     }, [schoolName]);
 
+    // Redirect to schools page if school cannot be found
     if (error) {
-        return (
-            <div className="min-h-screen bg-white p-8">
-                <div className="max-w-7xl mx-auto">
-                    <div className="bg-red-50 border border-red-200 text-red-800 px-6 py-4 rounded-lg">
-                        <h2 className="text-lg font-semibold mb-2">
-                            Error Loading School Data
-                        </h2>
-                        <p>{error}</p>
-                    </div>
-                </div>
-            </div>
-        );
+        router.push("/schools");
     }
 
     return (
-        <div
-            className="min-h-screen bg-white"
-            style={{
-                paddingLeft: "calc(100vw / 6)",
-                paddingRight: "calc(100vw / 6)",
-            }}
-        >
-            <div className="flex flex-col gap-[10px] py-8">
-                {/* header with school name */}
-                <h1 className="text-4xl font-bold text-gray-900">
-                    {schoolData.name}
-                </h1>
+        <div className="min-h-screen bg-white px-[16.67vw] py-8">
+            <div className="flex flex-col gap-8">
+                {/* Header with school name */}
+                <h1 className="text-2xl font-bold">{schoolData.name}</h1>
 
-                {/* data cards */}
-                <div className="flex gap-[32px] mt-6 mb-4 w-full">
-                    <div
-                        className="flex flex-col items-center justify-center rounded-lg border flex-1"
-                        style={{
-                            padding: "24px 58px",
-                            aspectRatio: "247 / 138",
-                            gap: "20px",
-                            borderColor: "rgba(0, 0, 0, 0.15)",
-                        }}
-                    >
-                        <span style={{ fontSize: "14px" }}>
-                            Total # Projects
-                        </span>
-                        <span
-                            className="font-mono"
-                            style={{
-                                fontFamily: "MonoLisa, monospace",
-                                fontSize: "56px",
-                                lineHeight: "32px",
-                                fontWeight: 700,
-                            }}
-                        >
-                            {schoolData.projectCount}
-                        </span>
-                    </div>
-
-                    <div
-                        className="flex flex-col items-center justify-center rounded-lg border flex-1"
-                        style={{
-                            padding: "24px 58px",
-                            aspectRatio: "247 / 138",
-                            gap: "20px",
-                            borderColor: "rgba(0, 0, 0, 0.15)",
-                        }}
-                    >
-                        <span style={{ fontSize: "14px" }}>
-                            Total # Teachers
-                        </span>
-                        <span
-                            className="font-mono"
-                            style={{
-                                fontFamily: "MonoLisa, monospace",
-                                fontSize: "56px",
-                                lineHeight: "32px",
-                                fontWeight: 700,
-                            }}
-                        >
-                            {schoolData.teacherCount}
-                        </span>
-                    </div>
-
-                    <div
-                        className="flex flex-col items-center justify-center rounded-lg border flex-1"
-                        style={{
-                            padding: "24px 58px",
-                            aspectRatio: "247 / 138",
-                            gap: "20px",
-                            borderColor: "rgba(0, 0, 0, 0.15)",
-                        }}
-                    >
-                        <span style={{ fontSize: "14px" }}>
-                            Total # Students
-                        </span>
-                        <span
-                            className="font-mono"
-                            style={{
-                                fontFamily: "MonoLisa, monospace",
-                                fontSize: "56px",
-                                lineHeight: "32px",
-                                fontWeight: 700,
-                            }}
-                        >
-                            {schoolData.studentCount}
-                        </span>
-                    </div>
+                {/* Stats cards */}
+                <div className="grid grid-cols-3 gap-8">
+                    <StatCard
+                        label="Total # Projects"
+                        value={schoolData.projectCount}
+                    />
+                    <StatCard
+                        label="Total # Teachers"
+                        value={schoolData.teacherCount}
+                    />
+                    <StatCard
+                        label="Total # Students"
+                        value={schoolData.studentCount}
+                    />
                 </div>
 
-                {/* additional info */}
-                <div className="mb-8 space-y-1 text-base">
-                    <div>
-                        <span className="font-semibold">Town:</span>{" "}
-                        <span>{schoolData.town}</span>
-                    </div>
-                    <div>
-                        <span className="font-semibold">
-                            Instruction Model:
-                        </span>{" "}
-                        <span>{schoolData.instructionalModel}</span>
-                    </div>
-                    <div>
-                        <span className="font-semibold">
-                            First Year Participating:
-                        </span>{" "}
-                        <span>{schoolData.firstYear}</span>
-                    </div>
+                {/* School information */}
+                <div className="space-y-2 text-base">
+                    <InfoRow label="Town" value={schoolData.town} />
+                    <InfoRow
+                        label="Instruction Model"
+                        value={schoolData.instructionalModel}
+                    />
+                    <InfoRow
+                        label="First Year Participating"
+                        value={schoolData.firstYear}
+                    />
                 </div>
 
-                {/* placeholders */}
-                <div className="flex gap-[32px] w-full mb-8">
-                    <div
-                        className="border rounded-lg p-6"
-                        style={{
-                            borderColor: "rgba(0, 0, 0, 0.15)",
-                            width: "calc(66.666%)",
-                        }}
-                    >
-                        <div className="h-48 flex items-center justify-center">
-                            <div className="text-center">
-                                <p
-                                    style={{
-                                        fontSize: "14px",
-                                        fontWeight: 600,
-                                    }}
-                                >
-                                    Region Distribution
-                                </p>
-                                <p
-                                    style={{ fontSize: "14px" }}
-                                    className="mt-2"
-                                >
-                                    placeholder
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                    <div
-                        className="border rounded-lg p-6 flex-1"
-                        style={{ borderColor: "rgba(0, 0, 0, 0.15)" }}
-                    >
-                        <div className="h-48 flex items-center justify-center">
-                            <div className="text-center">
-                                <p
-                                    style={{
-                                        fontSize: "14px",
-                                        fontWeight: 600,
-                                    }}
-                                >
-                                    % Highschool
-                                </p>
-                                <p
-                                    style={{ fontSize: "14px" }}
-                                    className="mt-2"
-                                >
-                                    placeholder
-                                </p>
-                            </div>
-                        </div>
-                    </div>
+                {/* Placeholders for charts */}
+                <div className="grid grid-cols-3 gap-8">
+                    <PlaceholderCard
+                        title="Region Distribution"
+                        className="col-span-2"
+                    />
+                    <PlaceholderCard title="% Highschool" />
                 </div>
 
-                {/* placeholder */}
-                <div
-                    className="border rounded-lg p-6"
-                    style={{ borderColor: "rgba(0, 0, 0, 0.15)" }}
-                >
-                    <h2 className="text-xl font-semibold mb-4 text-black-600 inline-block pb-1">
+                {/* Data table placeholder */}
+                <div className="border border-gray-200 rounded-lg p-6">
+                    <h2 className="text-xl font-semibold mb-4 text-gray-900">
                         View and edit data
                     </h2>
-                    <div className="mt-6">
-                        <div className="h-48 flex items-center justify-center">
-                            <p className="text-sm">placeholder</p>
-                        </div>
+                    <div className="h-48 flex items-center justify-center bg-gray-50 rounded">
+                        <p className="text-sm text-gray-500">
+                            Data table placeholder
+                        </p>
                     </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// Reusable stat card component
+function StatCard({ label, value }: { label: string; value: string }) {
+    return (
+        <div className="flex flex-col items-center justify-center rounded-lg border border-gray-200 p-6 aspect-[247/138] gap-5">
+            <span className="text-sm text-gray-600">{label}</span>
+            <span className="font-mono text-5xl font-bold leading-none">
+                {value}
+            </span>
+        </div>
+    );
+}
+
+// Reusable info row component
+function InfoRow({ label, value }: { label: string; value: string }) {
+    return (
+        <div>
+            <span className="font-semibold text-gray-900">{label}:</span>{" "}
+            <span className="text-gray-700">{value}</span>
+        </div>
+    );
+}
+
+// Reusable placeholder card component
+function PlaceholderCard({
+    title,
+    className = "",
+}: {
+    title: string;
+    className?: string;
+}) {
+    return (
+        <div className={`border border-gray-200 rounded-lg p-6 ${className}`}>
+            <div className="h-48 flex items-center justify-center bg-gray-50 rounded">
+                <div className="text-center">
+                    <p className="text-sm font-semibold text-gray-900">
+                        {title}
+                    </p>
+                    <p className="text-sm text-gray-500 mt-2">
+                        Chart placeholder
+                    </p>
                 </div>
             </div>
         </div>
