@@ -95,9 +95,8 @@ export async function GET(
             instructionalModel: "normal",
         });
     } catch (error) {
-        console.error("Error fetching school data:", error);
         return NextResponse.json(
-            { error: "Internal server error" },
+            { error: "Internal server error: " + (error as Error).message },
             { status: 500 },
         );
     }
