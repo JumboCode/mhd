@@ -1,12 +1,3 @@
-/**
- * route.ts (for data ingestion)
- * by Anne Wu and Chiara Martello
- * 11/16/25
- *
- * API route responsible for getting excel sheet data and inserting that data
- * into a NEON database with drizzle.
- */
-
 /***************************************************************
  *
  *                /api/import/route.ts
@@ -204,13 +195,11 @@ export async function POST(req: NextRequest) {
             insertedCount++;
         }
 
-        console.log(`Processed ${insertedCount} rows successfully`);
         return NextResponse.json(
             { message: "Success", rowsProcessed: insertedCount },
             { status: 200 },
         );
     } catch (error) {
-        console.error("Error processing import:", error);
         return NextResponse.json(
             { message: "Import failed", error: String(error) },
             { status: 500 },

@@ -98,7 +98,6 @@ export default function SpreadsheetUpload() {
                 throw new Error("Failed to upload data");
             }
         } catch (error) {
-            console.error(error);
             alert("Error: " + error);
         }
     };
@@ -107,7 +106,7 @@ export default function SpreadsheetUpload() {
         <div>
             <p className="font-semibold text-lg p-2">Upload Spreadsheet</p>
             <p className="p-2">
-                It's a new year! Time to upload the data required. You can
+                It&apos;s a new year! Time to upload the data required. You can
                 download the expected file format <strong>here</strong>.
             </p>
             <p className="p-2">Year</p>
