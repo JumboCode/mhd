@@ -2,44 +2,31 @@
  * SpreadSheetUpload.tsx (for data ingestion)
  * by Anne Wu and Chiara Martello
  * 11/16/25
- * Uploads spreadsheet through on click or drag and drop to database
+ * Uploads spreadsheet through click or drag and drop to database
  */
 "use client";
 
-import { TableColumnsSplit } from "lucide-react";
-// import {React, useRef} from "react";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { MdOutlineUploadFile } from "react-icons/md";
 import * as XLSX from "xlsx";
-import React, { useRef } from "react";
 
 export default function SpreadsheetUpload() {
-    // const [file, setFile] = useState<File | null>(null);
-    const [spreadsheetData, setSpreadsheetData] = useState("");
+    const [spreadsheetData, setSpreadsheetData] = useState<any[]>([]);
     const [year, setYear] = useState("2025");
-    const hiddenFileInput = useRef<HTMLInputElement>(null);
+    const [isDragging, setIsDragging] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // Save the file
-    const handleFileDrop = (event: React.DragEvent<HTMLInputElement>) => {
-        console.log("in handleFileDrop");
-        event.preventDefault();
-        const file = event.dataTransfer?.files[0];
-        if (!file) {
-            console.log("Invalid file!!!");
-            return;
-        }
-        //console.log(files);
+    const handleFileUpload = (file: File) => {
         const fileExtension = "." + file.name.split(".").pop()?.toLowerCase();
-        console.log(fileExtension);
+
         if (
-            fileExtension != ".xlsx" &&
-            fileExtension != ".xlsm" &&
-            fileExtension != ".xls"
+            fileExtension !== ".xlsx" &&
+            fileExtension !== ".xlsm" &&
+            fileExtension !== ".xls"
         ) {
             alert("Please upload a .xlsx, .xlsm, or .xls file.");
             return;
         }
-        console.log("your dropped a file!!!");
 
         const reader = new FileReader();
         reader.onload = (event: ProgressEvent<FileReader>) => {
@@ -48,76 +35,74 @@ export default function SpreadsheetUpload() {
             });
             const sheetName = workbook.SheetNames[0];
             const worksheet = workbook.Sheets[sheetName];
-            const json_data = XLSX.utils.sheet_to_json(worksheet, {
-                header: 1,
-            });
-            console.log(json_data);
-            setSpreadsheetData(JSON.stringify(json_data));
+            const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+            setSpreadsheetData(jsonData as any[]);
         };
         reader.readAsBinaryString(file);
     };
 
-    const uploadFile = () => {
-        console.log("upload file popup");
-        hiddenFileInput.current?.click();
-        // const inputFile = useRef(null);
-        // fileInputRef.current.click();
+    const handleFileDrop = (event: React.DragEvent<HTMLDivElement>) => {
+        event.preventDefault();
+        setIsDragging(false);
+
+        const file = event.dataTransfer?.files[0];
+        if (!file) return;
+
+        handleFileUpload(file);
+    };
+
+    const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+        event.preventDefault();
+        setIsDragging(true);
+    };
+
+    const handleDragLeave = (event: React.DragEvent<HTMLDivElement>) => {
+        event.preventDefault();
+        setIsDragging(false);
+    };
+
+    const handleClick = () => {
+        fileInputRef.current?.click();
     };
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const files = event.target.files;
-        // event.preventDefault();
-        // const selectedFile = event.target.files[0];
         if (files && files.length > 0) {
-            const selectedFile = files[0];
-            console.log(selectedFile);
-
-            const reader = new FileReader();
-            reader.onload = (event: ProgressEvent<FileReader>) => {
-                const workbook = XLSX.read(event.target?.result, {
-                    type: "binary",
-                });
-                const sheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[sheetName];
-                const json_data = XLSX.utils.sheet_to_json(worksheet, {
-                    header: 1,
-                });
-                console.log(json_data);
-                setSpreadsheetData(JSON.stringify(json_data));
-            };
-            reader.readAsBinaryString(selectedFile);
+            handleFileUpload(files[0]);
         }
     };
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        // console.log(year);
+
+        if (spreadsheetData.length === 0) {
+            alert("Please upload a file first.");
+            return;
+        }
 
         try {
-            const myObject = {
-                formYear: year,
-                formData: spreadsheetData,
-            };
             const response = await fetch("/api/import", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify(myObject),
+                body: JSON.stringify({
+                    formYear: year,
+                    formData: JSON.stringify(spreadsheetData),
+                }),
             });
 
-            const data = await response.json();
             if (response.ok) {
-                alert("data sent successfully!");
+                alert("Data sent successfully!");
+            } else {
+                throw new Error("Failed to upload data");
             }
-            console.log(data);
         } catch (error) {
-            console.log(error);
-            alert("error: " + error);
+            console.error(error);
+            alert("Error: " + error);
         }
     };
 
-    //We find it a bit odd that the "drop box" doesn't darken / highlight if something it dragged onto it
     return (
         <div>
             <p className="font-semibold text-lg p-2">Upload Spreadsheet</p>
@@ -132,6 +117,7 @@ export default function SpreadsheetUpload() {
             >
                 <select
                     onChange={(e) => setYear(e.target.value)}
+                    value={year}
                     className="border-gray-400 border-1 rounded-md pl-2 pr-2 m-2 self-start justify-self-start"
                 >
                     <option value="2025">2025</option>
@@ -141,11 +127,14 @@ export default function SpreadsheetUpload() {
 
                 <div
                     onDrop={handleFileDrop}
-                    onDragOver={(e) => e.preventDefault()}
-                    onClick={uploadFile}
-                    ref={hiddenFileInput}
-                    onChange={handleFileChange}
-                    className="bg-[#EDEDED] flex flex-col items-center justify-center rounded-md w-full h-1/3 border-dashed border-gray-400 my-6 border-2"
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onClick={handleClick}
+                    className={`bg-[#EDEDED] flex flex-col items-center justify-center rounded-md w-full h-1/3 border-dashed border-2 my-6 ${
+                        isDragging
+                            ? "border-blue-500 bg-blue-50"
+                            : "border-gray-400"
+                    }`}
                 >
                     <MdOutlineUploadFile className="w-full text-7xl pb-2" />
                     <span>Upload spreadsheet document here</span>
@@ -155,27 +144,13 @@ export default function SpreadsheetUpload() {
                 </div>
 
                 <input
-                    ref={hiddenFileInput}
+                    ref={fileInputRef}
                     type="file"
-                    id="file-input"
                     className="hidden"
                     onChange={handleFileChange}
                     accept=".xlsx, .xlsm, .xls"
                 />
-                {/* <input
-                
-                className="w-full h-1/3"
-                onDrop={handleFileDrop}
-                onClick={uploadFile}
-                id="fileInput"
-                placeholder=""
-                type="file"
-                multiple
-                accept=".xlsx, .xlsm, .xls"
-            /> */}
-                {/*The ticket seems to indicate that DB inserts happens immediently 
-            upon file upload. This seems weird + may make testing painful 
-            so we added a submit button*/}
+
                 <button
                     type="submit"
                     className="bg-[#1447E6] rounded-sm p-2 text-white self-end"
