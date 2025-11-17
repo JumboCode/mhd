@@ -7,6 +7,18 @@
  * into a NEON database with drizzle.
  */
 
+/***************************************************************
+ *
+ *                /api/import/route.ts
+ *
+ *         Author: Anne Wu & Chiara Martello
+ *           Date: 11/17/2025
+ *
+ *        Summary: API route responsible for getting excel sheet data and
+ *                 inserting that data into a NEON database with drizzle.
+ *
+ **************************************************************/
+
 import { NextRequest, NextResponse } from "next/server";
 import { eq, and } from "drizzle-orm";
 import { db } from "@/lib/db";
