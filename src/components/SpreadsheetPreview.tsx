@@ -103,7 +103,7 @@ export default function SpreadsheetPreview({ file }: PreviewProps) {
                         </p>
                     </div>
                 </div>
-                <div className="whitespace-nowrap overflow-x-auto max-w-2xl mb-10">
+                <div className="whitespace-nowrap overflow-x-auto max-w-2xl">
                     <DataTable data={rows} columns={cols} />
                 </div>
             </div>
