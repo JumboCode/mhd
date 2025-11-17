@@ -18,6 +18,7 @@
         "@mantine/hooks": "^8.3.4",
         "@neondatabase/serverless": "^1.0.2",
         "@next/eslint-plugin-next": "^15.5.4",
+        "d3": "^7.9.0",
         "dotenv": "^17.2.3",
         "drizzle-orm": "^0.44.7",
         "lucide": "^0.544.0",
