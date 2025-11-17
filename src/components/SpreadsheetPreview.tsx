@@ -57,7 +57,7 @@ export default function SpreadsheetPreview({ file }: PreviewProps) {
 
             // Remap rows to only include the desired columns in order
             const filteredRows = resp.rows
-                .slice(1, 5)
+                .slice(1, 6)
                 .map((row: any[]) => desiredIndexes.map((index) => row[index]));
 
             setNumRows(resp.rows.length);
