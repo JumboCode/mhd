@@ -171,7 +171,7 @@ export default function SpreadsheetState() {
 
             <div className="flex-1">{tab}</div>
 
-            <div className="flex justify-between w-full p-4">
+            <div className="flex justify-between w-full py-4">
                 {canPrevious && (
                     <button
                         className="bg-blue-700 py-1 w-40 rounded-lg bg-white text-black border border-gray-300 hover:bg-gray-200 hover:cursor-pointer transition duration-300"
