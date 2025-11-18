@@ -217,8 +217,8 @@ export default function SpreadsheetState() {
     };
 
     return (
-        <div className="flex flex-col items-center justify-between h-screen max-w-2xl mx-auto py-8 gap-12">
-            <div className="max-w-lg w-full">
+        <div className="flex flex-col items-center justify-between max-w-2xl mx-auto py-8 gap-12">
+            <div className="max-w-md w-full">
                 <div className="mb-2">
                     <SpreadsheetStatusBar tabIndex={tabIndex} maxTabs={2} />
                 </div>
@@ -233,7 +233,7 @@ export default function SpreadsheetState() {
 
             <div className="flex-1">{tab}</div>
 
-            <div className="flex justify-between w-full py-4">
+            <div className="flex justify-between w-full pb-4">
                 {canPrevious && (
                     <button
                         className="py-1 w-40 rounded-lg bg-white text-black border border-gray-300 hover:bg-gray-200 hover:cursor-pointer transition duration-300"
