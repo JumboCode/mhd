@@ -13,20 +13,23 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { DataTable } from "./data-table";
+import { DataTable } from "./DataTable";
 import { CircleCheck, FileChartColumn } from "lucide-react";
+import type { CellValue, SpreadsheetData } from "@/types/spreadsheet";
 
 type PreviewProps = {
     file?: File;
-    spreadsheetData: any[][];
+    spreadsheetData: SpreadsheetData;
 };
 
 export default function SpreadsheetPreview({
     file,
     spreadsheetData,
 }: PreviewProps) {
-    const [cols, setCols] = useState<any[]>([]);
-    const [rows, setRows] = useState<any[][]>([]);
+    const [cols, setCols] = useState<
+        { id: string; accessorKey: string; header: string }[]
+    >([]);
+    const [rows, setRows] = useState<CellValue[][]>([]);
     const [numRows, setNumRows] = useState<number>(0);
     const [numCols, setNumCols] = useState<number>(0);
 
@@ -60,7 +63,7 @@ export default function SpreadsheetPreview({
         // Skip the first row (index 0) as it contains headers, take rows 1-5
         const filteredRows = spreadsheetData
             .slice(1, 6)
-            .map((row: any[]) => desiredIndexes.map((index) => row[index]));
+            .map((row) => desiredIndexes.map((index) => row[index]));
 
         setNumRows(spreadsheetData.length - 1); // Subtract 1 for header row
         setNumCols(desiredIndexes.length);

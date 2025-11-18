@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
 
         // Validate all required columns exist
         const missingColumns = Object.entries(COLUMN_INDICES)
-            .filter(([_, index]) => index === -1)
+            .filter(([, index]) => index === -1)
             .map(([name]) => name);
 
         if (missingColumns.length > 0) {

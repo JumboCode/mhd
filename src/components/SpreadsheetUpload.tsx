@@ -36,8 +36,8 @@ export default function SpreadsheetUpload({
             <div className="flex flex-col gap-4">
                 <h1 className="text-2xl font-bold">Upload Spreadsheet</h1>
                 <h2 className="text-md">
-                    It's a new year! Time to upload the data required. You can
-                    download the expected file format here.
+                    It&apos;s a new year! Time to upload the data required. You
+                    can download the expected file format here.
                 </h2>
                 <div className="flex flex-col gap-2">
                     <h2 className="text-base mt-4">Year</h2>

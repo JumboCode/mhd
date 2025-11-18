@@ -20,10 +20,11 @@ import SpreadsheetPreview from "./SpreadsheetPreview";
 import SpreadsheetPreviewFail from "./SpreadsheetPreviewFail";
 import SpreadsheetStatusBar from "@/components/SpreadsheetStatusBar";
 import * as XLSX from "xlsx";
+import type { SpreadsheetData } from "@/types/spreadsheet";
 
 export default function SpreadsheetState() {
     const [file, setFile] = useState<File | undefined>();
-    const [spreadsheetData, setSpreadsheetData] = useState<any[]>([]);
+    const [spreadsheetData, setSpreadsheetData] = useState<SpreadsheetData>([]);
     const [year, setYear] = useState<number | null>();
     const [tab, setTab] = useState<ReactElement>(
         <SpreadsheetUpload
@@ -50,11 +51,13 @@ export default function SpreadsheetState() {
 
     const checkForUploadNext = () => {
         if (tabIndex === 0) {
-            setCanNext(year != null && file != null);
+            setCanNext(year !== null && file !== null);
         }
     };
 
-    const parseSpreadsheet = (callback: (jsonData: any[][] | null) => void) => {
+    const parseSpreadsheet = (
+        callback: (jsonData: SpreadsheetData | null) => void,
+    ) => {
         if (!file) {
             callback(null);
             return;
@@ -72,9 +75,12 @@ export default function SpreadsheetState() {
             });
             const sheetName = workbook.SheetNames[0];
             const worksheet = workbook.Sheets[sheetName];
-            const jsonData: any[][] = XLSX.utils.sheet_to_json(worksheet, {
-                header: 1,
-            });
+            const jsonData: SpreadsheetData = XLSX.utils.sheet_to_json(
+                worksheet,
+                {
+                    header: 1,
+                },
+            );
 
             callback(jsonData);
         };
@@ -91,7 +97,7 @@ export default function SpreadsheetState() {
         setIsSubmitting(true);
 
         try {
-            const response = await fetch("/api/import", {
+            const response = await fetch("/api/upload", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -112,7 +118,6 @@ export default function SpreadsheetState() {
                 throw new Error(errorData.message || "Failed to upload data");
             }
         } catch (error) {
-            console.error("Upload error:", error);
             alert("Error uploading data: " + error);
         } finally {
             setIsSubmitting(false);
@@ -135,7 +140,7 @@ export default function SpreadsheetState() {
         }
     };
 
-    const switchTab = (tabIndex: Number) => {
+    const switchTab = (tabIndex: number) => {
         if (tabIndex === 0) {
             setTabIndex(0);
             setTab(

@@ -15,16 +15,12 @@
 
 import React from "react";
 
-type PreviewProps = {
-    file?: File;
-};
-
-export default function SpreadsheetPreviewFail({ file }: PreviewProps) {
+export default function SpreadsheetPreviewFail() {
     return (
         <div>
             <div className="flex flex-col items-center justify-center">
                 <h2 className="text-2xl font-bold mt-5">
-                    This file can't be imported
+                    This file can&apos;t be imported
                 </h2>
                 <p className="font-bold text-gray-500 mt-5">
                     Contains missing/unrecognized columns

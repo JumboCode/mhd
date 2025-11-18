@@ -22,12 +22,10 @@ type UploadProps = {
 
 export default function FileUpload({ fileInfo, setFileInfo }: UploadProps) {
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const [file, setFile] = useState<any>();
     const [fileName, setFileName] = useState<string>("");
     const [isDragging, setIsDragging] = useState<boolean>(false);
 
     useEffect(() => {
-        setFile(fileInfo);
         setFileName(fileInfo?.name || "");
     }, [fileInfo]);
 
@@ -40,7 +38,6 @@ export default function FileUpload({ fileInfo, setFileInfo }: UploadProps) {
     const handleFiles = (files: FileList | null) => {
         if (files && files.length > 0) {
             const file = files[0];
-            setFile(file);
             setFileName(file.name);
             setFileInfo(file);
         }

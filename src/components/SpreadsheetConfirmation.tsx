@@ -14,10 +14,11 @@
 import React, { useState, useEffect } from "react";
 import Checkbox from "./Checkbox";
 import { School, GraduationCap, User, FolderOpenDot } from "lucide-react";
+import type { SpreadsheetData } from "@/types/spreadsheet";
 
 type ConfirmationProps = {
     year?: number | null;
-    spreadsheetData: any[][];
+    spreadsheetData: SpreadsheetData;
 };
 
 export default function SpreadsheetConfirmation({

@@ -43,6 +43,7 @@ export default [
             "eqeqeq": ["error", "always"],
             "@next/next/no-img-element": "warn",
             "react/react-in-jsx-scope": "off",
+            "react/prop-types": "off",
         },
     },
 ];
