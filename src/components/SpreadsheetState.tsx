@@ -33,9 +33,10 @@ export default function SpreadsheetState() {
         />,
     );
     const [tabIndex, setTabIndex] = useState(0);
-    const [canNext, setCanNext] = useState<boolean>(false);
+    const [canNext, setCanNext] = useState<boolean | null>(false);
     const [canPrevious, setCanPrevious] = useState<boolean>(false);
     const [isFormatted, setIsFormatted] = useState<boolean>(true);
+    const [confirmed, setConfirmed] = useState<boolean | null>(false);
 
     const [nextText, setNextText] = useState("Next");
 
@@ -52,6 +53,12 @@ export default function SpreadsheetState() {
             setCanNext(year != null && file != null);
         }
     };
+
+    useEffect(() => {
+        if (tabIndex === 2) {
+            setCanNext(confirmed === true);
+        }
+    }, [confirmed, tabIndex]);
 
     const checkFormat = (callback: (formatted: boolean) => void) => {
         if (!file) {
@@ -139,7 +146,7 @@ export default function SpreadsheetState() {
                     setTab(<SpreadsheetPreview file={file} />);
                     setCanNext(true);
                 } else {
-                    setTab(<SpreadsheetPreviewFail />);
+                    setTab(<SpreadsheetPreviewFail file={file} />);
                     setCanNext(false);
                 }
             });
@@ -148,9 +155,16 @@ export default function SpreadsheetState() {
             setCanPrevious(true);
         } else if (tabIndex === 2) {
             setTabIndex(2);
-            setTab(<SpreadsheetConfirmation file={file} year={year} />);
+            setTab(
+                <SpreadsheetConfirmation
+                    file={file}
+                    year={year}
+                    confirmed={confirmed}
+                    setConfirmed={setConfirmed}
+                />,
+            );
             setNextText("Finish");
-            setCanNext(true);
+            setCanNext(confirmed);
         }
     };
 

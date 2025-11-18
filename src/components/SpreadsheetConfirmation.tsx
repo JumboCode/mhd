@@ -20,11 +20,15 @@ import * as XLSX from "xlsx";
 type ConfirmationProps = {
     file?: File;
     year?: number | null;
+    confirmed?: boolean | null;
+    setConfirmed: (confirmed: boolean | null) => void;
 };
 
 export default function SpreadsheetConfirmation({
     file,
     year,
+    confirmed,
+    setConfirmed,
 }: ConfirmationProps) {
     const [uniqueSchools, setUniqueSchools] = useState<number>(0);
     const [students, setStudents] = useState<number>(0);
@@ -107,7 +111,10 @@ export default function SpreadsheetConfirmation({
                         <p>{numProjects} projects</p>
                     </li>
                     <li className="mt-10">
-                        <Checkbox label="I understand"></Checkbox>
+                        <Checkbox
+                            label="I understand"
+                            onToggle={(_, confirmed) => setConfirmed(confirmed)}
+                        />
                     </li>
                 </ul>
                 <div className="mt-5"></div>

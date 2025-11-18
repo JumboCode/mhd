@@ -54,13 +54,23 @@ export default function SpreadsheetPreview({ file }: PreviewProps) {
                 accessorKey: String(arrayIndex),
                 header: columnNames[colIndex] || `Column ${colIndex}`,
             }));
+            var count = 0;
+            while (
+                count < resp.rows.length &&
+                typeof resp.rows[count][1] === "string" &&
+                resp.rows[count][1].trim() !== undefined &&
+                resp.rows[count][1].trim() !== ""
+            ) {
+                count++;
+            }
+
+            setNumRows(count);
 
             // Remap rows to only include the desired columns in order
             const filteredRows = resp.rows
                 .slice(1, 6)
                 .map((row: any[]) => desiredIndexes.map((index) => row[index]));
 
-            setNumRows(resp.rows.length);
             setNumCols(desiredIndexes.length);
             setCols(cols);
             setRows(filteredRows);
