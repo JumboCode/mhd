@@ -1,4 +1,7 @@
+/* MAKE SURE TO WRAP PAGE THAT INCLUDES CALENDAR IN MANTINE PROVIDER */
+
 "use client";
+
 import React from "react";
 import { Calendar } from "@mantine/dates"; // Calendar from Mantine library
 import dayjs from "dayjs";
