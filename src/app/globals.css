@@ -21,6 +21,7 @@
 }
 
 :root {
+    --sidebar-width: 72px;
 }
 
 @media (prefers-color-scheme: dark) {

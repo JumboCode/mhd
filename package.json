@@ -20,12 +20,15 @@
         "@next/eslint-plugin-next": "^15.5.4",
         "dotenv": "^17.2.3",
         "drizzle-orm": "^0.44.7",
+        "framer-motion": "^12.23.24",
         "lucide": "^0.544.0",
         "lucide-react": "^0.545.0",
         "next": "15.5.4",
+        "pg": "^8.16.3",
         "react": "19.1.0",
         "react-dom": "19.1.0",
-        "vercel": "^48.2.0"
+        "vercel": "^48.2.0",
+        "zustand": "^5.0.8"
     },
     "devDependencies": {
         "@eslint/js": "^9.37.0",

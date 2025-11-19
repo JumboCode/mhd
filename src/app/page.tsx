@@ -1,9 +1,10 @@
 import NavBar from "@/components/NavBar";
+import Dashboard from "./dashboard";
 
 export default function Home() {
     return (
-        <div className="flex justify-center">
-            <NavBar />
+        <div>
+            <Dashboard />
         </div>
     );
 }
