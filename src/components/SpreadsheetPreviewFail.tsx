@@ -45,27 +45,39 @@ export default function SpreadsheetPreviewFail({ file }: PreviewProps) {
 
     return (
         <>
-            <div className="flex flex-col items-center gap-12">
-                <div className="flex flex-col items-center">
+            <div className="flex flex-col items-center gap-12 max-w-lg">
+                <div className="flex flex-col items-center gap-2 w-full">
                     <CircleX className="w-16 h-16 text-red-500" />
                     <h2 className="text-xl font-bold mt-5">
                         This file can't be imported
                     </h2>
+                    <p className="text-base text-[#646464]">
+                        We found x errors with your file
+                    </p>
                 </div>
-                <div className="flex flex-col gap-4">
-                    <div className="flex flex-col gap-2">
-                        <div className="flex gap-4 items-center">
-                            <p className="font-bold w-32">File</p>
-                            <div className="bg-gray-100 px-2 rounded border flex items-center gap-1">
-                                <FileChartColumn className="h-4 text-gray-600" />
-                                <p>{file?.name ?? "None"}</p>
-                            </div>
-                        </div>
-                        <div className="flex gap-4">
-                            <p className="font-bold w-32">Rows Found</p>
-                            <p>{numRows} rows</p>
+                <div className="flex flex-col gap-4 w-full">
+                    <div className="flex gap-4 items-center">
+                        <p className="font-bold w-32">File</p>
+                        <div className="bg-gray-100 px-2 rounded border flex items-center gap-1">
+                            <FileChartColumn className="h-4 text-gray-600" />
+                            <p>{file?.name ?? "None"}</p>
                         </div>
                     </div>
+                    <div className="flex gap-4">
+                        <p className="font-bold w-32">Rows Found</p>
+                        <p>{numRows} rows</p>
+                    </div>
+                </div>
+                <div className="self-start flex flex-col w-full gap-4">
+                    <h2 className="font-bold text-xl">Errors</h2>
+                    {/* Placeholder for table to be placed here */}
+                    <div className="border rounded-lg w-full h-32"></div>
+                </div>
+                <div>
+                    <p className="text-[#646464] text-base">
+                        Please fix these issues in your spreadsheet (e.g.,
+                        Excel, Google Sheets) and re-upload the file.
+                    </p>
                 </div>
             </div>
         </>
