@@ -18,19 +18,20 @@ import { CircleCheck, FileChartColumn } from "lucide-react";
 import type { CellValue, SpreadsheetData } from "@/types/spreadsheet";
 
 type PreviewProps = {
-    file?: File;
+    fileName: string;
+    numRows: number;
     spreadsheetData: SpreadsheetData;
 };
 
 export default function SpreadsheetPreview({
-    file,
+    fileName,
+    numRows,
     spreadsheetData,
 }: PreviewProps) {
     const [cols, setCols] = useState<
         { id: string; accessorKey: string; header: string }[]
     >([]);
     const [rows, setRows] = useState<CellValue[][]>([]);
-    const [numRows, setNumRows] = useState<number>(0);
     const [numCols, setNumCols] = useState<number>(0);
 
     useEffect(() => {
@@ -65,7 +66,6 @@ export default function SpreadsheetPreview({
             .slice(1, 6)
             .map((row) => desiredIndexes.map((index) => row[index]));
 
-        setNumRows(spreadsheetData.length - 1); // Subtract 1 for header row
         setNumCols(desiredIndexes.length);
         setCols(cols);
         setRows(filteredRows);
@@ -86,7 +86,7 @@ export default function SpreadsheetPreview({
                             <p className="font-bold w-32">File</p>
                             <div className="bg-gray-100 px-2 rounded border flex items-center gap-1">
                                 <FileChartColumn className="h-4 text-gray-600" />
-                                <p>{file?.name ?? "None"}</p>
+                                <p>{fileName}</p>
                             </div>
                         </div>
                         <div className="flex gap-4">

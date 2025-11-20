@@ -35,9 +35,11 @@ export default function SpreadsheetState() {
         />,
     );
     const [tabIndex, setTabIndex] = useState(0);
-    const [canNext, setCanNext] = useState<boolean>(false);
+    const [canNext, setCanNext] = useState<boolean | null>(false);
     const [canPrevious, setCanPrevious] = useState<boolean>(false);
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+    const [confirmed, setConfirmed] = useState<boolean | null>(false);
+    const [hasError, setHasError] = useState<boolean>(false);
 
     const [nextText, setNextText] = useState("Next");
 
@@ -55,7 +57,13 @@ export default function SpreadsheetState() {
         }
     };
 
-    const parseSpreadsheet = (
+    useEffect(() => {
+        if (tabIndex === 2) {
+            setCanNext(confirmed === true);
+        }
+    }, [confirmed, tabIndex]);
+
+    const checkFormat = (
         callback: (jsonData: SpreadsheetData | null) => void,
     ) => {
         if (!file) {
@@ -158,15 +166,34 @@ export default function SpreadsheetState() {
             setTabIndex(1);
 
             // Parse spreadsheet and check format
-            parseSpreadsheet((jsonData) => {
+            checkFormat((jsonData) => {
                 if (!jsonData || jsonData.length === 0) {
-                    setTab(<SpreadsheetPreviewFail />);
+                    setTab(
+                        <SpreadsheetPreviewFail
+                            fileName={file?.name ?? "None"}
+                            numRows={0}
+                        />,
+                    );
                     setCanNext(false);
+                    setHasError(true);
                     return;
                 }
 
                 // Store the parsed data
                 setSpreadsheetData(jsonData);
+
+                // Calculate number of rows (count non-empty rows, excluding header)
+                const nonEmptyRows = jsonData
+                    .slice(1)
+                    .filter((row) =>
+                        row.some(
+                            (cell) =>
+                                cell !== null &&
+                                cell !== undefined &&
+                                cell !== "",
+                        ),
+                    );
+                const calculatedNumRows = nonEmptyRows.length;
 
                 // Check if format is valid
                 const headers = jsonData[0] as string[];
@@ -190,14 +217,22 @@ export default function SpreadsheetState() {
                 if (hasAllColumns) {
                     setTab(
                         <SpreadsheetPreview
-                            file={file}
+                            fileName={file?.name ?? "None"}
+                            numRows={calculatedNumRows}
                             spreadsheetData={jsonData}
                         />,
                     );
                     setCanNext(true);
+                    setHasError(false);
                 } else {
-                    setTab(<SpreadsheetPreviewFail />);
+                    setTab(
+                        <SpreadsheetPreviewFail
+                            fileName={file?.name ?? "None"}
+                            numRows={calculatedNumRows}
+                        />,
+                    );
                     setCanNext(false);
+                    setHasError(true);
                 }
             });
 
@@ -207,12 +242,13 @@ export default function SpreadsheetState() {
             setTabIndex(2);
             setTab(
                 <SpreadsheetConfirmation
-                    year={year}
                     spreadsheetData={spreadsheetData}
+                    year={year}
+                    setConfirmed={setConfirmed}
                 />,
             );
             setNextText("Finish");
-            setCanNext(true);
+            setCanNext(confirmed);
         }
     };
 
@@ -220,7 +256,11 @@ export default function SpreadsheetState() {
         <div className="flex flex-col items-center justify-between max-w-2xl mx-auto py-8 gap-12">
             <div className="max-w-md w-full">
                 <div className="mb-2">
-                    <SpreadsheetStatusBar tabIndex={tabIndex} maxTabs={2} />
+                    <SpreadsheetStatusBar
+                        tabIndex={tabIndex}
+                        maxTabs={2}
+                        hasError={hasError}
+                    />
                 </div>
                 <div className="flex flex-row justify-between w-full font-semibold">
                     <p className="text-left flex-1 -translate-x-4">Upload</p>

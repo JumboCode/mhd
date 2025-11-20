@@ -19,11 +19,13 @@ import type { SpreadsheetData } from "@/types/spreadsheet";
 type ConfirmationProps = {
     year?: number | null;
     spreadsheetData: SpreadsheetData;
+    setConfirmed: (confirmed: boolean | null) => void;
 };
 
 export default function SpreadsheetConfirmation({
     year,
     spreadsheetData,
+    setConfirmed,
 }: ConfirmationProps) {
     const [uniqueSchools, setUniqueSchools] = useState<number>(0);
     const [students, setStudents] = useState<number>(0);
@@ -67,36 +69,37 @@ export default function SpreadsheetConfirmation({
     }, [spreadsheetData]);
 
     return (
-        <div>
-            <div className="flex flex-col items-left justify-left p-8">
-                <h1 className="text-2xl font-bold mt-8">Confirmation</h1>
-                <p className="text-gray-600 my-5">
-                    You are about to override data for {year} - are you sure you
-                    want to do this? This action cannot be undone.
-                </p>
-                <ul className="ml-5 my-5">
-                    <li className="flex">
-                        <School className="inline-block mr-2 mb-1" />
-                        <p>{uniqueSchools} schools</p>
-                    </li>
-                    <li className="flex">
-                        <GraduationCap className="inline-block mr-2 mb-1" />
-                        <p>{students} students</p>
-                    </li>
-                    <li className="flex">
-                        <User className="inline-block mr-2 mb-1" />
-                        <p>{numTeachers} teachers</p>
-                    </li>
-                    <li className="flex">
-                        <FolderOpenDot className="inline-block mr-2 mb-1" />
-                        <p>{numProjects} projects</p>
-                    </li>
-                    <li className="mt-10">
-                        <Checkbox label="I understand"></Checkbox>
-                    </li>
-                </ul>
-                <div className="mt-5"></div>
-            </div>
+        <div className="flex flex-col items-left justify-left">
+            <h1 className="text-2xl font-bold mt-8">Confirmation</h1>
+            <p className="text-gray-600 my-5">
+                You are about to override data for {year} - are you sure you
+                want to do this? This action cannot be undone.
+            </p>
+            <ul className="ml-5 my-5">
+                <li className="flex">
+                    <School className="inline-block mr-2 mb-1" />
+                    <p>{uniqueSchools} schools</p>
+                </li>
+                <li className="flex">
+                    <GraduationCap className="inline-block mr-2 mb-1" />
+                    <p>{students} students</p>
+                </li>
+                <li className="flex">
+                    <User className="inline-block mr-2 mb-1" />
+                    <p>{numTeachers} teachers</p>
+                </li>
+                <li className="flex">
+                    <FolderOpenDot className="inline-block mr-2 mb-1" />
+                    <p>{numProjects} projects</p>
+                </li>
+                <li className="mt-10">
+                    <Checkbox
+                        label="I understand"
+                        onToggle={(_, confirmed) => setConfirmed(confirmed)}
+                    />
+                </li>
+            </ul>
+            <div className="mt-5"></div>
         </div>
     );
 }
