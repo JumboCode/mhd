@@ -6,18 +6,14 @@
  *           Date: 11/19/2025
  *
  *        Summary: Main dashboard page displaying yearly statistics
- *                 with layout and sidebar expansion animations
  *
  **************************************************************/
 
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import { useExpanded } from "@/context/ExpandedContext";
 
 export default function Dashboard() {
-    const { isExpanded } = useExpanded();
     const [year, setYear] = useState(2024);
     const [stats, setStats] = useState<any>(null);
     const [loading, setLoading] = useState(false);
@@ -40,33 +36,13 @@ export default function Dashboard() {
     }, [year]);
 
     return (
-        <motion.div
-            className="px-8 md:px-12 lg:px-16 py-16 md:py-20 lg:py-24"
-            animate={{
-                marginLeft: isExpanded ? 224 : 72,
-                width: isExpanded ? "calc(100% - 224px)" : "calc(100% - 72px)",
-                scale: isExpanded ? 0.95 : 1,
-            }}
-            transition={{ type: "spring", stiffness: 350, damping: 30 }}
-        >
+        <div className="flex flex-col gap-8 w-full max-w-5xl px-6">
+            <div>{/* Toast here */}</div>
             {/* Header and dropdown menu */}
-            <motion.h1
-                className="text-xl sm:text-xl md:text-2xl lg:text-3x1 font-semibold mb-4 md:mb-6"
-                animate={{
-                    opacity: isExpanded ? 0.9 : 1,
-                }}
-            >
-                Overview Dashboard
-            </motion.h1>
-            <motion.div
-                className="mb-3 md:mb-4"
-                animate={{
-                    opacity: isExpanded ? 0.85 : 1,
-                }}
-                transition={{ duration: 0.3 }}
-            >
-                {/*Dropdown menu*/}
-                <div className="w-32 sm:w-36 md:w-40">
+            <h1 className="text-2xl font-semibold">Overview Dashboard</h1>
+            <div className="">
+                {/* Dropdown menu */}
+                <div className="w-40">
                     <select
                         value={year}
                         onChange={(e) => setYear(parseInt(e.target.value))}
@@ -79,20 +55,13 @@ export default function Dashboard() {
                         ))}
                     </select>
                 </div>
-            </motion.div>
+            </div>
 
             {loading && <p className="text-gray-500">Loading...</p>}
 
             {stats && !loading && (
-                <motion.div
-                    className="space-y-10"
-                    animate={{
-                        opacity: isExpanded ? 0.85 : 1,
-                        scale: isExpanded ? 0.95 : 1,
-                    }}
-                    transition={{ type: "spring", stiffness: 350, damping: 30 }}
-                >
-                    <div className="grid grid-cols-3 sm:grid-cols-3 xl:grid-cols-3 gap-5">
+                <div className="">
+                    <div className="grid grid-cols-3 gap-5">
                         <StatCard
                             label="Total # Projects"
                             value={stats.totals.total_projects}
@@ -111,23 +80,20 @@ export default function Dashboard() {
                         />
                         <StatCard label="% Highschool" value={0} />
                     </div>
-                </motion.div>
+                </div>
             )}
-        </motion.div>
+        </div>
     );
 }
-{
-    /*Statcard component used to display all totals*/
-}
+
+/* Statcard component used to display all totals */
 function StatCard({ label, value }: { label: string; value: number }) {
     return (
-        <div className="bg-white border border-gray-200 rounded-lg md:rounded-xl shadow-sm p-3 md:p-5 text-center">
-            <h3 className="text-black text-xs sm:text-sm md:text-sm mb-1 md:mb-2 font-medium">
-                {label}
-            </h3>
-            <p className="text-2xl sm:text-2xl md:text-3xl font-sans font-bold tracking-tight text-black">
-                {value.toLocaleString()}
-            </p>
+        <div className="flex flex-col items-center justify-center rounded-lg border border-gray-200 py-6 gap-5">
+            <span className="text-xs">{label}</span>
+            <span className="font-mono text-5xl font-bold leading-none">
+                {value}
+            </span>
         </div>
     );
 }

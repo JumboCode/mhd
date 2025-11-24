@@ -5,14 +5,13 @@
  *         Author: Justin
  *           Date: 11/19/2025
  *
- *        Summary: Sidebar UI component that expands upon hover
+ *        Summary: Sidebar UI component
  *
  **************************************************************/
 
 "use client";
 
 import React from "react";
-import { motion } from "framer-motion";
 import Link from "next/link";
 import {
     Map,
@@ -22,11 +21,8 @@ import {
     Upload,
     Settings,
 } from "lucide-react";
-import { useExpanded } from "@/context/ExpandedContext";
 
 export default function Sidebar() {
-    const { isExpanded, setIsExpanded } = useExpanded();
-
     const sections = [
         {
             title: "VISUALISATIONS",
@@ -59,37 +55,24 @@ export default function Sidebar() {
     ];
 
     return (
-        <motion.aside
-            className="fixed top-0 left-0 h-screen bg-white border-r border-gray-200 flex flex-col justify-between"
-            animate={{ width: isExpanded ? 224 : 72 }}
-            transition={{ type: "spring", stiffness: 300, damping: 25 }}
-            onMouseEnter={() => setIsExpanded(true)}
-            onMouseLeave={() => setIsExpanded(false)}
-        >
+        <aside className="h-screen bg-white border-r border-gray-200 flex flex-col justify-between w-56 flex-shrink-0">
             <div className="flex-1 overflow-hidden">
                 <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-center">
-                    <motion.h1
-                        animate={{ opacity: isExpanded ? 1 : 0 }}
-                        transition={{ duration: 0.2 }}
-                    >
+                    <h1>
                         <img
                             src="/images/logo.png"
                             alt="Logo"
                             className="w-20 h-12"
                         />
-                    </motion.h1>
+                    </h1>
                 </div>
 
                 <div className="mt-4 px-3">
                     {sections.map((section) => (
                         <div key={section.title} className="mb-5">
-                            <motion.p
-                                className="text-xs font-semibold text-gray-400 mb-2 px-2 overflow-hidden whitespace-nowrap"
-                                animate={{ opacity: isExpanded ? 1 : 0 }}
-                                transition={{ duration: 0.2 }}
-                            >
+                            <p className="text-xs font-semibold text-gray-400 mb-2 px-2 overflow-hidden whitespace-nowrap">
                                 {section.title}
-                            </motion.p>
+                            </p>
 
                             <nav className="flex flex-col space-y-1">
                                 {section.items.map((item) => (
@@ -101,15 +84,9 @@ export default function Sidebar() {
                                         <div className="flex items-center justify-center w-6">
                                             {item.icon}
                                         </div>
-                                        <motion.span
-                                            className="text-sm font-medium overflow-hidden whitespace-nowrap"
-                                            animate={{
-                                                opacity: isExpanded ? 1 : 0,
-                                            }}
-                                            transition={{ duration: 0.2 }}
-                                        >
+                                        <span className="text-sm font-medium overflow-hidden whitespace-nowrap">
                                             {item.label}
-                                        </motion.span>
+                                        </span>
                                     </Link>
                                 ))}
                             </nav>
@@ -126,14 +103,10 @@ export default function Sidebar() {
                         className="w-full h-full object-cover"
                     />
                 </div>
-                <motion.span
-                    className="text-sm font-medium text-gray-700 overflow-hidden whitespace-nowrap"
-                    animate={{ opacity: isExpanded ? 1 : 0 }}
-                    transition={{ duration: 0.2 }}
-                >
+                <span className="text-sm font-medium text-gray-700 overflow-hidden whitespace-nowrap">
                     Admin Name
-                </motion.span>
+                </span>
             </div>
-        </motion.aside>
+        </aside>
     );
 }

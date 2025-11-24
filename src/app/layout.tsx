@@ -2,7 +2,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import Sidebar from "@/components/Sidebar";
-import { ExpandedProvider } from "@/context/ExpandedContext";
 
 import {
     interstate,
@@ -26,14 +25,9 @@ export default function RootLayout({
             lang="en"
             className={`${millerBanner.variable} ${millerDisplay.variable} ${millerText.variable} ${interstate.variable}`}
         >
-            <body className="font-sans flex">
-                <ExpandedProvider>
-                    {/* Sidebar stays fixed on the left */}
-                    <Sidebar />
-
-                    {/* Page content */}
-                    <div className="flex-1">{children}</div>
-                </ExpandedProvider>
+            <body className="font-sans flex flex-row h-screen">
+                <Sidebar />
+                <main className="flex-1 flex justify-center">{children}</main>
             </body>
         </html>
     );

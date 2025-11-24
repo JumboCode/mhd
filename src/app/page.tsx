@@ -1,10 +1,6 @@
 import NavBar from "@/components/NavBar";
-import Dashboard from "./dashboard";
+import Dashboard from "@/components/Dashboard";
 
 export default function Home() {
-    return (
-        <div>
-            <Dashboard />
-        </div>
-    );
+    return <Dashboard />;
 }
