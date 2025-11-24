@@ -16,12 +16,14 @@ import { useParams, useRouter } from "next/navigation";
 import { ColumnDef } from "@tanstack/react-table";
 import { SchoolsDataTable } from "@/components/DataTableSchools";
 import { columns } from "@/components/Columns";
+import YearDropdown from "@/components/YearDropdown";
 
 export default function SchoolsPage() {
     const [schoolInfo, setSchoolInfo] = useState([]);
+    const [year, setYear] = useState<number | null>(2018);
 
     useEffect(() => {
-        fetch(`/api/schools`)
+        fetch(`/api/schools?year=` + year)
             .then((response) => {
                 if (!response.ok) {
                     throw new Error(`Failed to fetch school data`);
@@ -33,9 +35,9 @@ export default function SchoolsPage() {
                 //console.log(schoolInfo);
             })
             .catch((error) => {
-                //setError(error.message);
+                console.log(error);
             });
-    }, []);
+    }, [year]);
 
     // let schoolInfo = [
     //     {
@@ -52,9 +54,13 @@ export default function SchoolsPage() {
     return (
         <div className="font-sans ml-40 mt-15">
             <div className="font-bold">
-                <h1 className=" text-xl">Schools</h1>
-                <h2 className="text-xs mt-1">Table Charts</h2>
+                {/*Table and charts need to be a toggle */}
+                <h1 className="text-xl"> Schools </h1>
             </div>
+            <div className="flex justify-center mr-10 text-black">
+                <YearDropdown selectedYear={year} onYearChange={setYear} />
+            </div>
+
             <div className="container mt-5 overflow-x-auto">
                 <SchoolsDataTable columns={columns} data={schoolInfo} />
             </div>
