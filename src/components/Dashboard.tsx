@@ -13,31 +13,39 @@
 
 import { useState, useEffect } from "react";
 
+type Stats = {
+    totals: object;
+    year: number;
+};
+
 export default function Dashboard() {
     const [year, setYear] = useState(2024);
-    const [stats, setStats] = useState<any>(null);
+    const [stats, setStats] = useState<Stats | null>(null);
     const [loading, setLoading] = useState(false);
 
-    async function fetchStats(selectedYear: number) {
-        setLoading(true);
-        try {
-            const res = await fetch(`/api/yearly-totals?year=${selectedYear}`);
-            const data = await res.json();
-            setStats(data);
-        } catch (err) {
-            console.error("fetchStats error:", err);
-        } finally {
-            setLoading(false);
-        }
-    }
-
     useEffect(() => {
+        const fetchStats = async (selectedYear: number) => {
+            setLoading(true);
+            try {
+                const res = await fetch(
+                    `/api/yearly-totals?year=${selectedYear}`,
+                );
+                const data = await res.json();
+
+                setStats(data.yearlyStats);
+            } catch (error) {
+                alert("Major error: big leagues are calling." + error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
         fetchStats(year);
     }, [year]);
 
     return (
         <div className="flex flex-col gap-8 w-full max-w-5xl px-6">
-            <div>{/* Toast here */}</div>
+            <div>{/* TO DO: Toast here (if we want) */}</div>
             {/* Header and dropdown menu */}
             <h1 className="text-2xl font-semibold">Overview Dashboard</h1>
             <div className="">
@@ -48,11 +56,13 @@ export default function Dashboard() {
                         onChange={(e) => setYear(parseInt(e.target.value))}
                         className="border border-gray-300 rounded-lg px-3 md:px-4py-1.5 md:py-2 w-full text-sm md:text-base text-gray-700 shadow-sm"
                     >
-                        {[2024, 2023, 2022, 2021].map((y) => (
-                            <option key={y} value={y}>
-                                {y}
-                            </option>
-                        ))}
+                        {[2025, 2024, 2023, 2022, 2021, 2020, 2019, 2018].map(
+                            (y) => (
+                                <option key={y} value={y}>
+                                    {y}
+                                </option>
+                            ),
+                        )}
                     </select>
                 </div>
             </div>
@@ -78,7 +88,8 @@ export default function Dashboard() {
                             label="# Schools"
                             value={stats.totals.total_schools}
                         />
-                        <StatCard label="% Highschool" value={0} />
+                        {/* TO DO: Once we store type of school, make this correct */}
+                        <StatCard label="% Highschool" value={12} />
                     </div>
                 </div>
             )}

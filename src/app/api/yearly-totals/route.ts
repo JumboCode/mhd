@@ -4,14 +4,23 @@ import { getYearlyStats } from "@/lib/yearlyTotals";
 export async function GET(req: Request) {
     try {
         const { searchParams } = new URL(req.url);
-        const year = parseInt(searchParams.get("year") || "2024");
+        const year: string | null = searchParams.get("year");
 
-        const data = await getYearlyStats(year);
+        if (year === null) {
+            return NextResponse.json(
+                { error: "Expected year but received null" },
+                { status: 400 },
+            );
+        }
 
-        return NextResponse.json(data);
-    } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        console.error("/api/yearly-totals error:", err);
-        return NextResponse.json({ error: msg }, { status: 500 });
+        const yearNum: number = parseInt(year);
+        const yearlyStats = await getYearlyStats(yearNum);
+
+        return NextResponse.json({ yearlyStats }, { status: 200 });
+    } catch (error) {
+        return NextResponse.json(
+            { message: "Failed to fetch yearly data" + error },
+            { status: 500 },
+        );
     }
 }

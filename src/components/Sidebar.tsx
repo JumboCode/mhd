@@ -1,31 +1,17 @@
-/***************************************************************
- *
- *                Sidebar.tsx
- *
- *         Author: Justin
- *           Date: 11/19/2025
- *
- *        Summary: Sidebar UI component
- *
- **************************************************************/
-
 "use client";
 
 import React from "react";
 import Link from "next/link";
-import {
-    Map,
-    BarChart3,
-    Table2,
-    Calendar,
-    Upload,
-    Settings,
-} from "lucide-react";
+import Image from "next/image";
+import { usePathname } from "next/navigation";
+import { Map, BarChart3, Calendar, Upload, Settings } from "lucide-react";
 
 export default function Sidebar() {
+    const pathname = usePathname();
+
     const sections = [
         {
-            title: "VISUALISATIONS",
+            title: "VISUALIZATIONS",
             items: [
                 { href: "/map", label: "Map", icon: <Map size={20} /> },
                 {
@@ -33,13 +19,12 @@ export default function Sidebar() {
                     label: "Chart",
                     icon: <BarChart3 size={20} />,
                 },
-                { href: "/table", label: "Table", icon: <Table2 size={20} /> },
             ],
         },
         {
             title: "DATA",
             items: [
-                { href: "/", label: "Overview", icon: <Calendar size={20} /> },
+                { href: "/", label: "Overview", icon: <Calendar size={20} /> }, // TO DO: Make Overview a dorpdown
                 {
                     href: "/upload",
                     label: "Upload Data",
@@ -57,7 +42,7 @@ export default function Sidebar() {
     return (
         <aside className="h-screen bg-white border-r border-gray-200 flex flex-col justify-between w-56 flex-shrink-0">
             <div className="flex-1 overflow-hidden">
-                <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-center">
+                <div className="px-6 py-5 flex items-center justify-center">
                     <h1>
                         <img
                             src="/images/logo.png"
@@ -75,30 +60,41 @@ export default function Sidebar() {
                             </p>
 
                             <nav className="flex flex-col space-y-1">
-                                {section.items.map((item) => (
-                                    <Link
-                                        key={item.href}
-                                        href={item.href}
-                                        className="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-700 hover:bg-blue-50 hover:text-blue-900 transition-colors"
-                                    >
-                                        <div className="flex items-center justify-center w-6">
-                                            {item.icon}
-                                        </div>
-                                        <span className="text-sm font-medium overflow-hidden whitespace-nowrap">
-                                            {item.label}
-                                        </span>
-                                    </Link>
-                                ))}
+                                {section.items.map((item) => {
+                                    const isActive = pathname === item.href;
+
+                                    return (
+                                        <Link
+                                            key={item.href}
+                                            href={item.href}
+                                            className={`
+                                                flex items-center gap-3 px-3 py-2 rounded-lg transition-colors
+                                                ${
+                                                    isActive
+                                                        ? "text-black font-semibold"
+                                                        : "text-gray-700 hover:bg-blue-50 hover:text-blue-900"
+                                                }
+                                            `}
+                                        >
+                                            <div className="flex items-center justify-center w-6">
+                                                {item.icon}
+                                            </div>
+                                            <span className="text-sm overflow-hidden whitespace-nowrap">
+                                                {item.label}
+                                            </span>
+                                        </Link>
+                                    );
+                                })}
                             </nav>
                         </div>
                     ))}
                 </div>
             </div>
-            {/* Account name and picture */}
-            <div className="px-4 py-5 border-t border-gray-100 flex items-center gap-3">
+
+            <div className="px-4 py-5 flex items-center gap-3">
                 <div className="w-8 h-8 rounded-full overflow-hidden">
                     <img
-                        src="/images/profile.png"
+                        src="/images/drake.png"
                         alt="Profile"
                         className="w-full h-full object-cover"
                     />

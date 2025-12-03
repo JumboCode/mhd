@@ -20,10 +20,6 @@
     --color-second-alt: #e0ded7;
 }
 
-:root {
-    --sidebar-width: 72px;
-}
-
 @media (prefers-color-scheme: dark) {
     :root {
     }

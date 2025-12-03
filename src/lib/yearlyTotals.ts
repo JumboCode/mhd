@@ -1,39 +1,37 @@
 import { db } from "@/lib/db";
 import { projects, students } from "@/lib/schema";
-import { sql } from "drizzle-orm";
+import { eq, count } from "drizzle-orm";
 
 export async function getYearlyStats(year: number) {
-    const totalsResult = await db.execute(sql`
-    SELECT 
-      COUNT(DISTINCT ${projects.schoolId}) AS total_schools,
-      COUNT(DISTINCT ${projects.teacherId}) AS total_teachers,
-      COUNT(DISTINCT ${students.id}) AS total_students,
-      COUNT(${projects.id}) AS total_projects
-    FROM ${projects}
-    JOIN ${students} ON ${students.projectId} = ${projects.id}
-    WHERE ${projects.year} = ${year}
-  `);
-    const totals = totalsResult.rows[0] as {
-        total_schools: number;
-        total_teachers: number;
-        total_students: number;
-        total_projects: number;
-    };
-    const categoryResult = await db.execute(sql`
-    SELECT 
-      ${projects.category} AS category,
-      COUNT(*) AS count
-    FROM ${projects}
-    WHERE ${projects.year} = ${year}
-    GROUP BY ${projects.category}
-  `);
+    // Totals Query
+    const [totals] = await db
+        .selectDistinct({
+            total_schools: count(projects.schoolId),
+            total_teachers: count(projects.teacherId),
+            total_students: count(students.id),
+            total_projects: count(projects.id),
+        })
+        .from(projects)
+        .innerJoin(students, eq(students.projectId, projects.id))
+        .where(eq(projects.year, year));
 
-    const totalProjects = totals?.total_projects || 1;
+    // --- Category Percentages Query ---
+    // const categoryCounts = await db
+    //     .select({
+    //         category: projects.category,
+    //         count: count(projects.id),
+    //     })
+    //     .from(projects)
+    //     .where(eq(projects.year, year))
+    //     .groupBy(projects.category);
 
-    const categoryPercentages = categoryResult.rows.map((c: any) => ({
-        category: c.category,
-        percentage: ((Number(c.count) / totalProjects) * 100).toFixed(1),
-    }));
+    // const totalProjects = totals?.total_projects || 1;
 
-    return { year, totals, categoryPercentages };
+    // const categoryPercentages = categoryCounts.map((c) => ({
+    //     category: c.category,
+    //     percentage: ((c.count / totalProjects) * 100).toFixed(1),
+    // }));
+
+    // return { year, totals, categoryPercentages };
+    return { year, totals };
 }
