@@ -44,8 +44,9 @@ export default function FilterPanel({
     const [groupProjects, setGroupProjects] = useState(false);
     const [selectedSchools, setSelectedSchools] = useState<string[]>([]);
     const [selectedCities, setSelectedCities] = useState<string[]>([]);
+    const [teacherFilterEnabled, setTeacherFilterEnabled] = useState(false);
     const [teacherYearsOperator, setTeacherYearsOperator] = useState("=");
-    const [teacherYearsValue, setTeacherYearsValue] = useState("1");
+    const [teacherYearsValue, setTeacherYearsValue] = useState("");
 
     const updateFilters = (updates: Partial<Filters>) => {
         const newFilters: Filters = {
@@ -73,19 +74,6 @@ export default function FilterPanel({
         updateFilters({ groupBy: value });
     };
 
-    const handleCheckboxToggle = (label: string, checked: boolean) => {
-        if (label === "Gateway Cities") {
-            setGatewayCities(checked);
-            updateFilters({ gatewayCities: checked });
-        } else if (label === "Individual Projects") {
-            setIndividualProjects(checked);
-            updateFilters({ individualProjects: checked });
-        } else if (label === "Group Projects") {
-            setGroupProjects(checked);
-            updateFilters({ groupProjects: checked });
-        }
-    };
-
     const handleSchoolsChange = (values: string[]) => {
         setSelectedSchools(values);
         updateFilters({ selectedSchools: values });
@@ -94,6 +82,36 @@ export default function FilterPanel({
     const handleCitiesChange = (values: string[]) => {
         setSelectedCities(values);
         updateFilters({ selectedCities: values });
+    };
+
+    const handleSchoolCheckboxToggle = (school: string, checked: boolean) => {
+        const newSelection = checked
+            ? [...selectedSchools, school]
+            : selectedSchools.filter((s) => s !== school);
+        setSelectedSchools(newSelection);
+        updateFilters({ selectedSchools: newSelection });
+    };
+
+    const handleCityCheckboxToggle = (city: string, checked: boolean) => {
+        const newSelection = checked
+            ? [...selectedCities, city]
+            : selectedCities.filter((c) => c !== city);
+        setSelectedCities(newSelection);
+        updateFilters({ selectedCities: newSelection });
+    };
+
+    const handleTeacherFilterToggle = (label: string, checked: boolean) => {
+        setTeacherFilterEnabled(checked);
+        if (checked) {
+            // When enabling, set a default value if it's empty
+            const newValue = teacherYearsValue || "1";
+            setTeacherYearsValue(newValue);
+            updateFilters({ teacherYearsValue: newValue });
+        } else {
+            // When disabling, clear the value to mark it as inactive
+            setTeacherYearsValue("");
+            updateFilters({ teacherYearsValue: "" });
+        }
     };
 
     const handleTeacherYearsOperatorChange = (value: string) => {
@@ -116,7 +134,7 @@ export default function FilterPanel({
                 <select
                     value={measuredAs}
                     onChange={(e) => handleMeasuredAsChange(e.target.value)}
-                    className="w-64 px-3 py-2 border border-gray-300 rounded-md"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
                 >
                     <option value="total-count">Total Count</option>
                     <option value="total-student-count">
@@ -143,7 +161,7 @@ export default function FilterPanel({
                 <select
                     value={groupBy}
                     onChange={(e) => handleGroupByChange(e.target.value)}
-                    className="w-64 px-3 py-2 border border-gray-300 rounded-md"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
                 >
                     <option value="region">Region</option>
                     <option value="school-type">School Type</option>
@@ -162,15 +180,24 @@ export default function FilterPanel({
                     {/* Checkboxes */}
                     <Checkbox
                         label="Gateway Cities"
-                        onToggle={handleCheckboxToggle}
+                        onToggle={(_, checked) => {
+                            setGatewayCities(checked);
+                            updateFilters({ gatewayCities: checked });
+                        }}
                     />
                     <Checkbox
                         label="Individual Projects"
-                        onToggle={handleCheckboxToggle}
+                        onToggle={(_, checked) => {
+                            setIndividualProjects(checked);
+                            updateFilters({ individualProjects: checked });
+                        }}
                     />
                     <Checkbox
                         label="Group Projects"
-                        onToggle={handleCheckboxToggle}
+                        onToggle={(_, checked) => {
+                            setGroupProjects(checked);
+                            updateFilters({ groupProjects: checked });
+                        }}
                     />
 
                     {/* Multiselect schools */}
@@ -178,26 +205,28 @@ export default function FilterPanel({
                         <label className="block text-xs font-medium mb-1">
                             School:
                         </label>
-                        <select
-                            multiple
-                            value={selectedSchools}
-                            onChange={(e) =>
-                                handleSchoolsChange(
-                                    Array.from(
-                                        e.target.selectedOptions,
-                                        (option) => option.value,
-                                    ),
-                                )
-                            }
-                            className="w-64 px-3 py-2 border border-gray-300 rounded-md"
-                            size={3}
-                        >
+                        <div className="w-full h-24 overflow-y-auto border border-gray-300 rounded-md p-2 bg-white">
                             {schools.map((school) => (
-                                <option key={school} value={school}>
-                                    {school}
-                                </option>
+                                <div
+                                    key={school}
+                                    className="flex items-start py-1"
+                                >
+                                    <Checkbox
+                                        label={school}
+                                        onToggle={handleSchoolCheckboxToggle}
+                                        isChecked={selectedSchools.includes(
+                                            school,
+                                        )}
+                                    />
+                                </div>
                             ))}
-                        </select>
+                        </div>
+                        <button
+                            onClick={() => handleSchoolsChange([])}
+                            className="text-xs text-blue-600 hover:underline mt-1"
+                        >
+                            Clear selection
+                        </button>
                     </div>
 
                     {/* Multiselect cities */}
@@ -205,34 +234,37 @@ export default function FilterPanel({
                         <label className="block text-xs font-medium mb-1">
                             City/Town:
                         </label>
-                        <select
-                            multiple
-                            value={selectedCities}
-                            onChange={(e) =>
-                                handleCitiesChange(
-                                    Array.from(
-                                        e.target.selectedOptions,
-                                        (option) => option.value,
-                                    ),
-                                )
-                            }
-                            className="w-64 px-3 py-2 border border-gray-300 rounded-md"
-                            size={3}
-                        >
+                        <div className="w-full h-24 overflow-y-auto border border-gray-300 rounded-md p-2 bg-white">
                             {cities.map((city) => (
-                                <option key={city} value={city}>
-                                    {city}
-                                </option>
+                                <div
+                                    key={city}
+                                    className="flex items-start py-1"
+                                >
+                                    <Checkbox
+                                        label={city}
+                                        onToggle={handleCityCheckboxToggle}
+                                        isChecked={selectedCities.includes(
+                                            city,
+                                        )}
+                                    />
+                                </div>
                             ))}
-                        </select>
+                        </div>
+                        <button
+                            onClick={() => handleCitiesChange([])}
+                            className="text-xs text-blue-600 hover:underline mt-1"
+                        >
+                            Clear selection
+                        </button>
                     </div>
 
                     {/* Teacher Participation */}
                     <div>
-                        <label className="block text-xs font-medium mb-1">
-                            Teacher # participation years:
-                        </label>
-                        <div className="flex gap-2">
+                        <Checkbox
+                            label="Filter by Teacher Participation"
+                            onToggle={handleTeacherFilterToggle}
+                        />
+                        <div className="flex gap-2 mt-2 pl-6">
                             <select
                                 value={teacherYearsOperator}
                                 onChange={(e) =>
@@ -240,7 +272,8 @@ export default function FilterPanel({
                                         e.target.value,
                                     )
                                 }
-                                className="w-16 px-2 py-2 border border-gray-300 rounded-md"
+                                className="w-16 px-2 py-2 border border-gray-300 rounded-md disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                disabled={!teacherFilterEnabled}
                             >
                                 <option value="<">&lt;</option>
                                 <option value="=">=</option>
@@ -255,7 +288,8 @@ export default function FilterPanel({
                                         e.target.value,
                                     )
                                 }
-                                className="w-24 px-3 py-2 border border-gray-300 rounded-md"
+                                className="w-24 px-3 py-2 border border-gray-300 rounded-md disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                disabled={!teacherFilterEnabled}
                             />
                         </div>
                     </div>

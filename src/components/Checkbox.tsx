@@ -1,17 +1,18 @@
-import React, { useState } from "react";
+import React from "react";
 
 type CheckboxProps = {
     label: string;
     onToggle?: (label: string, checked: boolean) => void;
+    isChecked?: boolean;
 };
 
-export default function Checkbox({ label, onToggle }: CheckboxProps) {
-    const [checked, setChecked] = useState(false);
-
+export default function Checkbox({
+    label,
+    onToggle,
+    isChecked,
+}: CheckboxProps) {
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const isChecked = e.target.checked;
-        setChecked(isChecked);
-
         if (onToggle) onToggle(label, isChecked);
     };
 
@@ -20,7 +21,7 @@ export default function Checkbox({ label, onToggle }: CheckboxProps) {
             {/* Checkbox box */}
             <input
                 type="checkbox"
-                checked={checked}
+                checked={isChecked || false}
                 onChange={handleChange}
                 className="peer appearance-none w-6 h-6 border-2 border-gray-400 rounded transition-colors"
             />
@@ -31,7 +32,12 @@ export default function Checkbox({ label, onToggle }: CheckboxProps) {
             </span>
 
             {/* Label text */}
-            <span>{label}</span>
+            <span
+                className="whitespace-nowrap overflow-hidden text-ellipsis"
+                title={label}
+            >
+                {label}
+            </span>
         </label>
     );
 }
