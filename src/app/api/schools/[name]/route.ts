@@ -32,7 +32,7 @@ export async function GET(
         const schoolResult = await db
             .select()
             .from(schools)
-            .where(sql`LOWER(${schools.name}) = LOWER(${searchName})`)
+            .where(eq(sql`LOWER(${schools.name})`, searchName.toLowerCase()))
             .limit(1);
 
         // Check if school exists
