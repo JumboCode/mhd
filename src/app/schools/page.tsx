@@ -17,6 +17,8 @@ import { ColumnDef } from "@tanstack/react-table";
 import { SchoolsDataTable } from "@/components/DataTableSchools";
 import { columns } from "@/components/Columns";
 import YearDropdown from "@/components/YearDropdown";
+import { MHDBreadcrumb } from "@/components/Breadcrumbs";
+import SchoolSearchBar from "@/components/SchoolSearchbar";
 
 export default function SchoolsPage() {
     const [schoolInfo, setSchoolInfo] = useState([]);
@@ -52,13 +54,19 @@ export default function SchoolsPage() {
     // ]
 
     return (
-        <div className="font-sans ml-40 mt-15">
-            <div className="font-bold">
+        <div className="font-sans ml-40 mt-5">
+            <div className="flex items-center font-bold">
                 {/*Table and charts need to be a toggle */}
-                <h1 className="text-xl"> Schools </h1>
-            </div>
-            <div className="flex justify-center mr-10 text-black">
-                <YearDropdown selectedYear={year} onYearChange={setYear} />
+                <MHDBreadcrumb />
+                <div className="flex-1 text-center">
+                    <h1 className="text-xl font-bold"> Schools </h1>
+                </div>
+
+                <div className="flex items-center gap-4">
+                    <YearDropdown selectedYear={year} onYearChange={setYear} />
+                    {/* I think we'd add the search bar here*/}
+                    <SchoolSearchBar />
+                </div>
             </div>
 
             <div className="container mt-5 overflow-x-auto">

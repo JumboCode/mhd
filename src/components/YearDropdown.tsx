@@ -43,7 +43,7 @@ export default function YearDropdown({
         <select
             value={year ?? ""}
             onChange={handleChange}
-            className="border border-gray-300 rounded px-4 py-2 w-48 font-normal text-gray-600"
+            className="border border-gray-300 rounded px-4 py-1 w-30 font-normal text-sm text-gray-600"
         >
             <option value="">Select a year</option>
             {years.map((y) => (

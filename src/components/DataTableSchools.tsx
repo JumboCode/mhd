@@ -43,7 +43,7 @@ export function SchoolsDataTable<TData, TValue>({
         //Example code should be changed
         //border for school name column disappears when scrolling right
         <div className="overflow-x-auto overflow-y-hidden rounded-md border text-center w-11/12">
-            <Table>
+            <Table className="border-separate border-spacing-0">
                 <TableHeader>
                     {table.getHeaderGroups().map((headerGroup) => (
                         <TableRow key={headerGroup.id}>
@@ -53,17 +53,19 @@ export function SchoolsDataTable<TData, TValue>({
                                         key={header.id}
                                         className={
                                             header.index === 0
-                                                ? "sticky left-0 z-20 text-center bg-gray-100 border-r-1"
-                                                : " text-center border-r-1"
+                                                ? "sticky left-0 z-20 text-center bg-gray-100 border-r border-b"
+                                                : "text-center border-r border-b z-0 "
                                         }
                                     >
-                                        {header.isPlaceholder
-                                            ? null
-                                            : flexRender(
-                                                  header.column.columnDef
-                                                      .header,
-                                                  header.getContext(),
-                                              )}
+                                        <div>
+                                            {header.isPlaceholder
+                                                ? null
+                                                : flexRender(
+                                                      header.column.columnDef
+                                                          .header,
+                                                      header.getContext(),
+                                                  )}
+                                        </div>
                                     </TableHead>
                                 );
                             })}
@@ -82,8 +84,8 @@ export function SchoolsDataTable<TData, TValue>({
                                         key={cell.id}
                                         className={
                                             cell.column.getIndex() === 0
-                                                ? " text-center sticky left-0 z-20 bg-background border-r-1 border-b-0"
-                                                : " text-center"
+                                                ? " text-center sticky left-0 z-20 bg-background border-r border-b-0"
+                                                : " text-center z-0 border-b"
                                         }
                                     >
                                         {flexRender(
