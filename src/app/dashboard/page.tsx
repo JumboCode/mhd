@@ -3,7 +3,14 @@
 import React, { useEffect, useRef, useState } from "react";
 import * as d3 from "d3";
 import { d3BarChart } from "./chart";
-import { Check, ChevronsUpDown } from "lucide-react";
+import {
+    Check,
+    ChevronsUpDown,
+    ArrowRightFromLine,
+    Link,
+    CalendarDays,
+    ChevronDown,
+} from "lucide-react";
 import { projects, teachers } from "@/lib/schema";
 import { eq, sql } from "drizzle-orm";
 
@@ -108,6 +115,21 @@ const filterBy = [
     // },
 ];
 
+type Project = {
+    id: number;
+    title: string;
+    division: string;
+    category: string;
+    year: number;
+    group: boolean;
+    schoolId: number;
+    schoolName: string;
+    schoolTown: string;
+    teacherId: number;
+    teacherFirstName: string;
+    teacherLastName: string;
+};
+
 export default function Bargraph() {
     const svgRef = useRef<SVGSVGElement | null>(null);
 
@@ -115,6 +137,8 @@ export default function Bargraph() {
     const [data, setData] = useState<{ category: string; value: number }[]>([]);
 
     // save user input values
+    const [allProjects, setAllProjects] = useState<Project[]>([]);
+    const [loading, setLoading] = useState(true);
     const [measure, setMeasure] = useState("");
     const [openMeasure, setOpenMeasure] = React.useState(false);
     const [group, setGroup] = useState("");
@@ -144,23 +168,44 @@ export default function Bargraph() {
     }, [filter]);
 
     // fetch datafrom database whenever filters are changed
+    // useEffect(() => {
+    //     async function fetchData() {
+    //         const response = await fetch("/api/bargraph", {
+    //             method: "POST",
+    //             headers: { "Content-Type": "application/json" },
+    //             body: JSON.stringify({
+    //                 measure,
+    //                 group,
+    //                 filter,
+    //                 filterValue,
+    //             }),
+    //         });
+    //         const json = await response.json();
+    //         setData(json);
+    //     }
+    //     fetchData();
+    // }, [measure, group, filter, filterValue]);
+
+    // Fetch all project data on component mount
     useEffect(() => {
-        async function fetchData() {
-            const response = await fetch("/api/bargraph", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    measure,
-                    group,
-                    filter,
-                    filterValue,
-                }),
-            });
-            const json = await response.json();
-            setData(json);
-        }
-        fetchData();
-    }, [measure, group, filter, filterValue]);
+        const fetchProjects = async () => {
+            try {
+                // const response = await fetch("/api/bargraph");
+                const response = await fetch("/api/bargraph", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                });
+                if (!response.ok) throw new Error("Failed to fetch");
+                const data = await response.json();
+                setAllProjects(data);
+            } catch (error) {
+                console.error("Error:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchProjects();
+    }, []);
 
     // Render D3 bar chart
     useEffect(() => {
@@ -204,7 +249,7 @@ export default function Bargraph() {
                 <div className="w-1/4 h-screen bg-[#FCFCFC] p-6 shadow-md">
                     <div className="flex flex-col gap-[50px] mb-4">
                         <div className="flex flex-col gap-[5px]">
-                            <h2>Measured As</h2>
+                            <h2 className="font-bold">Measured As</h2>
                             <Popover
                                 open={openMeasure}
                                 onOpenChange={setOpenMeasure}
@@ -223,7 +268,7 @@ export default function Bargraph() {
                                                       measure,
                                               )?.label
                                             : "Total Count"}
-                                        <ChevronsUpDown className="opacity-50" />
+                                        <ChevronDown className="opacity-50" />
                                     </Button>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-[200px] p-0">
@@ -284,7 +329,7 @@ export default function Bargraph() {
                             </Popover>
                         </div>
                         <div className="flex flex-col gap-[5px]">
-                            <h2>Group By</h2>
+                            <h2 className="font-bold">Group By</h2>
                             <Popover
                                 open={openGroup}
                                 onOpenChange={setOpenGroup}
@@ -302,7 +347,7 @@ export default function Bargraph() {
                                                       groupBy.value === group,
                                               )?.label
                                             : "Category"}
-                                        <ChevronsUpDown className="opacity-50" />
+                                        <ChevronDown className="opacity-50" />
                                     </Button>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-[200px] p-0">
@@ -351,7 +396,7 @@ export default function Bargraph() {
                             </Popover>
                         </div>
                         <div className="flex flex-col gap-[5px]">
-                            <h2>Filter By</h2>
+                            <h2 className="font-bold">Filter By</h2>
                             <Popover
                                 open={openFilter}
                                 onOpenChange={setOpenFilter}
@@ -369,7 +414,7 @@ export default function Bargraph() {
                                                       filterBy.value === filter,
                                               )?.label
                                             : "Category"}
-                                        <ChevronsUpDown className="opacity-50" />
+                                        <ChevronDown className="opacity-50" />
                                     </Button>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-[200px] p-0">
@@ -446,7 +491,7 @@ export default function Bargraph() {
                                                           filterValue,
                                                   )?.label
                                                 : "Select..."}
-                                            <ChevronsUpDown className="opacity-50" />
+                                            <ChevronDown className="opacity-50" />
                                         </Button>
                                     </PopoverTrigger>
                                     <PopoverContent className="w-[200px] p-0">
@@ -506,28 +551,41 @@ export default function Bargraph() {
                     </div>
                 </div>
                 <div className="flex-1 p-8">
-                    <h1 className="text-2xl mb-6">Projects by Category</h1>
-                    {/* Charts, tables, or other content go here */}
-                    <svg ref={svgRef} width={928} height={500}></svg>
-                    <div className="flex justify-end w-full mb-4">
-                        <div className="inline-flex rounded-md shadow-sm border">
-                            {/* 3Y */}
-                            <button className="px-4 py-2 text-sm font-medium border-r hover:bg-gray-100">
-                                3Y
+                    <div className="flex items-center justify-between mb-6">
+                        <h1 className="text-2xl">Projects by Category</h1>
+                        <div className="flex gap-2">
+                            <button className="px-4 py-2 text-sm font-medium border rounded-md hover:bg-gray-100 flex items-center gap-2">
+                                <ArrowRightFromLine className="h-4 w-4" />
+                                Export
                             </button>
-
-                            {/* 5Y */}
-                            <button className="px-4 py-2 text-sm font-medium border-r hover:bg-gray-100">
-                                5Y
-                            </button>
-
-                            {/* Calendar Dropdown */}
-                            <button className="px-4 py-2 text-sm font-medium hover:bg-gray-100 flex items-center gap-2">
-                                <span>📅</span>
-                                <span>Select Date</span>
+                            <button className="px-4 py-2 text-sm font-medium border rounded-md hover:bg-gray-100 flex items-center gap-2">
+                                <Link className="h-4 w-4" />
+                                Share
                             </button>
                         </div>
                     </div>
+                    <div className="flex justify-end w-full mb-4">
+                        <div className="inline-flex rounded-md border">
+                            {/* 3Y */}
+                            <button className="px-6 py-2 text-sm font-medium border-r hover:bg-gray-100">
+                                3y
+                            </button>
+
+                            {/* 5Y */}
+                            <button className="px-6 py-2 text-sm font-medium border-r hover:bg-gray-100">
+                                5y
+                            </button>
+
+                            {/* Calendar Dropdown */}
+                            <button className="px-4 py-2 text-sm font-medium rounded-r bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-2 rounded-r-md">
+                                <CalendarDays className="h-4 w-4" />
+                                <span>2020-2025</span>
+                                <ChevronDown className="h-4 w-4" />
+                            </button>
+                        </div>
+                    </div>
+                    {/* Charts, tables, or other content go here */}
+                    <svg ref={svgRef} width={928} height={500}></svg>
                 </div>
             </div>
         </div>
