@@ -12,11 +12,27 @@ import { eq, sql, and, inArray } from "drizzle-orm";
 
 export async function POST(req: Request) {
     try {
-        const { measure, group, filter } = await req.json();
+        const { measure, group, filter, filterValue } = await req.json();
         console.log("in post", measure, group, filter);
 
         const conditions: any[] = [];
 
+        // ---------- GROUP COLUMN ----------
+        // no region
+        const schoolGroupColumns = {
+            town: schools.town,
+            name: schools.name,
+        } as const;
+
+        const projectGroupColumns = {
+            division: projects.division,
+            project_type: projects.category,
+            year: projects.year,
+            group: projects.group,
+        } as const;
+
+        type SchoolGroup = keyof typeof schoolGroupColumns;
+        type ProjectGroup = keyof typeof projectGroupColumns;
         let table: typeof schools | typeof projects;
         let groupColumn:
             | (typeof schoolGroupColumns)[SchoolGroup]
@@ -43,6 +59,41 @@ export async function POST(req: Request) {
                     break;
                 default:
                     groupColumn = projects.category;
+            }
+        }
+        if (filter && filterValue) {
+            switch (filter) {
+                case "school":
+                    // Filter by specific school ID
+                    if (table === schools) {
+                        conditions.push(eq(schools.id, parseInt(filterValue)));
+                    } else {
+                        // If querying projects table, need to filter by school_id
+                        conditions.push(
+                            eq(projects.schoolId, parseInt(filterValue)),
+                        );
+                    }
+                    break;
+                case "city":
+                    // Filter by specific city/town
+                    if (table === schools) {
+                        conditions.push(eq(schools.town, filterValue));
+                    }
+                    // Note: If table is projects and you need to filter by city,
+                    // you'll need to add a join with schools table
+                    break;
+                case "group":
+                    // Filter by individual or group projects
+                    if (table === projects) {
+                        conditions.push(eq(projects.group, filterValue));
+                    }
+                    break;
+                case "category":
+                    // Filter by project category/type
+                    if (table === projects) {
+                        conditions.push(eq(projects.category, filterValue));
+                    }
+                    break;
             }
         }
 
@@ -128,23 +179,6 @@ export async function POST(req: Request) {
                 valueSelect = sql`COUNT(*)`;
         }
 
-        // ---------- GROUP COLUMN ----------
-        // no region
-        const schoolGroupColumns = {
-            town: schools.town,
-            name: schools.name,
-        } as const;
-
-        const projectGroupColumns = {
-            division: projects.division,
-            project_type: projects.category,
-            year: projects.year,
-            group: projects.group,
-        } as const;
-
-        type SchoolGroup = keyof typeof schoolGroupColumns;
-        type ProjectGroup = keyof typeof projectGroupColumns;
-
         // if (entity === "School") {
         //   table = schools;
         //   groupColumn = schoolGroupColumns[group as SchoolGroup];
@@ -162,7 +196,7 @@ export async function POST(req: Request) {
                 value: valueSelect,
             })
             .from(table)
-            .where(and(...conditions))
+            .where(conditions.length > 0 ? and(...conditions) : undefined)
             .groupBy(groupColumn);
 
         return NextResponse.json(rows);

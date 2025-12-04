@@ -130,6 +130,12 @@ export default function Bargraph() {
     const [openGroup, setOpenGroup] = React.useState(false);
     const [filter, setFilter] = useState("");
     const [openFilter, setOpenFilter] = React.useState(false);
+
+    const [filterValue, setFilterValue] = useState("");
+    const [openFilterValue, setOpenFilterValue] = useState(false);
+    const [filterOptions, setFilterOptions] = useState<
+        { value: string; label: string }[]
+    >([]);
     // const [value, setValue] = React.useState("")
 
     const handleMeasureSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -150,6 +156,21 @@ export default function Bargraph() {
         // onMeasureChange?.(measureSelected);
     };
 
+    useEffect(() => {
+        async function fetchFilterOptions() {
+            if (!filter) {
+                setFilterOptions([]);
+                setFilterValue("");
+                return;
+            }
+
+            const response = await fetch(`/api/filter-options?type=${filter}`);
+            const json = await response.json();
+            setFilterOptions(json);
+        }
+        fetchFilterOptions();
+    }, [filter]);
+
     // fetch datafrom database whenever filters are changed
     useEffect(() => {
         async function fetchData() {
@@ -160,13 +181,14 @@ export default function Bargraph() {
                     measure,
                     group,
                     filter,
+                    filterValue,
                 }),
             });
             const json = await response.json();
             setData(json);
         }
         fetchData();
-    }, [measure, group, filter]);
+    }, [measure, group, filter, filterValue]);
 
     // Render D3 bar chart
     useEffect(() => {
@@ -436,6 +458,90 @@ export default function Bargraph() {
                                 </PopoverContent>
                             </Popover>
                         </div>
+                        {filter && (
+                            <div className="flex flex-col gap-[5px]">
+                                <h2>
+                                    Select{" "}
+                                    {
+                                        filterBy.find((f) => f.value === filter)
+                                            ?.label
+                                    }
+                                </h2>
+                                <Popover
+                                    open={openFilterValue}
+                                    onOpenChange={setOpenFilterValue}
+                                >
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            variant="outline"
+                                            role="combobox"
+                                            aria-expanded={openFilterValue}
+                                            className="w-[200px] justify-between"
+                                        >
+                                            {filterValue
+                                                ? filterOptions.find(
+                                                      (option) =>
+                                                          option.value ===
+                                                          filterValue,
+                                                  )?.label
+                                                : "Select..."}
+                                            <ChevronsUpDown className="opacity-50" />
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-[200px] p-0">
+                                        <Command>
+                                            <CommandInput
+                                                placeholder="Search..."
+                                                className="h-9"
+                                            />
+                                            <CommandList>
+                                                <CommandEmpty>
+                                                    No options found.
+                                                </CommandEmpty>
+                                                <CommandGroup>
+                                                    {filterOptions.map(
+                                                        (option) => (
+                                                            <CommandItem
+                                                                key={
+                                                                    option.value
+                                                                }
+                                                                value={
+                                                                    option.value
+                                                                }
+                                                                onSelect={(
+                                                                    currentValue,
+                                                                ) => {
+                                                                    setFilterValue(
+                                                                        currentValue ===
+                                                                            filterValue
+                                                                            ? ""
+                                                                            : currentValue,
+                                                                    );
+                                                                    setOpenFilterValue(
+                                                                        false,
+                                                                    );
+                                                                }}
+                                                            >
+                                                                {option.label}
+                                                                <Check
+                                                                    className={cn(
+                                                                        "ml-auto",
+                                                                        filterValue ===
+                                                                            option.value
+                                                                            ? "opacity-100"
+                                                                            : "opacity-0",
+                                                                    )}
+                                                                />
+                                                            </CommandItem>
+                                                        ),
+                                                    )}
+                                                </CommandGroup>
+                                            </CommandList>
+                                        </Command>
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
+                        )}
                     </div>
                 </div>
                 <div className="flex-1 p-8">
