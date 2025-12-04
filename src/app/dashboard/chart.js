@@ -2,6 +2,7 @@ import * as d3 from "d3";
 
 export function d3BarChart() {
     // Declare the chart dimensions and margins.
+    console.log("in chart.js");
     const width = 928;
     const height = 500;
     const marginTop = 30;

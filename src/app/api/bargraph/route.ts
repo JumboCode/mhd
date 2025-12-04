@@ -17,7 +17,6 @@ export async function POST(req: Request) {
 
         const conditions: any[] = [];
 
-        // ---------- GROUP COLUMN ----------
         // no region
         const schoolGroupColumns = {
             town: schools.town,
@@ -39,6 +38,7 @@ export async function POST(req: Request) {
             | (typeof projectGroupColumns)[ProjectGroup];
 
         // Determine table based on group
+        // fix this if statement
         if (["name", "town"].includes(group)) {
             table = schools;
             groupColumn = group === "name" ? schools.name : schools.town;
@@ -48,7 +48,7 @@ export async function POST(req: Request) {
                 case "division":
                     groupColumn = projects.division;
                     break;
-                case "project_type":
+                case "category":
                     groupColumn = projects.category;
                     break;
                 case "year":
@@ -61,123 +61,199 @@ export async function POST(req: Request) {
                     groupColumn = projects.category;
             }
         }
+
         if (filter && filterValue) {
             switch (filter) {
                 case "school":
-                    // Filter by specific school ID
-                    if (table === schools) {
-                        conditions.push(eq(schools.id, parseInt(filterValue)));
-                    } else {
-                        // If querying projects table, need to filter by school_id
-                        conditions.push(
-                            eq(projects.schoolId, parseInt(filterValue)),
-                        );
+                    const id = Number(filterValue);
+                    if (!isNaN(id)) {
+                        if (table === projects) {
+                            conditions.push(eq(projects.schoolId, id));
+                        } else if (table === schools) {
+                            conditions.push(eq(schools.id, id));
+                        }
                     }
                     break;
+
                 case "city":
-                    // Filter by specific city/town
-                    if (table === schools) {
-                        conditions.push(eq(schools.town, filterValue));
-                    }
-                    // Note: If table is projects and you need to filter by city,
-                    // you'll need to add a join with schools table
+                    conditions.push(eq(schools.town, filterValue));
                     break;
+
                 case "group":
-                    // Filter by individual or group projects
-                    if (table === projects) {
-                        conditions.push(eq(projects.group, filterValue));
-                    }
+                    conditions.push(eq(projects.group, filterValue));
                     break;
+
                 case "category":
-                    // Filter by project category/type
-                    if (table === projects) {
-                        conditions.push(eq(projects.category, filterValue));
-                    }
+                    conditions.push(eq(projects.category, filterValue));
                     break;
             }
         }
 
-        if (filter === "school" && table === schools) {
-            // filter all schools? probably no-op if user just selects "filter by school"
-        } else if (filter === "city" && table === schools) {
-            // filter by city if needed
-        } else if (filter === "project_type" && table === projects) {
-            // filter by project_type if needed
-        }
-        // switch(filter) {
-        //   case "school":
-        //     table = schools;
-        //     // groupColumn = group === "name" ? schools.name : schools.town;
-        //     // groupColumn = schools.name;
-        //     break;
-        //   case "city":
-        //     table = schools;
-        //     // groupColumn = schools.town;
-        //     break;
-        //   case "project_type":
-        //     table = projects;
-        //     // groupColumn = projects.category;
-        //     break;
-        //   case "division":
-        //     table = projects;
-        //     // groupColumn = projects.division;
-        //     break;
-        //   default:
-        //     table = projects;
-        //     // groupColumn = projects.category;
-        // }
-
-        // switch(group) {
-        //   case "name":
-        //     groupColumn = schools.name;
-        //     break;
-        //   case "town":
-        //     groupColumn = schools.town;
-        //     break;
-        //   case "division":
-        //     groupColumn = projects.division;
-        //     break;
-        //   case "project_type":
-        //     groupColumn = projects.category;
-        //     break;
-        //   default:
-        //     groupColumn = schools.name; // fallback
-        // }
-
-        // ---------- MEASURE ----------
+        // measure
+        let query;
         let valueSelect;
-        switch (measure) {
-            case "total_number_of_schools":
-                valueSelect = sql`COUNT(*)`;
-                break;
-            case "total_student_count":
-                valueSelect = sql`COUNT(${students.id})`;
-                console.log("total student count");
-                console.log(valueSelect);
-                break;
-            case "total_city_count":
-                valueSelect = sql`COUNT(DISTINCT ${schools.town})`;
-                console.log("total city count");
-                console.log(valueSelect);
-                break;
-            case "total_project_count":
-                valueSelect = sql`COUNT(${projects.id})`;
-                console.log("total proj count");
-                console.log(valueSelect);
-                break;
-            case "total_teacher_count":
-                valueSelect = sql`COUNT(${teachers.id})`;
-                console.log("total teacher count");
-                console.log(valueSelect);
-                break;
-            case "school_return_rate":
-                valueSelect = sql`COUNT(DISTINCT ${yearlySchoolParticipation.year})`;
-                console.log("school return rate");
-                console.log(valueSelect);
-                break;
-            default:
-                valueSelect = sql`COUNT(*)`;
+
+        if (table === schools) {
+            // Schools table
+            query = db.select({ category: groupColumn }).from(schools);
+
+            switch (measure) {
+                case "total_number_of_schools":
+                    valueSelect = sql`COUNT(*)`;
+                    break;
+                case "total_student_count":
+                    query = query.leftJoin(
+                        students,
+                        eq(students.schoolId, schools.id),
+                    );
+                    valueSelect = sql`COUNT(${students.id})`;
+                    break;
+                case "total_teacher_count":
+                    query = query.leftJoin(
+                        yearlyTeacherParticipation,
+                        eq(yearlyTeacherParticipation.schoolId, schools.id),
+                    );
+                    valueSelect = sql`COUNT(DISTINCT ${yearlyTeacherParticipation.teacherId})`;
+                    break;
+                case "total_city_count":
+                    valueSelect = sql`COUNT(DISTINCT ${schools.town})`;
+                    break;
+                case "school_return_rate":
+                    query = query.leftJoin(
+                        yearlySchoolParticipation,
+                        eq(yearlySchoolParticipation.schoolId, schools.id),
+                    );
+                    valueSelect = sql`COUNT(DISTINCT ${yearlySchoolParticipation.year})`;
+                    break;
+                default:
+                    valueSelect = sql`COUNT(*)`;
+            }
+        } else {
+            // Projects table
+            query = db
+                .select({ category: groupColumn })
+                .from(projects)
+                .leftJoin(schools, eq(schools.id, projects.schoolId));
+
+            switch (measure) {
+                case "total_number_of_schools":
+                    valueSelect = sql`COUNT(DISTINCT ${projects.schoolId})`;
+                    break;
+                case "total_student_count":
+                    query = query.leftJoin(
+                        students,
+                        eq(students.projectId, projects.id),
+                    );
+                    valueSelect = sql`COUNT(${students.id})`;
+                    break;
+                case "total_project_count":
+                    valueSelect = sql`COUNT(${projects.id})`;
+                    break;
+                case "total_teacher_count":
+                    valueSelect = sql`COUNT(DISTINCT ${projects.teacherId})`;
+                    break;
+                case "school_return_rate":
+                    query = query.leftJoin(
+                        yearlySchoolParticipation,
+                        eq(
+                            yearlySchoolParticipation.schoolId,
+                            projects.schoolId,
+                        ),
+                    );
+                    valueSelect = sql`COUNT(DISTINCT ${yearlySchoolParticipation.year})`;
+                    break;
+                default:
+                    valueSelect = sql`COUNT(*)`;
+            }
         }
+        let rows;
+        if (table === projects) {
+            rows = await db
+                .select({
+                    category: groupColumn,
+                    value: valueSelect,
+                })
+                .from(projects)
+                .leftJoin(schools, eq(schools.id, projects.schoolId))
+                .where(conditions.length ? and(...conditions) : undefined)
+                .groupBy(groupColumn);
+        } else {
+            rows = await db
+                .select({
+                    category: groupColumn,
+                    value: valueSelect,
+                })
+                .from(schools)
+                .where(conditions.length ? and(...conditions) : undefined)
+                .groupBy(groupColumn);
+        }
+
+        // Add filter conditions if provided
+        // if (conditions.length > 0) {
+        //     query = query.where(and(...conditions));
+        // }
+
+        // Final query
+        // query = query.select({ category: groupColumn, value: valueSelect }).groupBy(groupColumn);
+
+        // const rows = await query;
+        return NextResponse.json(rows);
+
+        // switch (measure) {
+        //     case "total_number_of_schools":
+        //         valueSelect = table === schools ? sql`COUNT(*)` : sql`COUNT(DISTINCT ${projects.schoolId})`;
+        //         break;
+        //     case "total_student_count":
+        //         valueSelect = table === schools ? sql`COUNT(${students.id})` : sql`COUNT(${students.id})`; // join needed if projects
+        //         break;
+        //     case "total_city_count":
+        //         valueSelect = sql`COUNT(DISTINCT ${schools.town})`;
+        //         break;
+        //     case "total_project_count":
+        //         valueSelect = table === projects ? sql`COUNT(${projects.id})` : sql`0`;
+        //         break;
+        //     case "total_teacher_count":
+        //         valueSelect = sql`COUNT(${teachers.id})`;
+        //         break;
+        //     case "school_return_rate":
+        //         valueSelect = sql`COUNT(DISTINCT ${yearlySchoolParticipation.year})`;
+        //         break;
+        //     default:
+        //         valueSelect = sql`COUNT(*)`;
+        // }
+
+        // switch (measure) {
+        //     case "total_number_of_schools":
+        //         valueSelect = sql`COUNT(*)`;
+        //         break;
+        //     case "total_student_count":
+        //         valueSelect = sql`COUNT(${students.id})`;
+        //         console.log("total student count");
+        //         console.log(valueSelect);
+        //         break;
+        //     case "total_city_count":
+        //         valueSelect = sql`COUNT(DISTINCT ${schools.town})`;
+        //         console.log("total city count");
+        //         console.log(valueSelect);
+        //         break;
+        //     case "total_project_count":
+        //         valueSelect = sql`COUNT(${projects.id})`;
+        //         console.log("total proj count");
+        //         console.log(valueSelect);
+        //         break;
+        //     case "total_teacher_count":
+        //         valueSelect = sql`COUNT(${teachers.id})`;
+        //         console.log("total teacher count");
+        //         console.log(valueSelect);
+        //         break;
+        //     case "school_return_rate":
+        //         valueSelect = sql`COUNT(DISTINCT ${yearlySchoolParticipation.year})`;
+        //         console.log("school return rate");
+        //         console.log(valueSelect);
+        //         break;
+        //     default:
+        //         valueSelect = sql`COUNT(*)`;
+        // }
 
         // if (entity === "School") {
         //   table = schools;
@@ -188,18 +264,33 @@ export async function POST(req: Request) {
         // } else {
         //   throw new Error("Unknown entity type");
         // }
+        // let rows;
 
-        // ---------- FINAL QUERY ----------
-        const rows = await db
-            .select({
-                category: groupColumn,
-                value: valueSelect,
-            })
-            .from(table)
-            .where(conditions.length > 0 ? and(...conditions) : undefined)
-            .groupBy(groupColumn);
+        // if (table === projects) {
+        // // projects table with school join
+        // rows = await db
+        //     .select({
+        //     category: groupColumn,
+        //     value: valueSelect,
+        //     })
+        //     .from(projects)
+        //     .leftJoin(schools, eq(schools.id, projects.schoolId))
+        //     .where(conditions.length > 0 ? and(...conditions) : undefined)
+        //     .groupBy(groupColumn);
+        // } else {
+        // // schools table only
+        // rows = await db
+        //     .select({
+        //     category: groupColumn,
+        //     value: valueSelect,
+        //     })
+        //     .from(schools)
+        //     .where(conditions.length > 0 ? and(...conditions) : undefined)
+        //     .groupBy(groupColumn);
+        // }
 
-        return NextResponse.json(rows);
+        // console.log("Returning rows:", rows);
+        // return NextResponse.json(rows);
     } catch (err) {
         let message = "Unknown error";
         if (err instanceof Error) {

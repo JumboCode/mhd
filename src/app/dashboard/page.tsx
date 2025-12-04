@@ -23,25 +23,14 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover";
 
-// import { NextRequest, NextResponse } from "next/server";
-// import { pgTable, integer, text, serial, boolean } from "drizzle-orm/pg-core";
-// import { db } from "@/lib/db";
-// import {
-//     students,
-//     schools,
-//     teachers,
-//     projects,
-//     yearlyTeacherParticipation,
-//     yearlySchoolParticipation,
-// } from "@/lib/schema";
-
+// possible values for measure filter
 const measuredAs = [
     {
         value: "total_number_of_schools",
         label: "Total Number of Schools",
     },
     {
-        value: "total_student_of_schools",
+        value: "total_student_count",
         label: "Total Student Count",
     },
     {
@@ -62,6 +51,7 @@ const measuredAs = [
     },
 ];
 
+// possible values for group filter
 const groupBy = [
     // {
     //     value: "region",
@@ -80,11 +70,12 @@ const groupBy = [
     //     label: "Implementation Type",
     // },
     {
-        value: "project_type",
+        value: "category",
         label: "Project Type",
     },
 ];
 
+// possible values for filter
 const filterBy = [
     // {
     //     value: "gateway_cities",
@@ -123,39 +114,20 @@ export default function Bargraph() {
     // saves data from database
     const [data, setData] = useState<{ category: string; value: number }[]>([]);
 
-    // combobox functions
+    // save user input values
     const [measure, setMeasure] = useState("");
     const [openMeasure, setOpenMeasure] = React.useState(false);
     const [group, setGroup] = useState("");
     const [openGroup, setOpenGroup] = React.useState(false);
     const [filter, setFilter] = useState("");
     const [openFilter, setOpenFilter] = React.useState(false);
-
     const [filterValue, setFilterValue] = useState("");
     const [openFilterValue, setOpenFilterValue] = useState(false);
     const [filterOptions, setFilterOptions] = useState<
         { value: string; label: string }[]
     >([]);
-    // const [value, setValue] = React.useState("")
 
-    const handleMeasureSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        // const measureSelected = e.target.value ? e.target.value : null;
-        setMeasure(e.target.value);
-        // onMeasureChange?.(measureSelected);
-    };
-
-    const handleGroupSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        // const measureSelected = e.target.value ? e.target.value : null;
-        setGroup(e.target.value);
-        // onMeasureChange?.(measureSelected);
-    };
-
-    const handleFilterSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        // const measureSelected = e.target.value ? e.target.value : null;
-        setFilter(e.target.value);
-        // onMeasureChange?.(measureSelected);
-    };
-
+    // populate options in filter dropdown
     useEffect(() => {
         async function fetchFilterOptions() {
             if (!filter) {
@@ -230,21 +202,6 @@ export default function Bargraph() {
         <div>
             <div className="flex min-h screen">
                 <div className="w-1/4 h-screen bg-[#FCFCFC] p-6 shadow-md">
-                    {/* <h2>Entities</h2>
-                <div className="flex gap-4 mb-4">
-                    <button
-                        onClick={() => setEntity("School")}
-                        className={`px-3 py-1 rounded ${entity === "School" ? "bg-blue-500 text-white" : "bg-gray-200"}`}
-                    >
-                        School
-                    </button>
-                    <button
-                        onClick={() => setEntity("Project")}
-                        className={`px-3 py-1 rounded ${entity === "Project" ? "bg-blue-500 text-white" : "bg-gray-200"}`}
-                    >
-                        Project
-                    </button>
-                </div> */}
                     <div className="flex flex-col gap-[50px] mb-4">
                         <div className="flex flex-col gap-[5px]">
                             <h2>Measured As</h2>
@@ -302,6 +259,10 @@ export default function Bargraph() {
                                                                     false,
                                                                 );
                                                             }}
+                                                            // onSelect={(currentValue) => {
+                                                            //     setFilterValue(currentValue); // just set the value
+                                                            //     setOpenFilterValue(false);    // close the popover
+                                                            // }}
                                                         >
                                                             {measuredAs.label}
                                                             <Check
