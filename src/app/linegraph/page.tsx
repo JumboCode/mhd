@@ -5,8 +5,7 @@
  *         Author: Elki Laranas and Zander Barba
  *           Date: 11/28/2025
  *
- *        Summary: Page to display a line graph of project
- *        data with filtering capabilities.
+ *        Summary: display line graph of project data
  *
  **************************************************************/
 "use client";
