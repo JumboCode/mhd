@@ -11,8 +11,8 @@
 
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { projects, schools, teachers } from "@/lib/schema";
-import { eq } from "drizzle-orm";
+import { projects, schools, teachers, students } from "@/lib/schema";
+import { eq, sql } from "drizzle-orm";
 
 export async function GET() {
     try {
@@ -30,10 +30,41 @@ export async function GET() {
                 teacherId: projects.teacherId,
                 teacherFirstName: teachers.firstName,
                 teacherLastName: teachers.lastName,
+                studentCount: sql<number>`COUNT(${students.id})`,
             })
+            // og
             .from(projects)
+            .leftJoin(students, eq(students.projectId, projects.id))
             .innerJoin(schools, eq(schools.id, projects.schoolId))
-            .innerJoin(teachers, eq(teachers.id, projects.teacherId));
+            .innerJoin(teachers, eq(teachers.id, projects.teacherId))
+
+            // maybe delete the group by
+            .groupBy(
+                projects.id,
+                schools.name,
+                schools.town,
+                teachers.firstName,
+                teachers.lastName,
+            );
+
+        // .from(projects)
+        // .leftJoin(students, eq(students.projectId, projects.id))
+        // .innerJoin(schools, eq(schools.id, projects.schoolId))
+        // .innerJoin(teachers, eq(teachers.id, projects.teacherId))
+        // .groupBy(
+        //   projects.id,
+        //   projects.title,
+        //   projects.division,
+        //   projects.category,
+        //   projects.year,
+        //   projects.group,
+        //   projects.schoolId,
+        //   schools.name,
+        //   schools.town,
+        //   projects.teacherId,
+        //   teachers.firstName,
+        //   teachers.lastName
+        // );
 
         return NextResponse.json(allProjects);
     } catch (error) {

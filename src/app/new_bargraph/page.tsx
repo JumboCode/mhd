@@ -27,6 +27,7 @@ type Project = {
     teacherId: number;
     teacherFirstName: string;
     teacherLastName: string;
+    studentCount: number;
 };
 
 const measuredAsLabels: Record<string, string> = {
@@ -145,6 +146,49 @@ export default function BarGraphPage() {
             ),
         ).sort();
 
+        // added to handle measured by filter!
+        function computeMetric(projects: Project[], metric: string) {
+            switch (metric) {
+                case "total-count":
+                case "total-student-count":
+                    return projects.reduce(
+                        (sum, p) => sum + (p.studentCount || 0),
+                        0,
+                    );
+
+                case "total-project-count":
+                    return projects.length;
+
+                case "total-teacher-count":
+                    return new Set(projects.map((p) => p.teacherId)).size;
+
+                case "total-city-count":
+                    return new Set(projects.map((p) => p.schoolTown)).size;
+
+                case "school-return-rate": {
+                    // schools that have projects in this YEAR for this GROUP
+                    const schoolsThisYear = new Set(
+                        projects.map((p) => p.schoolId),
+                    );
+                    const year = projects[0].year;
+
+                    // all earlier participation by these same schools
+                    const priorParticipation = allProjects.filter(
+                        (x) => schoolsThisYear.has(x.schoolId) && x.year < year,
+                    );
+
+                    const returningSchools = new Set(
+                        priorParticipation.map((p) => p.schoolId),
+                    );
+
+                    return returningSchools.size / schoolsThisYear.size || 0;
+                }
+
+                default:
+                    return projects.length;
+            }
+        }
+
         // Format the filtered and grouped data for the LineGraph component
         return uniqueGroups.map((groupName) => {
             // Isolate projects belonging to the current group
@@ -153,35 +197,49 @@ export default function BarGraphPage() {
             );
 
             // Count the number of projects per year within this group
-            const countsByYear = projectsInGroup.reduce(
-                (acc, curr) => {
-                    acc[curr.year] = (acc[curr.year] || 0) + 1;
-                    return acc;
-                },
-                {} as Record<number, number>,
+            // const countsByYear = projectsInGroup.reduce(
+            //     (acc, curr) => {
+            //         acc[curr.year] = (acc[curr.year] || 0) + 1;
+            //         return acc;
+            //     },
+            //     {} as Record<number, number>,
+            // );
+
+            const uniqueGroups = Array.from(
+                new Set(
+                    filteredProjects.map((p) =>
+                        String(p[groupKey] || "Unknown"),
+                    ),
+                ),
             );
 
-            const dataPoints = Object.entries(countsByYear)
-                .map(([year, count]) => ({
-                    x: Number(year), // <-- renamed from 'year' to 'x'
-                    y: count, // <-- renamed from 'value' to 'y'
+            const projectsByYear: Record<number, Project[]> = {};
+
+            projectsInGroup.forEach((p) => {
+                if (!projectsByYear[p.year]) projectsByYear[p.year] = [];
+                projectsByYear[p.year].push(p);
+            });
+
+            const metric = filters?.measuredAs || "total-count";
+
+            const dataPoints = Object.entries(projectsByYear)
+                .map(([year, projs]) => ({
+                    x: Number(year),
+                    y:
+                        metric === "total-student-count"
+                            ? projs.reduce(
+                                  (sum, p) => sum + (p.studentCount ?? 0),
+                                  0,
+                              )
+                            : computeMetric(projs, metric),
                 }))
                 .sort((a, b) => a.x - b.x);
-
-            // const uniqueGroups = Array.from(new Set(filteredProjects.map(p => String(p[groupKey] || "Unknown"))));
 
             return {
                 label: groupName,
                 data: dataPoints,
             };
-
-            // return {
-            //         label: groupName,
-            //         data: Object.entries(countsByYear).map(([year, value]) => ({
-            //             x: Number(year),
-            //             y: value,
-            //         })),
-            //     };
+            // return { label: groupName, data: dataPoints };
         });
     }, [allProjects, filters]);
 
