@@ -22,7 +22,11 @@ export default function BarGraph({
 }: BarGraphProps) {
     const svgRef = useRef<SVGSVGElement | null>(null);
 
-    const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+    // const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+    const colorScale = d3
+        .scaleOrdinal<string>()
+        .domain(dataset.map((d) => d.label))
+        .range(["#3b82f6", "#60a5fa", "#93c5fd", "#bfdbfe"]);
 
     useEffect(() => {
         if (!svgRef.current || dataset.length === 0) return;
@@ -57,14 +61,42 @@ export default function BarGraph({
             svg.selectAll(`.bar-${i}`)
                 .data(ds.data)
                 .enter()
-                .append("rect")
-                .attr("class", `bar-${i}`)
-                .attr("x", (d) => (x(String(d.x)) || 0) + i * barWidth)
-                .attr("y", (d) => y(d.y))
-                .attr("width", barWidth)
-                .attr("height", (d) => y(0) - y(d.y))
-                .attr("fill", colorScale(ds.label));
+                .append("path")
+                .attr("fill", colorScale(ds.label))
+                .attr("stroke-width", 1)
+                .attr("d", (d) => {
+                    const barX = (x(String(d.x)) || 0) + i * barWidth;
+                    const barY = y(d.y);
+                    const barHeight = y(0) - y(d.y);
+                    const r = 4; // top corner radius
+                    const w = barWidth;
+                    // top-left and top-right rounded, bottom corners square
+                    return `
+                  M${barX},${barY + r}
+                  a${r},${r} 0 0 1 ${r},${-r}
+                  h${w - 2 * r}
+                  a${r},${r} 0 0 1 ${r},${r}
+                  v${barHeight - r}
+                  h${-w}
+                  Z
+                `;
+                });
         });
+
+        // dataset.forEach((ds, i) => {
+        //     svg.selectAll(`.bar-${i}`)
+        //       .data(ds.data)
+        //       .enter()
+        //       .append("rect")
+        //       .attr("class", `bar-${i}`)
+        //       .attr("x", (d) => (x(String(d.x)) || 0) + i * barWidth)
+        //       .attr("y", (d) => y(d.y))
+        //       .attr("width", barWidth)
+        //       .attr("height", (d) => y(0) - y(d.y))
+        //       .attr("fill", colorScale(ds.label))
+        //       .attr("stroke", "#1e40af") // dark blue border
+        //       .attr("stroke-width", 1);
+        //   });
 
         // X-axis
         svg.append("g")

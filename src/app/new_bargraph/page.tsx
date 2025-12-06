@@ -14,6 +14,24 @@ import { useState, useEffect, useMemo } from "react";
 import BarGraph, { BarDataset } from "@/components/NewBargraph";
 import FilterPanel, { Filters } from "@/components/NewFilterPanel";
 
+import {
+    Card,
+    CardHeader,
+    CardTitle,
+    CardDescription,
+    CardContent,
+    CardFooter,
+} from "@/components/ui/card";
+import { ChartContainer } from "@/components/ui/chart";
+import { TrendingUp } from "lucide-react";
+
+type FilterPanelProps = {
+    schools: string[];
+    cities: string[];
+    filters: Filters;
+    onFiltersChange: (filters: Filters) => void;
+};
+
 type Project = {
     id: number;
     title: string;
@@ -29,6 +47,20 @@ type Project = {
     teacherLastName: string;
     studentCount: number;
 };
+
+const defaultFilters: Filters = {
+    individualProjects: true,
+    groupProjects: true,
+    gatewayCities: false, // ⬅ ADD THIS!
+    selectedSchools: [],
+    selectedCities: [],
+    teacherYearsValue: "",
+    teacherYearsOperator: "=",
+    groupBy: "region",
+    measuredAs: "total-count",
+};
+
+// const [filters, setFilters] = useState<Filters>(defaultFilters);
 
 const measuredAsLabels: Record<string, string> = {
     "total-count": "Total Count",
@@ -50,7 +82,9 @@ const groupByLabels: Record<string, string> = {
 export default function BarGraphPage() {
     const [allProjects, setAllProjects] = useState<Project[]>([]);
     const [loading, setLoading] = useState(true);
-    const [filters, setFilters] = useState<Filters | null>(null);
+    const [filters, setFilters] = useState<Filters>(defaultFilters);
+
+    // const [filters, setFilters] = useState<Filters | null>(null);
 
     // Fetch all project data on component mount
     useEffect(() => {
@@ -150,11 +184,13 @@ export default function BarGraphPage() {
         function computeMetric(projects: Project[], metric: string) {
             switch (metric) {
                 case "total-count":
-                case "total-student-count":
-                    return projects.reduce(
-                        (sum, p) => sum + (p.studentCount || 0),
-                        0,
-                    );
+                // case "total-student-count":
+                //     return projects.reduce(
+                //         (sum, p) => sum + (p.studentCount || 0),
+                //         0,
+                //     );
+                // case "total-student-count":
+                //     return projects.reduce((sum, p) => sum + (p.studentCount ?? 0), 0);
 
                 case "total-project-count":
                     return projects.length;
@@ -225,13 +261,7 @@ export default function BarGraphPage() {
             const dataPoints = Object.entries(projectsByYear)
                 .map(([year, projs]) => ({
                     x: Number(year),
-                    y:
-                        metric === "total-student-count"
-                            ? projs.reduce(
-                                  (sum, p) => sum + (p.studentCount ?? 0),
-                                  0,
-                              )
-                            : computeMetric(projs, metric),
+                    y: computeMetric(projs, metric),
                 }))
                 .sort((a, b) => a.x - b.x);
 
@@ -270,10 +300,29 @@ export default function BarGraphPage() {
                         Loading project data...
                     </p>
                 ) : (
-                    <BarGraph
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Bar Graph</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <BarGraph
+                                dataset={barDataset}
+                                // yAxisLabel="Count"
+                                // xAxisLabel={filters.groupBy}
+                                yAxisLabel={
+                                    measuredAsLabels[filters.measuredAs]
+                                }
+                                xAxisLabel={groupByLabels[filters.groupBy]}
+                            />
+                        </CardContent>
+                    </Card>
+                )}
+            </div>
+
+            {/* <BarGraph
                         dataset={barDataset}
                         yAxisLabel={
-                            measuredAsLabels[
+                            // measuredAsLabels[
                                 filters?.measuredAs || "total-count"
                             ]
                         }
@@ -281,6 +330,7 @@ export default function BarGraphPage() {
                     />
                 )}
             </div>
+        </div> */}
         </div>
     );
 }

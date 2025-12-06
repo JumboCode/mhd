@@ -180,6 +180,7 @@ export default function FilterPanel({
                     {/* Checkboxes */}
                     <Checkbox
                         label="Gateway Cities"
+                        isChecked={gatewayCities}
                         onToggle={(_, checked) => {
                             setGatewayCities(checked);
                             updateFilters({ gatewayCities: checked });
@@ -187,6 +188,7 @@ export default function FilterPanel({
                     />
                     <Checkbox
                         label="Individual Projects"
+                        isChecked={individualProjects}
                         onToggle={(_, checked) => {
                             setIndividualProjects(checked);
                             updateFilters({ individualProjects: checked });
@@ -194,6 +196,7 @@ export default function FilterPanel({
                     />
                     <Checkbox
                         label="Group Projects"
+                        isChecked={groupProjects}
                         onToggle={(_, checked) => {
                             setGroupProjects(checked);
                             updateFilters({ groupProjects: checked });
