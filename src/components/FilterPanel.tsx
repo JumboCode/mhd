@@ -1,17 +1,6 @@
-/***************************************************************
- *
- *                FilterPanel.tsx
- *
- *         Author: Elki & Zander
- *           Date: 11/24/2025
- *
- *        Summary: temp filter panel for line/bar graph pages
- *
- **************************************************************/
-
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Checkbox from "@/components/Checkbox";
 
 export type Filters = {
@@ -47,6 +36,22 @@ export default function FilterPanel({
     const [teacherFilterEnabled, setTeacherFilterEnabled] = useState(false);
     const [teacherYearsOperator, setTeacherYearsOperator] = useState("=");
     const [teacherYearsValue, setTeacherYearsValue] = useState("");
+
+    // Report default filter state to parent on mount
+    useEffect(() => {
+        onFiltersChange({
+            measuredAs,
+            groupBy,
+            gatewayCities,
+            individualProjects,
+            groupProjects,
+            selectedSchools,
+            selectedCities,
+            teacherYearsOperator,
+            teacherYearsValue,
+        });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const updateFilters = (updates: Partial<Filters>) => {
         const newFilters: Filters = {
@@ -103,12 +108,12 @@ export default function FilterPanel({
     const handleTeacherFilterToggle = (label: string, checked: boolean) => {
         setTeacherFilterEnabled(checked);
         if (checked) {
-            // When enabling, set a default value if it's empty
+            // On enable, set default value if empty
             const newValue = teacherYearsValue || "1";
             setTeacherYearsValue(newValue);
             updateFilters({ teacherYearsValue: newValue });
         } else {
-            // When disabling, clear the value to mark it as inactive
+            // On disable, clear value to mark as inactive
             setTeacherYearsValue("");
             updateFilters({ teacherYearsValue: "" });
         }
@@ -126,7 +131,6 @@ export default function FilterPanel({
 
     return (
         <div className="mb-8 space-y-6">
-            {/* Measured As */}
             <div>
                 <label className="block text-sm font-semibold mb-2">
                     Measured as (y-axis):
@@ -153,7 +157,6 @@ export default function FilterPanel({
                 </select>
             </div>
 
-            {/* Group By */}
             <div>
                 <label className="block text-sm font-semibold mb-2">
                     Group by:
@@ -173,17 +176,16 @@ export default function FilterPanel({
                 </select>
             </div>
 
-            {/* Filter By */}
             <div>
                 <h2 className="text-sm font-semibold mb-3">Filter by:</h2>
                 <div className="space-y-4">
-                    {/* Checkboxes */}
                     <Checkbox
                         label="Gateway Cities"
                         onToggle={(_, checked) => {
                             setGatewayCities(checked);
                             updateFilters({ gatewayCities: checked });
                         }}
+                        isChecked={gatewayCities}
                     />
                     <Checkbox
                         label="Individual Projects"
@@ -191,6 +193,7 @@ export default function FilterPanel({
                             setIndividualProjects(checked);
                             updateFilters({ individualProjects: checked });
                         }}
+                        isChecked={individualProjects}
                     />
                     <Checkbox
                         label="Group Projects"
@@ -198,9 +201,9 @@ export default function FilterPanel({
                             setGroupProjects(checked);
                             updateFilters({ groupProjects: checked });
                         }}
+                        isChecked={groupProjects}
                     />
 
-                    {/* Multiselect schools */}
                     <div>
                         <label className="block text-xs font-medium mb-1">
                             School:
@@ -229,7 +232,6 @@ export default function FilterPanel({
                         </button>
                     </div>
 
-                    {/* Multiselect cities */}
                     <div>
                         <label className="block text-xs font-medium mb-1">
                             City/Town:
@@ -258,11 +260,11 @@ export default function FilterPanel({
                         </button>
                     </div>
 
-                    {/* Teacher Participation */}
                     <div>
                         <Checkbox
                             label="Filter by Teacher Participation"
                             onToggle={handleTeacherFilterToggle}
+                            isChecked={teacherFilterEnabled}
                         />
                         <div className="flex gap-2 mt-2 pl-6">
                             <select

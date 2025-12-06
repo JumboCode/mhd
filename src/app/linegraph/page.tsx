@@ -1,13 +1,3 @@
-/***************************************************************
- *
- *                linegraph/page.tsx
- *
- *         Author: Elki Laranas and Zander Barba
- *           Date: 11/28/2025
- *
- *        Summary: display line graph of project data
- *
- **************************************************************/
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
@@ -51,7 +41,7 @@ export default function LineGraphPage() {
     const [loading, setLoading] = useState(true);
     const [filters, setFilters] = useState<Filters | null>(null);
 
-    // Fetch all project data on component mount
+    // Fetch all project data on mount
     useEffect(() => {
         const fetchProjects = async () => {
             try {
@@ -68,11 +58,11 @@ export default function LineGraphPage() {
         fetchProjects();
     }, []);
 
-    // Memoize graph dataset calculation to run only when data or filters change
+    // Memoize graph dataset calculation, runs only on data/filter change
     const graphDatasets: GraphDataset[] = useMemo(() => {
         if (!allProjects.length) return [];
 
-        // Pre-calculate teacher participation years if filter is active
+        // Pre-calculate teacher participation years if filter active
         const teacherYearsMap = new Map<number, number>();
         if (filters?.teacherYearsValue) {
             const tempMap: Record<number, Set<number>> = {};
@@ -85,11 +75,10 @@ export default function LineGraphPage() {
             });
         }
 
-        // Filter projects based on the active filters from the FilterPanel
+        // Filter projects based on active filters
         const filteredProjects = allProjects.filter((p) => {
             if (!filters) return true;
 
-            // Individual vs Group Projects
             if (filters.individualProjects && !filters.groupProjects && p.group)
                 return false;
             if (
@@ -99,21 +88,18 @@ export default function LineGraphPage() {
             )
                 return false;
 
-            // Selected Schools
             if (
                 filters.selectedSchools.length > 0 &&
                 !filters.selectedSchools.includes(p.schoolName)
             )
                 return false;
 
-            // Selected Cities
             if (
                 filters.selectedCities.length > 0 &&
                 !filters.selectedCities.includes(p.schoolTown)
             )
                 return false;
 
-            // Teacher Years Participation
             if (filters.teacherYearsValue) {
                 const yearsActive = teacherYearsMap.get(p.teacherId) || 0;
                 const target = parseInt(filters.teacherYearsValue, 10);
@@ -127,7 +113,7 @@ export default function LineGraphPage() {
             return true;
         });
 
-        // Determine the key to group data by for different lines on the graph
+        // Determine group key for graph lines from filters
         let groupKey: keyof Project = "category"; // Default fallback
 
         if (filters?.groupBy === "division") {
@@ -138,21 +124,21 @@ export default function LineGraphPage() {
             groupKey = "schoolTown";
         }
 
-        // Get a sorted list of unique group names (e.g., all categories or all towns)
+        // Get sorted list of unique group names
         const uniqueGroups = Array.from(
             new Set(
                 filteredProjects.map((p) => String(p[groupKey] || "Unknown")),
             ),
         ).sort();
 
-        // Format the filtered and grouped data for the LineGraph component
+        // Format filtered/grouped data for LineGraph component
         return uniqueGroups.map((groupName) => {
-            // Isolate projects belonging to the current group
+            // Isolate projects for current group
             const projectsInGroup = filteredProjects.filter(
                 (p) => String(p[groupKey] || "Unknown") === groupName,
             );
 
-            // Count the number of projects per year within this group
+            // Count projects per year within group
             const countsByYear = projectsInGroup.reduce(
                 (acc, curr) => {
                     acc[curr.year] = (acc[curr.year] || 0) + 1;
@@ -175,7 +161,7 @@ export default function LineGraphPage() {
         });
     }, [allProjects, filters]);
 
-    // Data for FilterPanel Dropdowns
+    // Data for FilterPanel dropdowns
     const schools = Array.from(
         new Set(allProjects.map((p) => p.schoolName)),
     ).sort();
@@ -185,7 +171,7 @@ export default function LineGraphPage() {
 
     return (
         <div className="flex min-h-screen flex-row">
-            {/* Sidebar for filters */}
+            {/* Filters sidebar */}
             <div className="flex flex-col border p-8 bg-gray-50 w-1/4 min-w-[300px] h-screen overflow-y-auto sticky top-0">
                 <h1 className="text-3xl font-bold mb-6">Line Graph</h1>
                 <FilterPanel
@@ -195,7 +181,7 @@ export default function LineGraphPage() {
                 />
             </div>
 
-            {/* Main content area for the graph */}
+            {/* Main content area */}
             <div className="flex-1 flex justify-center items-start pt-10 overflow-x-auto">
                 {loading ? (
                     <p className="text-xl text-gray-500 mt-20">
