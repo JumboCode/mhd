@@ -1,3 +1,15 @@
+/***************************************************************
+ *
+ *                school_name_standardize.ts
+ *
+ *         Author: Will and Hansini
+ *           Date: 12/6/2025
+ *
+ *        Summary: Standardizes a school's name by removing
+ *        certain words, characters, and white space
+ *
+ **************************************************************/
+
 const words_to_remove: string[] = [
     "public",
     "school",
