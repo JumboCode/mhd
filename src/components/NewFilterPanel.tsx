@@ -13,6 +13,31 @@
 
 import { useState } from "react";
 import Checkbox from "@/components/NewCheckbox";
+import { Combobox } from "@/components/Combobox";
+
+const measuredAsOptions = [
+    { value: "total-count", label: "Total Count" },
+    { value: "total-student-count", label: "Total Student Count" },
+    { value: "total-city-count", label: "Total City Count" },
+    { value: "total-project-count", label: "Total Project Count" },
+    { value: "total-teacher-count", label: "Total Teacher Count" },
+    { value: "school-return-rate", label: "School Return Rate" },
+];
+
+const groupByOptions = [
+    { value: "region", label: "Region" },
+    { value: "school-type", label: "School Type" },
+    { value: "division", label: "Division (Junior/Senior)" },
+    { value: "implementation-type", label: "Implementation Type" },
+    { value: "project-type", label: "Project Type" },
+];
+
+import {
+    Accordion,
+    AccordionItem,
+    AccordionTrigger,
+    AccordionContent,
+} from "@/components/ui/accordion";
 
 export type Filters = {
     measuredAs: string;
@@ -131,7 +156,12 @@ export default function FilterPanel({
                 <label className="block text-sm font-semibold mb-2">
                     Measured as (y-axis):
                 </label>
-                <select
+                <Combobox
+                    options={measuredAsOptions}
+                    value={measuredAs}
+                    onChange={handleMeasuredAsChange}
+                />
+                {/* <select
                     value={measuredAs}
                     onChange={(e) => handleMeasuredAsChange(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md"
@@ -150,7 +180,7 @@ export default function FilterPanel({
                     <option value="school-return-rate">
                         School Return Rate
                     </option>
-                </select>
+                </select> */}
             </div>
 
             {/* Group By */}
@@ -158,7 +188,12 @@ export default function FilterPanel({
                 <label className="block text-sm font-semibold mb-2">
                     Group by:
                 </label>
-                <select
+                <Combobox
+                    options={groupByOptions}
+                    value={groupBy}
+                    onChange={handleGroupByChange}
+                />
+                {/* <select
                     value={groupBy}
                     onChange={(e) => handleGroupByChange(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md"
@@ -170,134 +205,150 @@ export default function FilterPanel({
                         Implementation Type
                     </option>
                     <option value="project-type">Project Type</option>
-                </select>
+                </select> */}
             </div>
 
             {/* Filter By */}
             <div>
-                <h2 className="text-sm font-semibold mb-3">Filter by:</h2>
-                <div className="space-y-4">
-                    {/* Checkboxes */}
-                    <Checkbox
-                        label="Gateway Cities"
-                        isChecked={gatewayCities}
-                        onToggle={(_, checked) => {
-                            setGatewayCities(checked);
-                            updateFilters({ gatewayCities: checked });
-                        }}
-                    />
-                    <Checkbox
-                        label="Individual Projects"
-                        isChecked={individualProjects}
-                        onToggle={(_, checked) => {
-                            setIndividualProjects(checked);
-                            updateFilters({ individualProjects: checked });
-                        }}
-                    />
-                    <Checkbox
-                        label="Group Projects"
-                        isChecked={groupProjects}
-                        onToggle={(_, checked) => {
-                            setGroupProjects(checked);
-                            updateFilters({ groupProjects: checked });
-                        }}
-                    />
+                <h2 className="text-sm font-semibold mb-3">
+                    Filter by (additive filters):
+                </h2>
 
-                    {/* Multiselect schools */}
-                    <div>
-                        <label className="block text-xs font-medium mb-1">
-                            School:
-                        </label>
-                        <div className="w-full h-24 overflow-y-auto border border-gray-300 rounded-md p-2 bg-white">
-                            {schools.map((school) => (
-                                <div
-                                    key={school}
-                                    className="flex items-start py-1"
-                                >
+                <Accordion type="multiple" className="w-full">
+                    {/* Gateway Cities */}
+                    <AccordionItem value="gateway-cities">
+                        <AccordionTrigger>Gateway Cities</AccordionTrigger>
+                        <AccordionContent>
+                            <Checkbox
+                                label="Gateway Cities"
+                                isChecked={gatewayCities}
+                                onToggle={(_, checked) => {
+                                    setGatewayCities(checked);
+                                    updateFilters({ gatewayCities: checked });
+                                }}
+                            />
+                        </AccordionContent>
+                    </AccordionItem>
+
+                    {/* School Filter */}
+                    <AccordionItem value="school">
+                        <AccordionTrigger>School</AccordionTrigger>
+                        <AccordionContent>
+                            <div className="max-h-40 overflow-y-auto space-y-1 border rounded-md p-2">
+                                {schools.map((school) => (
                                     <Checkbox
+                                        key={school}
                                         label={school}
-                                        onToggle={handleSchoolCheckboxToggle}
                                         isChecked={selectedSchools.includes(
                                             school,
                                         )}
+                                        onToggle={handleSchoolCheckboxToggle}
                                     />
-                                </div>
-                            ))}
-                        </div>
-                        <button
-                            onClick={() => handleSchoolsChange([])}
-                            className="text-xs text-blue-600 hover:underline mt-1"
-                        >
-                            Clear selection
-                        </button>
-                    </div>
+                                ))}
+                            </div>
+                            <button
+                                onClick={() => handleSchoolsChange([])}
+                                className="mt-2 text-xs text-blue-600"
+                            >
+                                Clear selection
+                            </button>
+                        </AccordionContent>
+                    </AccordionItem>
 
-                    {/* Multiselect cities */}
-                    <div>
-                        <label className="block text-xs font-medium mb-1">
-                            City/Town:
-                        </label>
-                        <div className="w-full h-24 overflow-y-auto border border-gray-300 rounded-md p-2 bg-white">
-                            {cities.map((city) => (
-                                <div
-                                    key={city}
-                                    className="flex items-start py-1"
-                                >
+                    {/* City Filter */}
+                    <AccordionItem value="city">
+                        <AccordionTrigger>City</AccordionTrigger>
+                        <AccordionContent>
+                            <div className="max-h-40 overflow-y-auto space-y-1 border rounded-md p-2">
+                                {cities.map((city) => (
                                     <Checkbox
+                                        key={city}
                                         label={city}
-                                        onToggle={handleCityCheckboxToggle}
                                         isChecked={selectedCities.includes(
                                             city,
                                         )}
+                                        onToggle={handleCityCheckboxToggle}
                                     />
-                                </div>
-                            ))}
-                        </div>
-                        <button
-                            onClick={() => handleCitiesChange([])}
-                            className="text-xs text-blue-600 hover:underline mt-1"
-                        >
-                            Clear selection
-                        </button>
-                    </div>
+                                ))}
+                            </div>
+                            <button
+                                onClick={() => handleCitiesChange([])}
+                                className="mt-2 text-xs text-blue-600"
+                            >
+                                Clear selection
+                            </button>
+                        </AccordionContent>
+                    </AccordionItem>
+
+                    {/* Project Type */}
+                    <AccordionItem value="project-type">
+                        <AccordionTrigger>Project Type</AccordionTrigger>
+                        <AccordionContent>
+                            <Checkbox
+                                label="Individual Projects"
+                                isChecked={individualProjects}
+                                onToggle={(_, checked) => {
+                                    setIndividualProjects(checked);
+                                    updateFilters({
+                                        individualProjects: checked,
+                                    });
+                                }}
+                            />
+                            <Checkbox
+                                label="Group Projects"
+                                isChecked={groupProjects}
+                                onToggle={(_, checked) => {
+                                    setGroupProjects(checked);
+                                    updateFilters({ groupProjects: checked });
+                                }}
+                            />
+                        </AccordionContent>
+                    </AccordionItem>
 
                     {/* Teacher Participation */}
-                    <div>
-                        <Checkbox
-                            label="Filter by Teacher Participation"
-                            onToggle={handleTeacherFilterToggle}
-                            isChecked={teacherFilterEnabled}
-                        />
-                        <div className="flex gap-2 mt-2 pl-6">
-                            <select
-                                value={teacherYearsOperator}
-                                onChange={(e) =>
-                                    handleTeacherYearsOperatorChange(
-                                        e.target.value,
-                                    )
-                                }
-                                className="w-16 px-2 py-2 border border-gray-300 rounded-md disabled:bg-gray-100 disabled:cursor-not-allowed"
-                                disabled={!teacherFilterEnabled}
-                            >
-                                <option value="<">&lt;</option>
-                                <option value="=">=</option>
-                                <option value=">">&gt;</option>
-                            </select>
-                            <input
-                                type="number"
-                                min="1"
-                                value={teacherYearsValue}
-                                onChange={(e) =>
-                                    handleTeacherYearsValueChange(
-                                        e.target.value,
-                                    )
-                                }
-                                className="w-24 px-3 py-2 border border-gray-300 rounded-md disabled:bg-gray-100 disabled:cursor-not-allowed"
-                                disabled={!teacherFilterEnabled}
+                    <AccordionItem value="teacher-participation">
+                        <AccordionTrigger>
+                            Teacher Participation
+                        </AccordionTrigger>
+                        <AccordionContent>
+                            <Checkbox
+                                label="Enable Teacher Participation Filter"
+                                onToggle={handleTeacherFilterToggle}
+                                isChecked={teacherFilterEnabled}
                             />
-                        </div>
-                    </div>
-                </div>
+
+                            <div className="flex gap-2 mt-4">
+                                <select
+                                    value={teacherYearsOperator}
+                                    onChange={(e) =>
+                                        handleTeacherYearsOperatorChange(
+                                            e.target.value,
+                                        )
+                                    }
+                                    disabled={!teacherFilterEnabled}
+                                    className="border px-2 py-1 rounded-md w-16"
+                                >
+                                    <option value="<">&lt;</option>
+                                    <option value="=">=</option>
+                                    <option value=">">&gt;</option>
+                                </select>
+
+                                <input
+                                    type="number"
+                                    min="1"
+                                    value={teacherYearsValue}
+                                    onChange={(e) =>
+                                        handleTeacherYearsValueChange(
+                                            e.target.value,
+                                        )
+                                    }
+                                    disabled={!teacherFilterEnabled}
+                                    className="border px-2 py-1 rounded-md w-20"
+                                />
+                            </div>
+                        </AccordionContent>
+                    </AccordionItem>
+                </Accordion>
             </div>
         </div>
     );
