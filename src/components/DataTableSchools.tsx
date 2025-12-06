@@ -1,9 +1,21 @@
+/***************************************************************
+ *
+ *                DataTableSchools,tsx
+ *
+ *         Author: Anne Wu & Justin Ngan
+ *           Date: 12/6/2025
+ *
+ *        Summary: Component to display school table
+ *
+ **************************************************************/
+
 "use client";
 import React from "react";
 import {
     ColumnDef,
     flexRender,
     getCoreRowModel,
+    getFilteredRowModel,
     useReactTable,
     SortingState,
     getSortedRowModel,
@@ -18,31 +30,50 @@ import {
     TableRow,
 } from "@/components/ui/table";
 
+import Link from "next/link";
+
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[];
     data: TData[];
+    globalFilter: string;
+    setGlobalFilter: (value: string) => void;
 }
+
+import { Spinner } from "@/components/ui/spinner";
 
 export function SchoolsDataTable<TData, TValue>({
     columns,
     data,
+    globalFilter,
+    setGlobalFilter,
 }: DataTableProps<TData, TValue>) {
     const [sorting, setSorting] = React.useState<SortingState>([]);
+    //const [globalFilter, setGlobalFilter] = React.useState([]);
+
     const table = useReactTable({
         data,
         columns,
-        getCoreRowModel: getCoreRowModel(),
         getSortedRowModel: getSortedRowModel(), //May not need this?
         onSortingChange: setSorting,
+        onGlobalFilterChange: setGlobalFilter,
+        getCoreRowModel: getCoreRowModel(),
+        getFilteredRowModel: getFilteredRowModel(),
+        globalFilterFn: "includesString",
         state: {
             sorting,
+            globalFilter,
         },
     });
 
     return (
         //Example code should be changed
         //border for school name column disappears when scrolling right
-        <div className="overflow-x-auto overflow-y-hidden rounded-md border text-center w-11/12">
+        <div className="overflow-x-auto overflow-y-hidden rounded-md border text-center">
+            {/* <input
+                value={search}
+                onChange={e => {table.setGlobalFilter(String(e.target.value)); setSearch(e.target.value)}}
+                placeholder="Search"
+            /> */}
             <Table className="border-separate border-spacing-0">
                 <TableHeader>
                     {table.getHeaderGroups().map((headerGroup) => (
@@ -84,13 +115,26 @@ export function SchoolsDataTable<TData, TValue>({
                                         key={cell.id}
                                         className={
                                             cell.column.getIndex() === 0
-                                                ? " text-center sticky left-0 z-20 bg-background border-r border-b-0"
+                                                ? " text-center sticky left-0 z-20 bg-white border-r border-b-0"
                                                 : " text-center z-0 border-b"
                                         }
                                     >
-                                        {flexRender(
-                                            cell.column.columnDef.cell,
-                                            cell.getContext(),
+                                        {cell.column.getIndex() === 0 ? (
+                                            <Link
+                                                href={`/schools/${String(cell.getValue()).replaceAll(" ", "-")}`}
+                                            >
+                                                {flexRender(
+                                                    cell.column.columnDef.cell,
+                                                    cell.getContext(),
+                                                )}
+                                            </Link>
+                                        ) : (
+                                            <div>
+                                                {flexRender(
+                                                    cell.column.columnDef.cell,
+                                                    cell.getContext(),
+                                                )}
+                                            </div>
                                         )}
                                     </TableCell>
                                 ))}
@@ -100,9 +144,9 @@ export function SchoolsDataTable<TData, TValue>({
                         <TableRow>
                             <TableCell
                                 colSpan={columns.length}
-                                className="h-24 text-center"
+                                className="h-24"
                             >
-                                No results.
+                                <Spinner className="mx-auto size-8" />
                             </TableCell>
                         </TableRow>
                     )}

@@ -1,15 +1,20 @@
+/***************************************************************
+ *
+ *                Columns.tsx
+ *
+ *         Author: Anne Wu & Justin Ngan
+ *           Date: 12/6/2025
+ *
+ *        Summary: Component to control the columns used in the
+ *                 school data table
+ *
+ **************************************************************/
+
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
-import { ArrowUpDown } from "lucide-react";
+import { ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-    flexRender,
-    getCoreRowModel,
-    useReactTable,
-    SortingState,
-    getSortedRowModel,
-} from "@tanstack/react-table";
 
 export type Schools = {
     name: string;
@@ -30,12 +35,24 @@ export const columns: ColumnDef<Schools>[] = [
             return (
                 <Button
                     variant="ghost"
-                    onClick={() =>
-                        column.toggleSorting(column.getIsSorted() === "asc")
-                    }
+                    onClick={() => {
+                        if (column.getIsSorted() === "desc") {
+                            column.clearSorting();
+                        } else {
+                            column.toggleSorting(
+                                column.getIsSorted() === "asc",
+                            );
+                        }
+                    }}
                 >
                     Name
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                    {column.getIsSorted() === "asc" ? (
+                        <ArrowUp className="ml-2 h-4 w-4" />
+                    ) : column.getIsSorted() === "desc" ? (
+                        <ArrowDown className="ml-2 h-4 w-4" />
+                    ) : (
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                    )}
                 </Button>
             );
         },
@@ -46,12 +63,24 @@ export const columns: ColumnDef<Schools>[] = [
             return (
                 <Button
                     variant="ghost"
-                    onClick={() =>
-                        column.toggleSorting(column.getIsSorted() === "asc")
-                    }
+                    onClick={() => {
+                        if (column.getIsSorted() === "desc") {
+                            column.clearSorting();
+                        } else {
+                            column.toggleSorting(
+                                column.getIsSorted() === "asc",
+                            );
+                        }
+                    }}
                 >
                     City
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                    {column.getIsSorted() === "asc" ? (
+                        <ArrowUp className="ml-2 h-4 w-4" />
+                    ) : column.getIsSorted() === "desc" ? (
+                        <ArrowDown className="ml-2 h-4 w-4" />
+                    ) : (
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                    )}
                 </Button>
             );
         },
@@ -62,12 +91,24 @@ export const columns: ColumnDef<Schools>[] = [
             return (
                 <Button
                     variant="ghost"
-                    onClick={() =>
-                        column.toggleSorting(column.getIsSorted() === "asc")
-                    }
+                    onClick={() => {
+                        if (column.getIsSorted() === "desc") {
+                            column.clearSorting();
+                        } else {
+                            column.toggleSorting(
+                                column.getIsSorted() === "asc",
+                            );
+                        }
+                    }}
                 >
                     Region
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                    {column.getIsSorted() === "asc" ? (
+                        <ArrowUp className="ml-2 h-4 w-4" />
+                    ) : column.getIsSorted() === "desc" ? (
+                        <ArrowDown className="ml-2 h-4 w-4" />
+                    ) : (
+                        <ArrowUpDown className="ml-2 h-4 w-4 " />
+                    )}
                 </Button>
             );
         },
@@ -78,12 +119,24 @@ export const columns: ColumnDef<Schools>[] = [
             return (
                 <Button
                     variant="ghost"
-                    onClick={() =>
-                        column.toggleSorting(column.getIsSorted() === "asc")
-                    }
+                    onClick={() => {
+                        if (column.getIsSorted() === "desc") {
+                            column.clearSorting();
+                        } else {
+                            column.toggleSorting(
+                                column.getIsSorted() === "asc",
+                            );
+                        }
+                    }}
                 >
                     Instruction Model
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                    {column.getIsSorted() === "asc" ? (
+                        <ArrowUp className="ml-2 h-4 w-4" />
+                    ) : column.getIsSorted() === "desc" ? (
+                        <ArrowDown className="ml-2 h-4 w-4" />
+                    ) : (
+                        <ArrowUpDown className="ml-2 h-4 w-4 " />
+                    )}
                 </Button>
             );
         },
@@ -94,12 +147,24 @@ export const columns: ColumnDef<Schools>[] = [
             return (
                 <Button
                     variant="ghost"
-                    onClick={() =>
-                        column.toggleSorting(column.getIsSorted() === "asc")
-                    }
+                    onClick={() => {
+                        if (column.getIsSorted() === "desc") {
+                            column.clearSorting();
+                        } else {
+                            column.toggleSorting(
+                                column.getIsSorted() === "asc",
+                            );
+                        }
+                    }}
                 >
                     Implementaion Model
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                    {column.getIsSorted() === "asc" ? (
+                        <ArrowUp className="ml-2 h-4 w-4" />
+                    ) : column.getIsSorted() === "desc" ? (
+                        <ArrowDown className="ml-2 h-4 w-4" />
+                    ) : (
+                        <ArrowUpDown className="ml-2 h-4 w-4 " />
+                    )}
                 </Button>
             );
         },
@@ -110,12 +175,24 @@ export const columns: ColumnDef<Schools>[] = [
             return (
                 <Button
                     variant="ghost"
-                    onClick={() =>
-                        column.toggleSorting(column.getIsSorted() === "asc")
-                    }
+                    onClick={() => {
+                        if (column.getIsSorted() === "desc") {
+                            column.clearSorting();
+                        } else {
+                            column.toggleSorting(
+                                column.getIsSorted() === "asc",
+                            );
+                        }
+                    }}
                 >
                     # Students
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                    {column.getIsSorted() === "asc" ? (
+                        <ArrowUp className="ml-2 h-4 w-4" />
+                    ) : column.getIsSorted() === "desc" ? (
+                        <ArrowDown className="ml-2 h-4 w-4" />
+                    ) : (
+                        <ArrowUpDown className="ml-2 h-4 w-4 " />
+                    )}
                 </Button>
             );
         },
@@ -126,12 +203,24 @@ export const columns: ColumnDef<Schools>[] = [
             return (
                 <Button
                     variant="ghost"
-                    onClick={() =>
-                        column.toggleSorting(column.getIsSorted() === "asc")
-                    }
+                    onClick={() => {
+                        if (column.getIsSorted() === "desc") {
+                            column.clearSorting();
+                        } else {
+                            column.toggleSorting(
+                                column.getIsSorted() === "asc",
+                            );
+                        }
+                    }}
                 >
                     # Teachers
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                    {column.getIsSorted() === "asc" ? (
+                        <ArrowUp className="ml-2 h-4 w-4" />
+                    ) : column.getIsSorted() === "desc" ? (
+                        <ArrowDown className="ml-2 h-4 w-4" />
+                    ) : (
+                        <ArrowUpDown className="ml-2 h-4 w-4 " />
+                    )}
                 </Button>
             );
         },
@@ -142,12 +231,24 @@ export const columns: ColumnDef<Schools>[] = [
             return (
                 <Button
                     variant="ghost"
-                    onClick={() =>
-                        column.toggleSorting(column.getIsSorted() === "asc")
-                    }
+                    onClick={() => {
+                        if (column.getIsSorted() === "desc") {
+                            column.clearSorting();
+                        } else {
+                            column.toggleSorting(
+                                column.getIsSorted() === "asc",
+                            );
+                        }
+                    }}
                 >
                     # Projects
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                    {column.getIsSorted() === "asc" ? (
+                        <ArrowUp className="ml-2 h-4 w-4" />
+                    ) : column.getIsSorted() === "desc" ? (
+                        <ArrowDown className="ml-2 h-4 w-4" />
+                    ) : (
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                    )}
                 </Button>
             );
         },
