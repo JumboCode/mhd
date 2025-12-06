@@ -1,3 +1,13 @@
+/***************************************************************
+ *
+ *         /api/components/NewBargraph.tsx
+ *
+ *         Author: Chiara and Steven
+ *         Date: 12/6/2025
+ *
+ *        Summary: bargraph component using D3
+ **************************************************************/
+
 "use client";
 
 import React, { useRef, useEffect } from "react";
@@ -22,7 +32,7 @@ export default function BarGraph({
 }: BarGraphProps) {
     const svgRef = useRef<SVGSVGElement | null>(null);
 
-    // const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+    // make bars all blue
     const colorScale = d3
         .scaleOrdinal<string>()
         .domain(dataset.map((d) => d.label))
@@ -68,9 +78,8 @@ export default function BarGraph({
                     const barX = (x(String(d.x)) || 0) + i * barWidth;
                     const barY = y(d.y);
                     const barHeight = y(0) - y(d.y);
-                    const r = 4; // top corner radius
+                    const r = 4;
                     const w = barWidth;
-                    // top-left and top-right rounded, bottom corners square
                     return `
                   M${barX},${barY + r}
                   a${r},${r} 0 0 1 ${r},${-r}
@@ -82,21 +91,6 @@ export default function BarGraph({
                 `;
                 });
         });
-
-        // dataset.forEach((ds, i) => {
-        //     svg.selectAll(`.bar-${i}`)
-        //       .data(ds.data)
-        //       .enter()
-        //       .append("rect")
-        //       .attr("class", `bar-${i}`)
-        //       .attr("x", (d) => (x(String(d.x)) || 0) + i * barWidth)
-        //       .attr("y", (d) => y(d.y))
-        //       .attr("width", barWidth)
-        //       .attr("height", (d) => y(0) - y(d.y))
-        //       .attr("fill", colorScale(ds.label))
-        //       .attr("stroke", "#1e40af") // dark blue border
-        //       .attr("stroke-width", 1);
-        //   });
 
         // X-axis
         svg.append("g")

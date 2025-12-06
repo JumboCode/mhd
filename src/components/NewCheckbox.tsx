@@ -1,3 +1,13 @@
+/***************************************************************
+ *
+ *         /api/components/NewCheckbox.tsx
+ *
+ *         Author: Chiara and Steven
+ *         Date: 12/6/2025
+ *
+ *        Summary: checkbox component for filter selection
+ **************************************************************/
+
 import React from "react";
 
 type CheckboxProps = {

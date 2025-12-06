@@ -1,3 +1,14 @@
+/***************************************************************
+ *
+ *         /api/components/Combobox.tsx
+ *
+ *         Author: Chiara and Steven
+ *         Date: 12/6/2025
+ *
+ *        Summary: reusable dropdown component with search feature
+ *
+ **************************************************************/
+
 "use client";
 
 import * as React from "react";

@@ -1,9 +1,10 @@
 /***************************************************************
  *
- *                /api/projects/route.ts
+ *                /api/bargraph_projects/route.ts
  *
  *         Author: Elki & Zander
- *           Date: 11/24/2025
+ *         Edited by: Chiara and Steven
+ *         Date: 12/6/2025
  *
  *        Summary: endpoint for fetching all project data
  *
@@ -32,13 +33,11 @@ export async function GET() {
                 teacherLastName: teachers.lastName,
                 studentCount: sql<number>`COUNT(${students.id})`,
             })
-            // og
             .from(projects)
             .leftJoin(students, eq(students.projectId, projects.id))
             .innerJoin(schools, eq(schools.id, projects.schoolId))
             .innerJoin(teachers, eq(teachers.id, projects.teacherId))
 
-            // maybe delete the group by
             .groupBy(
                 projects.id,
                 schools.name,
@@ -46,25 +45,6 @@ export async function GET() {
                 teachers.firstName,
                 teachers.lastName,
             );
-
-        // .from(projects)
-        // .leftJoin(students, eq(students.projectId, projects.id))
-        // .innerJoin(schools, eq(schools.id, projects.schoolId))
-        // .innerJoin(teachers, eq(teachers.id, projects.teacherId))
-        // .groupBy(
-        //   projects.id,
-        //   projects.title,
-        //   projects.division,
-        //   projects.category,
-        //   projects.year,
-        //   projects.group,
-        //   projects.schoolId,
-        //   schools.name,
-        //   schools.town,
-        //   projects.teacherId,
-        //   teachers.firstName,
-        //   teachers.lastName
-        // );
 
         return NextResponse.json(allProjects);
     } catch (error) {

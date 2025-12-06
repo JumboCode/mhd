@@ -1,11 +1,12 @@
 /***************************************************************
  *
- *                linegraph/page.tsx
+ *                new_bargraph/page.tsx
  *
  *         Author: Elki Laranas and Zander Barba
- *           Date: 11/28/2025
+ *         Edited by: Chiara and Steven
+ *         Date: 12/6/2025
  *
- *        Summary: display line graph of project data
+ *        Summary: display bar graph of project data
  *
  **************************************************************/
 "use client";
@@ -32,6 +33,7 @@ type FilterPanelProps = {
     onFiltersChange: (filters: Filters) => void;
 };
 
+// define Project type
 type Project = {
     id: number;
     title: string;
@@ -48,10 +50,11 @@ type Project = {
     studentCount: number;
 };
 
+// define default filters type
 const defaultFilters: Filters = {
     individualProjects: true,
     groupProjects: true,
-    gatewayCities: false, // ⬅ ADD THIS!
+    gatewayCities: false,
     selectedSchools: [],
     selectedCities: [],
     teacherYearsValue: "",
@@ -60,8 +63,7 @@ const defaultFilters: Filters = {
     measuredAs: "total-count",
 };
 
-// const [filters, setFilters] = useState<Filters>(defaultFilters);
-
+// possible values for measured as filter
 const measuredAsLabels: Record<string, string> = {
     "total-count": "Total Count",
     "total-student-count": "Total Student Count",
@@ -71,6 +73,7 @@ const measuredAsLabels: Record<string, string> = {
     "school-return-rate": "School Return Rate",
 };
 
+// possible values for group by filter
 const groupByLabels: Record<string, string> = {
     "region": "Region",
     "school-type": "School Type",
@@ -84,9 +87,7 @@ export default function BarGraphPage() {
     const [loading, setLoading] = useState(true);
     const [filters, setFilters] = useState<Filters>(defaultFilters);
 
-    // const [filters, setFilters] = useState<Filters | null>(null);
-
-    // Fetch all project data on component mount
+    // Fetch all project data
     useEffect(() => {
         const fetchProjects = async () => {
             try {
@@ -165,6 +166,7 @@ export default function BarGraphPage() {
         // Determine the key to group data by for different lines on the graph
         let groupKey: keyof Project = "category"; // Default fallback
 
+        // set groupKey based on filter selection
         if (filters?.groupBy === "division") {
             groupKey = "division";
         } else if (filters?.groupBy === "project-type") {
@@ -184,11 +186,7 @@ export default function BarGraphPage() {
         function computeMetric(projects: Project[], metric: string) {
             switch (metric) {
                 case "total-count":
-                // case "total-student-count":
-                //     return projects.reduce(
-                //         (sum, p) => sum + (p.studentCount || 0),
-                //         0,
-                //     );
+
                 // case "total-student-count":
                 //     return projects.reduce((sum, p) => sum + (p.studentCount ?? 0), 0);
 
@@ -202,7 +200,7 @@ export default function BarGraphPage() {
                     return new Set(projects.map((p) => p.schoolTown)).size;
 
                 case "school-return-rate": {
-                    // schools that have projects in this YEAR for this GROUP
+                    // schools that have projects in this year for this group
                     const schoolsThisYear = new Set(
                         projects.map((p) => p.schoolId),
                     );
@@ -269,11 +267,8 @@ export default function BarGraphPage() {
                 label: groupName,
                 data: dataPoints,
             };
-            // return { label: groupName, data: dataPoints };
         });
     }, [allProjects, filters]);
-
-    // filter by teacher participation
 
     // Data for FilterPanel Dropdowns
     const schools = Array.from(
@@ -307,8 +302,6 @@ export default function BarGraphPage() {
                         <CardContent>
                             <BarGraph
                                 dataset={barDataset}
-                                // yAxisLabel="Count"
-                                // xAxisLabel={filters.groupBy}
                                 yAxisLabel={
                                     measuredAsLabels[filters.measuredAs]
                                 }
@@ -318,19 +311,6 @@ export default function BarGraphPage() {
                     </Card>
                 )}
             </div>
-
-            {/* <BarGraph
-                        dataset={barDataset}
-                        yAxisLabel={
-                            // measuredAsLabels[
-                                filters?.measuredAs || "total-count"
-                            ]
-                        }
-                        xAxisLabel={groupByLabels[filters?.groupBy || "region"]}
-                    />
-                )}
-            </div>
-        </div> */}
         </div>
     );
 }
