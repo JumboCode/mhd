@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useEffect, useMemo } from "react";
+import { useRef, useEffect, useMemo } from "react";
 import * as d3 from "d3";
 
 export type GraphDataset = {

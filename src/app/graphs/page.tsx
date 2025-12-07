@@ -93,7 +93,7 @@ export default function GraphsPage() {
     useEffect(() => {
         const fetchProjects = async () => {
             try {
-                const response = await fetch("/api/bar-graph");
+                const response = await fetch("/api/projects");
                 if (!response.ok) throw new Error("Failed to fetch");
                 const data = await response.json();
                 setAllProjects(data);
@@ -312,7 +312,7 @@ export default function GraphsPage() {
     return (
         <div className="flex min-h-screen flex-row bg-white">
             {/* Left Sidebar - Filter Panel */}
-            <div className="flex flex-col border-r border-gray-200 p-8 bg-white w-80 h-screen overflow-y-auto sticky top-0">
+            <div className="flex flex-col border-r border-gray-200 p-8 bg-[#FCFCFC] w-70 h-screen overflow-y-auto sticky top-0">
                 <GraphFilters
                     schools={schools}
                     cities={cities}
@@ -570,7 +570,7 @@ export default function GraphsPage() {
                         </div>
 
                         {/* Chart Area */}
-                        <div className="flex-1 flex items-center justify-center p-8 bg-white">
+                        <div className="flex-1 flex items-center justify-center px-8 pt-8 bg-white">
                             {chartType === "bar" ? (
                                 <BarGraph
                                     dataset={graphDataset}
@@ -591,7 +591,7 @@ export default function GraphsPage() {
                         </div>
 
                         {/* Footer */}
-                        <div className="flex flex-col justify-center items-end gap-2 px-8 py-4 border-t border-gray-200 text-sm text-gray-600">
+                        <div className="flex flex-col justify-center items-end gap-2 px-8 py-4 text-sm text-gray-600">
                             <p className="font-medium">
                                 <span className="font-mono bg-gray/4 border rounded-sm border-gray/2 py-1 px-2">
                                     {Math.round(filteredProjectCount)}
