@@ -1,8 +1,8 @@
 "use client";
 
-import React from "react";
+// import React from "react";
 import Link from "next/link";
-import Image from "next/image";
+// import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Map, BarChart3, Calendar, Upload, Settings } from "lucide-react";
 
@@ -71,7 +71,7 @@ export default function Sidebar() {
                                                 flex items-center gap-3 px-3 py-2 rounded-lg transition-colors
                                                 ${
                                                     isActive
-                                                        ? "text-black font-semibold"
+                                                        ? "text-black font-semibold bg-blue-100"
                                                         : "text-gray-700 hover:bg-blue-50 hover:text-blue-900"
                                                 }
                                             `}
