@@ -411,26 +411,28 @@ export default function GraphFilters({
                         <AccordionItem value="project-type">
                             <AccordionTrigger>Project Type</AccordionTrigger>
                             <AccordionContent>
-                                <Checkbox
-                                    label="Individual Projects"
-                                    isChecked={individualProjects}
-                                    onToggle={(_, checked) => {
-                                        setIndividualProjects(checked);
-                                        updateFilters({
-                                            individualProjects: checked,
-                                        });
-                                    }}
-                                />
-                                <Checkbox
-                                    label="Group Projects"
-                                    isChecked={groupProjects}
-                                    onToggle={(_, checked) => {
-                                        setGroupProjects(checked);
-                                        updateFilters({
-                                            groupProjects: checked,
-                                        });
-                                    }}
-                                />
+                                <div className="space-y-1">
+                                    <Checkbox
+                                        label="Individual Projects"
+                                        isChecked={individualProjects}
+                                        onToggle={(_, checked) => {
+                                            setIndividualProjects(checked);
+                                            updateFilters({
+                                                individualProjects: checked,
+                                            });
+                                        }}
+                                    />
+                                    <Checkbox
+                                        label="Group Projects"
+                                        isChecked={groupProjects}
+                                        onToggle={(_, checked) => {
+                                            setGroupProjects(checked);
+                                            updateFilters({
+                                                groupProjects: checked,
+                                            });
+                                        }}
+                                    />
+                                </div>
                             </AccordionContent>
                         </AccordionItem>
                     )}
