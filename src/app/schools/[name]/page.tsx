@@ -68,6 +68,7 @@ export default function SchoolProfilePage() {
     return (
         <div className="min-h-screen bg-white px-[16.67vw] py-8">
             <div className="flex flex-col gap-8">
+                {/* <MHDBreadcrumb /> */}
                 {/* Header with school name */}
                 <h1 className="text-2xl font-bold">{schoolData.name}</h1>
 

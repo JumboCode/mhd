@@ -23,7 +23,7 @@ export default function YearDropdown({
     selectedYear,
     onYearChange,
 }: YearDropdownProps) {
-    const [year, setYear] = useState<number | null | undefined>(null);
+    const [year, setYear] = useState<number | null>(null);
 
     // Years from current year down to 10 years ago
     const currentYear = new Date().getFullYear();
@@ -36,14 +36,14 @@ export default function YearDropdown({
     };
 
     useEffect(() => {
-        setYear(selectedYear);
+        setYear(selectedYear ?? null);
     }, [selectedYear]);
 
     return (
         <select
             value={year ?? ""}
             onChange={handleChange}
-            className="border border-gray-300 rounded px-4 py-2 w-48 font-normal text-gray-600"
+            className="border border-gray-300 rounded px-4 w-30 font-normal text-sm text-gray-600 h-[30px] hover:border-gray-400 focus:border-[#22405D] focus:outline-none focus:ring-2 focus:ring-[#457BAF]/20"
         >
             <option value="">Select a year</option>
             {years.map((y) => (
