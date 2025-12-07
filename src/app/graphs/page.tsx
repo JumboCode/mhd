@@ -376,7 +376,7 @@ export default function GraphsPage() {
                                     onClick={() => setChartType("line")}
                                     className={`px-4 py-2 text-sm font-medium rounded-l-md ${
                                         chartType === "line"
-                                            ? "text-blue-600 bg-blue-50 border border-blue-300"
+                                            ? "text-blue-600 bg-blue-50 border border-blue-300 z-10"
                                             : "text-gray-700 bg-white border border-gray-300 hover:bg-gray-50"
                                     }`}
                                 >
@@ -397,9 +397,9 @@ export default function GraphsPage() {
                                 </button>
                                 <button
                                     onClick={() => setChartType("bar")}
-                                    className={`px-4 py-2 text-sm font-medium rounded-r-md ${
+                                    className={`px-4 py-2 text-sm font-medium rounded-r-md -ml-px ${
                                         chartType === "bar"
-                                            ? "text-blue-600 bg-blue-50 border border-blue-300"
+                                            ? "text-blue-600 bg-blue-50 border border-blue-300 z-10"
                                             : "text-gray-700 bg-white border border-gray-300 hover:bg-gray-50"
                                     }`}
                                 >
