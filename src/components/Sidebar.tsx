@@ -140,7 +140,7 @@ export default function Sidebar() {
                                                                             px-3 py-1.5 rounded-lg transition-colors text-sm
                                                                             ${
                                                                                 isActive
-                                                                                    ? "text-black font-semibold"
+                                                                                    ? "text-black font-semibold bg-blue-100"
                                                                                     : "text-gray-600 hover:bg-blue-50 hover:text-blue-900"
                                                                             }
                                                                         `}
