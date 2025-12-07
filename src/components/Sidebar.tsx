@@ -189,7 +189,7 @@ export default function Sidebar() {
                 </div>
             </div>
 
-            <div className="px-4 py-5 flex items-center gap-3">
+            <div className="px-4 py-5 self-center flex items-center gap-3">
                 <div className="w-8 h-8 rounded-full overflow-hidden">
                     <img
                         src="/images/drake.png"
