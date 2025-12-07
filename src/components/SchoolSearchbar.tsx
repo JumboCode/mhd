@@ -13,7 +13,6 @@
 "use client";
 
 import React from "react";
-import { useState, useEffect } from "react";
 import { Search } from "lucide-react";
 type SearchBarProps = {
     placeholder?: string;
@@ -34,7 +33,7 @@ export default function SchoolSearchBar({
 
     return (
         <div className={`relative ${className}`}>
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-3 h-3" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-3 h-[30px]" />
             <input
                 type="text"
                 value={search}

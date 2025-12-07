@@ -20,7 +20,7 @@ import {
 import { count, eq } from "drizzle-orm";
 
 function percentageChange(curr: number, past: number) {
-    return past != 0 ? Math.round(((curr - past) / past) * 100) : undefined;
+    return past !== 0 ? Math.round(((curr - past) / past) * 100) : undefined;
 }
 
 export async function GET(req: NextRequest) {
@@ -153,6 +153,7 @@ export async function GET(req: NextRequest) {
 
         return NextResponse.json(schoolsToReturn);
     } catch (error) {
+        // eslint-disable-next-line no-console
         console.error("Error fetching school data:", error);
         return NextResponse.json(
             { message: "Internal server error" },

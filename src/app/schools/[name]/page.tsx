@@ -13,7 +13,6 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { MHDBreadcrumb } from "@/components/Breadcrumbs";
 
 // interface such that data can be blank if API is loading
 type SchoolData = {

@@ -20,7 +20,7 @@ import SchoolSearchBar from "@/components/SchoolSearchbar";
 
 export default function SchoolsPage() {
     const [schoolInfo, setSchoolInfo] = useState([]);
-    const [year, setYear] = useState<number | null>(2018);
+    const [year, setYear] = useState<number | null>(2025);
     const [search, setSearch] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -43,6 +43,7 @@ export default function SchoolsPage() {
                 setIsLoading(false);
             })
             .catch((error) => {
+                // eslint-disable-next-line no-console
                 console.log(error);
                 setError(error.message || "Failed to load school data");
                 setIsLoading(false);
