@@ -1,6 +1,6 @@
 /***************************************************************
  *
- *         /api/components/NewCheckbox.tsx
+ *         /api/components/Checkbox.tsx
  *
  *         Author: Chiara and Steven
  *         Date: 12/6/2025

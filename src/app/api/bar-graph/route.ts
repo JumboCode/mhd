@@ -1,6 +1,6 @@
 /***************************************************************
  *
- *                /api/bargraph_projects/route.ts
+ *                /api/bar-graph/route.ts
  *
  *         Author: Elki & Zander
  *         Edited by: Chiara and Steven

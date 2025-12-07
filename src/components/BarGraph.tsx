@@ -43,7 +43,17 @@ export default function BarGraph({
 
         const width = 1000;
         const height = 600;
-        const margin = { top: 20, right: 150, bottom: 50, left: 60 };
+
+        // Count total bars to determine if we need a legend
+        const totalBars = dataset.reduce((sum, ds) => sum + ds.data.length, 0);
+        const useLegend = totalBars > 30;
+
+        const margin = {
+            top: 20,
+            right: useLegend ? 150 : 20,
+            bottom: useLegend ? 50 : 100,
+            left: 60,
+        };
 
         const svg = d3.select(svgRef.current);
         svg.selectAll("*").remove(); // clear previous render
@@ -130,47 +140,69 @@ export default function BarGraph({
             .attr("fill", "#555")
             .text(yAxisLabel);
 
-        // Legend
-        const legendGroup = svg
-            .append("g")
-            .attr(
-                "transform",
-                `translate(${width - margin.right + 10}, ${margin.top})`,
-            );
-
-        legendGroup
-            .append("text")
-            .attr("x", 0)
-            .attr("y", 0)
-            .text(xAxisLabel)
-            .style("font-size", "12px")
-            .style("font-weight", "bold");
-
-        const legend = legendGroup
-            .append("g")
-            .attr("transform", "translate(0, 20)");
-
-        dataset.forEach((ds, i) => {
-            const row = legend
+        if (useLegend) {
+            // Legend (for many bars)
+            const legendGroup = svg
                 .append("g")
-                .attr("transform", `translate(0, ${i * 20})`);
+                .attr(
+                    "transform",
+                    `translate(${width - margin.right + 10}, ${margin.top})`,
+                );
 
-            row.append("rect")
-                .attr("width", 12)
-                .attr("height", 12)
-                .attr("fill", colorScale(ds.label));
-
-            row.append("text")
-                .attr("x", 16)
-                .attr("y", 10)
-                .text(ds.label)
+            legendGroup
+                .append("text")
+                .attr("x", 0)
+                .attr("y", 0)
+                .text(xAxisLabel)
                 .style("font-size", "12px")
-                .attr("alignment-baseline", "middle");
-        });
+                .style("font-weight", "bold");
+
+            const legend = legendGroup
+                .append("g")
+                .attr("transform", "translate(0, 20)");
+
+            dataset.forEach((ds, i) => {
+                const row = legend
+                    .append("g")
+                    .attr("transform", `translate(0, ${i * 20})`);
+
+                row.append("rect")
+                    .attr("width", 12)
+                    .attr("height", 12)
+                    .attr("fill", colorScale(ds.label));
+
+                row.append("text")
+                    .attr("x", 16)
+                    .attr("y", 10)
+                    .text(ds.label)
+                    .style("font-size", "12px")
+                    .attr("alignment-baseline", "middle");
+            });
+        } else {
+            // Add labels below each bar (for fewer bars)
+            dataset.forEach((ds, i) => {
+                ds.data.forEach((d) => {
+                    const barX = (x(String(d.x)) || 0) + i * barWidth;
+                    const barCenterX = barX + barWidth / 2;
+
+                    svg.append("text")
+                        .attr("x", barCenterX)
+                        .attr("y", height - margin.bottom + 35)
+                        .attr("text-anchor", "end")
+                        .attr(
+                            "transform",
+                            `rotate(-45, ${barCenterX}, ${height - margin.bottom + 35})`,
+                        )
+                        .style("font-size", "10px")
+                        .attr("fill", "#555")
+                        .text(ds.label);
+                });
+            });
+        }
     }, [dataset]);
 
     return (
-        <div className="m-10">
+        <div>
             <svg ref={svgRef} width={1000} height={600}></svg>
         </div>
     );
