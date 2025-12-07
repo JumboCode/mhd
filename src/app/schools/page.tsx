@@ -15,15 +15,22 @@ import { useEffect, useState } from "react";
 import { SchoolsDataTable } from "@/components/DataTableSchools";
 import { columns } from "@/components/Columns";
 import YearDropdown from "@/components/YearDropdown";
-import { MHDBreadcrumb } from "@/components/Breadcrumbs";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 import SchoolSearchBar from "@/components/SchoolSearchbar";
 
 export default function SchoolsPage() {
     const [schoolInfo, setSchoolInfo] = useState([]);
     const [year, setYear] = useState<number | null>(2018);
     const [search, setSearch] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
+        if (!year) return;
+
+        setIsLoading(true);
+        setError(null);
+
         fetch(`/api/schools?year=` + year)
             .then((response) => {
                 if (!response.ok) {
@@ -33,31 +40,21 @@ export default function SchoolsPage() {
             })
             .then((data) => {
                 setSchoolInfo(data);
-                //console.log(schoolInfo);
+                setIsLoading(false);
             })
             .catch((error) => {
                 console.log(error);
+                setError(error.message || "Failed to load school data");
+                setIsLoading(false);
             });
     }, [year]);
-
-    // let schoolInfo = [
-    //     {
-    //         name: "School",
-    //         city: "Boston",
-    //         region: "na",
-    //         instructionModel: "na",
-    //         implementationModel: "na",
-    //         numStudents: 0,
-    //         numTeachers: 0
-    //     }
-    // ]
 
     return (
         <div className="font-sans mt-5">
             <div className="w-11/12 mx-auto">
                 <div className="flex items-center font-bold">
                     {/*Table and charts need to be a toggle */}
-                    <MHDBreadcrumb />
+                    <Breadcrumbs />
                     <div className="flex-1 text-center">
                         <h1 className="text-xl font-bold sm: pr-6">
                             {" "}
@@ -78,11 +75,17 @@ export default function SchoolsPage() {
                 </div>
 
                 <div className="mt-5 overflow-x-auto">
+                    {error && (
+                        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md text-red-700">
+                            {error}
+                        </div>
+                    )}
                     <SchoolsDataTable
                         columns={columns}
                         data={schoolInfo}
                         globalFilter={search}
                         setGlobalFilter={setSearch}
+                        isLoading={isLoading}
                     />
                 </div>
             </div>

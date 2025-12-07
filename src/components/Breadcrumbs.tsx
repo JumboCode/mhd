@@ -27,7 +27,7 @@ import { Button } from "@/components/ui/button";
 
 import { ArrowLeftIcon } from "lucide-react";
 
-export function MHDBreadcrumb() {
+export function Breadcrumbs() {
     const pathname = usePathname();
     const crumbTrail = pathname.split("/").filter((item) => item !== "");
     const backArrowHref = `/${crumbTrail.slice(0, crumbTrail.length - 2).join("/")}`;
