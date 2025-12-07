@@ -1,18 +1,19 @@
 /***************************************************************
  *
- *                new_bargraph/page.tsx
+ *                graphs/page.tsx
  *
  *         Author: Elki Laranas and Zander Barba
  *         Edited by: Chiara and Steven
  *         Date: 12/6/2025
  *
- *        Summary: display bar graph of project data
+ *        Summary: display bar/line graph of project data with toggle
  *
  **************************************************************/
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
 import BarGraph, { BarDataset } from "@/components/BarGraph";
+import LineGraph from "@/components/LineGraph";
 import GraphFilters, { Filters } from "@/components/GraphFilters";
 import {
     Popover,
@@ -70,7 +71,7 @@ const groupByLabels: Record<string, string> = {
     "project-type": "Project Type",
 };
 
-export default function BarGraphPage() {
+export default function GraphsPage() {
     const [allProjects, setAllProjects] = useState<Project[]>([]);
     const [loading, setLoading] = useState(true);
     const [filters, setFilters] = useState<Filters>(defaultFilters);
@@ -127,7 +128,7 @@ export default function BarGraphPage() {
     }, [timePeriod, yearRange, allProjects]);
 
     // Memoize graph dataset calculation to run only when data or filters change
-    const barDataset: BarDataset[] = useMemo(() => {
+    const graphDataset: BarDataset[] = useMemo(() => {
         if (!allProjects.length) return [];
 
         // Pre-calculate teacher participation years if filter is active
@@ -261,7 +262,7 @@ export default function BarGraphPage() {
             }
         }
 
-        // Format the filtered and grouped data for the LineGraph component
+        // Format the filtered and grouped data for the graph components
         return uniqueGroups.map((groupName) => {
             // Isolate projects belonging to the current group
             const projectsInGroup = filteredProjects.filter(
@@ -293,12 +294,12 @@ export default function BarGraphPage() {
 
     // Calculate filtered project count
     const filteredProjectCount = useMemo(() => {
-        return barDataset.reduce((total, dataset) => {
+        return graphDataset.reduce((total, dataset) => {
             return (
                 total + dataset.data.reduce((sum, point) => sum + point.y, 0)
             );
         }, 0);
-    }, [barDataset]);
+    }, [graphDataset]);
 
     // Data for filter dropdowns
     const schools = Array.from(
@@ -570,13 +571,23 @@ export default function BarGraphPage() {
 
                         {/* Chart Area */}
                         <div className="flex-1 flex items-center justify-center p-8 bg-white">
-                            <BarGraph
-                                dataset={barDataset}
-                                yAxisLabel={
-                                    measuredAsLabels[filters.measuredAs]
-                                }
-                                xAxisLabel={groupByLabels[filters.groupBy]}
-                            />
+                            {chartType === "bar" ? (
+                                <BarGraph
+                                    dataset={graphDataset}
+                                    yAxisLabel={
+                                        measuredAsLabels[filters.measuredAs]
+                                    }
+                                    xAxisLabel={groupByLabels[filters.groupBy]}
+                                />
+                            ) : (
+                                <LineGraph
+                                    datasets={graphDataset}
+                                    yAxisLabel={
+                                        measuredAsLabels[filters.measuredAs]
+                                    }
+                                    xAxisLabel={groupByLabels[filters.groupBy]}
+                                />
+                            )}
                         </div>
 
                         {/* Footer */}

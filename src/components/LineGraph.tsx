@@ -5,22 +5,28 @@ import * as d3 from "d3";
 
 export type GraphDataset = {
     label: string;
-    data: { year: number; value: number }[];
+    data: { x: string | number; y: number }[];
 };
 
 type MultiLineGraphProps = {
     datasets: GraphDataset[];
     yAxisLabel: string;
-    groupByLabel: string;
+    xAxisLabel: string;
 };
 
 export default function MultiLineGraph({
     datasets,
     yAxisLabel,
-    groupByLabel,
+    xAxisLabel,
 }: MultiLineGraphProps) {
     const svgRef = useRef<SVGSVGElement | null>(null);
     const wrapperRef = useRef<HTMLDivElement | null>(null);
+    const tooltipRef = useRef<d3.Selection<
+        HTMLDivElement,
+        unknown,
+        null,
+        undefined
+    > | null>(null);
 
     // Memoize color scale to prevent re-running useEffect unnecessarily
     const colorScale = useMemo(() => d3.scaleOrdinal(d3.schemeCategory10), []);
@@ -28,6 +34,25 @@ export default function MultiLineGraph({
     useEffect(() => {
         const svg = d3.select(svgRef.current);
         if (!svg.node() || !wrapperRef.current) return;
+
+        // Create tooltip once (outside drawChart to prevent memory leak)
+        if (!tooltipRef.current) {
+            tooltipRef.current = d3
+                .select(wrapperRef.current)
+                .append("div")
+                .attr("class", "d3-tooltip")
+                .style("position", "absolute")
+                .style("opacity", 0)
+                .style("background", "black")
+                .style("color", "white")
+                .style("padding", "0.5rem")
+                .style("border-radius", "0.375rem")
+                .style("font-size", "0.875rem")
+                .style("pointer-events", "none")
+                .style("transform", "translate(-50%, -125%)");
+        }
+
+        const tooltip = tooltipRef.current;
 
         // Encapsulate drawing logic for initial render and resize
         const drawChart = () => {
@@ -41,14 +66,17 @@ export default function MultiLineGraph({
             const allPoints = datasets.flatMap((d) => d.data);
             if (allPoints.length === 0) return;
 
+            // Convert x values to numbers for scaling
+            const xValues = allPoints.map((d) => Number(d.x));
+
             const x = d3
                 .scaleLinear()
-                .domain(d3.extent(allPoints, (d) => d.year) as [number, number])
+                .domain(d3.extent(xValues) as [number, number])
                 .range([margin.left, width - margin.right]);
 
             const y = d3
                 .scaleLinear()
-                .domain([0, d3.max(allPoints, (d) => d.value) || 10])
+                .domain([0, d3.max(allPoints, (d) => d.y) || 10])
                 .range([height - margin.bottom, margin.top]);
 
             svg.selectAll("*").remove(); // Clear SVG for responsive redraw
@@ -62,8 +90,7 @@ export default function MultiLineGraph({
                         .ticks(
                             // Ensure reasonable number of x-axis ticks
                             Math.min(
-                                d3.max(allPoints, (d) => d.year)! -
-                                    d3.min(allPoints, (d) => d.year)!,
+                                Math.max(...xValues) - Math.min(...xValues),
                                 10,
                             ),
                         )
@@ -100,9 +127,9 @@ export default function MultiLineGraph({
                 .call((g) => g.selectAll(".tick text").attr("fill", "#555"));
 
             const lineGen = d3
-                .line<{ year: number; value: number }>()
-                .x((d) => x(d.year))
-                .y((d) => y(d.value));
+                .line<{ x: string | number; y: number }>()
+                .x((d) => x(Number(d.x)))
+                .y((d) => y(d.y));
 
             datasets.forEach((dataset) => {
                 const path = svg
@@ -122,29 +149,17 @@ export default function MultiLineGraph({
                     .attr("stroke-dashoffset", 0);
             });
 
-            // Create a D3-managed tooltip div
-            const tooltip = d3
-                .select(wrapperRef.current)
-                .append("div")
-                .attr("class", "d3-tooltip")
-                .style("position", "absolute")
-                .style("opacity", 0)
-                .style("background", "black")
-                .style("color", "white")
-                .style("padding", "0.5rem")
-                .style("border-radius", "0.375rem")
-                .style("font-size", "0.875rem")
-                .style("pointer-events", "none")
-                .style("transform", "translate(-50%, -125%)");
-
             datasets.forEach((dataset) => {
-                svg.selectAll(`.dot-${dataset.label}`)
+                // Sanitize label for use in CSS class selector
+                const safeLabel = dataset.label.replace(/[^a-zA-Z0-9-_]/g, "-");
+
+                svg.selectAll(`.dot-${safeLabel}`)
                     .data(dataset.data)
                     .enter()
                     .append("circle")
-                    .attr("class", `dot-${dataset.label}`)
-                    .attr("cx", (d) => x(d.year))
-                    .attr("cy", (d) => y(d.value))
+                    .attr("class", `dot-${safeLabel}`)
+                    .attr("cx", (d) => x(Number(d.x)))
+                    .attr("cy", (d) => y(d.y))
                     .attr("r", 4)
                     .attr("fill", colorScale(dataset.label))
                     .style("cursor", "pointer")
@@ -152,12 +167,12 @@ export default function MultiLineGraph({
                     .on("mouseover focus", function (event, d) {
                         d3.select(this).transition().duration(100).attr("r", 6);
                         tooltip
-                            .html(String(d.value))
+                            .html(String(d.y))
                             .transition()
                             .duration(100)
                             .style("opacity", 1)
-                            .style("left", `${x(d.year)}px`)
-                            .style("top", `${y(d.value)}px`);
+                            .style("left", `${x(Number(d.x))}px`)
+                            .style("top", `${y(d.y)}px`);
                     })
                     .on("mouseout blur", function () {
                         d3.select(this).transition().duration(100).attr("r", 4);
@@ -165,7 +180,7 @@ export default function MultiLineGraph({
                     });
 
                 // Animate points appearing
-                svg.selectAll(`.dot-${dataset.label}`)
+                svg.selectAll(`.dot-${safeLabel}`)
                     .attr("opacity", 0)
                     .transition()
                     .delay(500) // Stagger point animation after line draw
@@ -194,7 +209,7 @@ export default function MultiLineGraph({
                 .append("text")
                 .attr("x", 0)
                 .attr("y", -10)
-                .text(groupByLabel)
+                .text(xAxisLabel)
                 .style("font-size", "14px")
                 .style("font-weight", "bold");
 
@@ -260,8 +275,15 @@ export default function MultiLineGraph({
         const resizeObserver = new ResizeObserver(drawChart);
         resizeObserver.observe(wrapperRef.current!);
 
-        return () => resizeObserver.disconnect();
-    }, [datasets, groupByLabel, yAxisLabel, colorScale]);
+        return () => {
+            resizeObserver.disconnect();
+            // Clean up tooltip on unmount
+            if (tooltipRef.current) {
+                tooltipRef.current.remove();
+                tooltipRef.current = null;
+            }
+        };
+    }, [datasets, xAxisLabel, yAxisLabel, colorScale]);
 
     return (
         <div ref={wrapperRef} className="m-10 w-full min-w-[400px] relative">
