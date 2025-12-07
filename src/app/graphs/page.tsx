@@ -49,12 +49,12 @@ const defaultFilters: Filters = {
     teacherYearsValue: "",
     teacherYearsOperator: "=",
     groupBy: "region",
-    measuredAs: "total-count",
+    measuredAs: "total-school-count",
 };
 
 // possible values for measured as filter
 const measuredAsLabels: Record<string, string> = {
-    "total-count": "Total Count",
+    "total-school-count": "Total School Count",
     "total-student-count": "Total Student Count",
     "total-city-count": "Total City Count",
     "total-project-count": "Total Project Count",
@@ -276,7 +276,7 @@ export default function GraphsPage() {
                 projectsByYear[p.year].push(p);
             });
 
-            const metric = filters?.measuredAs || "total-count";
+            const metric = filters?.measuredAs || "total-school-count";
 
             const dataPoints = Object.entries(projectsByYear)
                 .map(([year, projs]) => ({

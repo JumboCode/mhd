@@ -18,7 +18,7 @@ import Checkbox from "@/components/Checkbox";
 import { Combobox } from "@/components/Combobox";
 
 const measuredAsOptions = [
-    { value: "total-count", label: "Total Count" },
+    { value: "total-school-count", label: "Total School Count" },
     { value: "total-student-count", label: "Total Student Count" },
     { value: "total-city-count", label: "Total City Count" },
     { value: "total-project-count", label: "Total Project Count" },
@@ -64,7 +64,7 @@ export default function GraphFilters({
     cities,
     onFiltersChange,
 }: GraphFiltersProps) {
-    const [measuredAs, setMeasuredAs] = useState("total-count");
+    const [measuredAs, setMeasuredAs] = useState("total-school-count");
     const [groupBy, setGroupBy] = useState("region");
     const [gatewayCities, setGatewayCities] = useState(false);
     const [individualProjects, setIndividualProjects] = useState(false);
