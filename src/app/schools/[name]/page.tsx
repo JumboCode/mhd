@@ -67,8 +67,8 @@ export default function SchoolProfilePage() {
     }
 
     return (
-        <div className="min-h-screen w-full bg-white py-8 px-12 sm:px-24 lg:px-48">
-            <div className="flex flex-col gap-8">
+        <div className="h-screen w-full bg-white overflow-y-auto flex justify-center">
+            <div className="w-full flex flex-col gap-8 py-8 max-w-5xl px-6">
                 <Breadcrumbs />
                 {/* Header with school name */}
                 <h1 className="text-2xl font-bold">{schoolData.name}</h1>

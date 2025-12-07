@@ -1,39 +1,55 @@
 "use client";
 
-// import React from "react";
+import { useState } from "react";
 import Link from "next/link";
-// import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Map, BarChart3, Calendar, Upload, Settings } from "lucide-react";
+import {
+    Map,
+    BarChart3,
+    LayoutDashboard,
+    FileUp,
+    Settings as SettingsIcon,
+    ChevronDown,
+    ChevronRight,
+} from "lucide-react";
 
 export default function Sidebar() {
     const pathname = usePathname();
+    const [isOverviewOpen, setIsOverviewOpen] = useState(false);
 
     const sections = [
         {
-            title: "VISUALIZATIONS",
+            title: "DATA",
+            items: [
+                {
+                    label: "Overview",
+                    icon: <LayoutDashboard size={20} />,
+                    isExpandable: true,
+                    subitems: [
+                        { href: "/", label: "Dashboard" },
+                        { href: "/schools", label: "Schools" },
+                    ],
+                },
+                {
+                    href: "/upload",
+                    label: "Upload Data",
+                    icon: <FileUp size={20} />,
+                },
+                {
+                    href: "/settings",
+                    label: "Settings",
+                    icon: <SettingsIcon size={20} />,
+                },
+            ],
+        },
+        {
+            title: "ANALYSIS",
             items: [
                 { href: "/map", label: "Map", icon: <Map size={20} /> },
                 {
                     href: "/graphs",
                     label: "Chart",
                     icon: <BarChart3 size={20} />,
-                },
-            ],
-        },
-        {
-            title: "DATA",
-            items: [
-                { href: "/", label: "Overview", icon: <Calendar size={20} /> }, // TO DO: Make Overview a dorpdown
-                {
-                    href: "/upload",
-                    label: "Upload Data",
-                    icon: <Upload size={20} />,
-                },
-                {
-                    href: "/settings",
-                    label: "Settings",
-                    icon: <Settings size={20} />,
                 },
             ],
         },
@@ -61,29 +77,111 @@ export default function Sidebar() {
 
                             <nav className="flex flex-col space-y-1">
                                 {section.items.map((item) => {
-                                    const isActive = pathname === item.href;
+                                    if (item.isExpandable && item.subitems) {
+                                        // Expandable item (Overview)
+                                        const isAnySubitemActive =
+                                            item.subitems.some(
+                                                (sub) => pathname === sub.href,
+                                            );
 
-                                    return (
-                                        <Link
-                                            key={item.href}
-                                            href={item.href}
-                                            className={`
-                                                flex items-center gap-3 px-3 py-2 rounded-lg transition-colors
-                                                ${
-                                                    isActive
-                                                        ? "text-black font-semibold bg-blue-100"
-                                                        : "text-gray-700 hover:bg-blue-50 hover:text-blue-900"
-                                                }
-                                            `}
-                                        >
-                                            <div className="flex items-center justify-center w-6">
-                                                {item.icon}
+                                        return (
+                                            <div key={item.label}>
+                                                <button
+                                                    onClick={() =>
+                                                        setIsOverviewOpen(
+                                                            !isOverviewOpen,
+                                                        )
+                                                    }
+                                                    className={`
+                                                        w-full flex items-center justify-between px-3 py-2 rounded-lg transition-colors
+                                                        ${
+                                                            isAnySubitemActive
+                                                                ? "text-black font-semibold"
+                                                                : "text-gray-700 hover:bg-blue-50 hover:text-blue-900"
+                                                        }
+                                                    `}
+                                                >
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="flex items-center justify-center w-6">
+                                                            {item.icon}
+                                                        </div>
+                                                        <span className="text-sm overflow-hidden whitespace-nowrap">
+                                                            {item.label}
+                                                        </span>
+                                                    </div>
+                                                    {isOverviewOpen ? (
+                                                        <ChevronDown
+                                                            size={16}
+                                                        />
+                                                    ) : (
+                                                        <ChevronRight
+                                                            size={16}
+                                                        />
+                                                    )}
+                                                </button>
+
+                                                {isOverviewOpen && (
+                                                    <div className="ml-12 mt-1 flex flex-col space-y-1">
+                                                        {item.subitems.map(
+                                                            (subitem) => {
+                                                                const isActive =
+                                                                    pathname ===
+                                                                    subitem.href;
+
+                                                                return (
+                                                                    <Link
+                                                                        key={
+                                                                            subitem.href
+                                                                        }
+                                                                        href={
+                                                                            subitem.href
+                                                                        }
+                                                                        className={`
+                                                                            px-3 py-1.5 rounded-lg transition-colors text-sm
+                                                                            ${
+                                                                                isActive
+                                                                                    ? "text-black font-semibold"
+                                                                                    : "text-gray-600 hover:bg-blue-50 hover:text-blue-900"
+                                                                            }
+                                                                        `}
+                                                                    >
+                                                                        {
+                                                                            subitem.label
+                                                                        }
+                                                                    </Link>
+                                                                );
+                                                            },
+                                                        )}
+                                                    </div>
+                                                )}
                                             </div>
-                                            <span className="text-sm overflow-hidden whitespace-nowrap">
-                                                {item.label}
-                                            </span>
-                                        </Link>
-                                    );
+                                        );
+                                    } else {
+                                        // Regular item
+                                        const isActive = pathname === item.href;
+
+                                        return (
+                                            <Link
+                                                key={item.href}
+                                                href={item.href!}
+                                                className={`
+                                                    flex items-center gap-3 px-3 py-2 rounded-lg transition-colors
+                                                    ${
+                                                        isActive
+                                                            ? "text-black font-semibold bg-blue-100"
+                                                            : "text-gray-700 hover:bg-blue-50 hover:text-blue-900"
+                                                    }
+                                                `}
+                                            >
+                                                <div className="flex items-center justify-center w-6">
+                                                    {item.icon}
+                                                </div>
+                                                <span className="text-sm overflow-hidden whitespace-nowrap">
+                                                    {item.label}
+                                                </span>
+                                            </Link>
+                                        );
+                                    }
                                 })}
                             </nav>
                         </div>
