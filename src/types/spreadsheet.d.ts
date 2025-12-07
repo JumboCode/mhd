@@ -1,4 +1,4 @@
-/**
+/*
  * Type definitions for spreadsheet data
  */
 
