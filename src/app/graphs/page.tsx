@@ -2,11 +2,10 @@
  *
  *                graphs/page.tsx
  *
- *         Author: Elki Laranas and Zander Barba
- *         Edited by: Chiara and Steven
+ *         Author: Elki, Zander, Chiara, and Steven
  *         Date: 12/6/2025
  *
- *        Summary: display bar/line graph of project data with toggle
+ *         Summary: display bar/line graph of project data with toggle
  *
  **************************************************************/
 "use client";
@@ -21,6 +20,7 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 
 // define Project type
 type Project = {
@@ -312,7 +312,8 @@ export default function GraphsPage() {
     return (
         <div className="w-full min-h-screen flex bg-white">
             {/* Left Sidebar - Filter Panel */}
-            <div className="flex flex-col border-r border-gray-200 p-8 bg-[#FCFCFC] w-70 h-screen overflow-y-auto sticky top-0">
+            <div className="flex flex-col border-r border-gray-200 p-8 bg-[#FCFCFC] w-70 h-screen overflow-y-auto sticky top-0 gap-12">
+                <Breadcrumbs />
                 <GraphFilters
                     schools={schools}
                     cities={cities}
@@ -329,7 +330,7 @@ export default function GraphsPage() {
                 ) : (
                     <div className="flex flex-col gap-4 h-full overflow-hidden">
                         {/* Header */}
-                        <div className="flex items-center justify-between px-8 py-4 flex-shrink-0">
+                        <div className="flex items-center justify-between px-8 pt-4 flex-shrink-0">
                             <h1 className="text-xl font-semibold text-gray-900">
                                 Projects by {groupByLabels[filters.groupBy]}
                             </h1>

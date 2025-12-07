@@ -13,6 +13,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 
 // interface such that data can be blank if API is loading
 type SchoolData = {
@@ -66,9 +67,9 @@ export default function SchoolProfilePage() {
     }
 
     return (
-        <div className="min-h-screen bg-white px-[16.67vw] py-8">
+        <div className="min-h-screen w-full bg-white py-8 px-12 sm:px-24 lg:px-48">
             <div className="flex flex-col gap-8">
-                {/* <MHDBreadcrumb /> */}
+                <Breadcrumbs />
                 {/* Header with school name */}
                 <h1 className="text-2xl font-bold">{schoolData.name}</h1>
 
