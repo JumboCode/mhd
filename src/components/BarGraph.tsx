@@ -44,14 +44,10 @@ export default function BarGraph({
         const width = 1000;
         const height = 400;
 
-        // Count total bars to determine if we need a legend
-        const totalBars = dataset.reduce((sum, ds) => sum + ds.data.length, 0);
-        const useLegend = totalBars > 30;
-
         const margin = {
             top: 20,
-            right: useLegend ? 150 : 20,
-            bottom: useLegend ? 50 : 100,
+            right: 20,
+            bottom: 100,
             left: 60,
         };
 
@@ -109,10 +105,10 @@ export default function BarGraph({
             .call((g) => g.selectAll(".tick line").remove())
             .call((g) => g.select(".domain").remove());
 
-        // X-axis label
+        // X-axis label (positioned above legend)
         svg.append("text")
             .attr("x", margin.left + (width - margin.left - margin.right) / 2)
-            .attr("y", height - 5)
+            .attr("y", height - margin.bottom + 40)
             .attr("text-anchor", "middle")
             .attr("fill", "#555")
             .text(xAxisLabel);
@@ -140,78 +136,59 @@ export default function BarGraph({
             .attr("fill", "#555")
             .text(yAxisLabel);
 
-        if (useLegend) {
-            // Legend (for many bars) - create a clipPath for scrollable legend
-            svg.append("defs")
-                .append("clipPath")
-                .attr("id", "legend-clip")
-                .append("rect")
-                .attr("width", 140)
-                .attr("height", height - margin.top - margin.bottom);
+        // Legend at bottom
+        const legendGroup = svg
+            .append("g")
+            .attr("class", "legend")
+            .attr(
+                "transform",
+                `translate(${margin.left}, ${height - margin.bottom + 60})`,
+            );
 
-            const legendGroup = svg
-                .append("g")
-                .attr(
-                    "transform",
-                    `translate(${width - margin.right + 10}, ${margin.top})`,
-                );
+        const legendWidth = width - margin.left - margin.right;
+        const itemMargin = 10;
+        const rowHeight = 20;
 
-            legendGroup
-                .append("text")
-                .attr("x", 0)
-                .attr("y", 0)
-                .text(xAxisLabel)
-                .style("font-size", "12px")
-                .style("font-weight", "bold");
+        const legendItems = legendGroup
+            .selectAll("g.legend-item")
+            .data(dataset)
+            .enter()
+            .append("g")
+            .attr("class", "legend-item");
 
-            const legend = legendGroup
-                .append("g")
-                .attr("transform", "translate(0, 20)")
-                .attr("clip-path", "url(#legend-clip)");
+        legendItems
+            .append("rect")
+            .attr("width", 12)
+            .attr("height", 12)
+            .attr("fill", (d) => colorScale(d.label));
 
-            dataset.forEach((ds, i) => {
-                const row = legend
-                    .append("g")
-                    .attr("transform", `translate(0, ${i * 18})`);
+        legendItems
+            .append("text")
+            .attr("x", 16)
+            .attr("y", 10)
+            .text((d) => d.label)
+            .style("font-size", "12px")
+            .attr("alignment-baseline", "middle");
 
-                row.append("rect")
-                    .attr("width", 10)
-                    .attr("height", 10)
-                    .attr("fill", colorScale(ds.label));
-
-                row.append("text")
-                    .attr("x", 14)
-                    .attr("y", 8)
-                    .text(ds.label)
-                    .style("font-size", "11px")
-                    .attr("alignment-baseline", "middle");
-            });
-        } else {
-            // Add labels below each bar (for fewer bars)
-            dataset.forEach((ds, i) => {
-                ds.data.forEach((d) => {
-                    const barX = (x(String(d.x)) || 0) + i * barWidth;
-                    const barCenterX = barX + barWidth / 2;
-
-                    svg.append("text")
-                        .attr("x", barCenterX)
-                        .attr("y", height - margin.bottom + 35)
-                        .attr("text-anchor", "end")
-                        .attr(
-                            "transform",
-                            `rotate(-45, ${barCenterX}, ${height - margin.bottom + 35})`,
-                        )
-                        .style("font-size", "10px")
-                        .attr("fill", "#555")
-                        .text(ds.label);
-                });
-            });
-        }
+        // Position legend items, wrap to new line on overflow
+        let xOffset = 0;
+        let yOffset = 0;
+        legendItems.attr("transform", function () {
+            const itemWidth =
+                (this as SVGGElement).getBBox().width + itemMargin;
+            if (xOffset + itemWidth > legendWidth) {
+                xOffset = 0;
+                yOffset += rowHeight;
+            }
+            const transform = `translate(${xOffset}, ${yOffset})`;
+            xOffset += itemWidth;
+            return transform;
+        });
     }, [dataset]);
 
     return (
         <div>
-            <svg ref={svgRef} width={1000} height={400}></svg>
+            <svg ref={svgRef} width={900} height={400}></svg>
         </div>
     );
 }

@@ -327,7 +327,7 @@ export default function GraphsPage() {
                         Loading project data...
                     </p>
                 ) : (
-                    <div className="flex flex-col h-full overflow-hidden">
+                    <div className="flex flex-col gap-4 h-full overflow-hidden">
                         {/* Header */}
                         <div className="flex items-center justify-between px-8 py-4 flex-shrink-0">
                             <h1 className="text-xl font-semibold text-gray-900">
@@ -570,7 +570,7 @@ export default function GraphsPage() {
                         </div>
 
                         {/* Chart Area */}
-                        <div className="flex-1 flex items-center justify-center px-8 py-4 bg-white overflow-auto">
+                        <div className="flex-1 flex items-center justify-center px-8 bg-white overflow-auto">
                             {chartType === "bar" ? (
                                 <BarGraph
                                     dataset={graphDataset}
@@ -591,7 +591,7 @@ export default function GraphsPage() {
                         </div>
 
                         {/* Footer */}
-                        <div className="flex flex-col justify-center items-end gap-3 px-8 py-3 text-xs text-black flex-shrink-0">
+                        <div className="flex flex-col justify-center items-end gap-3 px-8 pb-4 text-xs text-black flex-shrink-0">
                             <p className="font-medium">
                                 <span className="font-mono bg-gray/4 border rounded-sm border-gray/2 py-1 px-2">
                                     {Math.round(filteredProjectCount)}
