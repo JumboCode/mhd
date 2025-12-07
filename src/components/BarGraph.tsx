@@ -32,11 +32,8 @@ export default function BarGraph({
 }: BarGraphProps) {
     const svgRef = useRef<SVGSVGElement | null>(null);
 
-    // make bars all blue
-    const colorScale = d3
-        .scaleOrdinal<string>()
-        .domain(dataset.map((d) => d.label))
-        .range(["#3b82f6", "#60a5fa", "#93c5fd", "#bfdbfe"]);
+    // Use same color scheme as LineGraph
+    const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
 
     useEffect(() => {
         if (!svgRef.current || dataset.length === 0) return;
