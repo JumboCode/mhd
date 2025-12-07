@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import LineGraph, { GraphDataset } from "@/components/LineGraph";
-import FilterPanel, { Filters } from "@/components/FilterPanel";
+import GraphFilters, { Filters } from "@/components/GraphFilters";
 
 type Project = {
     id: number;
@@ -161,7 +161,7 @@ export default function LineGraphPage() {
         });
     }, [allProjects, filters]);
 
-    // Data for FilterPanel dropdowns
+    // Data for GraphFilters dropdowns
     const schools = Array.from(
         new Set(allProjects.map((p) => p.schoolName)),
     ).sort();
@@ -174,7 +174,7 @@ export default function LineGraphPage() {
             {/* Filters sidebar */}
             <div className="flex flex-col border p-8 bg-gray-50 w-1/4 min-w-[300px] h-screen overflow-y-auto sticky top-0">
                 <h1 className="text-3xl font-bold mb-6">Line Graph</h1>
-                <FilterPanel
+                <GraphFilters
                     schools={schools}
                     cities={cities}
                     onFiltersChange={setFilters}
