@@ -310,7 +310,7 @@ export default function GraphsPage() {
     ).sort();
 
     return (
-        <div className="flex min-h-screen flex-row bg-white">
+        <div className="w-full min-h-screen flex bg-white">
             {/* Left Sidebar - Filter Panel */}
             <div className="flex flex-col border-r border-gray-200 p-8 bg-[#FCFCFC] w-70 h-screen overflow-y-auto sticky top-0">
                 <GraphFilters
@@ -321,16 +321,16 @@ export default function GraphsPage() {
             </div>
 
             {/* Main Content Area */}
-            <div className="flex-1 flex flex-col">
+            <div className="flex-1 flex flex-col h-screen overflow-hidden">
                 {loading ? (
                     <p className="text-xl text-gray-500 mt-20 text-center">
                         Loading project data...
                     </p>
                 ) : (
-                    <div className="flex flex-col h-full">
+                    <div className="flex flex-col h-full overflow-hidden">
                         {/* Header */}
-                        <div className="flex items-center justify-between px-8 py-6">
-                            <h1 className="text-2xl font-semibold text-gray-900">
+                        <div className="flex items-center justify-between px-8 py-4 flex-shrink-0">
+                            <h1 className="text-xl font-semibold text-gray-900">
                                 Projects by {groupByLabels[filters.groupBy]}
                             </h1>
                             <div className="flex gap-3">
@@ -370,7 +370,7 @@ export default function GraphsPage() {
                         </div>
 
                         {/* Chart Controls */}
-                        <div className="flex items-center justify-between px-8 py-4 border-b border-gray-200">
+                        <div className="flex items-center justify-between px-8 py-3 border-b border-gray-200 flex-shrink-0">
                             <div className="flex items-center">
                                 <button
                                     onClick={() => setChartType("line")}
@@ -570,7 +570,7 @@ export default function GraphsPage() {
                         </div>
 
                         {/* Chart Area */}
-                        <div className="flex-1 flex items-center justify-center px-8 pt-8 bg-white">
+                        <div className="flex-1 flex items-center justify-center px-8 py-4 bg-white overflow-auto">
                             {chartType === "bar" ? (
                                 <BarGraph
                                     dataset={graphDataset}
@@ -591,7 +591,7 @@ export default function GraphsPage() {
                         </div>
 
                         {/* Footer */}
-                        <div className="flex flex-col justify-center items-end gap-2 px-8 py-4 text-sm text-gray-600">
+                        <div className="flex flex-col justify-center items-end gap-3 px-8 py-3 text-xs text-black flex-shrink-0">
                             <p className="font-medium">
                                 <span className="font-mono bg-gray/4 border rounded-sm border-gray/2 py-1 px-2">
                                     {Math.round(filteredProjectCount)}

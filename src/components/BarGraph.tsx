@@ -42,7 +42,7 @@ export default function BarGraph({
         if (!svgRef.current || dataset.length === 0) return;
 
         const width = 1000;
-        const height = 600;
+        const height = 400;
 
         // Count total bars to determine if we need a legend
         const totalBars = dataset.reduce((sum, ds) => sum + ds.data.length, 0);
@@ -141,7 +141,14 @@ export default function BarGraph({
             .text(yAxisLabel);
 
         if (useLegend) {
-            // Legend (for many bars)
+            // Legend (for many bars) - create a clipPath for scrollable legend
+            svg.append("defs")
+                .append("clipPath")
+                .attr("id", "legend-clip")
+                .append("rect")
+                .attr("width", 140)
+                .attr("height", height - margin.top - margin.bottom);
+
             const legendGroup = svg
                 .append("g")
                 .attr(
@@ -159,23 +166,24 @@ export default function BarGraph({
 
             const legend = legendGroup
                 .append("g")
-                .attr("transform", "translate(0, 20)");
+                .attr("transform", "translate(0, 20)")
+                .attr("clip-path", "url(#legend-clip)");
 
             dataset.forEach((ds, i) => {
                 const row = legend
                     .append("g")
-                    .attr("transform", `translate(0, ${i * 20})`);
+                    .attr("transform", `translate(0, ${i * 18})`);
 
                 row.append("rect")
-                    .attr("width", 12)
-                    .attr("height", 12)
+                    .attr("width", 10)
+                    .attr("height", 10)
                     .attr("fill", colorScale(ds.label));
 
                 row.append("text")
-                    .attr("x", 16)
-                    .attr("y", 10)
+                    .attr("x", 14)
+                    .attr("y", 8)
                     .text(ds.label)
-                    .style("font-size", "12px")
+                    .style("font-size", "11px")
                     .attr("alignment-baseline", "middle");
             });
         } else {
@@ -203,7 +211,7 @@ export default function BarGraph({
 
     return (
         <div>
-            <svg ref={svgRef} width={1000} height={600}></svg>
+            <svg ref={svgRef} width={1000} height={400}></svg>
         </div>
     );
 }

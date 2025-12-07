@@ -40,7 +40,7 @@ export default function Sidebar() {
     ];
 
     return (
-        <aside className="h-screen bg-white border-r border-gray-200 flex flex-col justify-between w-56 flex-shrink-0">
+        <aside className="h-full bg-white border-r border-gray-200 flex flex-col justify-between w-56 flex-shrink-0">
             <div className="flex-1 overflow-hidden">
                 <div className="px-6 py-5 flex items-center justify-center">
                     <h1>

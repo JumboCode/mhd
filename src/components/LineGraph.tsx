@@ -59,8 +59,8 @@ export default function MultiLineGraph({
             if (datasets.length === 0) return;
 
             const { width } = wrapperRef.current!.getBoundingClientRect();
-            const height = 600; // Keep a fixed aspect ratio base
-            const margin = { top: 20, right: 20, bottom: 100, left: 60 };
+            const height = 400; // Keep a fixed aspect ratio base
+            const margin = { top: 20, right: 20, bottom: 80, left: 60 };
 
             // Flatten datasets for global min/max axis domains
             const allPoints = datasets.flatMap((d) => d.data);
@@ -286,7 +286,7 @@ export default function MultiLineGraph({
     }, [datasets, xAxisLabel, yAxisLabel, colorScale]);
 
     return (
-        <div ref={wrapperRef} className="m-10 w-full min-w-[400px] relative">
+        <div ref={wrapperRef} className="w-full min-w-[400px] relative">
             <svg ref={svgRef}></svg>
         </div>
     );
