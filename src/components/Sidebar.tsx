@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -16,6 +16,17 @@ import {
 export default function Sidebar() {
     const pathname = usePathname();
     const [isOverviewOpen, setIsOverviewOpen] = useState(false);
+
+    // Automatically open Overview if any subitem is active
+    useEffect(() => {
+        const overviewSubitems = ["/", "/schools"];
+        const isAnyOverviewSubitemActive = overviewSubitems.some(
+            (href) => pathname === href,
+        );
+        if (isAnyOverviewSubitemActive) {
+            setIsOverviewOpen(true);
+        }
+    }, [pathname]);
 
     const sections = [
         {
