@@ -127,6 +127,7 @@ export function SchoolsDataTable<TData, TValue>({
                                         {cell.column.getIndex() === 0 ? (
                                             <Link
                                                 href={`/schools/${String(cell.getValue()).replaceAll(" ", "-").toLowerCase()}`}
+                                                className="hover:underline"
                                             >
                                                 {flexRender(
                                                     cell.column.columnDef.cell,
