@@ -120,7 +120,7 @@ export function SchoolsDataTable<TData, TValue>({
                                         key={cell.id}
                                         className={
                                             cell.column.getIndex() === 0
-                                                ? " text-center sticky left-0 z-20 bg-white border-r border-b-0 min-w-[200px] w-[200px]"
+                                                ? " text-center sticky left-0 z-20 bg-gray-50 border-r border-b min-w-[200px] w-[200px]"
                                                 : " text-center z-0 border-b"
                                         }
                                     >
