@@ -30,7 +30,7 @@ import { ArrowLeftIcon } from "lucide-react";
 export function Breadcrumbs() {
     const pathname = usePathname();
     const crumbTrail = pathname.split("/").filter((item) => item !== "");
-    const backArrowHref = `/${crumbTrail.slice(0, crumbTrail.length - 2).join("/")}`;
+    const backArrowHref = `/${crumbTrail.slice(0, crumbTrail.length - 1).join("/")}`;
 
     return (
         <div className="flex items-center gap-4">
