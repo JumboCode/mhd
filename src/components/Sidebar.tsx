@@ -107,7 +107,7 @@ export default function Sidebar() {
                                                         w-full flex items-center justify-between px-3 py-2 rounded-lg transition-colors
                                                         ${
                                                             isAnySubitemActive
-                                                                ? "text-black font-semibold"
+                                                                ? "text-black hover:bg-blue-50 hover:text-blue-900"
                                                                 : "text-gray-700 hover:bg-blue-50 hover:text-blue-900"
                                                         }
                                                     `}
