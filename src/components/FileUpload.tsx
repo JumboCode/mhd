@@ -12,8 +12,9 @@
 
 "use client";
 
-import React, { useRef, useState, useEffect } from "react";
 import { FileUp as FileUploadIcon } from "lucide-react";
+import type React from "react";
+import { useEffect, useRef, useState } from "react";
 
 type UploadProps = {
     fileInfo?: File;
@@ -86,10 +87,12 @@ export default function FileUpload({ fileInfo, setFileInfo }: UploadProps) {
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
+            className="cursor-pointer"
         >
             <button
+                type="button"
                 onClick={handleClick}
-                className={`flex flex-col items-center justify-center gap-6 rounded-lg py-20 border-2 border-dashed border-border w-full hover:bg-accent transition duration-300
+                className={`flex flex-col items-center justify-center gap-6 rounded-lg py-20 border-2 border-dashed border-border w-full hover:bg-accent transition duration-300 cursor-pointer
                     ${isDragging ? "bg-accent" : "bg-muted"}`}
             >
                 <FileUploadIcon size={64} />
