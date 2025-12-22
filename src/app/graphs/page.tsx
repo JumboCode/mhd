@@ -10,17 +10,17 @@
  **************************************************************/
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import BarGraph, { BarDataset } from "@/components/BarGraph";
+import { useEffect, useMemo, useState } from "react";
+import BarGraph, { type BarDataset } from "@/components/BarGraph";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
+import GraphFilters, { type Filters } from "@/components/GraphFilters";
 import LineGraph from "@/components/LineGraph";
-import GraphFilters, { Filters } from "@/components/GraphFilters";
+import { Button } from "@/components/ui/button";
 import {
     Popover,
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover";
-import { Button } from "@/components/ui/button";
-import { Breadcrumbs } from "@/components/Breadcrumbs";
 
 // define Project type
 type Project = {

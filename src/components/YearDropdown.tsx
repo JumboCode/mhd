@@ -12,7 +12,15 @@
 
 "use client";
 
-import React, { useState, useEffect } from "react";
+import type React from "react";
+import { useEffect, useState } from "react";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 
 type YearDropdownProps = {
     selectedYear?: number | null;
@@ -24,33 +32,66 @@ export default function YearDropdown({
     onYearChange,
 }: YearDropdownProps) {
     const [year, setYear] = useState<number | null>(null);
+    const [yearsWithData, setYearsWithData] = useState<Set<number>>(new Set());
 
     // Years from current year down to 10 years ago
     const currentYear = new Date().getFullYear();
     const years = Array.from({ length: 10 }, (_, i) => currentYear - i);
 
-    const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const selected = e.target.value ? Number(e.target.value) : null;
-        setYear(selected);
-        onYearChange?.(selected);
-    };
-
     useEffect(() => {
         setYear(selectedYear ?? null);
     }, [selectedYear]);
 
+    // Fetch years with data
+    useEffect(() => {
+        const fetchYearsWithData = async () => {
+            try {
+                const response = await fetch("/api/years");
+                if (response.ok) {
+                    const data = await response.json();
+                    setYearsWithData(new Set(data.yearsWithData));
+                }
+            } catch (error) {
+                // eslint-disable-next-line no-console
+                console.error("Failed to fetch years with data:", error);
+            }
+        };
+        fetchYearsWithData();
+    }, []);
+
+    const handleValueChange = (value: string) => {
+        const selected = value ? Number(value) : null;
+        setYear(selected);
+        onYearChange?.(selected);
+    };
+
+    const hasData = (year: number) => yearsWithData.has(year);
+
     return (
-        <select
-            value={year ?? ""}
-            onChange={handleChange}
-            className="border border-input rounded px-4 w-30 font-normal text-sm text-muted-foreground h-[30px] hover:border-border focus:border-[#22405D] focus:outline-none focus:ring-2 focus:ring-[#457BAF]/20"
+        <Select
+            value={year?.toString() ?? ""}
+            onValueChange={handleValueChange}
         >
-            <option value="">Select a year</option>
-            {years.map((y) => (
-                <option key={y} value={y}>
-                    {y}
-                </option>
-            ))}
-        </select>
+            <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Select a year" />
+            </SelectTrigger>
+            <SelectContent>
+                {years.map((y) => (
+                    <SelectItem
+                        key={y}
+                        value={y.toString()}
+                        rightContent={
+                            <div
+                                className={`h-2 w-2 rounded-full shrink-0 ${
+                                    hasData(y) ? "bg-green-500" : "bg-red-500"
+                                }`}
+                            />
+                        }
+                    >
+                        {y}
+                    </SelectItem>
+                ))}
+            </SelectContent>
+        </Select>
     );
 }
