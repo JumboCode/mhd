@@ -30,6 +30,15 @@ export function Breadcrumbs() {
     const crumbTrail = pathname.split("/").filter((item) => item !== "");
     const backArrowHref = `/${crumbTrail.slice(0, crumbTrail.length - 1).join("/")}`;
 
+    // Determine if we're on an Analysis page (map or graphs)
+    const isAnalysisPage = pathname === "/map" || pathname === "/graphs";
+    const firstBreadcrumbLabel = isAnalysisPage ? "ANALYSIS" : "OVERVIEW";
+    const firstBreadcrumbHref = isAnalysisPage
+        ? pathname === "/map"
+            ? "/map"
+            : "/graphs"
+        : "/";
+
     return (
         <div className="flex items-center gap-4 font-semibold">
             <Button
@@ -54,7 +63,9 @@ export function Breadcrumbs() {
                                     : "text-muted-foreground"
                             }
                         >
-                            <Link href="/">OVERVIEW</Link>
+                            <Link href={firstBreadcrumbHref}>
+                                {firstBreadcrumbLabel}
+                            </Link>
                         </BreadcrumbLink>
                     </BreadcrumbItem>
                     {crumbTrail.map((link, index) => {

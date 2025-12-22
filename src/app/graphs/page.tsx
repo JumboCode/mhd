@@ -10,6 +10,14 @@
  **************************************************************/
 "use client";
 
+import {
+    BarChart,
+    Calendar,
+    CalendarDays,
+    ChartColumn,
+    ChevronDown,
+    LineChart,
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import BarGraph, { type BarDataset } from "@/components/BarGraph";
@@ -22,6 +30,7 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // define Project type
 type Project = {
@@ -75,7 +84,7 @@ const groupByLabels: Record<string, string> = {
 export default function GraphsPage() {
     const [allProjects, setAllProjects] = useState<Project[]>([]);
     const [filters, setFilters] = useState<Filters>(defaultFilters);
-    const [chartType, setChartType] = useState<"line" | "bar">("bar");
+    const [chartType, setChartType] = useState<"line" | "bar">("line");
     const [timePeriod, setTimePeriod] = useState<
         "all" | "3y" | "5y" | "custom"
     >("all");
@@ -105,6 +114,13 @@ export default function GraphsPage() {
         };
         fetchProjects();
     }, []);
+
+    // Sync tempYearRange with yearRange only when popover opens in custom mode
+    useEffect(() => {
+        if (yearRangeOpen && timePeriod === "custom") {
+            setTempYearRange(yearRange);
+        }
+    }, [yearRangeOpen, timePeriod, yearRange]);
 
     // Calculate the current year range based on time period selection
     const currentYearRange = useMemo(() => {
@@ -330,7 +346,11 @@ export default function GraphsPage() {
                                 Projects by {groupByLabels[filters.groupBy]}
                             </h1>
                             <div className="flex gap-3">
-                                <button className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-foreground bg-card border border-border rounded-md hover:bg-accent">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="flex items-center gap-2"
+                                >
                                     <svg
                                         className="w-4 h-4"
                                         fill="none"
@@ -345,8 +365,12 @@ export default function GraphsPage() {
                                         />
                                     </svg>
                                     Export
-                                </button>
-                                <button className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-foreground bg-card border border-border rounded-md hover:bg-accent">
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="flex items-center gap-2"
+                                >
                                     <svg
                                         className="w-4 h-4"
                                         fill="none"
@@ -361,123 +385,90 @@ export default function GraphsPage() {
                                         />
                                     </svg>
                                     Share
-                                </button>
+                                </Button>
                             </div>
                         </div>
 
                         {/* Chart Controls */}
                         <div className="flex items-center justify-between px-8 py-3 shrink-0">
                             <div className="flex items-center">
-                                <button
-                                    onClick={() => setChartType("line")}
-                                    className={`px-4 py-2 text-sm font-medium rounded-l-md ${
-                                        chartType === "line"
-                                            ? "text-primary bg-primary/10 border border-primary z-10"
-                                            : "text-foreground bg-card border border-border hover:bg-accent"
-                                    }`}
+                                <Tabs
+                                    value={chartType}
+                                    onValueChange={(value) =>
+                                        setChartType(value as "line" | "bar")
+                                    }
                                 >
-                                    <svg
-                                        className="w-4 h-4 inline mr-1"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"
-                                        />
-                                    </svg>
-                                    Line
-                                </button>
-                                <button
-                                    onClick={() => setChartType("bar")}
-                                    className={`px-4 py-2 text-sm font-medium rounded-r-md -ml-px ${
-                                        chartType === "bar"
-                                            ? "text-primary bg-primary/10 border border-primary z-10"
-                                            : "text-foreground bg-card border border-border hover:bg-accent"
-                                    }`}
-                                >
-                                    <svg
-                                        className="w-4 h-4 inline mr-1"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                                        />
-                                    </svg>
-                                    Bar
-                                </button>
+                                    <TabsList>
+                                        <TabsTrigger
+                                            value="line"
+                                            className="gap-2"
+                                        >
+                                            <LineChart className="w-4 h-4" />
+                                            Line
+                                        </TabsTrigger>
+                                        <TabsTrigger
+                                            value="bar"
+                                            className="gap-2"
+                                        >
+                                            <ChartColumn className="w-4 h-4" />
+                                            Bar
+                                        </TabsTrigger>
+                                    </TabsList>
+                                </Tabs>
                             </div>
 
-                            <div className="flex items-center gap-3">
-                                <button
-                                    onClick={() => setTimePeriod("3y")}
-                                    className={`px-4 py-2 text-sm font-medium rounded-md ${
+                            <div className="flex items-center">
+                                <Button
+                                    type="button"
+                                    variant={
                                         timePeriod === "3y"
-                                            ? "text-primary bg-primary/10 border border-primary"
-                                            : "text-foreground bg-card border border-border hover:bg-accent"
-                                    }`}
+                                            ? "default"
+                                            : "outline"
+                                    }
+                                    size="sm"
+                                    onClick={() => setTimePeriod("3y")}
+                                    className="rounded-l-md rounded-r-none border-r-0"
                                 >
                                     3y
-                                </button>
-                                <button
-                                    onClick={() => setTimePeriod("5y")}
-                                    className={`px-4 py-2 text-sm font-medium rounded-md ${
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant={
                                         timePeriod === "5y"
-                                            ? "text-primary bg-primary/10 border border-primary"
-                                            : "text-foreground bg-card border border-border hover:bg-accent"
-                                    }`}
+                                            ? "default"
+                                            : "outline"
+                                    }
+                                    size="sm"
+                                    onClick={() => setTimePeriod("5y")}
+                                    className="rounded-none border-l-0 border-r-0 -ml-px"
                                 >
                                     5y
-                                </button>
+                                </Button>
                                 <Popover
                                     open={yearRangeOpen}
                                     onOpenChange={setYearRangeOpen}
                                 >
                                     <PopoverTrigger asChild>
-                                        <button
-                                            className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md ${
+                                        <Button
+                                            type="button"
+                                            variant={
                                                 timePeriod === "custom"
-                                                    ? "text-primary-foreground bg-primary hover:bg-primary/90"
-                                                    : "text-foreground bg-card border border-border hover:bg-accent"
-                                            }`}
+                                                    ? "default"
+                                                    : "outline"
+                                            }
+                                            size="sm"
+                                            onClick={() => {
+                                                if (timePeriod !== "custom") {
+                                                    setTimePeriod("custom");
+                                                }
+                                            }}
+                                            className="rounded-r-md rounded-l-none border-l-0 -ml-px flex items-center gap-2"
                                         >
-                                            <svg
-                                                className="w-4 h-4"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                viewBox="0 0 24 24"
-                                            >
-                                                <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    strokeWidth={2}
-                                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                                                />
-                                            </svg>
+                                            <CalendarDays />
                                             {currentYearRange.start} -{" "}
                                             {currentYearRange.end}
-                                            <svg
-                                                className="w-4 h-4"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                viewBox="0 0 24 24"
-                                            >
-                                                <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    strokeWidth={2}
-                                                    d="M19 9l-7 7-7-7"
-                                                />
-                                            </svg>
-                                        </button>
+                                            <ChevronDown />
+                                        </Button>
                                     </PopoverTrigger>
                                     <PopoverContent className="w-80">
                                         <div className="space-y-4">

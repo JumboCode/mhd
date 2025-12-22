@@ -54,7 +54,7 @@ export default function Dashboard() {
     }, [year]);
 
     return (
-        <div className="flex flex-col gap-8 w-full px-6">
+        <div className="flex flex-col gap-8 w-full px-6 py-10">
             <h1 className="text-2xl font-semibold">Overview Dashboard</h1>
             <div className="">
                 <div className="w-40">

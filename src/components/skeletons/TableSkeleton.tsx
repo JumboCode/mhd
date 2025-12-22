@@ -7,7 +7,7 @@ type TableSkeletonProps = {
 
 export function TableSkeleton({ rows = 8, cols = 5 }: TableSkeletonProps) {
     return (
-        <div className="overflow-x-auto rounded-md border">
+        <div className="h-full overflow-auto rounded-md border text-center">
             <div className="border-separate border-spacing-0">
                 {/* Header */}
                 <div className="sticky top-0 z-10 border-b bg-muted">

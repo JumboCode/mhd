@@ -3,7 +3,7 @@ import { StatCardSkeleton } from "./StatCardSkeleton";
 
 export function DashboardSkeleton() {
     return (
-        <div className="flex flex-col gap-8 w-full max-w-5xl px-6">
+        <div className="flex flex-col gap-8 w-full max-w-5xl px-6 py-10">
             {/* Header skeleton */}
             <Skeleton className="h-8 w-64" />
 

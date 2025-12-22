@@ -1,53 +1,64 @@
-/***************************************************************
- *
- *         /api/components/Checkbox.tsx
- *
- *         Author: Chiara and Steven
- *         Date: 12/6/2025
- *
- *        Summary: checkbox component for filter selection
- **************************************************************/
+"use client";
 
-import React from "react";
+import * as CheckboxPrimitive from "@radix-ui/react-checkbox";
+import { X } from "lucide-react";
+import type * as React from "react";
 
-type CheckboxProps = {
-    label: string;
-    onToggle?: (label: string, checked: boolean) => void;
+import { cn } from "@/lib/utils";
+
+type CustomCheckboxProps = {
     isChecked?: boolean;
+    onToggle?: (checked: boolean) => void;
 };
 
-export default function Checkbox({
-    label,
-    onToggle,
-    isChecked,
-}: CheckboxProps) {
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const isChecked = e.target.checked;
-        if (onToggle) onToggle(label, isChecked);
+type CheckboxProps = Omit<
+    React.ComponentProps<typeof CheckboxPrimitive.Root>,
+    "checked" | "onCheckedChange"
+> &
+    CustomCheckboxProps & {
+        checked?: boolean;
+        onCheckedChange?: (checked: boolean | "indeterminate") => void;
     };
 
+function Checkbox({
+    className,
+    isChecked,
+    onToggle,
+    checked,
+    onCheckedChange,
+    ...props
+}: CheckboxProps) {
+    // Map isChecked to checked, and onToggle to onCheckedChange
+    const finalChecked = checked ?? isChecked;
+    const finalOnCheckedChange =
+        onCheckedChange ??
+        (onToggle
+            ? (checkedState: boolean | "indeterminate") => {
+                  // Convert CheckedState to boolean
+                  const isCheckedValue = checkedState === true;
+                  onToggle(isCheckedValue);
+              }
+            : undefined);
+
     return (
-        <label className="flex items-center space-x-3 relative cursor-pointer">
-            {/* Checkbox box */}
-            <input
-                type="checkbox"
-                checked={isChecked || false}
-                onChange={handleChange}
-                className="peer appearance-none w-6 h-6 flex-shrink-0 border-2 border-border rounded transition-colors"
-            />
-
-            {/* X overlay */}
-            <span className="absolute left-0 top-0 w-6 h-6 flex-shrink-0 flex items-center justify-center text-sm text-primary font-extrabold text-lg pointer-events-none peer-checked:flex hidden">
-                ✕
-            </span>
-
-            {/* Label text */}
-            <span
-                className="whitespace-nowrap overflow-hidden text-ellipsis"
-                title={label}
+        <CheckboxPrimitive.Root
+            data-slot="checkbox"
+            className={cn(
+                "peer border-input dark:bg-input/30 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground dark:data-[state=checked]:bg-primary data-[state=checked]:border-primary focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive size-4 shrink-0 rounded-[4px] border shadow-xs transition-shadow outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50",
+                className,
+            )}
+            checked={finalChecked}
+            onCheckedChange={finalOnCheckedChange}
+            {...props}
+        >
+            <CheckboxPrimitive.Indicator
+                data-slot="checkbox-indicator"
+                className="grid place-content-center text-current transition-none"
             >
-                {label}
-            </span>
-        </label>
+                <X className="size-3.5" />
+            </CheckboxPrimitive.Indicator>
+        </CheckboxPrimitive.Root>
     );
 }
+
+export { Checkbox };
