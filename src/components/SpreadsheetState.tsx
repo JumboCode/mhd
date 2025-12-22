@@ -276,7 +276,7 @@ export default function SpreadsheetState() {
             <div className="flex justify-between w-full pb-4">
                 {canPrevious && (
                     <button
-                        className="py-1 w-40 rounded-lg bg-white text-black border border-gray-300 hover:bg-gray-200 hover:cursor-pointer transition duration-300"
+                        className="py-1 w-40 rounded-lg bg-card text-foreground border border-border hover:bg-accent hover:cursor-pointer transition duration-300"
                         onClick={previous}
                         disabled={isSubmitting}
                     >
@@ -286,7 +286,7 @@ export default function SpreadsheetState() {
 
                 {canNext && (
                     <button
-                        className="ml-auto py-1 w-40 rounded-lg bg-blue-700 text-white hover:bg-blue-900 hover:cursor-pointer transition duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                        className="ml-auto py-1 w-40 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 hover:cursor-pointer transition duration-300 disabled:bg-muted disabled:cursor-not-allowed"
                         onClick={next}
                         disabled={isSubmitting}
                     >

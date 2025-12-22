@@ -67,7 +67,7 @@ export default function SchoolProfilePage() {
     }
 
     return (
-        <div className="h-screen w-full bg-white overflow-y-auto flex justify-center">
+        <div className="h-screen w-full bg-background overflow-y-auto flex justify-center">
             <div className="w-full flex flex-col gap-8 py-8 max-w-5xl px-6">
                 <Breadcrumbs />
                 {/* Header with school name */}
@@ -112,12 +112,12 @@ export default function SchoolProfilePage() {
                 </div>
 
                 {/* Data table placeholder */}
-                <div className="border border-gray-200 rounded-lg p-6">
-                    <h2 className="text-xl font-semibold mb-4 text-gray-900">
+                <div className="border border-border rounded-lg p-6">
+                    <h2 className="text-xl font-semibold mb-4 text-foreground">
                         View and edit data
                     </h2>
-                    <div className="h-48 flex items-center justify-center bg-gray-50 rounded">
-                        <p className="text-sm text-gray-500">
+                    <div className="h-48 flex items-center justify-center bg-muted rounded">
+                        <p className="text-sm text-muted-foreground">
                             Data table placeholder
                         </p>
                     </div>
@@ -130,8 +130,8 @@ export default function SchoolProfilePage() {
 // Reusable stat card component
 function StatCard({ label, value }: { label: string; value: string }) {
     return (
-        <div className="flex flex-col items-center justify-center rounded-lg border border-gray-200 p-6 aspect-[247/138] gap-5">
-            <span className="text-sm text-gray-600">{label}</span>
+        <div className="flex flex-col items-center justify-center rounded-lg border border-border p-6 aspect-[247/138] gap-5">
+            <span className="text-sm text-muted-foreground">{label}</span>
             <span className="font-mono text-5xl font-bold leading-none">
                 {value}
             </span>
@@ -143,8 +143,8 @@ function StatCard({ label, value }: { label: string; value: string }) {
 function InfoRow({ label, value }: { label: string; value: string }) {
     return (
         <div>
-            <span className="font-semibold text-gray-900">{label}:</span>{" "}
-            <span className="text-gray-700">{value}</span>
+            <span className="font-semibold text-foreground">{label}:</span>{" "}
+            <span className="text-foreground">{value}</span>
         </div>
     );
 }
@@ -158,13 +158,13 @@ function PlaceholderCard({
     className?: string;
 }) {
     return (
-        <div className={`border border-gray-200 rounded-lg p-6 ${className}`}>
-            <div className="h-48 flex items-center justify-center bg-gray-50 rounded">
+        <div className={`border border-border rounded-lg p-6 ${className}`}>
+            <div className="h-48 flex items-center justify-center bg-muted rounded">
                 <div className="text-center">
-                    <p className="text-sm font-semibold text-gray-900">
+                    <p className="text-sm font-semibold text-foreground">
                         {title}
                     </p>
-                    <p className="text-sm text-gray-500 mt-2">
+                    <p className="text-sm text-muted-foreground mt-2">
                         Chart placeholder
                     </p>
                 </div>

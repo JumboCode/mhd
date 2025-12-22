@@ -60,7 +60,7 @@ export default function Dashboard() {
                     <select
                         value={year}
                         onChange={(e) => setYear(parseInt(e.target.value))}
-                        className="border border-gray-300 rounded-lg px-3 md:px-4py-1.5 md:py-2 w-full text-sm md:text-base text-gray-700 shadow-sm"
+                        className="border border-input rounded-lg px-3 md:px-4py-1.5 md:py-2 w-full text-sm md:text-base text-foreground shadow-sm"
                     >
                         {[2025, 2024, 2023, 2022, 2021, 2020, 2019, 2018].map(
                             (y) => (
@@ -73,7 +73,7 @@ export default function Dashboard() {
                 </div>
             </div>
 
-            {loading && <p className="text-gray-500">Loading...</p>}
+            {loading && <p className="text-muted-foreground">Loading...</p>}
 
             {stats && !loading && (
                 <div className="">
@@ -106,7 +106,7 @@ export default function Dashboard() {
 /* Statcard component used to display all totals */
 function StatCard({ label, value }: { label: string; value: number }) {
     return (
-        <div className="flex flex-col items-center justify-center rounded-lg border border-gray-200 py-6 gap-5">
+        <div className="flex flex-col items-center justify-center rounded-lg border border-border py-6 gap-5">
             <span className="text-xs">{label}</span>
             <span className="font-mono text-5xl font-bold leading-none">
                 {value}

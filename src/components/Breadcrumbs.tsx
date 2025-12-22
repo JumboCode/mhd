@@ -39,7 +39,7 @@ export function Breadcrumbs() {
                 variant="ghost"
                 size="icon"
                 aria-label="Submit"
-                className="outline  hover:bg-gray-100"
+                className="outline  hover:bg-accent"
             >
                 <Link href={backArrowHref}>
                     <ArrowLeftIcon />
@@ -53,7 +53,7 @@ export function Breadcrumbs() {
                             className={
                                 pathname === "/"
                                     ? "text-mhd-black"
-                                    : "text-gray-400"
+                                    : "text-muted-foreground"
                             }
                         >
                             <Link href="/">OVERVIEW</Link>
@@ -72,7 +72,7 @@ export function Breadcrumbs() {
                                         className={
                                             isCurrent
                                                 ? "text-mhd-black"
-                                                : "text-gray-400"
+                                                : "text-muted-foreground"
                                         }
                                     >
                                         <Link href={href}>

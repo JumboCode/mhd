@@ -80,8 +80,8 @@ export function SchoolsDataTable<TData, TValue>({
                                         key={header.id}
                                         className={
                                             header.index === 0
-                                                ? "sticky left-0 z-30 text-center bg-gray-100 border-r border-b min-w-[200px] w-[200px]"
-                                                : "text-center border-r border-b z-0 bg-gray-100"
+                                                ? "sticky left-0 z-30 text-center bg-muted border-r border-b min-w-[200px] w-[200px]"
+                                                : "text-center border-r border-b z-0 bg-muted"
                                         }
                                     >
                                         <div>
@@ -120,7 +120,7 @@ export function SchoolsDataTable<TData, TValue>({
                                         key={cell.id}
                                         className={
                                             cell.column.getIndex() === 0
-                                                ? " text-center sticky left-0 z-20 bg-gray-50 border-r border-b min-w-[200px] w-[200px]"
+                                                ? " text-center sticky left-0 z-20 bg-muted border-r border-b min-w-[200px] w-[200px]"
                                                 : " text-center z-0 border-b"
                                         }
                                     >
@@ -150,7 +150,7 @@ export function SchoolsDataTable<TData, TValue>({
                         <TableRow>
                             <TableCell
                                 colSpan={columns.length}
-                                className="h-24 text-center text-gray-500"
+                                className="h-24 text-center text-muted-foreground"
                             >
                                 No schools found
                             </TableCell>

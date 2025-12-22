@@ -8,7 +8,7 @@ export default function Input() {
     const [questionDisplay, setQuestionDisplay] = useState("");
     const [answerDisplay, setAnswerDisplay] = useState("");
     const [buttonStyle, setButtonStyle] = useState(
-        "bg-[#22405D] hover:bg-[#457baf] text-white rounded-md w-30 h-10 my-2 display-block",
+        "bg-primary hover:bg-primary/90 text-primary-foreground rounded-md w-30 h-10 my-2 display-block",
     );
 
     // used to get rid of stuff like &quot; in the question string
@@ -28,16 +28,16 @@ export default function Input() {
     const styleClickedButton = () => {
         setButtonStyle(
             buttonStyle.replace(
-                "bg-[#22405D] hover:bg-[#457baf]",
-                "bg-[#1C334A]",
+                "bg-primary hover:bg-primary/90",
+                "bg-primary/80",
             ),
         );
     };
     const revertClickedButtonStyle = () => {
         setButtonStyle(
             buttonStyle.replace(
-                "bg-[#1C334A]",
-                "bg-[#22405D] hover:bg-[#457baf]",
+                "bg-primary/80",
+                "bg-primary hover:bg-primary/90",
             ),
         );
     };

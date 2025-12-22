@@ -241,7 +241,7 @@ export default function GraphFilters({
         <div className="mb-8 space-y-6">
             {/* Measured As */}
             <div>
-                <label className="block text-sm font-semibold mb-2 text-gray-700">
+                <label className="block text-sm font-semibold mb-2 text-foreground">
                     Measured as
                 </label>
                 <Combobox
@@ -253,7 +253,7 @@ export default function GraphFilters({
 
             {/* Group By */}
             <div>
-                <label className="block text-sm font-semibold mb-2 text-gray-700">
+                <label className="block text-sm font-semibold mb-2 text-foreground">
                     Group by
                 </label>
                 <Combobox
@@ -265,7 +265,7 @@ export default function GraphFilters({
 
             {/* Filter By */}
             <div>
-                <h2 className="text-sm font-semibold mb-3 text-gray-700">
+                <h2 className="text-sm font-semibold mb-3 text-foreground">
                     Filter by
                 </h2>
 
@@ -275,7 +275,7 @@ export default function GraphFilters({
                         {activeFilters.map((filter) => (
                             <div
                                 key={filter.key}
-                                className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 border border-gray-300 rounded-md text-sm cursor-pointer hover:bg-gray-200"
+                                className="inline-flex items-center gap-1 px-3 py-1 bg-muted border border-border rounded-md text-sm cursor-pointer hover:bg-accent"
                                 onClick={() => {
                                     // Open the corresponding accordion item
                                     if (
@@ -298,7 +298,7 @@ export default function GraphFilters({
 
                 {/* Add Filter Button */}
                 <button
-                    className="flex items-center gap-1 text-sm text-gray-700 hover:text-gray-900 mb-4"
+                    className="flex items-center gap-1 text-sm text-foreground hover:text-foreground mb-4"
                     onClick={() => {
                         if (showAllFilters) {
                             // Hide all non-active filters
@@ -371,7 +371,7 @@ export default function GraphFilters({
                                 </div>
                                 <button
                                     onClick={() => handleSchoolsChange([])}
-                                    className="mt-2 text-xs text-blue-600"
+                                    className="mt-2 text-xs text-primary"
                                 >
                                     Clear selection
                                 </button>
@@ -398,7 +398,7 @@ export default function GraphFilters({
                                 </div>
                                 <button
                                     onClick={() => handleCitiesChange([])}
-                                    className="mt-2 text-xs text-blue-600"
+                                    className="mt-2 text-xs text-primary"
                                 >
                                     Clear selection
                                 </button>

@@ -33,11 +33,11 @@ export default function Checkbox({
                 type="checkbox"
                 checked={isChecked || false}
                 onChange={handleChange}
-                className="peer appearance-none w-6 h-6 flex-shrink-0 border-2 border-gray-400 rounded transition-colors"
+                className="peer appearance-none w-6 h-6 flex-shrink-0 border-2 border-border rounded transition-colors"
             />
 
             {/* X overlay */}
-            <span className="absolute left-0 top-0 w-6 h-6 flex-shrink-0 flex items-center justify-center text-sm text-blue-900 font-extrabold text-lg pointer-events-none peer-checked:flex hidden">
+            <span className="absolute left-0 top-0 w-6 h-6 flex-shrink-0 flex items-center justify-center text-sm text-primary font-extrabold text-lg pointer-events-none peer-checked:flex hidden">
                 ✕
             </span>
 

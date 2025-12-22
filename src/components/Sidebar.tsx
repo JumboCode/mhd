@@ -67,7 +67,7 @@ export default function Sidebar() {
     ];
 
     return (
-        <aside className="h-full bg-white border-r border-gray-200 flex flex-col justify-between w-56 flex-shrink-0">
+        <aside className="h-full bg-card border-r border-border flex flex-col justify-between w-56 flex-shrink-0">
             <div className="flex-1 overflow-hidden">
                 <div className="px-6 py-5 flex items-center justify-center">
                     <h1>
@@ -82,7 +82,7 @@ export default function Sidebar() {
                 <div className="mt-4 px-3">
                     {sections.map((section) => (
                         <div key={section.title} className="mb-5">
-                            <p className="text-xs font-semibold text-gray-400 mb-2 px-2 overflow-hidden whitespace-nowrap">
+                            <p className="text-xs font-semibold text-muted-foreground mb-2 px-2 overflow-hidden whitespace-nowrap">
                                 {section.title}
                             </p>
 
@@ -107,8 +107,8 @@ export default function Sidebar() {
                                                         w-full flex items-center justify-between px-3 py-2 rounded-lg transition-colors
                                                         ${
                                                             isAnySubitemActive
-                                                                ? "text-black hover:bg-blue-50 hover:text-blue-900"
-                                                                : "text-gray-700 hover:bg-blue-50 hover:text-blue-900"
+                                                                ? "text-foreground hover:bg-accent hover:text-accent-foreground"
+                                                                : "text-foreground hover:bg-accent hover:text-accent-foreground"
                                                         }
                                                     `}
                                                 >
@@ -151,8 +151,8 @@ export default function Sidebar() {
                                                                             px-3 py-1.5 rounded-lg transition-colors text-sm
                                                                             ${
                                                                                 isActive
-                                                                                    ? "text-black font-semibold bg-blue-100"
-                                                                                    : "text-gray-600 hover:bg-blue-50 hover:text-blue-900"
+                                                                                    ? "text-foreground font-semibold bg-accent"
+                                                                                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                                                                             }
                                                                         `}
                                                                     >
@@ -179,8 +179,8 @@ export default function Sidebar() {
                                                     flex items-center gap-3 px-3 py-2 rounded-lg transition-colors
                                                     ${
                                                         isActive
-                                                            ? "text-black font-semibold bg-blue-100"
-                                                            : "text-gray-700 hover:bg-blue-50 hover:text-blue-900"
+                                                            ? "text-foreground font-semibold bg-accent"
+                                                            : "text-foreground hover:bg-accent hover:text-accent-foreground"
                                                     }
                                                 `}
                                             >
@@ -208,7 +208,7 @@ export default function Sidebar() {
                         className="w-full h-full object-cover"
                     />
                 </div>
-                <span className="text-sm font-medium text-gray-700 overflow-hidden whitespace-nowrap">
+                <span className="text-sm font-medium text-foreground overflow-hidden whitespace-nowrap">
                     Admin Name
                 </span>
             </div>

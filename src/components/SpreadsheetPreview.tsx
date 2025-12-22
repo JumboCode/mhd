@@ -75,7 +75,7 @@ export default function SpreadsheetPreview({
         <>
             <div className="flex flex-col items-center gap-12">
                 <div className="flex flex-col items-center">
-                    <CircleCheck className="w-16 h-16 text-green-500" />
+                    <CircleCheck className="w-16 h-16 text-primary" />
                     <h2 className="text-xl font-bold mt-5">
                         Your file looks good
                     </h2>
@@ -84,8 +84,8 @@ export default function SpreadsheetPreview({
                     <div className="flex flex-col gap-2">
                         <div className="flex gap-4 items-center">
                             <p className="font-bold w-32">File</p>
-                            <div className="bg-gray-100 px-2 rounded border flex items-center gap-1">
-                                <FileChartColumn className="h-4 text-gray-600" />
+                            <div className="bg-muted px-2 rounded border flex items-center gap-1">
+                                <FileChartColumn className="h-4 text-muted-foreground" />
                                 <p>{fileName}</p>
                             </div>
                         </div>
@@ -102,7 +102,7 @@ export default function SpreadsheetPreview({
                     </div>
                     <div className="flex flex-col gap-2">
                         <h2 className="text-xl font-bold mt-5 ">Data sample</h2>
-                        <p className="text-gray-600">
+                        <p className="text-muted-foreground">
                             Here are the first 5 rows from your file
                         </p>
                     </div>

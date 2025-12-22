@@ -43,7 +43,7 @@ export default function YearDropdown({
         <select
             value={year ?? ""}
             onChange={handleChange}
-            className="border border-gray-300 rounded px-4 w-30 font-normal text-sm text-gray-600 h-[30px] hover:border-gray-400 focus:border-[#22405D] focus:outline-none focus:ring-2 focus:ring-[#457BAF]/20"
+            className="border border-input rounded px-4 w-30 font-normal text-sm text-muted-foreground h-[30px] hover:border-border focus:border-[#22405D] focus:outline-none focus:ring-2 focus:ring-[#457BAF]/20"
         >
             <option value="">Select a year</option>
             {years.map((y) => (

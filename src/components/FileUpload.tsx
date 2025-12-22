@@ -89,8 +89,8 @@ export default function FileUpload({ fileInfo, setFileInfo }: UploadProps) {
         >
             <button
                 onClick={handleClick}
-                className={`flex flex-col items-center justify-center gap-6 rounded-lg py-20 border-2 border-dashed border-gray-300 w-full hover:bg-gray-200 transition duration-300
-                    ${isDragging ? "bg-gray-200" : "bg-gray-100"}`}
+                className={`flex flex-col items-center justify-center gap-6 rounded-lg py-20 border-2 border-dashed border-border w-full hover:bg-accent transition duration-300
+                    ${isDragging ? "bg-accent" : "bg-muted"}`}
             >
                 <FileUploadIcon size={64} />
                 <div className="flex flex-col gap-1">

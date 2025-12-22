@@ -310,9 +310,9 @@ export default function GraphsPage() {
     ).sort();
 
     return (
-        <div className="w-full min-h-screen flex bg-white">
+        <div className="w-full min-h-screen flex bg-background">
             {/* Left Sidebar - Filter Panel */}
-            <div className="flex flex-col border-r border-gray-200 p-8 bg-[#FCFCFC] w-70 h-screen overflow-y-auto sticky top-0 gap-12">
+            <div className="flex flex-col border-r border-border p-8 bg-card w-70 h-screen overflow-y-auto sticky top-0 gap-12">
                 <Breadcrumbs />
                 <GraphFilters
                     schools={schools}
@@ -324,18 +324,18 @@ export default function GraphsPage() {
             {/* Main Content Area */}
             <div className="flex-1 flex flex-col h-screen overflow-hidden">
                 {loading ? (
-                    <p className="text-xl text-gray-500 mt-20 text-center">
+                    <p className="text-xl text-muted-foreground mt-20 text-center">
                         Loading project data...
                     </p>
                 ) : (
                     <div className="flex flex-col gap-4 h-full overflow-hidden">
                         {/* Header */}
-                        <div className="flex items-center justify-between px-8 pt-4 flex-shrink-0">
-                            <h1 className="text-xl font-semibold text-gray-900">
+                        <div className="flex items-center justify-between px-8 pt-4 shrink-0">
+                            <h1 className="text-xl font-semibold text-foreground">
                                 Projects by {groupByLabels[filters.groupBy]}
                             </h1>
                             <div className="flex gap-3">
-                                <button className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                                <button className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-foreground bg-card border border-border rounded-md hover:bg-accent">
                                     <svg
                                         className="w-4 h-4"
                                         fill="none"
@@ -351,7 +351,7 @@ export default function GraphsPage() {
                                     </svg>
                                     Export
                                 </button>
-                                <button className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                                <button className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-foreground bg-card border border-border rounded-md hover:bg-accent">
                                     <svg
                                         className="w-4 h-4"
                                         fill="none"
@@ -371,14 +371,14 @@ export default function GraphsPage() {
                         </div>
 
                         {/* Chart Controls */}
-                        <div className="flex items-center justify-between px-8 py-3 flex-shrink-0">
+                        <div className="flex items-center justify-between px-8 py-3 shrink-0">
                             <div className="flex items-center">
                                 <button
                                     onClick={() => setChartType("line")}
                                     className={`px-4 py-2 text-sm font-medium rounded-l-md ${
                                         chartType === "line"
-                                            ? "text-blue-600 bg-blue-50 border border-blue-300 z-10"
-                                            : "text-gray-700 bg-white border border-gray-300 hover:bg-gray-50"
+                                            ? "text-primary bg-primary/10 border border-primary z-10"
+                                            : "text-foreground bg-card border border-border hover:bg-accent"
                                     }`}
                                 >
                                     <svg
@@ -400,8 +400,8 @@ export default function GraphsPage() {
                                     onClick={() => setChartType("bar")}
                                     className={`px-4 py-2 text-sm font-medium rounded-r-md -ml-px ${
                                         chartType === "bar"
-                                            ? "text-blue-600 bg-blue-50 border border-blue-300 z-10"
-                                            : "text-gray-700 bg-white border border-gray-300 hover:bg-gray-50"
+                                            ? "text-primary bg-primary/10 border border-primary z-10"
+                                            : "text-foreground bg-card border border-border hover:bg-accent"
                                     }`}
                                 >
                                     <svg
@@ -426,8 +426,8 @@ export default function GraphsPage() {
                                     onClick={() => setTimePeriod("3y")}
                                     className={`px-4 py-2 text-sm font-medium rounded-md ${
                                         timePeriod === "3y"
-                                            ? "text-blue-600 bg-blue-50 border border-blue-300"
-                                            : "text-gray-700 bg-white border border-gray-300 hover:bg-gray-50"
+                                            ? "text-primary bg-primary/10 border border-primary"
+                                            : "text-foreground bg-card border border-border hover:bg-accent"
                                     }`}
                                 >
                                     3y
@@ -436,8 +436,8 @@ export default function GraphsPage() {
                                     onClick={() => setTimePeriod("5y")}
                                     className={`px-4 py-2 text-sm font-medium rounded-md ${
                                         timePeriod === "5y"
-                                            ? "text-blue-600 bg-blue-50 border border-blue-300"
-                                            : "text-gray-700 bg-white border border-gray-300 hover:bg-gray-50"
+                                            ? "text-primary bg-primary/10 border border-primary"
+                                            : "text-foreground bg-card border border-border hover:bg-accent"
                                     }`}
                                 >
                                     5y
@@ -450,8 +450,8 @@ export default function GraphsPage() {
                                         <button
                                             className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md ${
                                                 timePeriod === "custom"
-                                                    ? "text-white bg-blue-600 hover:bg-blue-700"
-                                                    : "text-gray-700 bg-white border border-gray-300 hover:bg-gray-50"
+                                                    ? "text-primary-foreground bg-primary hover:bg-primary/90"
+                                                    : "text-foreground bg-card border border-border hover:bg-accent"
                                             }`}
                                         >
                                             <svg
@@ -491,7 +491,7 @@ export default function GraphsPage() {
                                             </h4>
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div>
-                                                    <label className="text-xs text-gray-600 mb-1 block">
+                                                    <label className="text-xs text-muted-foreground mb-1 block">
                                                         Start Year
                                                     </label>
                                                     <input
@@ -509,13 +509,13 @@ export default function GraphsPage() {
                                                                     ) || 2020,
                                                             })
                                                         }
-                                                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                                                        className="w-full px-3 py-2 border border-input rounded-md text-sm"
                                                         min="2000"
                                                         max={tempYearRange.end}
                                                     />
                                                 </div>
                                                 <div>
-                                                    <label className="text-xs text-gray-600 mb-1 block">
+                                                    <label className="text-xs text-muted-foreground mb-1 block">
                                                         End Year
                                                     </label>
                                                     <input
@@ -533,7 +533,7 @@ export default function GraphsPage() {
                                                                     ) || 2025,
                                                             })
                                                         }
-                                                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                                                        className="w-full px-3 py-2 border border-input rounded-md text-sm"
                                                         min={
                                                             tempYearRange.start
                                                         }
@@ -571,7 +571,7 @@ export default function GraphsPage() {
                         </div>
 
                         {/* Chart Area */}
-                        <div className="flex-1 flex items-center justify-center px-8 bg-white overflow-auto">
+                        <div className="flex-1 flex items-center justify-center px-8 bg-background overflow-auto">
                             {chartType === "bar" ? (
                                 <BarGraph
                                     dataset={graphDataset}
@@ -592,7 +592,7 @@ export default function GraphsPage() {
                         </div>
 
                         {/* Footer */}
-                        <div className="flex flex-col justify-center items-end gap-3 px-8 pb-4 text-xs text-black flex-shrink-0">
+                        <div className="flex flex-col justify-center items-end gap-3 px-8 pb-4 text-xs text-foreground shrink-0">
                             <p className="font-medium">
                                 <span className="font-mono bg-gray/4 border rounded-sm border-gray/2 py-1 px-2">
                                     {Math.round(filteredProjectCount)}

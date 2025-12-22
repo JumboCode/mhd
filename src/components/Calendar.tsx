@@ -50,17 +50,17 @@ export default function MHDCalendar() {
                         onClick: () => handleSelect(date),
                     })}
                 />
-                <p className="mt-4 text-gray-600">
+                <p className="mt-4 text-muted-foreground">
                     Selected: {selectedDate ? selectedDate : "None"}
                 </p>
 
                 <button
                     onClick={handleSubmit}
-                    className="mt-2 px-4 py-2 bg-blue-500 text-white justify-center rounded-lg hover:bg-blue-600 transition"
+                    className="mt-2 px-4 py-2 bg-primary text-primary-foreground justify-center rounded-lg hover:bg-primary/90 transition"
                 >
                     Submit
                 </button>
-                {response && <p className="mt-2 text-gray-700">{response}</p>}
+                {response && <p className="mt-2 text-foreground">{response}</p>}
             </div>
         </div>
     );

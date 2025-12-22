@@ -77,7 +77,7 @@ export default function SchoolsPage() {
 
                 <div className="mt-5 overflow-x-auto">
                     {error && (
-                        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md text-red-700">
+                        <div className="mb-4 p-4 bg-destructive/10 border border-destructive rounded-md text-destructive">
                             {error}
                         </div>
                     )}
