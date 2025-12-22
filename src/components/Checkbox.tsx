@@ -1,45 +1,15 @@
 "use client";
 
 import * as CheckboxPrimitive from "@radix-ui/react-checkbox";
-import { X } from "lucide-react";
+import { CheckIcon, X } from "lucide-react";
 import type * as React from "react";
 
 import { cn } from "@/lib/utils";
 
-type CustomCheckboxProps = {
-    isChecked?: boolean;
-    onToggle?: (checked: boolean) => void;
-};
-
-type CheckboxProps = Omit<
-    React.ComponentProps<typeof CheckboxPrimitive.Root>,
-    "checked" | "onCheckedChange"
-> &
-    CustomCheckboxProps & {
-        checked?: boolean;
-        onCheckedChange?: (checked: boolean | "indeterminate") => void;
-    };
-
 function Checkbox({
     className,
-    isChecked,
-    onToggle,
-    checked,
-    onCheckedChange,
     ...props
-}: CheckboxProps) {
-    // Map isChecked to checked, and onToggle to onCheckedChange
-    const finalChecked = checked ?? isChecked;
-    const finalOnCheckedChange =
-        onCheckedChange ??
-        (onToggle
-            ? (checkedState: boolean | "indeterminate") => {
-                  // Convert CheckedState to boolean
-                  const isCheckedValue = checkedState === true;
-                  onToggle(isCheckedValue);
-              }
-            : undefined);
-
+}: React.ComponentProps<typeof CheckboxPrimitive.Root>) {
     return (
         <CheckboxPrimitive.Root
             data-slot="checkbox"
@@ -47,8 +17,6 @@ function Checkbox({
                 "peer border-input dark:bg-input/30 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground dark:data-[state=checked]:bg-primary data-[state=checked]:border-primary focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive size-4 shrink-0 rounded-[4px] border shadow-xs transition-shadow outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50",
                 className,
             )}
-            checked={finalChecked}
-            onCheckedChange={finalOnCheckedChange}
             {...props}
         >
             <CheckboxPrimitive.Indicator
