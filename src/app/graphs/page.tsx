@@ -11,6 +11,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import BarGraph, { type BarDataset } from "@/components/BarGraph";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import GraphFilters, { type Filters } from "@/components/GraphFilters";
@@ -98,8 +99,9 @@ export default function GraphsPage() {
                 const data = await response.json();
                 setAllProjects(data);
             } catch (error) {
-                // eslint-disable-next-line no-console
-                console.error("Error:", error);
+                toast.error(
+                    "Failed to load project data. Please refresh the page.",
+                );
             } finally {
                 setLoading(false);
             }

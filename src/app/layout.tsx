@@ -2,6 +2,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 
+import { Toaster } from "sonner";
 import {
     interstate,
     millerBanner,
@@ -33,6 +34,7 @@ export default function RootLayout({
                         {children}
                     </main>
                 </ResponsiveLayout>
+                <Toaster />
             </body>
         </html>
     );

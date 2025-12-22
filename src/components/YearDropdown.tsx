@@ -12,8 +12,8 @@
 
 "use client";
 
-import type React from "react";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import {
     Select,
     SelectContent,
@@ -52,8 +52,7 @@ export default function YearDropdown({
                     setYearsWithData(new Set(data.yearsWithData));
                 }
             } catch (error) {
-                // eslint-disable-next-line no-console
-                console.error("Failed to fetch years with data:", error);
+                toast.error("Failed to load year data");
             }
         };
         fetchYearsWithData();

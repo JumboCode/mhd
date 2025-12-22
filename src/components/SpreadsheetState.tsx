@@ -13,14 +13,15 @@
 
 "use client";
 
-import React, { ReactElement, useState, useEffect } from "react";
+import React, { type ReactElement, useEffect, useState } from "react";
+import { toast } from "sonner";
+import * as XLSX from "xlsx";
+import SpreadsheetStatusBar from "@/components/SpreadsheetStatusBar";
+import type { SpreadsheetData } from "@/types/spreadsheet";
 import SpreadsheetConfirmation from "./SpreadsheetConfirmation";
-import SpreadsheetUpload from "./SpreadsheetUpload";
 import SpreadsheetPreview from "./SpreadsheetPreview";
 import SpreadsheetPreviewFail from "./SpreadsheetPreviewFail";
-import SpreadsheetStatusBar from "@/components/SpreadsheetStatusBar";
-import * as XLSX from "xlsx";
-import type { SpreadsheetData } from "@/types/spreadsheet";
+import SpreadsheetUpload from "./SpreadsheetUpload";
 
 export default function SpreadsheetState() {
     const [file, setFile] = useState<File | undefined>();
@@ -98,7 +99,7 @@ export default function SpreadsheetState() {
 
     const handleSubmit = async () => {
         if (spreadsheetData.length === 0) {
-            alert("No data to upload.");
+            toast.warning("No data to upload.");
             return;
         }
 
@@ -118,7 +119,7 @@ export default function SpreadsheetState() {
 
             if (response.ok) {
                 const data = await response.json();
-                alert(
+                toast.success(
                     `Data uploaded successfully! Processed ${data.rowsProcessed || spreadsheetData.length - 1} rows.`,
                 );
             } else {
@@ -126,7 +127,11 @@ export default function SpreadsheetState() {
                 throw new Error(errorData.message || "Failed to upload data");
             }
         } catch (error) {
-            alert("Error uploading data: " + error);
+            toast.error(
+                error instanceof Error
+                    ? `Error uploading data: ${error.message}`
+                    : "Error uploading data. Please try again.",
+            );
         } finally {
             setIsSubmitting(false);
         }

@@ -11,8 +11,9 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 
 // interface such that data can be blank if API is loading
@@ -58,12 +59,28 @@ export default function SchoolProfilePage() {
             })
             .catch((error) => {
                 setError(error.message);
+                toast.error(
+                    "Failed to load school data. Redirecting to schools page.",
+                );
+                // Redirect after showing error
+                setTimeout(() => {
+                    router.push("/schools");
+                }, 2000);
             });
-    }, [schoolName]);
+    }, [schoolName, router]);
 
     // Redirect to schools page if school cannot be found
     if (error) {
-        router.push("/schools");
+        return (
+            <div className="h-screen w-full bg-background overflow-y-auto flex justify-center">
+                <div className="w-full flex flex-col gap-8 py-8 max-w-5xl px-6">
+                    <Breadcrumbs />
+                    <div className="p-4 bg-destructive/10 border border-destructive rounded-md text-destructive">
+                        {error}
+                    </div>
+                </div>
+            </div>
+        );
     }
 
     return (
