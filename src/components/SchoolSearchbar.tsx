@@ -12,8 +12,9 @@
 
 "use client";
 
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
 import type React from "react";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 type SearchBarProps = {
@@ -33,12 +34,32 @@ export default function SchoolSearchBar({
         setSearch(value);
     };
 
+    const handleClear = () => {
+        setSearch("");
+    };
+
     return (
-        <Input
-            type="text"
-            value={search}
-            onChange={handleChange}
-            placeholder={placeholder}
-        />
+        <div className={`relative ${className}`}>
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+            <Input
+                type="text"
+                value={search}
+                onChange={handleChange}
+                placeholder={placeholder}
+                className="pl-9 pr-9"
+            />
+            {search && (
+                <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+                    onClick={handleClear}
+                    aria-label="Clear search"
+                >
+                    <X className="h-4 w-4" />
+                </Button>
+            )}
+        </div>
     );
 }

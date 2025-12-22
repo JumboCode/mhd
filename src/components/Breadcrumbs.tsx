@@ -12,9 +12,10 @@
 
 "use client";
 
-import React from "react";
+import { ArrowLeftIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import React from "react";
 import {
     Breadcrumb,
     BreadcrumbItem,
@@ -22,10 +23,7 @@ import {
     BreadcrumbList,
     BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-
 import { Button } from "@/components/ui/button";
-
-import { ArrowLeftIcon } from "lucide-react";
 
 export function Breadcrumbs() {
     const pathname = usePathname();
@@ -33,13 +31,13 @@ export function Breadcrumbs() {
     const backArrowHref = `/${crumbTrail.slice(0, crumbTrail.length - 1).join("/")}`;
 
     return (
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 font-semibold">
             <Button
                 asChild
                 variant="ghost"
                 size="icon"
                 aria-label="Submit"
-                className="outline  hover:bg-accent"
+                className="outline hover:bg-accent h-7 w-7"
             >
                 <Link href={backArrowHref}>
                     <ArrowLeftIcon />

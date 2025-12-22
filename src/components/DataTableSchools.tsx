@@ -65,7 +65,7 @@ export function SchoolsDataTable<TData, TValue>({
     return (
         //Example code should be changed
         //border for school name column disappears when scrolling right
-        <div className="overflow-x-auto rounded-md border text-center max-h-[calc(100vh-100px)] overflow-y-auto">
+        <div className="h-full overflow-auto rounded-md border text-center">
             <Table className="border-separate border-spacing-0">
                 <TableHeader className="sticky top-0 z-10">
                     {table.getHeaderGroups().map((headerGroup) => (

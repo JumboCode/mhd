@@ -29,7 +29,7 @@ export default function SchoolsPage() {
 
         setError(null);
 
-        fetch(`/api/schools?year=` + year)
+        fetch(`/api/schools?year=${year}`)
             .then((response) => {
                 if (!response.ok) {
                     throw new Error(`Failed to fetch school data`);
@@ -40,43 +40,32 @@ export default function SchoolsPage() {
                 setSchoolInfo(data);
             })
             .catch((error) => {
-                // eslint-disable-next-line no-console
                 console.log(error);
                 setError(error.message || "Failed to load school data");
             });
     }, [year]);
 
     return (
-        <div className="font-sans mt-5">
-            <div className="w-11/12 mx-auto">
-                <div className="flex items-center">
-                    {/*Table and charts need to be a toggle */}
-                    <Breadcrumbs />
-                    <div className="flex-1 text-center">
-                        <h1 className="text-xl font-bold sm: pr-6">
-                            {" "}
-                            Schools{" "}
-                        </h1>
-                    </div>
-
-                    <div className="flex items-center gap-4">
-                        <YearDropdown
-                            selectedYear={year}
-                            onYearChange={setYear}
-                        />
-                        <SchoolSearchBar
-                            search={search}
-                            setSearch={setSearch}
-                        />
-                    </div>
+        <div className="font-sans h-full w-full max-w-full flex flex-col overflow-hidden px-6 py-5">
+            <div className="flex items-center shrink-0 pb-5">
+                <Breadcrumbs />
+                <div className="flex-1 text-center">
+                    <h1 className="text-xl font-bold sm: pr-6"> Schools </h1>
                 </div>
 
-                <div className="mt-5 overflow-x-auto">
-                    {error && (
-                        <div className="mb-4 p-4 bg-destructive/10 border border-destructive rounded-md text-destructive">
-                            {error}
-                        </div>
-                    )}
+                <div className="flex items-center gap-4">
+                    <YearDropdown selectedYear={year} onYearChange={setYear} />
+                    <SchoolSearchBar search={search} setSearch={setSearch} />
+                </div>
+            </div>
+
+            <div className="flex-1 flex flex-col overflow-hidden min-h-0">
+                {error && (
+                    <div className="mb-4 p-4 bg-destructive/10 border border-destructive rounded-md text-destructive shrink-0">
+                        {error}
+                    </div>
+                )}
+                <div className="flex-1 overflow-hidden min-h-0">
                     <SchoolsDataTable
                         columns={columns}
                         data={schoolInfo}

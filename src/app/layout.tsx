@@ -27,10 +27,10 @@ export default function RootLayout({
             lang="en"
             className={`${millerBanner.variable} ${millerDisplay.variable} ${millerText.variable} ${interstate.variable}`}
         >
-            <body className="font-sans flex flex-row h-screen">
+            <body className="font-sans flex flex-row h-screen overflow-hidden">
                 <ResponsiveLayout>
                     <Sidebar />
-                    <main className="flex-1 flex justify-center">
+                    <main className="flex-1 flex justify-center overflow-hidden">
                         {children}
                     </main>
                 </ResponsiveLayout>
