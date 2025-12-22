@@ -30,7 +30,7 @@ export default function SpreadsheetPreviewFail({
         <>
             <div className="flex flex-col items-center gap-12 max-w-lg">
                 <div className="flex flex-col items-center gap-2 w-full">
-                    <CircleX className="w-16 h-16 text-red-500" />
+                    <CircleX className="w-16 h-16 text-destructive" />
                     <h2 className="text-xl font-bold mt-5">
                         This file can&apos;t be imported
                     </h2>
@@ -41,8 +41,8 @@ export default function SpreadsheetPreviewFail({
                 <div className="flex flex-col gap-4 w-full">
                     <div className="flex gap-4 items-center">
                         <p className="font-bold w-32">File</p>
-                        <div className="bg-gray-100 px-2 rounded border flex items-center gap-1">
-                            <FileChartColumn className="h-4 text-gray-600" />
+                        <div className="bg-muted px-2 rounded border flex items-center gap-1">
+                            <FileChartColumn className="h-4 text-muted-foreground" />
                             <p>{fileName}</p>
                         </div>
                     </div>

@@ -37,17 +37,13 @@ interface DataTableProps<TData, TValue> {
     data: TData[];
     globalFilter: string;
     setGlobalFilter: (value: string) => void;
-    isLoading?: boolean;
 }
-
-import { Spinner } from "@/components/ui/spinner";
 
 export function SchoolsDataTable<TData, TValue>({
     columns,
     data,
     globalFilter,
     setGlobalFilter,
-    isLoading = false,
 }: DataTableProps<TData, TValue>) {
     const [sorting, setSorting] = React.useState<SortingState>([]);
 
@@ -69,7 +65,7 @@ export function SchoolsDataTable<TData, TValue>({
     return (
         //Example code should be changed
         //border for school name column disappears when scrolling right
-        <div className="overflow-x-auto rounded-md border text-center max-h-[calc(100vh-100px)] overflow-y-auto">
+        <div className="h-full overflow-auto rounded-md border text-center">
             <Table className="border-separate border-spacing-0">
                 <TableHeader className="sticky top-0 z-10">
                     {table.getHeaderGroups().map((headerGroup) => (
@@ -80,8 +76,8 @@ export function SchoolsDataTable<TData, TValue>({
                                         key={header.id}
                                         className={
                                             header.index === 0
-                                                ? "sticky left-0 z-30 text-center bg-gray-100 border-r border-b min-w-[200px] w-[200px]"
-                                                : "text-center border-r border-b z-0 bg-gray-100"
+                                                ? "sticky left-0 z-30 text-center bg-muted border-r border-b min-w-[200px] w-[200px]"
+                                                : "text-center border-r border-b z-0 bg-muted"
                                         }
                                     >
                                         <div>
@@ -100,16 +96,7 @@ export function SchoolsDataTable<TData, TValue>({
                     ))}
                 </TableHeader>
                 <TableBody>
-                    {isLoading ? (
-                        <TableRow>
-                            <TableCell
-                                colSpan={columns.length}
-                                className="h-24"
-                            >
-                                <Spinner className="mx-auto size-8" />
-                            </TableCell>
-                        </TableRow>
-                    ) : table.getRowModel().rows?.length ? (
+                    {table.getRowModel().rows?.length ? (
                         table.getRowModel().rows.map((row) => (
                             <TableRow
                                 key={row.id}
@@ -120,7 +107,7 @@ export function SchoolsDataTable<TData, TValue>({
                                         key={cell.id}
                                         className={
                                             cell.column.getIndex() === 0
-                                                ? " text-center sticky left-0 z-20 bg-gray-50 border-r border-b min-w-[200px] w-[200px]"
+                                                ? " text-center sticky left-0 z-20 bg-muted border-r border-b min-w-[200px] w-[200px]"
                                                 : " text-center z-0 border-b"
                                         }
                                     >
@@ -150,7 +137,7 @@ export function SchoolsDataTable<TData, TValue>({
                         <TableRow>
                             <TableCell
                                 colSpan={columns.length}
-                                className="h-24 text-center text-gray-500"
+                                className="h-24 text-center text-muted-foreground"
                             >
                                 No schools found
                             </TableCell>

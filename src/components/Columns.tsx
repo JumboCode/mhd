@@ -12,8 +12,15 @@
 
 "use client";
 
-import { ColumnDef } from "@tanstack/react-table";
-import { ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
+import type { ColumnDef } from "@tanstack/react-table";
+import {
+    ArrowDown,
+    ArrowUp,
+    ArrowUpDown,
+    ChevronDown,
+    ChevronsUpDown,
+    ChevronUp,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export type Schools = {
@@ -47,11 +54,11 @@ export const columns: ColumnDef<Schools>[] = [
                 >
                     Name
                     {column.getIsSorted() === "asc" ? (
-                        <ArrowUp className="ml-2 h-4 w-4" />
+                        <ChevronUp className="ml-2 h-4 w-4" />
                     ) : column.getIsSorted() === "desc" ? (
-                        <ArrowDown className="ml-2 h-4 w-4" />
+                        <ChevronDown className="ml-2 h-4 w-4" />
                     ) : (
-                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                        <ChevronsUpDown className="ml-2 h-4 w-4" />
                     )}
                 </Button>
             );
@@ -75,11 +82,11 @@ export const columns: ColumnDef<Schools>[] = [
                 >
                     City
                     {column.getIsSorted() === "asc" ? (
-                        <ArrowUp className="ml-2 h-4 w-4" />
+                        <ChevronUp className="ml-2 h-4 w-4" />
                     ) : column.getIsSorted() === "desc" ? (
-                        <ArrowDown className="ml-2 h-4 w-4" />
+                        <ChevronDown className="ml-2 h-4 w-4" />
                     ) : (
-                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                        <ChevronsUpDown className="ml-2 h-4 w-4" />
                     )}
                 </Button>
             );
@@ -103,11 +110,11 @@ export const columns: ColumnDef<Schools>[] = [
                 >
                     Region
                     {column.getIsSorted() === "asc" ? (
-                        <ArrowUp className="ml-2 h-4 w-4" />
+                        <ChevronUp className="ml-2 h-4 w-4" />
                     ) : column.getIsSorted() === "desc" ? (
-                        <ArrowDown className="ml-2 h-4 w-4" />
+                        <ChevronDown className="ml-2 h-4 w-4" />
                     ) : (
-                        <ArrowUpDown className="ml-2 h-4 w-4 " />
+                        <ChevronsUpDown className="ml-2 h-4 w-4 " />
                     )}
                 </Button>
             );
@@ -131,11 +138,11 @@ export const columns: ColumnDef<Schools>[] = [
                 >
                     Instruction Model
                     {column.getIsSorted() === "asc" ? (
-                        <ArrowUp className="ml-2 h-4 w-4" />
+                        <ChevronUp className="ml-2 h-4 w-4" />
                     ) : column.getIsSorted() === "desc" ? (
-                        <ArrowDown className="ml-2 h-4 w-4" />
+                        <ChevronDown className="ml-2 h-4 w-4" />
                     ) : (
-                        <ArrowUpDown className="ml-2 h-4 w-4 " />
+                        <ChevronsUpDown className="ml-2 h-4 w-4 " />
                     )}
                 </Button>
             );
@@ -159,11 +166,11 @@ export const columns: ColumnDef<Schools>[] = [
                 >
                     Implementaion Model
                     {column.getIsSorted() === "asc" ? (
-                        <ArrowUp className="ml-2 h-4 w-4" />
+                        <ChevronUp className="ml-2 h-4 w-4" />
                     ) : column.getIsSorted() === "desc" ? (
-                        <ArrowDown className="ml-2 h-4 w-4" />
+                        <ChevronDown className="ml-2 h-4 w-4" />
                     ) : (
-                        <ArrowUpDown className="ml-2 h-4 w-4 " />
+                        <ChevronsUpDown className="ml-2 h-4 w-4 " />
                     )}
                 </Button>
             );
@@ -187,11 +194,11 @@ export const columns: ColumnDef<Schools>[] = [
                 >
                     # Students
                     {column.getIsSorted() === "asc" ? (
-                        <ArrowUp className="ml-2 h-4 w-4" />
+                        <ChevronUp className="ml-2 h-4 w-4" />
                     ) : column.getIsSorted() === "desc" ? (
-                        <ArrowDown className="ml-2 h-4 w-4" />
+                        <ChevronDown className="ml-2 h-4 w-4" />
                     ) : (
-                        <ArrowUpDown className="ml-2 h-4 w-4 " />
+                        <ChevronsUpDown className="ml-2 h-4 w-4 " />
                     )}
                 </Button>
             );
@@ -215,11 +222,11 @@ export const columns: ColumnDef<Schools>[] = [
                 >
                     # Teachers
                     {column.getIsSorted() === "asc" ? (
-                        <ArrowUp className="ml-2 h-4 w-4" />
+                        <ChevronUp className="ml-2 h-4 w-4" />
                     ) : column.getIsSorted() === "desc" ? (
-                        <ArrowDown className="ml-2 h-4 w-4" />
+                        <ChevronDown className="ml-2 h-4 w-4" />
                     ) : (
-                        <ArrowUpDown className="ml-2 h-4 w-4 " />
+                        <ChevronsUpDown className="ml-2 h-4 w-4 " />
                     )}
                 </Button>
             );
@@ -243,11 +250,11 @@ export const columns: ColumnDef<Schools>[] = [
                 >
                     # Projects
                     {column.getIsSorted() === "asc" ? (
-                        <ArrowUp className="ml-2 h-4 w-4" />
+                        <ChevronUp className="ml-2 h-4 w-4" />
                     ) : column.getIsSorted() === "desc" ? (
-                        <ArrowDown className="ml-2 h-4 w-4" />
+                        <ChevronDown className="ml-2 h-4 w-4" />
                     ) : (
-                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                        <ChevronsUpDown className="ml-2 h-4 w-4" />
                     )}
                 </Button>
             );

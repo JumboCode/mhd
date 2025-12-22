@@ -11,9 +11,9 @@
  **************************************************************/
 "use client";
 
-import React, { useState, useEffect } from "react";
-import Checkbox from "./Checkbox";
-import { School, GraduationCap, User, FolderOpenDot } from "lucide-react";
+import { FolderOpenDot, GraduationCap, School, User } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { Checkbox } from "@/components/Checkbox";
 import type { SpreadsheetData } from "@/types/spreadsheet";
 
 type ConfirmationProps = {
@@ -71,7 +71,7 @@ export default function SpreadsheetConfirmation({
     return (
         <div className="flex flex-col items-left justify-left">
             <h1 className="text-2xl font-bold mt-8">Confirmation</h1>
-            <p className="text-gray-600 my-5">
+            <p className="text-muted-foreground my-5">
                 You are about to override data for {year} - are you sure you
                 want to do this? This action cannot be undone.
             </p>
@@ -94,9 +94,11 @@ export default function SpreadsheetConfirmation({
                 </li>
                 <li className="mt-10">
                     <Checkbox
-                        label="I understand"
-                        onToggle={(_, confirmed) => setConfirmed(confirmed)}
+                        onCheckedChange={(checked: boolean) =>
+                            setConfirmed(checked)
+                        }
                     />
+                    <label htmlFor="confirmation-checkbox">I understand</label>
                 </li>
             </ul>
             <div className="mt-5"></div>

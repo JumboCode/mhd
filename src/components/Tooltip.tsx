@@ -82,7 +82,7 @@ export default function Tooltips() {
             <div
                 ref={refs.setFloating}
                 style={floatingStyles}
-                className={`bg-black text-white p-3 rounded-lg w-64 break-words transition-all duration-300 transform ${
+                className={`bg-popover text-popover-foreground p-3 rounded-lg w-64 break-words transition-all duration-300 transform ${
                     isHover || isFocused
                         ? "opacity-100 translate-y-0"
                         : "opacity-0 translate-y-1 pointer-events-none"
@@ -97,7 +97,7 @@ export default function Tooltips() {
                         top: middlewareData.arrow?.y,
                         [side]: "-4px",
                     }}
-                    className="w-2 h-2 rotate-45 bg-black"
+                    className="w-2 h-2 rotate-45 bg-popover"
                 />
             </div>
         </div>

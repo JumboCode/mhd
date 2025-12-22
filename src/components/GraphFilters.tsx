@@ -14,7 +14,6 @@
 "use client";
 
 import { useState } from "react";
-import Checkbox from "@/components/Checkbox";
 import { Combobox } from "@/components/Combobox";
 
 const measuredAsOptions = [
@@ -34,11 +33,12 @@ const groupByOptions = [
     { value: "project-type", label: "Project Type" },
 ];
 
+import { Checkbox } from "@/components/Checkbox";
 import {
     Accordion,
+    AccordionContent,
     AccordionItem,
     AccordionTrigger,
-    AccordionContent,
 } from "@/components/ui/accordion";
 
 export type Filters = {
@@ -241,7 +241,10 @@ export default function GraphFilters({
         <div className="mb-8 space-y-6">
             {/* Measured As */}
             <div>
-                <label className="block text-sm font-semibold mb-2 text-gray-700">
+                <label
+                    htmlFor="measuredAs"
+                    className="block text-sm font-semibold mb-2 text-foreground"
+                >
                     Measured as
                 </label>
                 <Combobox
@@ -253,7 +256,10 @@ export default function GraphFilters({
 
             {/* Group By */}
             <div>
-                <label className="block text-sm font-semibold mb-2 text-gray-700">
+                <label
+                    htmlFor="groupBy"
+                    className="block text-sm font-semibold mb-2 text-foreground"
+                >
                     Group by
                 </label>
                 <Combobox
@@ -265,7 +271,10 @@ export default function GraphFilters({
 
             {/* Filter By */}
             <div>
-                <h2 className="text-sm font-semibold mb-3 text-gray-700">
+                <h2
+                    id="filterBy"
+                    className="text-sm font-semibold mb-3 text-foreground"
+                >
                     Filter by
                 </h2>
 
@@ -275,7 +284,7 @@ export default function GraphFilters({
                         {activeFilters.map((filter) => (
                             <div
                                 key={filter.key}
-                                className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 border border-gray-300 rounded-md text-sm cursor-pointer hover:bg-gray-200"
+                                className="inline-flex items-center gap-1 px-3 py-1 bg-muted border border-border rounded-md text-sm cursor-pointer hover:bg-accent"
                                 onClick={() => {
                                     // Open the corresponding accordion item
                                     if (
@@ -298,7 +307,8 @@ export default function GraphFilters({
 
                 {/* Add Filter Button */}
                 <button
-                    className="flex items-center gap-1 text-sm text-gray-700 hover:text-gray-900 mb-4"
+                    type="button"
+                    className="flex items-center gap-1 text-sm text-foreground hover:text-foreground mb-4"
                     onClick={() => {
                         if (showAllFilters) {
                             // Hide all non-active filters
@@ -336,16 +346,25 @@ export default function GraphFilters({
                         <AccordionItem value="gateway-cities">
                             <AccordionTrigger>Gateway Cities</AccordionTrigger>
                             <AccordionContent>
-                                <Checkbox
-                                    label="Gateway Cities"
-                                    isChecked={gatewayCities}
-                                    onToggle={(_, checked) => {
-                                        setGatewayCities(checked);
-                                        updateFilters({
-                                            gatewayCities: checked,
-                                        });
-                                    }}
-                                />
+                                <div className="flex items-center gap-2">
+                                    <Checkbox
+                                        id="gateway-cities-checkbox"
+                                        checked={gatewayCities}
+                                        onCheckedChange={(checked) => {
+                                            const isChecked = checked === true;
+                                            setGatewayCities(isChecked);
+                                            updateFilters({
+                                                gatewayCities: isChecked,
+                                            });
+                                        }}
+                                    />
+                                    <label
+                                        htmlFor="gateway-cities-checkbox"
+                                        className="text-sm cursor-pointer"
+                                    >
+                                        Gateway Cities
+                                    </label>
+                                </div>
                             </AccordionContent>
                         </AccordionItem>
                     )}
@@ -357,21 +376,36 @@ export default function GraphFilters({
                             <AccordionContent>
                                 <div className="max-h-40 overflow-y-auto space-y-1 border rounded-md p-2">
                                     {schools.map((school) => (
-                                        <Checkbox
+                                        <div
                                             key={school}
-                                            label={school}
-                                            isChecked={selectedSchools.includes(
-                                                school,
-                                            )}
-                                            onToggle={
-                                                handleSchoolCheckboxToggle
-                                            }
-                                        />
+                                            className="flex items-center gap-2"
+                                        >
+                                            <Checkbox
+                                                id={`school-checkbox-${school}`}
+                                                checked={selectedSchools.includes(
+                                                    school,
+                                                )}
+                                                onCheckedChange={(checked) => {
+                                                    const isChecked =
+                                                        checked === true;
+                                                    handleSchoolCheckboxToggle(
+                                                        school,
+                                                        isChecked,
+                                                    );
+                                                }}
+                                            />
+                                            <label
+                                                htmlFor={`school-checkbox-${school}`}
+                                                className="text-sm cursor-pointer"
+                                            >
+                                                {school}
+                                            </label>
+                                        </div>
                                     ))}
                                 </div>
                                 <button
                                     onClick={() => handleSchoolsChange([])}
-                                    className="mt-2 text-xs text-blue-600"
+                                    className="mt-2 text-xs text-primary"
                                 >
                                     Clear selection
                                 </button>
@@ -386,19 +420,36 @@ export default function GraphFilters({
                             <AccordionContent>
                                 <div className="max-h-40 overflow-y-auto space-y-1 border rounded-md p-2">
                                     {cities.map((city) => (
-                                        <Checkbox
+                                        <div
                                             key={city}
-                                            label={city}
-                                            isChecked={selectedCities.includes(
-                                                city,
-                                            )}
-                                            onToggle={handleCityCheckboxToggle}
-                                        />
+                                            className="flex items-center gap-2"
+                                        >
+                                            <Checkbox
+                                                id={`city-checkbox-${city}`}
+                                                checked={selectedCities.includes(
+                                                    city,
+                                                )}
+                                                onCheckedChange={(checked) => {
+                                                    const isChecked =
+                                                        checked === true;
+                                                    handleCityCheckboxToggle(
+                                                        city,
+                                                        isChecked,
+                                                    );
+                                                }}
+                                            />
+                                            <label
+                                                htmlFor={`city-checkbox-${city}`}
+                                                className="text-sm cursor-pointer"
+                                            >
+                                                {city}
+                                            </label>
+                                        </div>
                                     ))}
                                 </div>
                                 <button
                                     onClick={() => handleCitiesChange([])}
-                                    className="mt-2 text-xs text-blue-600"
+                                    className="mt-2 text-xs text-primary"
                                 >
                                     Clear selection
                                 </button>
@@ -412,26 +463,49 @@ export default function GraphFilters({
                             <AccordionTrigger>Project Type</AccordionTrigger>
                             <AccordionContent>
                                 <div className="space-y-1">
-                                    <Checkbox
-                                        label="Individual Projects"
-                                        isChecked={individualProjects}
-                                        onToggle={(_, checked) => {
-                                            setIndividualProjects(checked);
-                                            updateFilters({
-                                                individualProjects: checked,
-                                            });
-                                        }}
-                                    />
-                                    <Checkbox
-                                        label="Group Projects"
-                                        isChecked={groupProjects}
-                                        onToggle={(_, checked) => {
-                                            setGroupProjects(checked);
-                                            updateFilters({
-                                                groupProjects: checked,
-                                            });
-                                        }}
-                                    />
+                                    <div className="flex items-center gap-2">
+                                        <Checkbox
+                                            id="individual-projects-checkbox"
+                                            checked={individualProjects}
+                                            onCheckedChange={(checked) => {
+                                                const isChecked =
+                                                    checked === true;
+                                                setIndividualProjects(
+                                                    isChecked,
+                                                );
+                                                updateFilters({
+                                                    individualProjects:
+                                                        isChecked,
+                                                });
+                                            }}
+                                        />
+                                        <label
+                                            htmlFor="individual-projects-checkbox"
+                                            className="text-sm cursor-pointer"
+                                        >
+                                            Individual Projects
+                                        </label>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <Checkbox
+                                            id="group-projects-checkbox"
+                                            checked={groupProjects}
+                                            onCheckedChange={(checked) => {
+                                                const isChecked =
+                                                    checked === true;
+                                                setGroupProjects(isChecked);
+                                                updateFilters({
+                                                    groupProjects: isChecked,
+                                                });
+                                            }}
+                                        />
+                                        <label
+                                            htmlFor="group-projects-checkbox"
+                                            className="text-sm cursor-pointer"
+                                        >
+                                            Group Projects
+                                        </label>
+                                    </div>
                                 </div>
                             </AccordionContent>
                         </AccordionItem>
@@ -444,11 +518,24 @@ export default function GraphFilters({
                                 Teacher Participation
                             </AccordionTrigger>
                             <AccordionContent>
-                                <Checkbox
-                                    label="Enable Teacher Participation Filter"
-                                    onToggle={handleTeacherFilterToggle}
-                                    isChecked={teacherFilterEnabled}
-                                />
+                                <div className="flex items-center gap-2">
+                                    <Checkbox
+                                        id="teacher-filter-checkbox"
+                                        onCheckedChange={(checked) =>
+                                            handleTeacherFilterToggle(
+                                                "Enable Teacher Participation Filter",
+                                                checked === true,
+                                            )
+                                        }
+                                        checked={teacherFilterEnabled}
+                                    />
+                                    <label
+                                        htmlFor="teacher-filter-checkbox"
+                                        className="text-sm cursor-pointer"
+                                    >
+                                        Enable Teacher Participation Filter
+                                    </label>
+                                </div>
 
                                 <div className="flex gap-2 mt-4">
                                     <select
