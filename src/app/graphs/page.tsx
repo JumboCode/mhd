@@ -74,7 +74,6 @@ const groupByLabels: Record<string, string> = {
 
 export default function GraphsPage() {
     const [allProjects, setAllProjects] = useState<Project[]>([]);
-    const [loading, setLoading] = useState(true);
     const [filters, setFilters] = useState<Filters>(defaultFilters);
     const [chartType, setChartType] = useState<"line" | "bar">("bar");
     const [timePeriod, setTimePeriod] = useState<
@@ -98,12 +97,10 @@ export default function GraphsPage() {
                 if (!response.ok) throw new Error("Failed to fetch");
                 const data = await response.json();
                 setAllProjects(data);
-            } catch (error) {
+            } catch {
                 toast.error(
                     "Failed to load project data. Please refresh the page.",
                 );
-            } finally {
-                setLoading(false);
             }
         };
         fetchProjects();
@@ -325,11 +322,7 @@ export default function GraphsPage() {
 
             {/* Main Content Area */}
             <div className="flex-1 flex flex-col h-screen overflow-hidden">
-                {loading ? (
-                    <p className="text-xl text-muted-foreground mt-20 text-center">
-                        Loading project data...
-                    </p>
-                ) : (
+                {allProjects.length > 0 ? (
                     <div className="flex flex-col gap-4 h-full overflow-hidden">
                         {/* Header */}
                         <div className="flex items-center justify-between px-8 pt-4 shrink-0">
@@ -610,7 +603,7 @@ export default function GraphsPage() {
                             </p>
                         </div>
                     </div>
-                )}
+                ) : null}
             </div>
         </div>
     );

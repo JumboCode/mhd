@@ -25,11 +25,13 @@ import {
 type YearDropdownProps = {
     selectedYear?: number | null;
     onYearChange?: (year: number | null) => void;
+    showDataIndicator?: boolean;
 };
 
 export default function YearDropdown({
     selectedYear,
     onYearChange,
+    showDataIndicator = false,
 }: YearDropdownProps) {
     const [year, setYear] = useState<number | null>(null);
     const [yearsWithData, setYearsWithData] = useState<Set<number>>(new Set());
@@ -80,11 +82,15 @@ export default function YearDropdown({
                         key={y}
                         value={y.toString()}
                         rightContent={
-                            <div
-                                className={`h-2 w-2 rounded-full shrink-0 ${
-                                    hasData(y) ? "bg-green-500" : "bg-red-500"
-                                }`}
-                            />
+                            showDataIndicator ? (
+                                <div
+                                    className={`h-2 w-2 rounded-full shrink-0 ${
+                                        hasData(y)
+                                            ? "bg-green-500"
+                                            : "bg-red-500"
+                                    }`}
+                                />
+                            ) : null
                         }
                     >
                         {y}

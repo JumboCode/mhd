@@ -12,8 +12,10 @@
 
 "use client";
 
-import React from "react";
 import { Search } from "lucide-react";
+import type React from "react";
+import { Input } from "@/components/ui/input";
+
 type SearchBarProps = {
     placeholder?: string;
     className?: string;
@@ -32,15 +34,11 @@ export default function SchoolSearchBar({
     };
 
     return (
-        <div className={`relative ${className}`}>
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-3 h-[30px]" />
-            <input
-                type="text"
-                value={search}
-                onChange={handleChange}
-                placeholder={placeholder}
-                className="w-full pl-8 py-1 font-normal text-sm border border-input rounded placeholder-muted-foreground hover:border-border focus:border-[#22405D] focus:outline-none focus:ring-2 focus:ring-[#457BAF]/20"
-            />
-        </div>
+        <Input
+            type="text"
+            value={search}
+            onChange={handleChange}
+            placeholder={placeholder}
+        />
     );
 }

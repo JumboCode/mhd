@@ -15,6 +15,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { SchoolProfileSkeleton } from "@/components/skeletons/SchoolProfileSkeleton";
 
 // interface such that data can be blank if API is loading
 type SchoolData = {
@@ -33,17 +34,7 @@ export default function SchoolProfilePage() {
 
     const router = useRouter();
 
-    // while API is loading, still display something
-    const [schoolData, setSchoolData] = useState<SchoolData>({
-        name: "...",
-        town: "...",
-        studentCount: "...",
-        teacherCount: "...",
-        projectCount: "...",
-        firstYear: "...",
-        instructionalModel: "...",
-    });
-
+    const [schoolData, setSchoolData] = useState<SchoolData | null>(null);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
@@ -81,6 +72,10 @@ export default function SchoolProfilePage() {
                 </div>
             </div>
         );
+    }
+
+    if (!schoolData) {
+        return <SchoolProfileSkeleton />;
     }
 
     return (

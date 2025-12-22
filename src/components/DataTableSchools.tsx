@@ -37,17 +37,13 @@ interface DataTableProps<TData, TValue> {
     data: TData[];
     globalFilter: string;
     setGlobalFilter: (value: string) => void;
-    isLoading?: boolean;
 }
-
-import { Spinner } from "@/components/ui/spinner";
 
 export function SchoolsDataTable<TData, TValue>({
     columns,
     data,
     globalFilter,
     setGlobalFilter,
-    isLoading = false,
 }: DataTableProps<TData, TValue>) {
     const [sorting, setSorting] = React.useState<SortingState>([]);
 
@@ -100,16 +96,7 @@ export function SchoolsDataTable<TData, TValue>({
                     ))}
                 </TableHeader>
                 <TableBody>
-                    {isLoading ? (
-                        <TableRow>
-                            <TableCell
-                                colSpan={columns.length}
-                                className="h-24"
-                            >
-                                <Spinner className="mx-auto size-8" />
-                            </TableCell>
-                        </TableRow>
-                    ) : table.getRowModel().rows?.length ? (
+                    {table.getRowModel().rows?.length ? (
                         table.getRowModel().rows.map((row) => (
                             <TableRow
                                 key={row.id}

@@ -35,11 +35,9 @@ type Stats = {
 export default function Dashboard() {
     const [year, setYear] = useState(2024);
     const [stats, setStats] = useState<Stats | null>(null);
-    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         const fetchStats = async (selectedYear: number) => {
-            setLoading(true);
             try {
                 const res = await fetch(
                     `/api/yearly-totals?year=${selectedYear}`,
@@ -49,8 +47,6 @@ export default function Dashboard() {
                 setStats(data.yearlyStats);
             } catch {
                 toast.error("Failed to load dashboard data. Please try again.");
-            } finally {
-                setLoading(false);
             }
         };
 
@@ -82,9 +78,7 @@ export default function Dashboard() {
                 </div>
             </div>
 
-            {loading && <p className="text-muted-foreground">Loading...</p>}
-
-            {stats && !loading && (
+            {stats ? (
                 <div className="">
                     <div className="grid grid-cols-3 gap-5">
                         <StatCard
@@ -107,7 +101,7 @@ export default function Dashboard() {
                         <StatCard label="% Highschool" value={12} />
                     </div>
                 </div>
-            )}
+            ) : null}
         </div>
     );
 }
