@@ -15,8 +15,28 @@ import { useState } from "react";
 import { MultiSelectCombobox } from "../../components/ui/multi-select-combobox";
 import { Trash, Plus } from "lucide-react";
 
+interface PermittedUser {
+    email: string;
+    lastSignIn: string;
+}
+
 export default function Settings() {
     const [selectedCities, setSelectedCities] = useState<string[]>([]);
+    const [emailInput, setEmailInput] = useState("");
+    const [permittedUsers, setPermittedUsers] = useState<PermittedUser[]>([
+        {
+            email: "something@mhd.com",
+            lastSignIn: "3 days ago",
+        },
+        {
+            email: "something@mhd.com",
+            lastSignIn: "3 days ago",
+        },
+        {
+            email: "something@mhd.com",
+            lastSignIn: "3 days ago",
+        },
+    ]);
 
     // TO DO: Replace with actual gateway cities
     const cityOptions = [
@@ -53,6 +73,62 @@ export default function Settings() {
         return cityOptions.find((opt) => opt.value === value)?.label || value;
     };
 
+    // Email validation function
+    const isValidEmail = (email: string): boolean => {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
+    };
+
+    // Add permitted user
+    const handleAddUser = () => {
+        const trimmedEmail = emailInput.trim();
+
+        // Validate email format
+        if (!isValidEmail(trimmedEmail)) {
+            alert("Please enter a valid email address");
+            return;
+        }
+
+        // Check for duplicates
+        if (
+            permittedUsers.some(
+                (user) =>
+                    user.email.toLowerCase() === trimmedEmail.toLowerCase(),
+            )
+        ) {
+            alert("This email is already in the permitted users list");
+            return;
+        }
+
+        // Add new user
+        setPermittedUsers([
+            ...permittedUsers,
+            {
+                email: trimmedEmail,
+                lastSignIn: "3 days ago", // Mock data as requested
+            },
+        ]);
+
+        // Clear input
+        setEmailInput("");
+        setHasUnsavedChanges(true);
+    };
+
+    // Remove permitted user
+    const handleRemoveUser = (email: string) => {
+        setPermittedUsers(
+            permittedUsers.filter((user) => user.email !== email),
+        );
+        setHasUnsavedChanges(true);
+    };
+
+    // Handle Enter key press
+    const handleEmailKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === "Enter") {
+            handleAddUser();
+        }
+    };
+
     return (
         <div className="flex flex-col gap-12 p-6 max-w-4xl">
             <div>
@@ -78,11 +154,9 @@ export default function Settings() {
                 <div className="mt-6 space-y-6">
                     <div className="space-y-3">
                         <div className="flex items-center justify-between">
-                            <h3 className="text-xl font-medium">
-                                Gateway Cities
-                            </h3>
+                            <h3 className="font-bold">Gateway Cities</h3>
                         </div>
-                        <div className="w-50">
+                        <div className="w-50 flex flex-row justify-between ">
                             <MultiSelectCombobox
                                 options={cityOptions}
                                 value={selectedCities}
@@ -90,6 +164,7 @@ export default function Settings() {
                                 placeholder="Select cities"
                                 searchable
                             />
+                            {/* TO DO: Once we have map, add toggle between map and table generated below */}
                         </div>
                         {selectedCities.length > 0 && (
                             <>
@@ -155,28 +230,28 @@ export default function Settings() {
                     {/* Permitted Users Section */}
                     <div className="space-y-3">
                         <div className="flex items-center justify-between">
-                            <h3 className="text-xl font-medium">
-                                Permitted Users
-                            </h3>
+                            <h3 className="font-bold">Permitted Users</h3>
                         </div>
 
                         <p className="text-sm text-gray-600">
                             These emails are permitted to sign into the
                             platform. Here you can also revoke access
                         </p>
-                        <div className="flex rounded-lg border border-gray-300 shadow-sm overflow-hidden w-60">
+                        <div className="flex rounded-lg border border-gray-300 shadow-sm overflow-hidden w-72">
                             <input
                                 type="email"
                                 placeholder="Email"
                                 aria-label="Email"
-                                className="flex-1 px-4 py-2 text-base text-gray-700 placeholder-gray-500"
+                                value={emailInput}
+                                onChange={(e) => setEmailInput(e.target.value)}
+                                onKeyDown={handleEmailKeyDown}
+                                className="flex-1 px-4 py-1 text-base text-gray-700 placeholder-gray-500 outline-none"
                             />
                             <button
                                 type="button"
-                                aria-label="Email"
-                                className={`
-                            bg-gray-200 hover:bg-gray-300 text-gray-600 transition-colors
-                            w-12 flex items-center justify-center border-l border-gray-300`}
+                                onClick={handleAddUser}
+                                aria-label="Add Email"
+                                className="bg-gray-200 hover:bg-gray-300 text-gray-600 transition-colors w-8 flex items-center justify-center border-l border-gray-300"
                             >
                                 <Plus className="w-6 h-6" />
                             </button>
@@ -193,25 +268,12 @@ export default function Settings() {
                                             Last Signed In
                                         </th>
                                         <th className="text-left px-4 py-3 text-sm font-medium text-gray-700">
-                                            Remove
+                                            Actions
                                         </th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-200 bg-white">
-                                    {[
-                                        {
-                                            email: "something@gmail.com",
-                                            lastSignIn: "2 days ago",
-                                        },
-                                        {
-                                            email: "something@gmail.com",
-                                            lastSignIn: "2 days ago",
-                                        },
-                                        {
-                                            email: "something@gmail.com",
-                                            lastSignIn: "2 days ago",
-                                        },
-                                    ].map((user, i) => (
+                                    {permittedUsers.map((user, i) => (
                                         <tr
                                             key={i}
                                             className="hover:bg-gray-50"
@@ -222,9 +284,17 @@ export default function Settings() {
                                             <td className="px-4 py-3 text-sm text-gray-600">
                                                 {user.lastSignIn}
                                             </td>
-                                            <td className="px-4 py-3">
-                                                <button className="text-gray-400 hover:text-gray-600">
-                                                    <Trash className="w-4 h-4"></Trash>
+                                            <td className="p-4">
+                                                <button
+                                                    onClick={() =>
+                                                        handleRemoveUser(
+                                                            user.email,
+                                                        )
+                                                    }
+                                                    className="text-gray-400 hover:text-red-500 transition-colors"
+                                                    aria-label={`Remove ${user.email}`}
+                                                >
+                                                    <Trash className="w-4 h-4" />
                                                 </button>
                                             </td>
                                         </tr>
@@ -250,7 +320,7 @@ export default function Settings() {
                         <button
                             onClick={handleSave}
                             disabled={!hasUnsavedChanges}
-                            className={`px-6 py-2 rounded ${
+                            className={`px-6 py-2 rounded-lg ${
                                 hasUnsavedChanges
                                     ? "bg-blue-600 text-white hover:bg-blue-700"
                                     : "bg-gray-200 text-gray-400 cursor-not-allowed"
