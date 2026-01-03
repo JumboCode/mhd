@@ -112,13 +112,13 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
 
             {/* Dropdown */}
             {open && (
-                <div className="mt-1 w-full border rounded bg-white shadow p-2 absolute z-50">
+                <div className="mt-1 w-64 border rounded bg-white shadow p-2 absolute z-50">
                     {/* Search */}
                     {searchable && (
                         <input
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            placeholder="Search..."
+                            placeholder="Search options..."
                             className="w-full border rounded px-2 py-1 mb-2"
                         />
                     )}

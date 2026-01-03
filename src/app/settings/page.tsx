@@ -18,7 +18,7 @@ import { Trash, Plus } from "lucide-react";
 export default function Settings() {
     const [selectedCities, setSelectedCities] = useState<string[]>([]);
 
-    // Placeholder city options, eventually will be pulled from db
+    // TO DO: Replace with actual gateway cities
     const cityOptions = [
         { value: "city-1", label: "City 1" },
         { value: "city-2", label: "City 2" },
