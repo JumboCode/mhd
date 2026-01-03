@@ -54,21 +54,21 @@ export default function Settings() {
     };
 
     return (
-        <div className="flex flex-col pl-50 gap-8 p-6 max-w-4xl">
+        <div className="flex flex-col gap-12 p-6 max-w-4xl">
             <div>
-                <h1 className="text-3xl font-bold mb-8">Settings</h1>
+                <h1 className="text-3xl font-bold">Settings</h1>
             </div>
 
-            <section className="space-y-3">
-                <h2 className="text-2xl font-semibold">Preferences</h2>
+            <section className="space-y-6">
+                <h2 className="text-xl font-semibold">Preferences</h2>
                 <p className="text-gray-600">
-                    How would you like to view charts
+                    How would you like to view charts...
                 </p>
             </section>
 
             <section className="space-y-6">
                 <div>
-                    <h2 className="text-2xl font-semibold">Configuration</h2>
+                    <h2 className="text-xl font-semibold">Configuration</h2>
                     <p className="text-gray-600">
                         These settings configure how data is calculated. Only
                         edit these settings if you really mean to.

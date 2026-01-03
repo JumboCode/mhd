@@ -27,7 +27,9 @@ export default function RootLayout({
         >
             <body className="font-sans flex flex-row h-screen">
                 <Sidebar />
-                <main className="flex-1 flex justify-center">{children}</main>
+                <main className="flex-1 flex justify-center overflow-y-scroll">
+                    {children}
+                </main>
             </body>
         </html>
     );
