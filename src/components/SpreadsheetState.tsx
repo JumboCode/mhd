@@ -13,14 +13,15 @@
 
 "use client";
 
-import React, { ReactElement, useState, useEffect } from "react";
+import React, { type ReactElement, useEffect, useState } from "react";
+import { toast } from "sonner";
+import * as XLSX from "xlsx";
+import SpreadsheetStatusBar from "@/components/SpreadsheetStatusBar";
+import type { SpreadsheetData } from "@/types/spreadsheet";
 import SpreadsheetConfirmation from "./SpreadsheetConfirmation";
-import SpreadsheetUpload from "./SpreadsheetUpload";
 import SpreadsheetPreview from "./SpreadsheetPreview";
 import SpreadsheetPreviewFail from "./SpreadsheetPreviewFail";
-import SpreadsheetStatusBar from "@/components/SpreadsheetStatusBar";
-import * as XLSX from "xlsx";
-import type { SpreadsheetData } from "@/types/spreadsheet";
+import SpreadsheetUpload from "./SpreadsheetUpload";
 
 export default function SpreadsheetState() {
     const [file, setFile] = useState<File | undefined>();
@@ -98,7 +99,7 @@ export default function SpreadsheetState() {
 
     const handleSubmit = async () => {
         if (spreadsheetData.length === 0) {
-            alert("No data to upload.");
+            toast.warning("No data to upload.");
             return;
         }
 
@@ -118,7 +119,7 @@ export default function SpreadsheetState() {
 
             if (response.ok) {
                 const data = await response.json();
-                alert(
+                toast.success(
                     `Data uploaded successfully! Processed ${data.rowsProcessed || spreadsheetData.length - 1} rows.`,
                 );
             } else {
@@ -126,7 +127,11 @@ export default function SpreadsheetState() {
                 throw new Error(errorData.message || "Failed to upload data");
             }
         } catch (error) {
-            alert("Error uploading data: " + error);
+            toast.error(
+                error instanceof Error
+                    ? `Error uploading data: ${error.message}`
+                    : "Error uploading data. Please try again.",
+            );
         } finally {
             setIsSubmitting(false);
         }
@@ -276,7 +281,7 @@ export default function SpreadsheetState() {
             <div className="flex justify-between w-full pb-4">
                 {canPrevious && (
                     <button
-                        className="py-1 w-40 rounded-lg bg-white text-black border border-gray-300 hover:bg-gray-200 hover:cursor-pointer transition duration-300"
+                        className="py-1 w-40 rounded-lg bg-card text-foreground border border-border hover:bg-accent hover:cursor-pointer transition duration-300"
                         onClick={previous}
                         disabled={isSubmitting}
                     >
@@ -286,7 +291,7 @@ export default function SpreadsheetState() {
 
                 {canNext && (
                     <button
-                        className="ml-auto py-1 w-40 rounded-lg bg-blue-700 text-white hover:bg-blue-900 hover:cursor-pointer transition duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                        className="ml-auto py-1 w-40 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 hover:cursor-pointer transition duration-300 disabled:bg-muted disabled:cursor-not-allowed"
                         onClick={next}
                         disabled={isSubmitting}
                     >

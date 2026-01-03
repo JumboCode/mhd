@@ -12,9 +12,10 @@
 
 "use client";
 
-import React from "react";
+import { ArrowLeftIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import React from "react";
 import {
     Breadcrumb,
     BreadcrumbItem,
@@ -22,24 +23,30 @@ import {
     BreadcrumbList,
     BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-
 import { Button } from "@/components/ui/button";
-
-import { ArrowLeftIcon } from "lucide-react";
 
 export function Breadcrumbs() {
     const pathname = usePathname();
     const crumbTrail = pathname.split("/").filter((item) => item !== "");
     const backArrowHref = `/${crumbTrail.slice(0, crumbTrail.length - 1).join("/")}`;
 
+    // Determine if we're on an Analysis page (map or graphs)
+    const isAnalysisPage = pathname === "/map" || pathname === "/graphs";
+    const firstBreadcrumbLabel = isAnalysisPage ? "ANALYSIS" : "OVERVIEW";
+    const firstBreadcrumbHref = isAnalysisPage
+        ? pathname === "/map"
+            ? "/map"
+            : "/graphs"
+        : "/";
+
     return (
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 font-semibold">
             <Button
                 asChild
                 variant="ghost"
                 size="icon"
                 aria-label="Submit"
-                className="outline  hover:bg-gray-100"
+                className="outline hover:bg-accent h-7 w-7"
             >
                 <Link href={backArrowHref}>
                     <ArrowLeftIcon />
@@ -53,10 +60,12 @@ export function Breadcrumbs() {
                             className={
                                 pathname === "/"
                                     ? "text-mhd-black"
-                                    : "text-gray-400"
+                                    : "text-muted-foreground"
                             }
                         >
-                            <Link href="/">OVERVIEW</Link>
+                            <Link href={firstBreadcrumbHref}>
+                                {firstBreadcrumbLabel}
+                            </Link>
                         </BreadcrumbLink>
                     </BreadcrumbItem>
                     {crumbTrail.map((link, index) => {
@@ -72,7 +81,7 @@ export function Breadcrumbs() {
                                         className={
                                             isCurrent
                                                 ? "text-mhd-black"
-                                                : "text-gray-400"
+                                                : "text-muted-foreground"
                                         }
                                     >
                                         <Link href={href}>

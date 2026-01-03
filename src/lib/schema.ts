@@ -1,4 +1,4 @@
-import { pgTable, integer, text, serial, boolean } from "drizzle-orm/pg-core";
+import { boolean, integer, pgTable, serial, text } from "drizzle-orm/pg-core";
 
 // Represents metadata (relatively unchanging data) about a school
 export const schools = pgTable("schools", {

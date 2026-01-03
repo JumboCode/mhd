@@ -11,7 +11,15 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 
 type Stats = {
     totals: {
@@ -25,13 +33,11 @@ type Stats = {
 };
 
 export default function Dashboard() {
-    const [year, setYear] = useState(2024);
+    const [year, setYear] = useState(() => new Date().getFullYear());
     const [stats, setStats] = useState<Stats | null>(null);
-    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         const fetchStats = async (selectedYear: number) => {
-            setLoading(true);
             try {
                 const res = await fetch(
                     `/api/yearly-totals?year=${selectedYear}`,
@@ -39,10 +45,8 @@ export default function Dashboard() {
                 const data = await res.json();
 
                 setStats(data.yearlyStats);
-            } catch (error) {
-                alert("Major error: big leagues are calling." + error);
-            } finally {
-                setLoading(false);
+            } catch {
+                toast.error("Failed to load dashboard data. Please try again.");
             }
         };
 
@@ -50,32 +54,32 @@ export default function Dashboard() {
     }, [year]);
 
     return (
-        <div className="flex flex-col gap-8 w-full max-w-5xl px-6">
-            <div>{/* TO DO: Toast here (if we want) */}</div>
-            {/* Header and dropdown menu */}
+        <div className="flex flex-col gap-8 w-full px-6 py-10">
             <h1 className="text-2xl font-semibold">Overview Dashboard</h1>
             <div className="">
-                {/* Dropdown menu */}
                 <div className="w-40">
-                    <select
-                        value={year}
-                        onChange={(e) => setYear(parseInt(e.target.value))}
-                        className="border border-gray-300 rounded-lg px-3 md:px-4py-1.5 md:py-2 w-full text-sm md:text-base text-gray-700 shadow-sm"
+                    <Select
+                        value={year.toString()}
+                        onValueChange={(value) => setYear(parseInt(value, 10))}
                     >
-                        {[2025, 2024, 2023, 2022, 2021, 2020, 2019, 2018].map(
-                            (y) => (
-                                <option key={y} value={y}>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Select a year" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {[
+                                2026, 2025, 2024, 2023, 2022, 2021, 2020, 2019,
+                                2018,
+                            ].map((y) => (
+                                <SelectItem key={y} value={y.toString()}>
                                     {y}
-                                </option>
-                            ),
-                        )}
-                    </select>
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                 </div>
             </div>
 
-            {loading && <p className="text-gray-500">Loading...</p>}
-
-            {stats && !loading && (
+            {stats ? (
                 <div className="">
                     <div className="grid grid-cols-3 gap-5">
                         <StatCard
@@ -94,11 +98,11 @@ export default function Dashboard() {
                             label="# Schools"
                             value={stats.totals.total_schools}
                         />
-                        {/* TO DO: Once we store type of school, make this correct */}
+                        {/* TODO: Once we store type of school, make this correct */}
                         <StatCard label="% Highschool" value={12} />
                     </div>
                 </div>
-            )}
+            ) : null}
         </div>
     );
 }
@@ -106,7 +110,7 @@ export default function Dashboard() {
 /* Statcard component used to display all totals */
 function StatCard({ label, value }: { label: string; value: number }) {
     return (
-        <div className="flex flex-col items-center justify-center rounded-lg border border-gray-200 py-6 gap-5">
+        <div className="flex flex-col items-center justify-center rounded-lg border border-border py-6 gap-5">
             <span className="text-xs">{label}</span>
             <span className="font-mono text-5xl font-bold leading-none">
                 {value}

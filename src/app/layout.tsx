@@ -1,14 +1,16 @@
 // src/app/layout.tsx
 import type { Metadata } from "next";
 import "./globals.css";
-import Sidebar from "@/components/Sidebar";
 
+import { Toaster } from "sonner";
 import {
     interstate,
     millerBanner,
     millerDisplay,
     millerText,
 } from "@/app/fonts";
+import ResponsiveLayout from "@/components/ResponsiveLayout";
+import Sidebar from "@/components/Sidebar";
 
 export const metadata: Metadata = {
     title: "MHD",
@@ -25,11 +27,14 @@ export default function RootLayout({
             lang="en"
             className={`${millerBanner.variable} ${millerDisplay.variable} ${millerText.variable} ${interstate.variable}`}
         >
-            <body className="font-sans flex flex-row h-screen">
-                <Sidebar />
-                <main className="flex-1 flex justify-center overflow-y-scroll">
-                    {children}
-                </main>
+            <body className="font-sans flex flex-row h-screen overflow-hidden">
+                <ResponsiveLayout>
+                    <Sidebar />
+                    <main className="flex-1 flex justify-center overflow-hidden">
+                        {children}
+                    </main>
+                </ResponsiveLayout>
+                <Toaster />
             </body>
         </html>
     );
