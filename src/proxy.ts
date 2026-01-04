@@ -22,6 +22,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-    runtime: "nodejs",
-    matcher: ["/dummyPage"], // TO DO: Apply middleware to specific routes
+    matcher: ["/dummyPage"],
 };
