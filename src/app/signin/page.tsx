@@ -9,7 +9,7 @@ export default function SignInPage() {
                 <div className="w-1/2 h-full">
                     <WarpShader
                         colorFront={{ r: 0.784, g: 0.192, b: 0.22, a: 1 }}
-                        colorBack={{ r: 0, g: 0, b: 0, a: 1 }}
+                        colorBack={{ r: 1.0, g: 0.498, b: 0.525, a: 1 }}
                     />
                 </div>
             </div>
