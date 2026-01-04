@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 export default function AuthForm() {
     const [step, setStep] = useState<"email" | "otp">("email");
@@ -69,106 +70,118 @@ export default function AuthForm() {
     }
 
     return (
-        <div className="max-w-md mx-auto p-6 space-y-6">
-            <h1 className="text-2xl font-bold text-center">
-                {step === "email" ? "Sign In" : "Enter Verification Code"}
-            </h1>
+        <div className="w-1/2 max-w-md mx-auto p-6 mt-16 flex flex-col gap-16 items-center">
+            <Image
+                src="/mhs-logo.png"
+                alt="MHS Logo Image"
+                width={256}
+                height={128}
+            />
+            <div className="flex flex-col gap-2">
+                <h1 className="text-3xl font-bold">Sign In</h1>
+                <p className="text-[#646464]">
+                    Enter your email and a one time password will be sent to
+                    you. If you do not have an account yet, speak to an
+                    appropriate administrator at MHD.
+                </p>
+            </div>
 
-            {error && (
-                <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded">
-                    {error}
-                </div>
-            )}
-
-            {step === "email" ? (
-                <form onSubmit={handleSendCode} className="space-y-4">
-                    <div>
-                        <label
-                            htmlFor="email"
-                            className="block text-sm font-medium mb-2"
-                        >
-                            Email Address
-                        </label>
-                        <Input
-                            id="email"
-                            type="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            placeholder="your@email.com"
-                            required
-                        />
-                    </div>
-                    <Button
-                        type="submit"
-                        className="w-full"
-                        disabled={isLoading}
-                    >
-                        {isLoading ? "Sending..." : "Send Code"}
-                    </Button>
-                </form>
-            ) : (
-                <div className="space-y-4">
-                    <p className="text-sm text-gray-600 text-center">
-                        We sent a 6-digit code to {email}
-                    </p>
-                    <form onSubmit={handleVerifyOtp} className="space-y-4">
+            <div className="w-full">
+                {step === "email" ? (
+                    <form onSubmit={handleSendCode} className="space-y-4">
                         <div>
                             <label
-                                htmlFor="otp"
-                                className="block text-sm font-medium mb-2"
+                                htmlFor="email"
+                                className="block text-sm text-[#646464] mb-2"
                             >
-                                Verification Code
+                                Email
                             </label>
                             <Input
-                                id="otp"
-                                type="text"
-                                value={otp}
-                                onChange={(e) =>
-                                    setOtp(
-                                        e.target.value
-                                            .replace(/\D/g, "")
-                                            .slice(0, 6),
-                                    )
-                                }
-                                placeholder="123456"
-                                maxLength={6}
+                                id="email"
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                placeholder="your@email.com"
                                 required
-                                className="text-center text-2xl tracking-widest"
                             />
                         </div>
+                        {error && (
+                            <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded">
+                                {error}
+                            </div>
+                        )}
                         <Button
                             type="submit"
-                            className="w-full"
+                            className="w-48 bg-[#1447E6]"
                             disabled={isLoading}
                         >
-                            {isLoading ? "Verifying..." : "Verify"}
+                            {isLoading ? "Sending..." : "Sign in"}
                         </Button>
                     </form>
-                    <div className="flex gap-2">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            className="flex-1"
-                            onClick={handleResendCode}
-                            disabled={isLoading}
-                        >
-                            Resend Code
-                        </Button>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            className="flex-1"
-                            onClick={() => {
-                                setStep("email");
-                                setOtp("");
-                                setError("");
-                            }}
-                        >
-                            Change Email
-                        </Button>
+                ) : (
+                    <div className="space-y-4">
+                        <form onSubmit={handleVerifyOtp} className="space-y-4">
+                            <div>
+                                <label
+                                    htmlFor="otp"
+                                    className="block text-sm font-medium mb-2 text-[#646464]"
+                                >
+                                    Code
+                                </label>
+                                <Input
+                                    id="otp"
+                                    type="text"
+                                    value={otp}
+                                    onChange={(e) =>
+                                        setOtp(
+                                            e.target.value
+                                                .replace(/\D/g, "")
+                                                .slice(0, 6),
+                                        )
+                                    }
+                                    placeholder="123456"
+                                    maxLength={6}
+                                    required
+                                    className="text-center text-2xl tracking-widest"
+                                />
+                            </div>
+                            <Button
+                                type="submit"
+                                className="w-full bg-[#1447E6]"
+                                disabled={isLoading}
+                            >
+                                {isLoading ? "Verifying..." : "Verify"}
+                            </Button>
+                        </form>
+                        <div className="flex gap-2">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="flex-1"
+                                onClick={handleResendCode}
+                                disabled={isLoading}
+                            >
+                                Resend Code
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="flex-1"
+                                onClick={() => {
+                                    setStep("email");
+                                    setOtp("");
+                                    setError("");
+                                }}
+                            >
+                                Change Email
+                            </Button>
+                        </div>
                     </div>
-                </div>
-            )}
+                )}
+            </div>
+            <div className="mt-auto">
+                <p className="text-[#646464]">Created with ❤️ by JumboCode</p>
+            </div>
         </div>
     );
 }

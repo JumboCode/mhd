@@ -4,7 +4,7 @@ import WarpShader from "@/components/WarpShader";
 export default function SignInPage() {
     return (
         <div className="flex h-screen flex-col items-center justify-center">
-            <div className="w-full h-full flex flex-row items-center">
+            <div className="w-full h-full flex flex-row">
                 <AuthForm />
                 <div className="w-1/2 h-full">
                     <WarpShader
