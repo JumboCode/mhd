@@ -98,6 +98,7 @@ export const session = pgTable(
     {
         id: text("id").primaryKey(),
         expiresAt: timestamp("expires_at").notNull(),
+        token: text("token").notNull().unique(),
         ipAddress: text("ip_address"),
         userAgent: text("user_agent"),
         userId: text("user_id")
