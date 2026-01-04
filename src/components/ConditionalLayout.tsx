@@ -10,7 +10,7 @@ export default function ConditionalLayout({
     children: React.ReactNode;
 }) {
     const pathname = usePathname();
-    const isAuthPage = pathname === "/signin" || pathname === "/signup";
+    const isAuthPage = pathname === "/signin";
 
     // If on auth pages, just render children without sidebar
     if (isAuthPage) {
