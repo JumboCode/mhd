@@ -37,6 +37,7 @@
         "react-excel-renderer": "^1.1.0",
         "react-hook-form": "^7.67.0",
         "react-icons": "^5.5.0",
+        "resend": "^6.6.0",
         "tailwind-merge": "^3.4.0",
         "tailwindcss-animate": "^1.0.7",
         "vercel": "^48.2.0",
