@@ -9,8 +9,7 @@ import {
     millerDisplay,
     millerText,
 } from "@/app/fonts";
-import ResponsiveLayout from "@/components/ResponsiveLayout";
-import Sidebar from "@/components/Sidebar";
+import ConditionalLayout from "@/components/ConditionalLayout";
 
 export const metadata: Metadata = {
     title: "MHD",
@@ -28,12 +27,7 @@ export default function RootLayout({
             className={`${millerBanner.variable} ${millerDisplay.variable} ${millerText.variable} ${interstate.variable}`}
         >
             <body className="font-sans flex flex-row h-screen overflow-hidden">
-                <ResponsiveLayout>
-                    <Sidebar />
-                    <main className="flex-1 flex justify-center overflow-hidden">
-                        {children}
-                    </main>
-                </ResponsiveLayout>
+                <ConditionalLayout>{children}</ConditionalLayout>
                 <Toaster />
             </body>
         </html>

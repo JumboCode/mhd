@@ -22,5 +22,16 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-    matcher: ["/dummyPage"],
+    // Protect all routes except sign-in, and API auth routes
+    matcher: [
+        /*
+         * Match all request paths except:
+         * - /signin (sign-in page)
+         * - /api/auth/* (auth API routes)
+         * - /_next/* (Next.js internals)
+         * - /static/* (static files)
+         * - /*.* (files with extensions like favicon.ico, images, etc.)
+         */
+        "/((?!signin|api/auth|_next/static|_next/image|favicon.ico|.*\\.png$|.*\\.jpg$|.*\\.jpeg$|.*\\.svg$).*)",
+    ],
 };
