@@ -92,7 +92,7 @@ export default function SpreadsheetConfirmation({
                     <FolderOpenDot className="inline-block mr-2 mb-1" />
                     <p>{numProjects} projects</p>
                 </li>
-                <li className="mt-10">
+                <li className="mt-10 flex flex-row items-center gap-2">
                     <Checkbox
                         onCheckedChange={(checked: boolean) =>
                             setConfirmed(checked)
