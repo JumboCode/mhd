@@ -306,7 +306,7 @@ export default function Settings() {
                 </div>
 
                 {/* Save Section */}
-                <div className="flex items-center justify-between pt-6">
+                <div className="flex items-center justify-between py-6">
                     <label className="flex items-center gap-2 text-sm text-gray-600">
                         <span>You have unsaved changes - save?</span>
                     </label>
