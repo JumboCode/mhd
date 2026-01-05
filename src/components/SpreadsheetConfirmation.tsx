@@ -12,7 +12,7 @@
 "use client";
 
 import { FolderOpenDot, GraduationCap, School, User } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Checkbox } from "@/components/Checkbox";
 import type { SpreadsheetData } from "@/types/spreadsheet";
 
@@ -20,12 +20,14 @@ type ConfirmationProps = {
     year?: number | null;
     spreadsheetData: SpreadsheetData;
     setConfirmed: (confirmed: boolean | null) => void;
+    yearHasData: boolean;
 };
 
 export default function SpreadsheetConfirmation({
     year,
     spreadsheetData,
     setConfirmed,
+    yearHasData,
 }: ConfirmationProps) {
     const [uniqueSchools, setUniqueSchools] = useState<number>(0);
     const [students, setStudents] = useState<number>(0);
@@ -72,8 +74,9 @@ export default function SpreadsheetConfirmation({
         <div className="flex flex-col items-left justify-left max-w-lg">
             <h1 className="text-2xl font-bold mt-8">Confirmation</h1>
             <p className="text-muted-foreground my-5">
-                You are about to override data for {year} - are you sure you
-                want to do this? This action cannot be undone.
+                You are about to {yearHasData ? "overwrite" : "add"} data for{" "}
+                {year} - are you sure you want to do this? This action cannot be
+                undone.
             </p>
             <div className="my-5 grid grid-cols-2 gap-4">
                 <div className="flex flex-col justify-center items-center gap-2 border rounded-lg py-4">

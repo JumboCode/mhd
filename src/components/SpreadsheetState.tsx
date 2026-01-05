@@ -41,8 +41,31 @@ export default function SpreadsheetState() {
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
     const [confirmed, setConfirmed] = useState<boolean | null>(false);
     const [hasError, setHasError] = useState<boolean>(false);
-
     const [nextText, setNextText] = useState("Next");
+    const [yearHasData, setYearHasData] = useState(false);
+    const [yearsWithData, setYearsWithData] = useState<Set<number>>(new Set());
+
+    // Fetch years with data once on mount
+    useEffect(() => {
+        const fetchYearsWithData = async () => {
+            try {
+                const response = await fetch("/api/years");
+                if (response.ok) {
+                    const data = await response.json();
+                    setYearsWithData(new Set(data.yearsWithData));
+                }
+            } catch (error) {
+                toast.error("Failed to load year data");
+            }
+        };
+
+        fetchYearsWithData();
+    }, []);
+
+    // Check if selected year has data whenever year changes
+    useEffect(() => {
+        setYearHasData(year !== null && yearsWithData.has(year));
+    }, [year, yearsWithData]);
 
     useEffect(() => {
         checkForUploadNext();
@@ -250,6 +273,7 @@ export default function SpreadsheetState() {
                     spreadsheetData={spreadsheetData}
                     year={year}
                     setConfirmed={setConfirmed}
+                    yearHasData={yearHasData}
                 />,
             );
             setNextText("Finish");
