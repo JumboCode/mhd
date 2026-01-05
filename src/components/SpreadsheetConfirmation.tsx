@@ -69,38 +69,40 @@ export default function SpreadsheetConfirmation({
     }, [spreadsheetData]);
 
     return (
-        <div className="flex flex-col items-left justify-left">
+        <div className="flex flex-col items-left justify-left max-w-lg">
             <h1 className="text-2xl font-bold mt-8">Confirmation</h1>
             <p className="text-muted-foreground my-5">
                 You are about to override data for {year} - are you sure you
                 want to do this? This action cannot be undone.
             </p>
-            <ul className="ml-5 my-5">
-                <li className="flex">
+            <div className="my-5 grid grid-cols-2 gap-4">
+                <div className="flex flex-col justify-center items-center gap-2 border rounded-lg py-4">
                     <School className="inline-block mr-2 mb-1" />
                     <p>{uniqueSchools} schools</p>
-                </li>
-                <li className="flex">
+                </div>
+                <div className="flex flex-col justify-center items-center gap-2 border rounded-lg py-4">
                     <GraduationCap className="inline-block mr-2 mb-1" />
                     <p>{students} students</p>
-                </li>
-                <li className="flex">
+                </div>
+                <div className="flex flex-col justify-center items-center gap-2 border rounded-lg py-4">
                     <User className="inline-block mr-2 mb-1" />
                     <p>{numTeachers} teachers</p>
-                </li>
-                <li className="flex">
+                </div>
+                <div className="flex flex-col justify-center items-center gap-2 border rounded-lg py-4">
                     <FolderOpenDot className="inline-block mr-2 mb-1" />
                     <p>{numProjects} projects</p>
-                </li>
-                <li className="mt-10 flex flex-row items-center gap-2">
-                    <Checkbox
-                        onCheckedChange={(checked: boolean) =>
-                            setConfirmed(checked)
-                        }
-                    />
-                    <label htmlFor="confirmation-checkbox">I understand</label>
-                </li>
-            </ul>
+                </div>
+            </div>
+            <div className="mt-4 flex flex-row items-center gap-4">
+                <Checkbox
+                    onCheckedChange={(checked: boolean) =>
+                        setConfirmed(checked)
+                    }
+                />
+                <label htmlFor="confirmation-checkbox">
+                    I understand this action may affect existing data
+                </label>
+            </div>
             <div className="mt-5"></div>
         </div>
     );
