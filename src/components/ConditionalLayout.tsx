@@ -21,7 +21,7 @@ export default function ConditionalLayout({
     return (
         <ResponsiveLayout>
             <Sidebar />
-            <main className="flex-1 flex justify-center overflow-hidden">
+            <main className="flex-1 flex justify-center overflow-scroll">
                 {children}
             </main>
         </ResponsiveLayout>
