@@ -20,7 +20,7 @@ type UploadProps = {
     file?: File;
     setFile: React.Dispatch<React.SetStateAction<File | undefined>>;
     year?: number | null;
-    setYear: (year: number | null | undefined) => void;
+    setYear: (year: number | null) => void;
 };
 
 export default function SpreadsheetUpload({

@@ -13,7 +13,7 @@
 
 "use client";
 
-import React, { type ReactElement, useEffect, useState } from "react";
+import { type ReactElement, useEffect, useState } from "react";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import SpreadsheetStatusBar from "@/components/SpreadsheetStatusBar";
@@ -26,7 +26,7 @@ import SpreadsheetUpload from "./SpreadsheetUpload";
 export default function SpreadsheetState() {
     const [file, setFile] = useState<File | undefined>();
     const [spreadsheetData, setSpreadsheetData] = useState<SpreadsheetData>([]);
-    const [year, setYear] = useState<number | null>();
+    const [year, setYear] = useState<number | null>(null);
     const [tab, setTab] = useState<ReactElement>(
         <SpreadsheetUpload
             file={file}
@@ -289,15 +289,17 @@ export default function SpreadsheetState() {
                     </button>
                 )}
 
-                {canNext && (
-                    <button
-                        className="ml-auto py-1 w-40 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 hover:cursor-pointer transition duration-300 disabled:bg-muted disabled:cursor-not-allowed"
-                        onClick={next}
-                        disabled={isSubmitting}
-                    >
-                        {isSubmitting ? "Uploading..." : nextText}
-                    </button>
-                )}
+                <button
+                    className={
+                        canNext
+                            ? "ml-auto py-1 w-40 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 hover:cursor-pointer transition duration-300 disabled:bg-muted disabled:cursor-not-allowed"
+                            : "ml-auto py-1 w-40 rounded-lg bg-gray-400 text-primary-foreground hover:bg-gray-400/90 hover:cursor-pointer transition duration-300 disabled:bg-muted disabled:cursor-not-allowed"
+                    }
+                    onClick={next}
+                    disabled={isSubmitting}
+                >
+                    {isSubmitting ? "Uploading..." : nextText}
+                </button>
             </div>
         </div>
     );
