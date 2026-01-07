@@ -45,23 +45,14 @@ export const projects = pgTable("projects", {
     teacherId: integer("teacher_id")
         .notNull()
         .references(() => teachers.id),
-    entryId: integer("entry_id").unique(),
+    projectId: integer("project_id").unique(),
     title: text("title").notNull(),
     division: text("division").notNull(),
+    categoryId: integer("category_id").notNull(),
     category: text("category").notNull(),
     year: integer("year").notNull(),
-    group: boolean("group").notNull(), // True if group project, false if individual
-});
-
-// Ties a student to a project and a school and whether they are returning
-export const students = pgTable("students", {
-    id: serial("id").primaryKey(),
-    projectId: integer("project_id")
-        .notNull()
-        .references(() => projects.id),
-    schoolId: integer("school_id")
-        .notNull()
-        .references(() => schools.id),
+    teamProject: boolean("team_project").notNull(), // True if team project, false if individual
+    numStudents: integer("num_students").notNull().default(1),
 });
 
 // Ties a teacher to a school for a given year
