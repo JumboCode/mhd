@@ -11,12 +11,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import {
-    projects,
-    schools,
-    students,
-    yearlyTeacherParticipation,
-} from "@/lib/schema";
+import { projects, schools, yearlyTeacherParticipation } from "@/lib/schema";
 import { count, eq } from "drizzle-orm";
 
 function percentageChange(curr: number, past: number) {

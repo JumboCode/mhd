@@ -121,7 +121,10 @@ export async function POST(req: NextRequest) {
             // Find or create project using projectId
             const projectIdValue = String(row[COLUMN_INDICES.projectId]);
             let project = await db.query.projects.findFirst({
-                where: eq(projects.projectId, projectIdValue),
+                where: and(
+                    eq(projects.projectId, projectIdValue),
+                    eq(projects.year, year),
+                ),
             });
 
             if (!project) {

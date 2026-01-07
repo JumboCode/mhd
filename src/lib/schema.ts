@@ -46,7 +46,7 @@ export const projects = pgTable("projects", {
     teacherId: integer("teacher_id")
         .notNull()
         .references(() => teachers.id),
-    projectId: text("project_id").unique(),
+    projectId: text("project_id").notNull(),
     title: text("title").notNull(),
     division: text("division").notNull(),
     categoryId: text("category_id").notNull(),
