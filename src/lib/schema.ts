@@ -35,6 +35,7 @@ export const teachers = pgTable("teachers", {
     firstName: text("first_name").notNull(),
     lastName: text("last_name").notNull(),
     email: text("email").notNull(),
+    teacherId: integer("teacher_id").unique().notNull(),
 });
 
 // Represents a project and its relevant information

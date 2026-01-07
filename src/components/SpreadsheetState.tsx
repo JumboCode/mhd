@@ -22,6 +22,7 @@ import SpreadsheetConfirmation from "./SpreadsheetConfirmation";
 import SpreadsheetPreview from "./SpreadsheetPreview";
 import SpreadsheetPreviewFail from "./SpreadsheetPreviewFail";
 import SpreadsheetUpload from "./SpreadsheetUpload";
+import { requiredColumns } from "@/lib/required-spreadsheet-columns";
 
 export default function SpreadsheetState() {
     const [file, setFile] = useState<File | undefined>();
@@ -225,21 +226,15 @@ export default function SpreadsheetState() {
 
                 // Check if format is valid
                 const headers = jsonData[0] as string[];
-                const requiredColumns = [
-                    "City",
-                    "Grade",
-                    "Division",
-                    "Teacher First",
-                    "Teacher Last",
-                    "Teacher Email",
-                    "Project Id",
-                    "Title",
-                    "Team Project",
-                    "School Name",
-                ];
+                const formattedHeaders = headers.map((header) =>
+                    header.toLowerCase().trim(),
+                );
+
+                console.log("Formatted Headers:", formattedHeaders);
+                console.log("Required Columns:", requiredColumns);
 
                 const hasAllColumns = requiredColumns.every((col) =>
-                    headers.includes(col),
+                    formattedHeaders.includes(col.toLowerCase()),
                 );
 
                 if (hasAllColumns) {
