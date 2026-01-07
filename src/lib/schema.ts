@@ -13,8 +13,8 @@ import {
 export const schools = pgTable("schools", {
     id: serial("id").primaryKey(),
     name: text("name").notNull(),
-    town: text("town").notNull(),
-    schoolId: integer("school_id").unique().notNull(),
+    town: text("town"), // Can't be not null b/c regional schools may not have associated town
+    schoolId: text("school_id").unique().notNull(),
 });
 
 // Ties a school to the years it has participated
@@ -32,10 +32,9 @@ export const yearlySchoolParticipation = pgTable(
 // Represents a teacher and their relevant information
 export const teachers = pgTable("teachers", {
     id: serial("id").primaryKey(),
-    firstName: text("first_name").notNull(),
-    lastName: text("last_name").notNull(),
+    name: text("name").notNull(),
     email: text("email").notNull(),
-    teacherId: integer("teacher_id").unique().notNull(),
+    teacherId: text("teacher_id").unique().notNull(),
 });
 
 // Represents a project and its relevant information
@@ -47,10 +46,10 @@ export const projects = pgTable("projects", {
     teacherId: integer("teacher_id")
         .notNull()
         .references(() => teachers.id),
-    projectId: integer("project_id").unique(),
+    projectId: text("project_id").unique(),
     title: text("title").notNull(),
     division: text("division").notNull(),
-    categoryId: integer("category_id").notNull(),
+    categoryId: text("category_id").notNull(),
     category: text("category").notNull(),
     year: integer("year").notNull(),
     teamProject: boolean("team_project").notNull(), // True if team project, false if individual
