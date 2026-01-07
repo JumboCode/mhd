@@ -14,7 +14,8 @@
 import { FolderOpenDot, GraduationCap, School, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Checkbox } from "@/components/Checkbox";
-import type { SpreadsheetData } from "@/types/spreadsheet";
+import type { SpreadsheetData, CellValue } from "@/types/spreadsheet";
+import { requiredColumns } from "@/lib/required-spreadsheet-columns";
 
 type ConfirmationProps = {
     year?: number | null;
@@ -43,31 +44,62 @@ export default function SpreadsheetConfirmation({
             return;
         }
 
+        // Get header row and normalize column names
+        const headerRow = spreadsheetData[0];
+        const normalizeColumnName = (name: CellValue): string => {
+            return String(name || "")
+                .toLowerCase()
+                .replace(/\s+/g, "");
+        };
+
+        // Create a map of normalized header names to their column indices
+        const headerMap = new Map<string, number>();
+        headerRow.forEach((header, index) => {
+            headerMap.set(normalizeColumnName(header), index);
+        });
+
+        // Helper function to find column index by name
+        const getColumnIndex = (columnName: string): number | undefined => {
+            return headerMap.get(normalizeColumnName(columnName));
+        };
+
         // Remove header row and filter out empty rows
         const dataRows = spreadsheetData
             .slice(1)
             .filter((row) => row.length > 0);
 
-        // Count students (column 1)
-        const studentsList = dataRows
-            .map((row) => row[1])
-            .filter((value) => value !== "" && value !== null);
-        setStudents(studentsList.length);
+        // Count number of rows for number of students
+        setStudents(dataRows.length);
 
-        // Count unique schools (column 37)
-        const schools = dataRows.map((row) => row[37]).filter(Boolean);
-        const uniqueSchoolsSet = new Set(schools);
-        setUniqueSchools(uniqueSchoolsSet.size);
+        // Count unique schools using schoolId
+        const schoolIdIdx = getColumnIndex("schoolId");
+        if (schoolIdIdx !== undefined) {
+            const schools = dataRows
+                .map((row) => row[schoolIdIdx])
+                .filter(Boolean);
+            const uniqueSchoolsSet = new Set(schools);
+            setUniqueSchools(uniqueSchoolsSet.size);
+        }
 
-        // Count unique teachers (column 21 - email)
-        const teachers = dataRows.map((row) => row[21]).filter(Boolean);
-        const uniqueTeachersSet = new Set(teachers);
-        setNumTeachers(uniqueTeachersSet.size);
+        // Count unique teachers using teacherId
+        const teacherIdIdx = getColumnIndex("teacherId");
+        if (teacherIdIdx !== undefined) {
+            const teachers = dataRows
+                .map((row) => row[teacherIdIdx])
+                .filter(Boolean);
+            const uniqueTeachersSet = new Set(teachers);
+            setNumTeachers(uniqueTeachersSet.size);
+        }
 
-        // Count unique projects (column 23 - project ID)
-        const projects = dataRows.map((row) => row[23]).filter(Boolean);
-        const uniqueProjectsSet = new Set(projects);
-        setNumProjects(uniqueProjectsSet.size);
+        // Count unique projects using projectId
+        const projectIdIdx = getColumnIndex("projectId");
+        if (projectIdIdx !== undefined) {
+            const projects = dataRows
+                .map((row) => row[projectIdIdx])
+                .filter(Boolean);
+            const uniqueProjectsSet = new Set(projects);
+            setNumProjects(uniqueProjectsSet.size);
+        }
     }, [spreadsheetData]);
 
     return (
