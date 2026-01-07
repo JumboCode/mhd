@@ -14,6 +14,7 @@ export const schools = pgTable("schools", {
     id: serial("id").primaryKey(),
     name: text("name").notNull(),
     town: text("town").notNull(),
+    schoolId: integer("school_id").unique().notNull(),
 });
 
 // Ties a school to the years it has participated
