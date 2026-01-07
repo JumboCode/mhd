@@ -12,10 +12,11 @@
  **************************************************************/
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { DataTable } from "./DataTable";
 import { CircleCheck, FileChartColumn } from "lucide-react";
 import type { CellValue, SpreadsheetData } from "@/types/spreadsheet";
+import { requiredColumns } from "@/lib/required-spreadsheet-columns";
 
 type PreviewProps = {
     fileName: string;
@@ -37,36 +38,60 @@ export default function SpreadsheetPreview({
     useEffect(() => {
         if (!spreadsheetData || spreadsheetData.length === 0) return;
 
-        // Map of column indexes to their actual names
-        const columnNames: { [key: number]: string } = {
-            4: "City",
-            13: "Grade",
-            17: "Division",
-            19: "Teacher First",
-            20: "Teacher Last",
-            21: "Teacher Email",
-            23: "Project Id",
-            24: "Title",
-            34: "Team Project",
-            37: "School Name",
+        // Get header row and normalize column names
+        const headerRow = spreadsheetData[0];
+        const normalizeColumnName = (name: CellValue): string => {
+            return String(name || "")
+                .toLowerCase()
+                .replace(/\s+/g, "");
         };
 
-        const desiredIndexes = [4, 13, 17, 19, 20, 21, 23, 24, 34, 37];
+        // Create a map of normalized header names to their column indices
+        const headerMap = new Map<string, number>();
+        headerRow.forEach((header, index) => {
+            headerMap.set(normalizeColumnName(header), index);
+        });
 
-        // Create columns with sequential accessorKeys (0, 1, 2, etc.)
-        const cols = desiredIndexes.map((colIndex, arrayIndex) => ({
+        // Find column indices for each required column
+        const columnMapping: {
+            index: number;
+            name: string;
+            displayName: string;
+        }[] = [];
+
+        requiredColumns.forEach((requiredCol) => {
+            const normalizedRequired = normalizeColumnName(requiredCol);
+            const columnIndex = headerMap.get(normalizedRequired);
+
+            if (columnIndex !== undefined) {
+                // Convert camelCase to readable display name
+                const displayName = requiredCol
+                    .replace(/([A-Z])/g, " $1")
+                    .replace(/^./, (str) => str.toUpperCase())
+                    .trim();
+
+                columnMapping.push({
+                    index: columnIndex,
+                    name: requiredCol,
+                    displayName,
+                });
+            }
+        });
+
+        // Create columns with sequential accessorKeys
+        const cols = columnMapping.map((col, arrayIndex) => ({
             id: String(arrayIndex),
             accessorKey: String(arrayIndex),
-            header: columnNames[colIndex] || `Column ${colIndex}`,
+            header: col.displayName,
         }));
 
-        // Remap rows to only include the desired columns in order
+        // Extract only the required columns from each row
         // Skip the first row (index 0) as it contains headers, take rows 1-5
         const filteredRows = spreadsheetData
             .slice(1, 6)
-            .map((row) => desiredIndexes.map((index) => row[index]));
+            .map((row) => columnMapping.map((col) => row[col.index]));
 
-        setNumCols(desiredIndexes.length);
+        setNumCols(columnMapping.length);
         setCols(cols);
         setRows(filteredRows);
     }, [spreadsheetData]);
