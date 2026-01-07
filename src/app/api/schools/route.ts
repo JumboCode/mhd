@@ -12,7 +12,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { projects, schools, yearlyTeacherParticipation } from "@/lib/schema";
-import { count, eq } from "drizzle-orm";
+import { count, eq, sum } from "drizzle-orm";
 
 function percentageChange(curr: number, past: number) {
     return past !== 0 ? Math.round(((curr - past) / past) * 100) : undefined;
@@ -63,24 +63,22 @@ export async function GET(req: NextRequest) {
         // Fetch student counts for current year grouped by school
         const currYearStudents = await db
             .select({
-                schoolId: students.schoolId,
-                count: count(),
+                schoolId: projects.schoolId,
+                total: sum(projects.numStudents),
             })
-            .from(students)
-            .innerJoin(projects, eq(projects.id, students.projectId))
+            .from(projects)
             .where(eq(projects.year, currentYear))
-            .groupBy(students.schoolId);
+            .groupBy(projects.schoolId);
 
         // Fetch student counts for last year grouped by school
         const lastYearStudents = await db
             .select({
-                schoolId: students.schoolId,
-                count: count(),
+                schoolId: projects.schoolId,
+                total: sum(projects.numStudents),
             })
-            .from(students)
-            .innerJoin(projects, eq(projects.id, students.projectId))
+            .from(projects)
             .where(eq(projects.year, currentYear - 1))
-            .groupBy(students.schoolId);
+            .groupBy(projects.schoolId);
 
         // Fetch teacher counts for current year grouped by school
         const currYearTeachers = await db
@@ -110,10 +108,16 @@ export async function GET(req: NextRequest) {
             lastYearProjects.map((p) => [p.schoolId, p.count]),
         );
         const currStudentsMap = new Map(
-            currYearStudents.map((s) => [s.schoolId, s.count]),
+            currYearStudents.map((s) => [
+                s.schoolId,
+                s.total ? Number(s.total) : 0,
+            ]),
         );
         const lastStudentsMap = new Map(
-            lastYearStudents.map((s) => [s.schoolId, s.count]),
+            lastYearStudents.map((s) => [
+                s.schoolId,
+                s.total ? Number(s.total) : 0,
+            ]),
         );
         const currTeachersMap = new Map(
             currYearTeachers.map((t) => [t.schoolId, t.count]),
