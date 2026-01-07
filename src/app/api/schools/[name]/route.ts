@@ -12,13 +12,8 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import {
-    schools,
-    projects,
-    students,
-    yearlyTeacherParticipation,
-} from "@/lib/schema";
-import { eq, sql, and } from "drizzle-orm";
+import { schools, projects, yearlyTeacherParticipation } from "@/lib/schema";
+import { eq, sql, and, sum } from "drizzle-orm";
 
 export async function GET(
     req: NextRequest,
@@ -48,12 +43,11 @@ export async function GET(
         const pastYear = currentYear - 1;
 
         const studentCount = await db
-            .select({ count: sql<number>`count(*)` })
-            .from(students)
-            .innerJoin(projects, eq(students.projectId, projects.id))
+            .select({ total: sum(projects.numStudents) })
+            .from(projects)
             .where(
                 and(
-                    eq(students.schoolId, school.id),
+                    eq(projects.schoolId, school.id),
                     eq(projects.year, pastYear),
                 ),
             );
@@ -87,7 +81,9 @@ export async function GET(
         return NextResponse.json({
             name: school.name,
             town: school.town,
-            studentCount: studentCount[0]?.count ?? 0,
+            studentCount: studentCount[0]?.total
+                ? Number(studentCount[0].total)
+                : 0,
             teacherCount: teacherCount[0]?.count ?? 0,
             projectCount: projectCount[0]?.count ?? 0,
             firstYear: firstYearData[0]?.year ?? null,
