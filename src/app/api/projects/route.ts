@@ -23,13 +23,14 @@ export async function GET() {
                 division: projects.division,
                 category: projects.category,
                 year: projects.year,
-                group: projects.group,
+                teamProject: projects.teamProject,
                 schoolId: projects.schoolId,
                 schoolName: schools.name,
                 schoolTown: schools.town,
                 teacherId: projects.teacherId,
-                teacherFirstName: teachers.firstName,
-                teacherLastName: teachers.lastName,
+                teacherName: teachers.name,
+                teacherEmail: teachers.email,
+                numStudents: projects.numStudents,
             })
             .from(projects)
             .innerJoin(schools, eq(schools.id, projects.schoolId))
