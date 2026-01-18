@@ -65,7 +65,7 @@ float getBayerValue(vec2 uv) {
 }
 
 void main() {
-  float t = .5 * u_time;
+  float t = .2 * u_time;
   vec2 uv = gl_FragCoord.xy / u_resolution.xy;
 
   // Pixelization
