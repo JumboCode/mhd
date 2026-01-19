@@ -70,6 +70,7 @@ export type Filters = {
     groupProjects: boolean;
     selectedSchools: string[];
     selectedCities: string[];
+    selectedProjectTypes: string[];
     teacherYearsOperator: string;
     teacherYearsValue: string;
     teacherYearsValue2?: string; // For range filtering (between)
@@ -78,6 +79,7 @@ export type Filters = {
 type GraphFiltersProps = {
     schools: string[];
     cities: string[];
+    projectTypes?: string[]; // List of project type options
     gatewayCities?: string[]; // List of gateway city names
     onFiltersChange: (filters: Filters) => void;
 };
@@ -85,6 +87,7 @@ type GraphFiltersProps = {
 export default function GraphFilters({
     schools,
     cities,
+    projectTypes = [],
     gatewayCities = [],
     onFiltersChange,
 }: GraphFiltersProps) {
@@ -94,6 +97,9 @@ export default function GraphFilters({
     const [groupProjects, setGroupProjects] = useState(true);
     const [selectedSchools, setSelectedSchools] = useState<string[]>([]);
     const [selectedCities, setSelectedCities] = useState<string[]>([]);
+    const [selectedProjectTypes, setSelectedProjectTypes] = useState<string[]>(
+        [],
+    );
     const [teacherYearsOperator, setTeacherYearsOperator] = useState("=");
     const [teacherYearsValue, setTeacherYearsValue] = useState("");
     const [teacherYearsValue2, setTeacherYearsValue2] = useState<string>("");
@@ -108,6 +114,7 @@ export default function GraphFilters({
             groupProjects,
             selectedSchools,
             selectedCities,
+            selectedProjectTypes,
             teacherYearsOperator,
             teacherYearsValue,
             teacherYearsValue2,
@@ -134,6 +141,11 @@ export default function GraphFilters({
     const handleCitiesChange = (values: string[]) => {
         setSelectedCities(values);
         updateFilters({ selectedCities: values });
+    };
+
+    const handleProjectTypesChange = (values: string[]) => {
+        setSelectedProjectTypes(values);
+        updateFilters({ selectedProjectTypes: values });
     };
 
     const handleSchoolCheckboxToggle = (school: string, checked: boolean) => {
@@ -186,18 +198,26 @@ export default function GraphFilters({
                 teacherYearsValue2: undefined,
             });
         }
+        // Clear project types when filter is removed
+        if (value.value === "project-type") {
+            setSelectedProjectTypes([]);
+            updateFilters({ selectedProjectTypes: [] });
+        }
     };
 
     const handleFilterValueFinish = (
-        filterType: "school" | "city",
+        filterType: "school" | "city" | "project-type",
         values: string[],
     ) => {
         if (filterType === "school") {
             setSelectedSchools(values);
             updateFilters({ selectedSchools: values });
-        } else {
+        } else if (filterType === "city") {
             setSelectedCities(values);
             updateFilters({ selectedCities: values });
+        } else if (filterType === "project-type") {
+            setSelectedProjectTypes(values);
+            updateFilters({ selectedProjectTypes: values });
         }
     };
 
@@ -248,6 +268,12 @@ export default function GraphFilters({
             const count = selectedCities.length;
             if (count === 0) return filter.label;
             const truncated = truncateValues(selectedCities);
+            return `${filter.label}: ${truncated}`;
+        }
+        if (filter.value === "project-type") {
+            const count = selectedProjectTypes.length;
+            if (count === 0) return filter.label;
+            const truncated = truncateValues(selectedProjectTypes);
             return `${filter.label}: ${truncated}`;
         }
         if (filter.value === "teacher-participation") {
@@ -328,6 +354,12 @@ export default function GraphFilters({
                             const isSchoolOrCity =
                                 filter.value === "school" ||
                                 filter.value === "city";
+                            const isProjectType =
+                                filter.value === "project-type";
+                            const isSchoolCityOrProjectType =
+                                filter.value === "school" ||
+                                filter.value === "city" ||
+                                filter.value === "project-type";
                             const isTeacherParticipation =
                                 filter.value === "teacher-participation";
                             const displayText = getFilterDisplayText(filter);
@@ -350,22 +382,29 @@ export default function GraphFilters({
                                 </div>
                             );
 
-                            if (isSchoolOrCity) {
+                            if (isSchoolCityOrProjectType) {
                                 return (
                                     <FilterValuePopover
                                         key={filter.value}
                                         filterType={
-                                            filter.value as "school" | "city"
+                                            filter.value as
+                                                | "school"
+                                                | "city"
+                                                | "project-type"
                                         }
                                         options={
                                             filter.value === "school"
                                                 ? schools
-                                                : cities
+                                                : filter.value === "city"
+                                                  ? cities
+                                                  : projectTypes
                                         }
                                         selectedValues={
                                             filter.value === "school"
                                                 ? selectedSchools
-                                                : selectedCities
+                                                : filter.value === "city"
+                                                  ? selectedCities
+                                                  : selectedProjectTypes
                                         }
                                         gatewayCities={
                                             filter.value === "city"
@@ -376,7 +415,8 @@ export default function GraphFilters({
                                             handleFilterValueFinish(
                                                 filter.value as
                                                     | "school"
-                                                    | "city",
+                                                    | "city"
+                                                    | "project-type",
                                                 values,
                                             )
                                         }

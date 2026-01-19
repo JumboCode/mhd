@@ -1,3 +1,5 @@
+// Generic component for filtering values in a popover for graphs
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -19,7 +21,7 @@ import {
 import { Check } from "lucide-react";
 
 interface FilterValuePopoverProps {
-    filterType: "school" | "city";
+    filterType: "school" | "city" | "project-type";
     options: string[];
     selectedValues: string[];
     gatewayCities?: string[]; // List of gateway city names (only for city filter)

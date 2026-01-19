@@ -59,6 +59,7 @@ const defaultFilters: Filters = {
     groupProjects: true,
     selectedSchools: [],
     selectedCities: [],
+    selectedProjectTypes: [],
     teacherYearsValue: "",
     teacherYearsOperator: "=",
     teacherYearsValue2: undefined,
@@ -216,6 +217,13 @@ export default function GraphsPage() {
             )
                 return false;
 
+            // Selected Project Types
+            if (
+                filters.selectedProjectTypes.length > 0 &&
+                !filters.selectedProjectTypes.includes(p.category)
+            )
+                return false;
+
             // Teacher Years Participation
             if (filters.teacherYearsValue) {
                 const yearsActive = teacherYearsMap.get(p.teacherId) || 0;
@@ -354,6 +362,9 @@ export default function GraphsPage() {
     const cities = Array.from(
         new Set(allProjects.map((p) => p.schoolTown)),
     ).sort();
+    const projectTypes = Array.from(
+        new Set(allProjects.map((p) => p.category)),
+    ).sort();
 
     return (
         <div className="w-full min-h-screen flex bg-background">
@@ -363,6 +374,7 @@ export default function GraphsPage() {
                 <GraphFilters
                     schools={schools}
                     cities={cities}
+                    projectTypes={projectTypes}
                     gatewayCities={gatewayCities}
                     onFiltersChange={setFilters}
                 />
