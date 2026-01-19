@@ -350,7 +350,7 @@ export default function GraphsPage() {
         });
     }, [allProjects, filters, currentYearRange]);
 
-    // Calculate filtered project count
+    // Calculate filtered count (based on selected 'measured by' category)
     const filteredProjectCount = useMemo(() => {
         return graphDataset.reduce((total, dataset) => {
             return (
