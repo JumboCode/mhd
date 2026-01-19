@@ -359,13 +359,13 @@ export default function GraphFilters({
                                     <Button
                                         variant="ghost"
                                         size="icon"
-                                        className="h-6 w-6 hover:cursor-pointer"
+                                        className="h-6 w-6 group hover:cursor-pointer hover:scale-105"
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             handleFilterRemove(filter);
                                         }}
                                     >
-                                        <X className="h-4 w-4 text-muted-foreground hover:cursor-pointer" />
+                                        <X className="h-4 w-4 text-muted-foreground transition-transform duration-150 group-hover:scale-105" />
                                     </Button>
                                 </div>
                             );
@@ -429,12 +429,12 @@ export default function GraphFilters({
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
-                                                className="h-6 w-6"
+                                                className="h-6 w-6 group"
                                                 onClick={() =>
                                                     handleFilterRemove(filter)
                                                 }
                                             >
-                                                <X className="h-4 w-4 text-muted-foreground cursor-pointer" />
+                                                <X className="h-4 w-4 text-muted-foreground cursor-pointer transition-transform transition-colors duration-150 group-hover:scale-110 group-hover:text-destructive" />
                                             </Button>
                                         </div>
 
