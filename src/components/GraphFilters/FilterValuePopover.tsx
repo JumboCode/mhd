@@ -188,7 +188,7 @@ export function FilterValuePopover({
                             Cancel
                         </Button>
                         <Button onClick={handleFinish} className="h-9">
-                            Finish
+                            Apply
                         </Button>
                     </div>
                 </Command>
