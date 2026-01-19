@@ -9,24 +9,12 @@
  *
  **************************************************************/
 
-// TO DO: Eliminate invalid options/combinations based on filters
+// TODO: Eliminate invalid options/combinations based on filters
 
 "use client";
 
 import { useState } from "react";
 import { Combobox } from "@/components/Combobox";
-import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from "@/components/ui/popover";
-import { Checkbox } from "@/components/Checkbox";
-import {
-    Accordion,
-    AccordionContent,
-    AccordionItem,
-    AccordionTrigger,
-} from "@/components/ui/accordion";
 import { AddFilterPopover } from "./AddFilterPopover";
 import { FilterValuePopover } from "./FilterValuePopover";
 import { Info, X } from "lucide-react";
