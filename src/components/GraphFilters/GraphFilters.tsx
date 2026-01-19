@@ -359,13 +359,13 @@ export default function GraphFilters({
                                     <Button
                                         variant="ghost"
                                         size="icon"
-                                        className="h-6 w-6"
+                                        className="h-6 w-6 hover:cursor-pointer"
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             handleFilterRemove(filter);
                                         }}
                                     >
-                                        <X className="h-4 w-4 text-muted-foreground cursor-pointer" />
+                                        <X className="h-4 w-4 text-muted-foreground hover:cursor-pointer" />
                                     </Button>
                                 </div>
                             );
