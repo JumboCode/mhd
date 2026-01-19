@@ -43,14 +43,14 @@ type Project = {
     division: string;
     category: string;
     year: number;
-    group: boolean;
+    teamProject: boolean;
     schoolId: number;
     schoolName: string;
     schoolTown: string;
     teacherId: number;
-    teacherFirstName: string;
-    teacherLastName: string;
-    studentCount: number;
+    teacherName: string;
+    teacherEmail: string;
+    numStudents: number;
 };
 
 // define default filters type
@@ -194,12 +194,16 @@ export default function GraphsPage() {
             }
 
             // Individual vs Group Projects
-            if (filters.individualProjects && !filters.groupProjects && p.group)
+            if (
+                filters.individualProjects &&
+                !filters.groupProjects &&
+                p.teamProject
+            )
                 return false;
             if (
                 filters.groupProjects &&
                 !filters.individualProjects &&
-                !p.group
+                !p.teamProject
             )
                 return false;
 
@@ -280,11 +284,11 @@ export default function GraphsPage() {
                 case "total-project-count":
                     return projects.length;
 
-                // case "total-student-count": TO DO: Fix this once student counts are sorted out properly
-                //     return projects.reduce(
-                //         (sum, p) => sum + (p.studentCount || 0),
-                //         0,
-                //     );
+                case "total-student-count":
+                    return projects.reduce(
+                        (sum, p) => sum + (p.numStudents || 0),
+                        0,
+                    );
 
                 case "total-teacher-count":
                     return new Set(projects.map((p) => p.teacherId)).size;
