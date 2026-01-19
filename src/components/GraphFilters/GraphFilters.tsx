@@ -28,6 +28,7 @@ import {
     AccordionTrigger,
 } from "@/components/ui/accordion";
 import { AddFilterPopover } from "./AddFilterPopover";
+import { FilterValuePopover } from "./FilterValuePopover";
 import { Info, X } from "lucide-react";
 import { Filter, filterOptions } from "./constants";
 import {
@@ -79,11 +80,14 @@ export default function GraphFilters({
 }: GraphFiltersProps) {
     const [measuredAs, setMeasuredAs] = useState("total-school-count");
     const [groupBy, setGroupBy] = useState("region");
+    const [gatewayCities, setGatewayCities] = useState(false);
+    const [individualProjects, setIndividualProjects] = useState(true);
+    const [groupProjects, setGroupProjects] = useState(true);
     const [selectedSchools, setSelectedSchools] = useState<string[]>([]);
     const [selectedCities, setSelectedCities] = useState<string[]>([]);
     const [teacherYearsOperator, setTeacherYearsOperator] = useState("=");
     const [teacherYearsValue, setTeacherYearsValue] = useState("");
-    const [openAccordionItems, setOpenAccordionItems] = useState<string[]>([]);
+
     const [selectedFilters, setSelectedFilters] = useState<Filter[]>([]);
 
     const updateFilters = (updates: Partial<Filters>) => {
@@ -138,20 +142,6 @@ export default function GraphFilters({
         updateFilters({ selectedCities: newSelection });
     };
 
-    const handleTeacherFilterToggle = (label: string, checked: boolean) => {
-        setTeacherFilterEnabled(checked);
-        if (checked) {
-            // When enabling, set a default value if it's empty
-            const newValue = teacherYearsValue || "1";
-            setTeacherYearsValue(newValue);
-            updateFilters({ teacherYearsValue: newValue });
-        } else {
-            // When disabling, clear the value to mark it as inactive
-            setTeacherYearsValue("");
-            updateFilters({ teacherYearsValue: "" });
-        }
-    };
-
     const handleTeacherYearsOperatorChange = (value: string) => {
         setTeacherYearsOperator(value);
         updateFilters({ teacherYearsOperator: value });
@@ -170,6 +160,47 @@ export default function GraphFilters({
         setSelectedFilters((prev) =>
             prev.filter((f) => f.value !== value.value),
         );
+    };
+
+    const handleFilterValueFinish = (
+        filterType: "school" | "city",
+        values: string[],
+    ) => {
+        if (filterType === "school") {
+            setSelectedSchools(values);
+            updateFilters({ selectedSchools: values });
+        } else {
+            setSelectedCities(values);
+            updateFilters({ selectedCities: values });
+        }
+    };
+
+    // Helper function to truncate comma-separated values
+    const truncateValues = (
+        values: string[],
+        maxLength: number = 50,
+    ): string => {
+        if (values.length === 0) return "";
+        const joined = values.join(", ");
+        if (joined.length <= maxLength) return joined;
+        return joined.substring(0, maxLength).trim() + "...";
+    };
+
+    // Get display text for filter chip
+    const getFilterDisplayText = (filter: Filter): string => {
+        if (filter.value === "school") {
+            const count = selectedSchools.length;
+            if (count === 0) return filter.label;
+            const truncated = truncateValues(selectedSchools);
+            return `${filter.label}: ${truncated}`;
+        }
+        if (filter.value === "city") {
+            const count = selectedCities.length;
+            if (count === 0) return filter.label;
+            const truncated = truncateValues(selectedCities);
+            return `${filter.label}: ${truncated}`;
+        }
+        return filter.label;
     };
 
     return (
@@ -225,24 +256,66 @@ export default function GraphFilters({
                 <div className="flex flex-col w-full items-center gap-2">
                     {/* Active Filter Chips */}
                     {selectedFilters.length > 0 &&
-                        selectedFilters.map((filter) => (
-                            <div
-                                className="text-sm border rounded-sm px-2 py-2 w-full flex items-center justify-between"
-                                key={filter.value}
-                            >
-                                <p key={filter.value} onClick={() => {}}>
-                                    {filter.label}
-                                </p>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-6 w-6"
-                                    onClick={() => handleFilterRemove(filter)}
-                                >
-                                    <X className="h-4 w-4 text-muted-foreground text cursor-pointer" />
-                                </Button>
-                            </div>
-                        ))}
+                        selectedFilters.map((filter) => {
+                            const isSchoolOrCity =
+                                filter.value === "school" ||
+                                filter.value === "city";
+                            const displayText = getFilterDisplayText(filter);
+                            const chipContent = (
+                                <div className="text-sm border rounded-sm px-2 py-2 w-full flex items-center justify-between cursor-pointer hover:bg-muted transition-colors">
+                                    <p className="flex-1 text-left">
+                                        {displayText}
+                                    </p>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-6 w-6"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleFilterRemove(filter);
+                                        }}
+                                    >
+                                        <X className="h-4 w-4 text-muted-foreground cursor-pointer" />
+                                    </Button>
+                                </div>
+                            );
+
+                            if (isSchoolOrCity) {
+                                return (
+                                    <FilterValuePopover
+                                        key={filter.value}
+                                        filterType={
+                                            filter.value as "school" | "city"
+                                        }
+                                        options={
+                                            filter.value === "school"
+                                                ? schools
+                                                : cities
+                                        }
+                                        selectedValues={
+                                            filter.value === "school"
+                                                ? selectedSchools
+                                                : selectedCities
+                                        }
+                                        onFinish={(values) =>
+                                            handleFilterValueFinish(
+                                                filter.value as
+                                                    | "school"
+                                                    | "city",
+                                                values,
+                                            )
+                                        }
+                                        trigger={chipContent}
+                                    />
+                                );
+                            }
+
+                            return (
+                                <div className="w-full" key={filter.value}>
+                                    {chipContent}
+                                </div>
+                            );
+                        })}
 
                     {/* Add Filter Button with Popover */}
                     {selectedFilters.length !== filterOptions.length && (
