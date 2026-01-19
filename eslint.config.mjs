@@ -10,7 +10,6 @@ export default [
     ...tseslint.configs.recommended,
     pluginReact.configs.flat.recommended,
     eslintConfigPrettier,
-    "prettier",
     {
         files: ["**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
         languageOptions: {
