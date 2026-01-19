@@ -17,6 +17,8 @@ import {
     ChartColumn,
     ChevronDown,
     LineChart,
+    Link,
+    Share,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -55,7 +57,6 @@ type Project = {
 const defaultFilters: Filters = {
     individualProjects: true,
     groupProjects: true,
-    gatewayCities: false,
     selectedSchools: [],
     selectedCities: [],
     teacherYearsValue: "",
@@ -87,6 +88,7 @@ const groupByLabels: Record<string, string> = {
 export default function GraphsPage() {
     const [allProjects, setAllProjects] = useState<Project[]>([]);
     const [filters, setFilters] = useState<Filters>(defaultFilters);
+    const [gatewayCities, setGatewayCities] = useState<string[]>([]);
     const [chartType, setChartType] = useState<"line" | "bar">("line");
     const [timePeriod, setTimePeriod] = useState<
         "all" | "3y" | "5y" | "custom"
@@ -116,6 +118,22 @@ export default function GraphsPage() {
             }
         };
         fetchProjects();
+    }, []);
+
+    // Fetch gateway cities
+    useEffect(() => {
+        const fetchGatewayCities = async () => {
+            try {
+                const response = await fetch("/api/gateway-cities");
+                if (!response.ok) throw new Error("Failed to fetch");
+                const data = await response.json();
+                setGatewayCities(data);
+            } catch {
+                // Silently fail - gateway cities are optional
+                setGatewayCities([]);
+            }
+        };
+        fetchGatewayCities();
     }, []);
 
     // Sync tempYearRange with yearRange only when popover opens in custom mode
@@ -345,6 +363,7 @@ export default function GraphsPage() {
                 <GraphFilters
                     schools={schools}
                     cities={cities}
+                    gatewayCities={gatewayCities}
                     onFiltersChange={setFilters}
                 />
             </div>
@@ -364,19 +383,7 @@ export default function GraphsPage() {
                                     size="sm"
                                     className="flex items-center gap-2"
                                 >
-                                    <svg
-                                        className="w-4 h-4"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                                        />
-                                    </svg>
+                                    <Share className="w-4 h-4" />
                                     Export
                                 </Button>
                                 <Button
@@ -384,19 +391,7 @@ export default function GraphsPage() {
                                     size="sm"
                                     className="flex items-center gap-2"
                                 >
-                                    <svg
-                                        className="w-4 h-4"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
-                                        />
-                                    </svg>
+                                    <Link className="w-4 h-4" />
                                     Share
                                 </Button>
                             </div>

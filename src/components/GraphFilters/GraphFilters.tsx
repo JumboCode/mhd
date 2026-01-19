@@ -66,7 +66,6 @@ const groupByOptions = [
 export type Filters = {
     measuredAs: string;
     groupBy: string;
-    gatewayCities: boolean;
     individualProjects: boolean;
     groupProjects: boolean;
     selectedSchools: string[];
@@ -79,17 +78,18 @@ export type Filters = {
 type GraphFiltersProps = {
     schools: string[];
     cities: string[];
+    gatewayCities?: string[]; // List of gateway city names
     onFiltersChange: (filters: Filters) => void;
 };
 
 export default function GraphFilters({
     schools,
     cities,
+    gatewayCities = [],
     onFiltersChange,
 }: GraphFiltersProps) {
     const [measuredAs, setMeasuredAs] = useState("total-school-count");
     const [groupBy, setGroupBy] = useState("region");
-    const [gatewayCities, setGatewayCities] = useState(false);
     const [individualProjects, setIndividualProjects] = useState(true);
     const [groupProjects, setGroupProjects] = useState(true);
     const [selectedSchools, setSelectedSchools] = useState<string[]>([]);
@@ -104,7 +104,6 @@ export default function GraphFilters({
         const newFilters: Filters = {
             measuredAs,
             groupBy,
-            gatewayCities,
             individualProjects,
             groupProjects,
             selectedSchools,
@@ -367,6 +366,11 @@ export default function GraphFilters({
                                             filter.value === "school"
                                                 ? selectedSchools
                                                 : selectedCities
+                                        }
+                                        gatewayCities={
+                                            filter.value === "city"
+                                                ? gatewayCities
+                                                : undefined
                                         }
                                         onFinish={(values) =>
                                             handleFilterValueFinish(

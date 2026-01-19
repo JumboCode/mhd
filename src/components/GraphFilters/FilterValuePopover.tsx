@@ -22,6 +22,7 @@ interface FilterValuePopoverProps {
     filterType: "school" | "city";
     options: string[];
     selectedValues: string[];
+    gatewayCities?: string[]; // List of gateway city names (only for city filter)
     onFinish: (selectedValues: string[]) => void;
     trigger: React.ReactNode;
 }
@@ -30,6 +31,7 @@ export function FilterValuePopover({
     filterType,
     options,
     selectedValues,
+    gatewayCities = [],
     onFinish,
     trigger,
 }: FilterValuePopoverProps) {
@@ -69,6 +71,19 @@ export function FilterValuePopover({
         setTempSelected([]);
     };
 
+    const handleSelectGatewayCities = () => {
+        // Get all gateway cities that are in the options
+        const gatewayInOptions = gatewayCities.filter((city) =>
+            validOptions.includes(city),
+        );
+
+        // Select all gateway cities (merge with existing selections)
+        const newSelection = [
+            ...new Set([...tempSelected, ...gatewayInOptions]),
+        ];
+        setTempSelected(newSelection);
+    };
+
     const handleFinish = () => {
         onFinish(tempSelected);
         setOpen(false);
@@ -94,14 +109,31 @@ export function FilterValuePopover({
                         value={searchQuery}
                         onValueChange={setSearchQuery}
                     />
-                    <div className="flex items-center justify-between px-3 py-2 border-b">
-                        <button
-                            type="button"
-                            onClick={handleSelectAll}
-                            className="text-sm text-primary hover:underline"
-                        >
-                            Select All
-                        </button>
+                    <div className="flex items-center justify-between px-3 py-2 border-b gap-2">
+                        <div className="flex items-center gap-3">
+                            <button
+                                type="button"
+                                onClick={handleSelectAll}
+                                className="text-sm text-primary hover:underline"
+                            >
+                                Select All
+                            </button>
+                            {filterType === "city" &&
+                                gatewayCities.length > 0 && (
+                                    <>
+                                        <span className="text-muted-foreground">
+                                            |
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={handleSelectGatewayCities}
+                                            className="text-sm text-primary hover:underline"
+                                        >
+                                            Select Gateway Cities
+                                        </button>
+                                    </>
+                                )}
+                        </div>
                         <button
                             type="button"
                             onClick={handleClearAll}

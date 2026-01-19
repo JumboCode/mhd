@@ -1,5 +1,4 @@
 export const filterOptions = [
-    { value: "gateway-cities", label: "Gateway Cities" },
     { value: "school", label: "School" },
     { value: "city", label: "City" },
     { value: "project-type", label: "Project Type" },
