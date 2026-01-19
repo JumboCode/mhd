@@ -17,12 +17,16 @@ import {
     ChartColumn,
     ChevronDown,
     LineChart,
+    Link,
+    Share,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import BarGraph, { type BarDataset } from "@/components/BarGraph";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
-import GraphFilters, { type Filters } from "@/components/GraphFilters";
+import GraphFilters, {
+    type Filters,
+} from "@/components/GraphFilters/GraphFilters";
 import LineGraph from "@/components/LineGraph";
 import { Button } from "@/components/ui/button";
 import {
@@ -39,25 +43,26 @@ type Project = {
     division: string;
     category: string;
     year: number;
-    group: boolean;
+    teamProject: boolean;
     schoolId: number;
     schoolName: string;
     schoolTown: string;
     teacherId: number;
-    teacherFirstName: string;
-    teacherLastName: string;
-    studentCount: number;
+    teacherName: string;
+    teacherEmail: string;
+    numStudents: number;
 };
 
 // define default filters type
 const defaultFilters: Filters = {
     individualProjects: true,
     groupProjects: true,
-    gatewayCities: false,
     selectedSchools: [],
     selectedCities: [],
+    selectedProjectTypes: [],
     teacherYearsValue: "",
     teacherYearsOperator: "=",
+    teacherYearsValue2: undefined,
     groupBy: "region",
     measuredAs: "total-school-count",
 };
@@ -84,6 +89,7 @@ const groupByLabels: Record<string, string> = {
 export default function GraphsPage() {
     const [allProjects, setAllProjects] = useState<Project[]>([]);
     const [filters, setFilters] = useState<Filters>(defaultFilters);
+    const [gatewayCities, setGatewayCities] = useState<string[]>([]);
     const [chartType, setChartType] = useState<"line" | "bar">("line");
     const [timePeriod, setTimePeriod] = useState<
         "all" | "3y" | "5y" | "custom"
@@ -113,6 +119,22 @@ export default function GraphsPage() {
             }
         };
         fetchProjects();
+    }, []);
+
+    // Fetch gateway cities
+    useEffect(() => {
+        const fetchGatewayCities = async () => {
+            try {
+                const response = await fetch("/api/gateway-cities");
+                if (!response.ok) throw new Error("Failed to fetch");
+                const data = await response.json();
+                setGatewayCities(data);
+            } catch {
+                // Silently fail - gateway cities are optional
+                setGatewayCities([]);
+            }
+        };
+        fetchGatewayCities();
     }, []);
 
     // Sync tempYearRange with yearRange only when popover opens in custom mode
@@ -172,12 +194,16 @@ export default function GraphsPage() {
             }
 
             // Individual vs Group Projects
-            if (filters.individualProjects && !filters.groupProjects && p.group)
+            if (
+                filters.individualProjects &&
+                !filters.groupProjects &&
+                p.teamProject
+            )
                 return false;
             if (
                 filters.groupProjects &&
                 !filters.individualProjects &&
-                !p.group
+                !p.teamProject
             )
                 return false;
 
@@ -195,15 +221,32 @@ export default function GraphsPage() {
             )
                 return false;
 
+            // Selected Project Types
+            if (
+                filters.selectedProjectTypes.length > 0 &&
+                !filters.selectedProjectTypes.includes(p.category)
+            )
+                return false;
+
             // Teacher Years Participation
             if (filters.teacherYearsValue) {
                 const yearsActive = teacherYearsMap.get(p.teacherId) || 0;
-                const target = parseInt(filters.teacherYearsValue, 10);
                 const op = filters.teacherYearsOperator;
 
-                if (op === "=" && yearsActive !== target) return false;
-                if (op === ">" && yearsActive <= target) return false;
-                if (op === "<" && yearsActive >= target) return false;
+                if (op === "=") {
+                    const target = parseInt(filters.teacherYearsValue, 10);
+                    if (yearsActive !== target) return false;
+                } else if (op === ">") {
+                    const target = parseInt(filters.teacherYearsValue, 10);
+                    if (yearsActive <= target) return false;
+                } else if (op === "<") {
+                    const target = parseInt(filters.teacherYearsValue, 10);
+                    if (yearsActive >= target) return false;
+                } else if (op === "between" && filters.teacherYearsValue2) {
+                    const min = parseInt(filters.teacherYearsValue, 10);
+                    const max = parseInt(filters.teacherYearsValue2, 10);
+                    if (yearsActive < min || yearsActive > max) return false;
+                }
             }
 
             return true;
@@ -241,11 +284,11 @@ export default function GraphsPage() {
                 case "total-project-count":
                     return projects.length;
 
-                // case "total-student-count": TO DO: Fix this once student counts are sorted out properly
-                //     return projects.reduce(
-                //         (sum, p) => sum + (p.studentCount || 0),
-                //         0,
-                //     );
+                case "total-student-count":
+                    return projects.reduce(
+                        (sum, p) => sum + (p.numStudents || 0),
+                        0,
+                    );
 
                 case "total-teacher-count":
                     return new Set(projects.map((p) => p.teacherId)).size;
@@ -307,7 +350,7 @@ export default function GraphsPage() {
         });
     }, [allProjects, filters, currentYearRange]);
 
-    // Calculate filtered project count
+    // Calculate filtered count (based on selected 'measured by' category)
     const filteredProjectCount = useMemo(() => {
         return graphDataset.reduce((total, dataset) => {
             return (
@@ -323,6 +366,9 @@ export default function GraphsPage() {
     const cities = Array.from(
         new Set(allProjects.map((p) => p.schoolTown)),
     ).sort();
+    const projectTypes = Array.from(
+        new Set(allProjects.map((p) => p.category)),
+    ).sort();
 
     return (
         <div className="w-full min-h-screen flex bg-background">
@@ -332,6 +378,8 @@ export default function GraphsPage() {
                 <GraphFilters
                     schools={schools}
                     cities={cities}
+                    projectTypes={projectTypes}
+                    gatewayCities={gatewayCities}
                     onFiltersChange={setFilters}
                 />
             </div>
@@ -351,19 +399,7 @@ export default function GraphsPage() {
                                     size="sm"
                                     className="flex items-center gap-2"
                                 >
-                                    <svg
-                                        className="w-4 h-4"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                                        />
-                                    </svg>
+                                    <Share className="w-4 h-4" />
                                     Export
                                 </Button>
                                 <Button
@@ -371,19 +407,7 @@ export default function GraphsPage() {
                                     size="sm"
                                     className="flex items-center gap-2"
                                 >
-                                    <svg
-                                        className="w-4 h-4"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
-                                        />
-                                    </svg>
+                                    <Link className="w-4 h-4" />
                                     Share
                                 </Button>
                             </div>
