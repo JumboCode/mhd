@@ -60,6 +60,7 @@ const defaultFilters: Filters = {
     selectedCities: [],
     teacherYearsValue: "",
     teacherYearsOperator: "=",
+    teacherYearsValue2: undefined,
     groupBy: "region",
     measuredAs: "total-school-count",
 };
@@ -200,12 +201,22 @@ export default function GraphsPage() {
             // Teacher Years Participation
             if (filters.teacherYearsValue) {
                 const yearsActive = teacherYearsMap.get(p.teacherId) || 0;
-                const target = parseInt(filters.teacherYearsValue, 10);
                 const op = filters.teacherYearsOperator;
 
-                if (op === "=" && yearsActive !== target) return false;
-                if (op === ">" && yearsActive <= target) return false;
-                if (op === "<" && yearsActive >= target) return false;
+                if (op === "=") {
+                    const target = parseInt(filters.teacherYearsValue, 10);
+                    if (yearsActive !== target) return false;
+                } else if (op === ">") {
+                    const target = parseInt(filters.teacherYearsValue, 10);
+                    if (yearsActive <= target) return false;
+                } else if (op === "<") {
+                    const target = parseInt(filters.teacherYearsValue, 10);
+                    if (yearsActive >= target) return false;
+                } else if (op === "between" && filters.teacherYearsValue2) {
+                    const min = parseInt(filters.teacherYearsValue, 10);
+                    const max = parseInt(filters.teacherYearsValue2, 10);
+                    if (yearsActive < min || yearsActive > max) return false;
+                }
             }
 
             return true;

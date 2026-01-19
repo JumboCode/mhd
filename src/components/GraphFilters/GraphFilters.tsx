@@ -30,6 +30,14 @@ import {
 import { AddFilterPopover } from "./AddFilterPopover";
 import { FilterValuePopover } from "./FilterValuePopover";
 import { Info, X } from "lucide-react";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { Filter, filterOptions } from "./constants";
 import {
     Tooltip,
@@ -65,6 +73,7 @@ export type Filters = {
     selectedCities: string[];
     teacherYearsOperator: string;
     teacherYearsValue: string;
+    teacherYearsValue2?: string; // For range filtering (between)
 };
 
 type GraphFiltersProps = {
@@ -87,6 +96,7 @@ export default function GraphFilters({
     const [selectedCities, setSelectedCities] = useState<string[]>([]);
     const [teacherYearsOperator, setTeacherYearsOperator] = useState("=");
     const [teacherYearsValue, setTeacherYearsValue] = useState("");
+    const [teacherYearsValue2, setTeacherYearsValue2] = useState<string>("");
 
     const [selectedFilters, setSelectedFilters] = useState<Filter[]>([]);
 
@@ -101,6 +111,7 @@ export default function GraphFilters({
             selectedCities,
             teacherYearsOperator,
             teacherYearsValue,
+            teacherYearsValue2,
             ...updates,
         };
         onFiltersChange(newFilters);
@@ -154,12 +165,28 @@ export default function GraphFilters({
 
     const handleFilterSelect = (value: Filter) => {
         setSelectedFilters((prev) => [...prev, value]);
+        // Initialize teacher participation filter with default values
+        if (value.value === "teacher-participation" && !teacherYearsValue) {
+            setTeacherYearsValue("1");
+            updateFilters({ teacherYearsValue: "1" });
+        }
     };
 
     const handleFilterRemove = (value: Filter) => {
         setSelectedFilters((prev) =>
             prev.filter((f) => f.value !== value.value),
         );
+        // Clear teacher participation values when filter is removed
+        if (value.value === "teacher-participation") {
+            setTeacherYearsOperator("=");
+            setTeacherYearsValue("");
+            setTeacherYearsValue2("");
+            updateFilters({
+                teacherYearsOperator: "=",
+                teacherYearsValue: "",
+                teacherYearsValue2: undefined,
+            });
+        }
     };
 
     const handleFilterValueFinish = (
@@ -172,6 +199,30 @@ export default function GraphFilters({
         } else {
             setSelectedCities(values);
             updateFilters({ selectedCities: values });
+        }
+    };
+
+    const handleTeacherParticipationFinish = (
+        operator: string,
+        value: string,
+        value2?: string,
+    ) => {
+        setTeacherYearsOperator(operator);
+        setTeacherYearsValue(value);
+        if (value2 !== undefined) {
+            setTeacherYearsValue2(value2);
+            updateFilters({
+                teacherYearsOperator: operator,
+                teacherYearsValue: value,
+                teacherYearsValue2: value2,
+            });
+        } else {
+            setTeacherYearsValue2("");
+            updateFilters({
+                teacherYearsOperator: operator,
+                teacherYearsValue: value,
+                teacherYearsValue2: undefined,
+            });
         }
     };
 
@@ -199,6 +250,24 @@ export default function GraphFilters({
             if (count === 0) return filter.label;
             const truncated = truncateValues(selectedCities);
             return `${filter.label}: ${truncated}`;
+        }
+        if (filter.value === "teacher-participation") {
+            if (!teacherYearsValue) return filter.label;
+            const op = teacherYearsOperator;
+            const opSymbol =
+                op === "="
+                    ? "="
+                    : op === "<"
+                      ? "<"
+                      : op === ">"
+                        ? ">"
+                        : op === "between"
+                          ? "between"
+                          : "";
+            if (op === "between" && teacherYearsValue2) {
+                return `${filter.label}: ${opSymbol} ${teacherYearsValue}-${teacherYearsValue2}`;
+            }
+            return `${filter.label}: ${opSymbol} ${teacherYearsValue}`;
         }
         return filter.label;
     };
@@ -260,6 +329,8 @@ export default function GraphFilters({
                             const isSchoolOrCity =
                                 filter.value === "school" ||
                                 filter.value === "city";
+                            const isTeacherParticipation =
+                                filter.value === "teacher-participation";
                             const displayText = getFilterDisplayText(filter);
                             const chipContent = (
                                 <div className="text-sm border rounded-sm px-2 py-2 w-full flex items-center justify-between cursor-pointer hover:bg-muted transition-colors">
@@ -307,6 +378,183 @@ export default function GraphFilters({
                                         }
                                         trigger={chipContent}
                                     />
+                                );
+                            }
+
+                            if (isTeacherParticipation) {
+                                const isRangeMode =
+                                    teacherYearsOperator === "between";
+                                return (
+                                    <div
+                                        key={filter.value}
+                                        className="text-sm border rounded-sm w-full overflow-hidden"
+                                    >
+                                        {/* Header */}
+                                        <div className="px-2 py-2 flex items-center justify-between">
+                                            <span className="text-foreground font-medium">
+                                                {filter.label}
+                                            </span>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-6 w-6"
+                                                onClick={() =>
+                                                    handleFilterRemove(filter)
+                                                }
+                                            >
+                                                <X className="h-4 w-4 text-muted-foreground cursor-pointer" />
+                                            </Button>
+                                        </div>
+
+                                        {/* Expanded Content */}
+                                        <div className="px-2 pb-2 border-t pt-2 space-y-2">
+                                            {isRangeMode ? (
+                                                <>
+                                                    <Select
+                                                        value={
+                                                            teacherYearsOperator
+                                                        }
+                                                        onValueChange={(
+                                                            value,
+                                                        ) => {
+                                                            setTeacherYearsOperator(
+                                                                value,
+                                                            );
+                                                            updateFilters({
+                                                                teacherYearsOperator:
+                                                                    value,
+                                                            });
+                                                        }}
+                                                    >
+                                                        <SelectTrigger className="h-8 text-xs w-full">
+                                                            <SelectValue />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="=">
+                                                                =
+                                                            </SelectItem>
+                                                            <SelectItem value="<">
+                                                                &lt;
+                                                            </SelectItem>
+                                                            <SelectItem value=">">
+                                                                &gt;
+                                                            </SelectItem>
+                                                            <SelectItem value="between">
+                                                                between
+                                                            </SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                    <div className="flex items-center gap-2">
+                                                        <Input
+                                                            type="number"
+                                                            min="1"
+                                                            value={
+                                                                teacherYearsValue
+                                                            }
+                                                            onChange={(e) => {
+                                                                const val =
+                                                                    e.target
+                                                                        .value;
+                                                                setTeacherYearsValue(
+                                                                    val,
+                                                                );
+                                                                updateFilters({
+                                                                    teacherYearsValue:
+                                                                        val,
+                                                                });
+                                                            }}
+                                                            placeholder="Min"
+                                                            className="h-8 text-xs flex-1"
+                                                        />
+                                                        <span className="text-muted-foreground">
+                                                            -
+                                                        </span>
+                                                        <Input
+                                                            type="number"
+                                                            min="1"
+                                                            value={
+                                                                teacherYearsValue2
+                                                            }
+                                                            onChange={(e) => {
+                                                                const val =
+                                                                    e.target
+                                                                        .value;
+                                                                setTeacherYearsValue2(
+                                                                    val,
+                                                                );
+                                                                updateFilters({
+                                                                    teacherYearsValue2:
+                                                                        val,
+                                                                });
+                                                            }}
+                                                            placeholder="Max"
+                                                            className="h-8 text-xs flex-1"
+                                                        />
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                <div className="flex items-center gap-2">
+                                                    <Select
+                                                        value={
+                                                            teacherYearsOperator
+                                                        }
+                                                        onValueChange={(
+                                                            value,
+                                                        ) => {
+                                                            setTeacherYearsOperator(
+                                                                value,
+                                                            );
+                                                            updateFilters({
+                                                                teacherYearsOperator:
+                                                                    value,
+                                                            });
+                                                        }}
+                                                    >
+                                                        <SelectTrigger className="h-8 text-xs w-[60px]">
+                                                            <SelectValue />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="=">
+                                                                =
+                                                            </SelectItem>
+                                                            <SelectItem value="<">
+                                                                &lt;
+                                                            </SelectItem>
+                                                            <SelectItem value=">">
+                                                                &gt;
+                                                            </SelectItem>
+                                                            <SelectItem value="between">
+                                                                between
+                                                            </SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                    <Input
+                                                        type="number"
+                                                        min="1"
+                                                        value={
+                                                            teacherYearsValue
+                                                        }
+                                                        onChange={(e) => {
+                                                            const val =
+                                                                e.target.value;
+                                                            setTeacherYearsValue(
+                                                                val,
+                                                            );
+                                                            updateFilters({
+                                                                teacherYearsValue:
+                                                                    val,
+                                                            });
+                                                        }}
+                                                        placeholder="Number"
+                                                        className="h-8 text-xs flex-1"
+                                                    />
+                                                    <span className="text-muted-foreground text-xs whitespace-nowrap">
+                                                        years
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
                                 );
                             }
 
