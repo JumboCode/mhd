@@ -10,6 +10,7 @@ import {
     millerText,
 } from "@/app/fonts";
 import ConditionalLayout from "@/components/ConditionalLayout";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 export const metadata: Metadata = {
     title: "MHD",
@@ -27,7 +28,9 @@ export default function RootLayout({
             className={`${millerBanner.variable} ${millerDisplay.variable} ${millerText.variable} ${interstate.variable}`}
         >
             <body className="font-sans flex flex-row h-screen overflow-hidden">
-                <ConditionalLayout>{children}</ConditionalLayout>
+                <ConditionalLayout>
+                    <TooltipProvider>{children}</TooltipProvider>
+                </ConditionalLayout>
                 <Toaster />
             </body>
         </html>

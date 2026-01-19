@@ -22,7 +22,9 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import BarGraph, { type BarDataset } from "@/components/BarGraph";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
-import GraphFilters, { type Filters } from "@/components/GraphFilters";
+import GraphFilters, {
+    type Filters,
+} from "@/components/GraphFilters/GraphFilters";
 import LineGraph from "@/components/LineGraph";
 import { Button } from "@/components/ui/button";
 import {
