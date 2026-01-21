@@ -175,7 +175,7 @@ export default function GraphFilters({
         setSelectedFilters((prev) =>
             prev.filter((f) => f.value !== value.value),
         );
-        // Clear teacher participation values when filter is removed
+
         if (value.value === "teacher-participation") {
             setTeacherYearsOperator("=");
             setTeacherYearsValue("");
@@ -185,11 +185,15 @@ export default function GraphFilters({
                 teacherYearsValue: "",
                 teacherYearsValue2: undefined,
             });
-        }
-        // Clear project types when filter is removed
-        if (value.value === "project-type") {
+        } else if (value.value === "project-type") {
             setSelectedProjectTypes([]);
             updateFilters({ selectedProjectTypes: [] });
+        } else if (value.value === "school") {
+            setSelectedSchools([]);
+            updateFilters({ selectedSchools: [] });
+        } else if (value.value === "city") {
+            setSelectedCities([]);
+            updateFilters({ selectedCities: [] });
         }
     };
 
