@@ -9,7 +9,7 @@ export async function proxy(request: NextRequest) {
     });
 
     if (!session) {
-        return NextResponse.redirect(new URL("/signin", request.url));
+        return NextResponse.redirect(new URL("/graphs", request.url));
     }
 
     const sessionCookie = getSessionCookie(request);
@@ -32,6 +32,6 @@ export const config = {
          * - /static/* (static files)
          * - /*.* (files with extensions like favicon.ico, images, etc.)
          */
-        "/((?!signin|api/auth|_next/static|_next/image|favicon.ico|.*\\.png$|.*\\.jpg$|.*\\.jpeg$|.*\\.svg$).*)",
+        //"/((?!signin|api/auth|_next/static|_next/image|favicon.ico|.*\\.png$|.*\\.jpg$|.*\\.jpeg$|.*\\.svg$).*)",
     ],
 };

@@ -20,7 +20,7 @@ import {
     Link,
     Share,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import BarGraph, { type BarDataset } from "@/components/BarGraph";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
@@ -35,6 +35,7 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { downloadGraph } from "@/lib/exporttopdf";
 
 // define Project type
 type Project = {
@@ -103,6 +104,7 @@ export default function GraphsPage() {
         start: 2020,
         end: 2025,
     });
+    const svgRef = useRef<SVGSVGElement | null>(null);
 
     // Fetch all project data
     useEffect(() => {
@@ -398,6 +400,7 @@ export default function GraphsPage() {
                                     variant="outline"
                                     size="sm"
                                     className="flex items-center gap-2"
+                                    onClick={() => downloadGraph(svgRef)}
                                 >
                                     <Share className="w-4 h-4" />
                                     Export
@@ -589,6 +592,7 @@ export default function GraphsPage() {
                                         measuredAsLabels[filters.measuredAs]
                                     }
                                     xAxisLabel={groupByLabels[filters.groupBy]}
+                                    svgRefCopy={svgRef}
                                 />
                             ) : (
                                 <LineGraph
@@ -597,6 +601,7 @@ export default function GraphsPage() {
                                         measuredAsLabels[filters.measuredAs]
                                     }
                                     xAxisLabel={groupByLabels[filters.groupBy]}
+                                    svgRefCopy={svgRef}
                                 />
                             )}
                         </div>

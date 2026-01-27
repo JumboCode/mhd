@@ -23,17 +23,22 @@ type BarGraphProps = {
     dataset: BarDataset[];
     yAxisLabel: string;
     xAxisLabel: string;
+    svgRefCopy: React.RefObject<SVGSVGElement | null>;
 };
 
 export default function BarGraph({
     dataset,
     yAxisLabel,
     xAxisLabel,
+    svgRefCopy,
 }: BarGraphProps) {
     const svgRef = useRef<SVGSVGElement | null>(null);
 
     // Use same color scheme as LineGraph
-    const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+    //const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+    const colorScale = d3.scaleOrdinal(
+        d3.schemeCategory10.map((c) => c.toString()),
+    );
 
     useEffect(() => {
         if (!svgRef.current || dataset.length === 0) return;

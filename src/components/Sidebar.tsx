@@ -13,12 +13,12 @@ import {
     ChevronRight,
     User,
 } from "lucide-react";
-import { authClient } from "@/lib/auth-client";
+//import { authClient } from "@/lib/auth-client";
 
 export default function Sidebar() {
     const pathname = usePathname();
     const [isOverviewOpen, setIsOverviewOpen] = useState(false);
-    const { data: session } = authClient.useSession();
+    //const { data: session } = authClient.useSession();
 
     // Automatically open Overview if any subitem is active
     useEffect(() => {
@@ -203,7 +203,7 @@ export default function Sidebar() {
                 </div>
             </div>
 
-            <div className="px-4 py-5 self-center flex items-center gap-3">
+            {/*<div className="px-4 py-5 self-center flex items-center gap-3">
                 <div className="w-8 h-8 rounded-full overflow-hidden bg-muted flex items-center justify-center">
                     {session?.user?.image ? (
                         <img
@@ -218,7 +218,7 @@ export default function Sidebar() {
                 <span className="text-sm font-medium text-foreground overflow-hidden whitespace-nowrap">
                     {session?.user?.email || "Loading..."}
                 </span>
-            </div>
+            </div>*/}
         </aside>
     );
 }

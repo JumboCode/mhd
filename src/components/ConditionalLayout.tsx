@@ -9,13 +9,14 @@ export default function ConditionalLayout({
 }: {
     children: React.ReactNode;
 }) {
-    const pathname = usePathname();
-    const isAuthPage = pathname === "/signin";
+    //const pathname = usePathname();
+
+    //const isAuthPage = pathname === "/signin";
 
     // If on auth pages, just render children without sidebar
-    if (isAuthPage) {
-        return <main className="w-full h-full">{children}</main>;
-    }
+    // if (isAuthPage) {
+    //     return <main className="w-full h-full">{children}</main>;
+    // }
 
     // Otherwise, render with sidebar and responsive layout
     return (
