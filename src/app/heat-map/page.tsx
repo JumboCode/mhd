@@ -1,3 +1,14 @@
+/***************************************************************
+ *
+ *                src/app/heat-map/page.tsx
+ *
+ *         Author: Chiara & Elki
+ *           Date: 1/27/26
+ *
+ *        Summary: Heatmap + Clusters POC with MA region
+ *
+ **************************************************************/
+
 import {
     Map,
     MapMarker,
