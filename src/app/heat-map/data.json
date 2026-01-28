@@ -1,0 +1,197 @@
+{
+    "type": "FeatureCollection",
+    "features": [
+        {
+            "type": "Feature",
+            "properties": { "name": "Boston", "population": "673458" },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [-71.0589, 42.3601]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": { "name": "Worcester", "population": "211286" },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [-71.802, 42.263]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": { "name": "Worcester", "population": "211286" },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [-71.802, 42.263]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": { "name": "Springfield", "population": "154888" },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [-72.590279, 42.101391]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": { "name": "Cambridge", "population": "121186" },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [-71.106, 42.375]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": { "name": "Lowell", "population": "120418" },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [-71.316, 42.633]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": { "name": "Brockton", "population": "105788" },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [-71.0184, 42.0834]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": { "name": "Quincy", "population": "103434" },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [-71.0023, 42.2529]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": { "name": "Lynn", "population": "103489" },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [-70.9495, 42.4668]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": { "name": "New Bedford", "population": "101318" },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [-70.927, 41.6362]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": { "name": "Fall River", "population": "94689" },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [-71.155, 41.7015]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": { "name": "Newton", "population": "90700" },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [-71.2092, 42.337]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": { "name": "Lawrence", "population": "89332" },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [-71.1605, 42.707]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": { "name": "Somerville", "population": "82149" },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [-71.0995, 42.3876]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": { "name": "Framingham", "population": "73361" },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [-71.4162, 42.2793]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": { "name": "Haverhill", "population": "68291" },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [-71.0773, 42.7762]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": { "name": "Malden", "population": "66693" },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [-71.074, 42.4251]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": { "name": "Waltham", "population": "65849" },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [-71.2356, 42.3765]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": { "name": "Revere", "population": "60702" },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [-71.011, 42.4084]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": { "name": "Taunton", "population": "61936" },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [-71.0898, 41.9001]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": { "name": "Peabody", "population": "55418" },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [-70.9858, 42.5365]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": { "name": "Westfield", "population": "41741" },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [-72.7562, 42.1251]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": { "name": "Chicopee", "population": "55347" },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [-72.6071, 42.1487]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": { "name": "Holyoke", "population": "40121" },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [-72.6142, 42.2043]
+            }
+        }
+    ]
+}

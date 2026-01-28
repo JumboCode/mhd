@@ -3,8 +3,12 @@ import {
     MapMarker,
     MarkerContent,
     MarkerTooltip,
+    MapClusterLayer,
+    MapPopup,
     MapRoute,
 } from "@/components/ui/map";
+
+import heatmapData from "../heat-map/data.json";
 
 const western = [
     [-73.2613, 42.75],
@@ -41,33 +45,42 @@ const southeast = [
 
 export default function HeatMapPage() {
     return (
-        <div className="h-[400px] w-full">
-            <Map center={[-72, 42.272]} zoom={7}>
-                <MapRoute
-                    coordinates={western}
-                    color="#3b82f6"
-                    width={4}
-                    opacity={0.5}
-                />
-                <MapRoute
-                    coordinates={central}
-                    color="red"
-                    width={4}
-                    opacity={0.5}
-                />
-                <MapRoute
-                    coordinates={northeast}
-                    color="orange"
-                    width={4}
-                    opacity={0.5}
-                />
-                <MapRoute
-                    coordinates={southeast}
-                    color="purple"
-                    width={4}
-                    opacity={0.5}
-                />
-            </Map>
+        <div className="flex h-screen w-full items-center justify-center">
+            <div className="h-[600px] w-[800px] rounded-2xl overflow-hidden border border-slate-200">
+                <Map center={[-72, 42.272]} zoom={7}>
+                    <MapRoute
+                        coordinates={western}
+                        color="#3b82f6"
+                        width={4}
+                        opacity={0.5}
+                    />
+                    <MapRoute
+                        coordinates={central}
+                        color="red"
+                        width={4}
+                        opacity={0.5}
+                    />
+                    <MapRoute
+                        coordinates={northeast}
+                        color="orange"
+                        width={4}
+                        opacity={0.5}
+                    />
+                    <MapRoute
+                        coordinates={southeast}
+                        color="purple"
+                        width={4}
+                        opacity={0.5}
+                    />
+                    <MapClusterLayer
+                        data={heatmapData as any}
+                        clusterRadius={50}
+                        clusterMaxZoom={14}
+                        clusterColors={["#22c55e", "#eab308", "#ef4444"]}
+                        pointColor="#3b82f6"
+                    />
+                </Map>
+            </div>
         </div>
     );
 }
