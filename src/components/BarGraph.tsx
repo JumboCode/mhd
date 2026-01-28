@@ -186,6 +186,8 @@ export default function BarGraph({
             xOffset += itemWidth;
             return transform;
         });
+
+        svgRefCopy.current = svgRef.current;
     }, [dataset]);
 
     return (

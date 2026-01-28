@@ -90,6 +90,7 @@ const groupByLabels: Record<string, string> = {
 export default function GraphsPage() {
     const [allProjects, setAllProjects] = useState<Project[]>([]);
     const [filters, setFilters] = useState<Filters>(defaultFilters);
+    //const [isExporting, setIsExporting] = useState(false); potentially for loading stat
     const [gatewayCities, setGatewayCities] = useState<string[]>([]);
     const [chartType, setChartType] = useState<"line" | "bar">("line");
     const [timePeriod, setTimePeriod] = useState<

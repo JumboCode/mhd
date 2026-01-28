@@ -396,6 +396,8 @@ export default function MultiLineGraph({
                 return transform;
             });
         });
+
+        svgRefCopy.current = svgRef.current;
     }, [datasets, xAxisLabel, yAxisLabel, colorScale]);
 
     return (
