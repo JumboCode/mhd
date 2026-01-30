@@ -2,8 +2,8 @@
  *
  *                GraphFilters.tsx
  *
- *         Author: Elki & Zander
- *           Date: 11/24/2025
+ *         Author: Anne, Jack, Elki & Zander
+ *           Date: 1/30/2026
  *
  *        Summary: temp filter panel for line/bar graph pages
  *
@@ -13,7 +13,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Combobox } from "@/components/Combobox";
 import { AddFilterPopover } from "./AddFilterPopover";
 import { FilterValuePopover } from "./FilterValuePopover";
@@ -69,6 +69,7 @@ type GraphFiltersProps = {
     cities: string[];
     projectTypes?: string[]; // List of project type options
     gatewayCities?: string[]; // List of gateway city names
+    filters?: Filters;
     onFiltersChange: (filters: Filters) => void;
 };
 
@@ -78,6 +79,7 @@ export default function GraphFilters({
     projectTypes = [],
     gatewayCities = [],
     onFiltersChange,
+    filters,
 }: GraphFiltersProps) {
     const [measuredAs, setMeasuredAs] = useState("total-school-count");
     const [groupBy, setGroupBy] = useState("region");
@@ -94,6 +96,57 @@ export default function GraphFilters({
 
     const [selectedFilters, setSelectedFilters] = useState<Filter[]>([]);
 
+    //     const defaultFilters: Filters = {
+
+    //     individualProjects: true,
+    //     groupProjects: true,
+    //     selectedSchools: [],
+    //     selectedCities: [],
+    //     selectedProjectTypes: [],
+    //     teacherYearsValue: "",
+    //     teacherYearsOperator: "=",
+    //     teacherYearsValue2: undefined,
+    //     groupBy: "region",
+    //     measuredAs: "total-school-count",
+    // };
+
+    useEffect(() => {
+        if (!filters) return;
+        setMeasuredAs(filters.measuredAs || "total-school-count");
+        setGroupBy(filters.groupBy || "region");
+        setIndividualProjects(filters.individualProjects ?? true);
+        setGroupProjects(filters.groupProjects ?? true);
+        setSelectedSchools(filters.selectedSchools || []);
+        setSelectedCities(filters.selectedCities || []);
+        setSelectedProjectTypes(filters.selectedProjectTypes || []);
+        setTeacherYearsOperator(filters.teacherYearsOperator || "=");
+        setTeacherYearsValue(filters.teacherYearsValue || "");
+        setTeacherYearsValue2(filters.teacherYearsValue2 ?? "");
+
+        const newSelectedFilters: Filter[] = [];
+        if ((filters.selectedSchools || []).length) {
+            newSelectedFilters.push(
+                filterOptions.find((f) => f.value === "school")!,
+            );
+        }
+        if ((filters.selectedCities || []).length) {
+            newSelectedFilters.push(
+                filterOptions.find((f) => f.value === "city")!,
+            );
+        }
+        if ((filters.selectedProjectTypes || []).length) {
+            newSelectedFilters.push(
+                filterOptions.find((f) => f.value === "project-type")!,
+            );
+        }
+        if (filters.teacherYearsValue) {
+            newSelectedFilters.push(
+                filterOptions.find((f) => f.value === "teacher-participation")!,
+            );
+        }
+        setSelectedFilters(newSelectedFilters);
+    }, [filters]);
+
     const updateFilters = (updates: Partial<Filters>) => {
         const newFilters: Filters = {
             measuredAs,
@@ -105,7 +158,8 @@ export default function GraphFilters({
             selectedProjectTypes,
             teacherYearsOperator,
             teacherYearsValue,
-            teacherYearsValue2,
+            teacherYearsValue2:
+                teacherYearsValue2 === "" ? undefined : teacherYearsValue2,
             ...updates,
         };
         onFiltersChange(newFilters);
