@@ -1,3 +1,13 @@
+/***************************************************************
+ *
+ *         /src/lib/exporttopdf.ts
+ *
+ *         Author: Will and Justin
+ *         Date: 2/1/2025
+ *
+ *        Summary: Export an svg graph as a pdf
+ **************************************************************/
+
 import React, { ReactElement, SVGProps } from "react";
 import html2canvas from "html2canvas-pro";
 import jsPDF from "jspdf";
@@ -7,7 +17,7 @@ export async function downloadGraph(
 ) {
     const newSVG = getClonedSvg(svgRef);
 
-    //if (!newSVG) { console.log("SVG is empty"); return; }
+    // Adds the svg element to the page temporarily
     const wrapper = document.createElement("div");
     if (newSVG != null) {
         wrapper.appendChild(newSVG);
@@ -20,15 +30,16 @@ export async function downloadGraph(
         scale: 2,
     });
 
-    const graphData = canvas.toDataURL("image/png");
-
     const pdf = new jsPDF();
 
     const pdfWidth = pdf.internal.pageSize.getWidth();
     const pdfHeight = pdf.internal.pageSize.getHeight();
 
+    //Creates a jsPDF object with the following specifications
     pdf.addImage(canvas, "JPEG", 0, 0, pdfWidth, pdfHeight);
     pdf.save("graph.pdf");
+
+    document.body.removeChild(wrapper);
 }
 
 export function getClonedSvg(
@@ -37,6 +48,7 @@ export function getClonedSvg(
     const original = svgRef.current;
     if (!original) return null;
 
+    //Creates and returns a clone of the svg element passed in
     const clone = original.cloneNode(true) as SVGSVGElement;
 
     return clone;
