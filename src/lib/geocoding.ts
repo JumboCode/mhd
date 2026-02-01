@@ -22,6 +22,8 @@ type CsvRow = {
     long: string;
 };
 
+const csvPath = path.join(process.cwd(), "public", "MA_schools_long_lat.csv");
+
 type SchoolID = {
     name: string;
     city: string;
@@ -42,7 +44,7 @@ export async function updateLocation(
 
     let schoolLocation = await getSchoolLatLong(schoolIDNum);
     if (schoolLocation === null) {
-        schoolLocation = findSchoolLocation(schoolID, "PATH!!!");
+        schoolLocation = findSchoolLocation(schoolID, csvPath);
     }
 
     if (schoolLocation === null) return null;
@@ -65,8 +67,8 @@ export async function saveSchoolLocation(
     await db
         .update(schools)
         .set({
-            lat: schoolLoc.lat,
-            long: schoolLoc.long,
+            latitude: schoolLoc.lat,
+            longitude: schoolLoc.long,
         })
         .where(eq(schools.id, schoolIDNum));
 }
@@ -121,8 +123,8 @@ export async function getSchoolLatLong(
 ): Promise<SchoolLocation | null> {
     const result = await db
         .select({
-            lat: schools.lat,
-            long: schools.long,
+            lat: schools.latitude,
+            long: schools.longitude,
         })
         .from(schools)
         .where(eq(schools.id, schoolIDNum))
