@@ -1,16 +1,47 @@
+/***************************************************************
+ *
+ *                Geocoding.ts
+ *
+ *         Author: Zander Barba & Steven Bagade
+ *                 & Hansini ...
+ *         Date: 02/01/2026
+ *
+ *        Summary: Utilities for resolving and storing school
+ *        latitude/longitude data.
+ *
+ **************************************************************/
+
+/**
+ * Using [lat, long] for formatting
+ */
+
+/**
+ * Flow:
+ * 1. Check if the school exists in the database
+ * 2. If it exists, check if lat/long is already stored
+ * 3. If missing, search a CSV file for coordinates
+ * 4. Persist coordinates back to the database
+ */
+
 import { db } from "@/lib/db";
 import { schools } from "@/lib/schema";
 import fs from "fs";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import path from "path";
 import { parse } from "csv-parse/sync";
-import { sql } from "drizzle-orm";
 
+/**
+ * Represents a resolved geographic location.
+ */
 type SchoolLocation = {
     lat: number;
     long: number;
 };
 
+/**
+ * Shape of each row in the CSV file.
+ * All numeric fields are strings when parsed.
+ */
 type CsvRow = {
     name: string;
     street: string;
@@ -22,37 +53,58 @@ type CsvRow = {
     long: string;
 };
 
+/**
+ * Absolute path to the CSV file containing school locations.
+ */
 const csvPath = path.join(process.cwd(), "public", "MA_schools_long_lat.csv");
 
-type SchoolID = {
+/**
+ * Identifies a school using name + city.
+ * This mirrors how schools are uniquely matched.
+ */
+export type SchoolID = {
     name: string;
     city: string;
 };
 
-// 1. We look for school in the database
-// 2. Confirm zipCode code / town if its there
-// 3. Then see if location exist, store it if so
-// 4. If school or zipCode code or location dont exist, we query the csv and populate database, and store location
-
-// Coordinated stored as [lat, long]
-
-export async function updateLocation(
-    schoolID: SchoolID,
-): Promise<SchoolLocation | null> {
+/**
+ * Attempts to retrieve a school's location.
+ *
+ * - Verifies the school exists in the database
+ * - Uses cached DB coordinates if available
+ * - Falls back to CSV lookup if missing
+ * - Persists newly found coordinates
+ *
+ * @param schoolID School identifier (name + city)
+ * @returns The school's latitude/longitude, or null if unresolved
+ */
+export async function updateLocation(schoolID: SchoolID) {
     const schoolIDNum = await dbHasSchool(schoolID);
-    if (schoolIDNum === null) return null;
+    if (schoolIDNum === null) return;
 
     let schoolLocation = await getSchoolLatLong(schoolIDNum);
+
     if (schoolLocation === null) {
         schoolLocation = findSchoolLocation(schoolID, csvPath);
     }
 
-    if (schoolLocation === null) return null;
+    if (schoolLocation === null) {
+        console.error(
+            `School location could not be found in ${csvPath} for ${schoolID.name} in ${schoolID.city}.`,
+        );
+        return;
+    }
 
     await saveSchoolLocation(schoolIDNum, schoolLocation);
-    return schoolLocation;
 }
 
+/**
+ * Case-insensitive comparison between two school identifiers.
+ *
+ * @param schoolID First school identifier
+ * @param other Second school identifier
+ * @returns True if name and city match
+ */
 export function doSchoolsMatch(schoolID: SchoolID, other: SchoolID) {
     return (
         schoolID.name.toLowerCase() === other.name.toLowerCase() &&
@@ -60,6 +112,12 @@ export function doSchoolsMatch(schoolID: SchoolID, other: SchoolID) {
     );
 }
 
+/**
+ * Saves latitude and longitude values for a school in the database.
+ *
+ * @param schoolIDNum Database ID of the school
+ * @param schoolLoc Resolved geographic coordinates
+ */
 export async function saveSchoolLocation(
     schoolIDNum: number,
     schoolLoc: SchoolLocation,
@@ -73,6 +131,13 @@ export async function saveSchoolLocation(
         .where(eq(schools.id, schoolIDNum));
 }
 
+/**
+ * Searches the CSV file for a matching school and extracts coordinates.
+ *
+ * @param schoolID School identifier (name + city)
+ * @param csvRelativePath Relative path to the CSV file
+ * @returns Parsed latitude/longitude or null if not found
+ */
 export function findSchoolLocation(
     schoolID: SchoolID,
     csvRelativePath: string,
@@ -93,9 +158,7 @@ export function findSchoolLocation(
         }),
     );
 
-    if (!match) return null;
-
-    if (!match.lat || !match.long) return null;
+    if (!match || !match.lat || !match.long) return null;
 
     return {
         lat: Number(match.lat),
@@ -103,6 +166,12 @@ export function findSchoolLocation(
     };
 }
 
+/**
+ * Checks whether a school exists in the database.
+ *
+ * @param schoolID School identifier (name + city)
+ * @returns School database ID or null if not found
+ */
 export async function dbHasSchool(schoolID: SchoolID): Promise<number | null> {
     const result = await db
         .select({ id: schools.id })
@@ -118,6 +187,12 @@ export async function dbHasSchool(schoolID: SchoolID): Promise<number | null> {
     return result.length ? result[0].id : null;
 }
 
+/**
+ * Retrieves a school's latitude/longitude from the database.
+ *
+ * @param schoolIDNum Database ID of the school
+ * @returns Stored coordinates or null if missing
+ */
 export async function getSchoolLatLong(
     schoolIDNum: number,
 ): Promise<SchoolLocation | null> {
@@ -133,7 +208,6 @@ export async function getSchoolLatLong(
     if (result.length === 0) return null;
 
     const { lat, long } = result[0];
-
     if (lat === null || long === null) return null;
 
     return {
