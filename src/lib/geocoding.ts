@@ -67,6 +67,8 @@ export type SchoolID = {
     city: string;
 };
 
+const normalize = (s: string) => s.trim().toLowerCase();
+
 /**
  * Attempts to retrieve a school's location.
  *
@@ -79,6 +81,9 @@ export type SchoolID = {
  * @returns The school's latitude/longitude, or null if unresolved
  */
 export async function updateLocation(schoolID: SchoolID) {
+    if (assertValidSchoolID(schoolID) === null) {
+        return;
+    }
     const schoolIDNum = await dbHasSchool(schoolID);
     if (schoolIDNum === null) return;
 
@@ -98,6 +103,17 @@ export async function updateLocation(schoolID: SchoolID) {
     await saveSchoolLocation(schoolIDNum, schoolLocation);
 }
 
+function assertValidSchoolID(schoolID: SchoolID): asserts schoolID is SchoolID {
+    if (
+        typeof schoolID.name !== "string" ||
+        typeof schoolID.city !== "string"
+    ) {
+        throw new Error(
+            `Invalid SchoolID: expected { name: string; city: string }, got ${JSON.stringify(schoolID)}`,
+        );
+    }
+}
+
 /**
  * Case-insensitive comparison between two school identifiers.
  *
@@ -107,8 +123,8 @@ export async function updateLocation(schoolID: SchoolID) {
  */
 export function doSchoolsMatch(schoolID: SchoolID, other: SchoolID) {
     return (
-        schoolID.name.toLowerCase() === other.name.toLowerCase() &&
-        schoolID.city.toLowerCase() === other.city.toLowerCase()
+        normalize(schoolID.name) === normalize(other.name) &&
+        normalize(schoolID.city) === normalize(other.city)
     );
 }
 
@@ -178,8 +194,8 @@ export async function dbHasSchool(schoolID: SchoolID): Promise<number | null> {
         .from(schools)
         .where(
             sql`
-                lower(${schools.name}) = ${schoolID.name.toLowerCase()}
-            AND lower(${schools.town}) = ${schoolID.city.toLowerCase()}
+                lower(${schools.name}) = ${normalize(schoolID.name)}
+            AND lower(${schools.town}) = ${normalize(schoolID.city)}
             `,
         )
         .limit(1);
