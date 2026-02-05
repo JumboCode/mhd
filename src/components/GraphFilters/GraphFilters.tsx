@@ -93,22 +93,7 @@ export default function GraphFilters({
     const [teacherYearsOperator, setTeacherYearsOperator] = useState("=");
     const [teacherYearsValue, setTeacherYearsValue] = useState("");
     const [teacherYearsValue2, setTeacherYearsValue2] = useState<string>("");
-
     const [selectedFilters, setSelectedFilters] = useState<Filter[]>([]);
-
-    //     const defaultFilters: Filters = {
-
-    //     individualProjects: true,
-    //     groupProjects: true,
-    //     selectedSchools: [],
-    //     selectedCities: [],
-    //     selectedProjectTypes: [],
-    //     teacherYearsValue: "",
-    //     teacherYearsOperator: "=",
-    //     teacherYearsValue2: undefined,
-    //     groupBy: "region",
-    //     measuredAs: "total-school-count",
-    // };
 
     useEffect(() => {
         if (!filters) return;

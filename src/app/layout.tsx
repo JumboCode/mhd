@@ -1,6 +1,6 @@
 /***************************************************************
  *
- *                GraphFilters.tsx
+ *                layout.tsx
  *
  *         Author: Anne, Jack
  *           Date: 1/30/2026
@@ -8,7 +8,6 @@
  *
  **************************************************************/
 
-// src/app/layout.tsx
 import type { Metadata } from "next";
 import "./globals.css";
 

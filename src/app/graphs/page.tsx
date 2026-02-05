@@ -11,8 +11,6 @@
 "use client";
 
 import {
-    BarChart,
-    Calendar,
     CalendarDays,
     ChartColumn,
     ChevronDown,
@@ -20,7 +18,7 @@ import {
     Link,
     Share,
 } from "lucide-react";
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import BarGraph, { type BarDataset } from "@/components/BarGraph";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
@@ -37,14 +35,11 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
     useQueryState,
-    useQueryStates,
     parseAsInteger,
     parseAsString,
-    parseAsBoolean,
     parseAsArrayOf,
 } from "nuqs";
 
-// define Project type
 type Project = {
     id: number;
     title: string;
@@ -61,7 +56,6 @@ type Project = {
     numStudents: number;
 };
 
-// define default filters type
 const defaultFilters: Filters = {
     individualProjects: true,
     groupProjects: true,
@@ -95,19 +89,6 @@ const groupByLabels: Record<string, string> = {
 };
 
 export default function GraphsPage() {
-    // const [allProjects, setAllProjects] = useState<Project[]>([]);
-    // const [filters, setFilters] = useState<Filters>(defaultFilters);
-    // const [gatewayCities, setGatewayCities] = useState<string[]>([]);
-    // const [chartType, setChartType] = useState<"line" | "bar">("line");
-    // const [timePeriod, setTimePeriod] = useState<
-    //     "all" | "3y" | "5y" | "custom"
-    // >("all");
-    // const [yearRange, setYearRange] = useState<{ start: number; end: number }>({
-    //     start: 2020,
-    //     end: 2025,
-    // });
-    // const [yearRangeOpen, setYearRangeOpen] = useState(false);
-
     const [allProjects, setAllProjects] = useState<Project[]>([]);
     const [gatewayCities, setGatewayCities] = useState<string[]>([]);
 
@@ -287,6 +268,7 @@ export default function GraphsPage() {
         setStartYear(minYear);
         setEndYear(maxYear);
     }, [timePeriod, allProjects]);
+
     // Memoize graph dataset calculation to run only when data or filters change
     const graphDataset: BarDataset[] = useMemo(() => {
         if (!allProjects.length) return [];
