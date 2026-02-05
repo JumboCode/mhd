@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { toast } from "sonner";
 
 interface WarpShaderProps {
     className?: string;
@@ -22,7 +23,7 @@ export default function WarpShader({
 
         const gl = canvas.getContext("webgl2");
         if (!gl) {
-            console.error("WebGL 2.0 not supported");
+            toast.error("WebGL 2.0 not supported");
             return;
         }
 
@@ -116,10 +117,7 @@ void main() {
             gl.compileShader(shader);
 
             if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-                console.error(
-                    "Shader compilation error:",
-                    gl.getShaderInfoLog(shader),
-                );
+                toast.error("Shader compilation error");
                 gl.deleteShader(shader);
                 return null;
             }
@@ -149,10 +147,7 @@ void main() {
         gl.linkProgram(program);
 
         if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-            console.error(
-                "Program linking error:",
-                gl.getProgramInfoLog(program),
-            );
+            toast.error("Program linking error");
             return;
         }
 

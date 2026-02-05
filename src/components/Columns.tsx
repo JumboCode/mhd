@@ -13,14 +13,7 @@
 "use client";
 
 import type { ColumnDef } from "@tanstack/react-table";
-import {
-    ArrowDown,
-    ArrowUp,
-    ArrowUpDown,
-    ChevronDown,
-    ChevronsUpDown,
-    ChevronUp,
-} from "lucide-react";
+import { ChevronDown, ChevronsUpDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export type Schools = {

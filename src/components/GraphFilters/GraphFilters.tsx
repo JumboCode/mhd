@@ -81,8 +81,8 @@ export default function GraphFilters({
 }: GraphFiltersProps) {
     const [measuredAs, setMeasuredAs] = useState("total-school-count");
     const [groupBy, setGroupBy] = useState("region");
-    const [individualProjects, setIndividualProjects] = useState(true);
-    const [groupProjects, setGroupProjects] = useState(true);
+    const [individualProjects] = useState(true);
+    const [groupProjects] = useState(true);
     const [selectedSchools, setSelectedSchools] = useState<string[]>([]);
     const [selectedCities, setSelectedCities] = useState<string[]>([]);
     const [selectedProjectTypes, setSelectedProjectTypes] = useState<string[]>(
@@ -119,47 +119,6 @@ export default function GraphFilters({
     const handleGroupByChange = (value: string) => {
         setGroupBy(value);
         updateFilters({ groupBy: value });
-    };
-
-    const handleSchoolsChange = (values: string[]) => {
-        setSelectedSchools(values);
-        updateFilters({ selectedSchools: values });
-    };
-
-    const handleCitiesChange = (values: string[]) => {
-        setSelectedCities(values);
-        updateFilters({ selectedCities: values });
-    };
-
-    const handleProjectTypesChange = (values: string[]) => {
-        setSelectedProjectTypes(values);
-        updateFilters({ selectedProjectTypes: values });
-    };
-
-    const handleSchoolCheckboxToggle = (school: string, checked: boolean) => {
-        const newSelection = checked
-            ? [...selectedSchools, school]
-            : selectedSchools.filter((s) => s !== school);
-        setSelectedSchools(newSelection);
-        updateFilters({ selectedSchools: newSelection });
-    };
-
-    const handleCityCheckboxToggle = (city: string, checked: boolean) => {
-        const newSelection = checked
-            ? [...selectedCities, city]
-            : selectedCities.filter((c) => c !== city);
-        setSelectedCities(newSelection);
-        updateFilters({ selectedCities: newSelection });
-    };
-
-    const handleTeacherYearsOperatorChange = (value: string) => {
-        setTeacherYearsOperator(value);
-        updateFilters({ teacherYearsOperator: value });
-    };
-
-    const handleTeacherYearsValueChange = (value: string) => {
-        setTeacherYearsValue(value);
-        updateFilters({ teacherYearsValue: value });
     };
 
     const handleFilterSelect = (value: Filter) => {
@@ -210,30 +169,6 @@ export default function GraphFilters({
         } else if (filterType === "project-type") {
             setSelectedProjectTypes(values);
             updateFilters({ selectedProjectTypes: values });
-        }
-    };
-
-    const handleTeacherParticipationFinish = (
-        operator: string,
-        value: string,
-        value2?: string,
-    ) => {
-        setTeacherYearsOperator(operator);
-        setTeacherYearsValue(value);
-        if (value2 !== undefined) {
-            setTeacherYearsValue2(value2);
-            updateFilters({
-                teacherYearsOperator: operator,
-                teacherYearsValue: value,
-                teacherYearsValue2: value2,
-            });
-        } else {
-            setTeacherYearsValue2("");
-            updateFilters({
-                teacherYearsOperator: operator,
-                teacherYearsValue: value,
-                teacherYearsValue2: undefined,
-            });
         }
     };
 
@@ -343,11 +278,6 @@ export default function GraphFilters({
                     {/* Active Filter Chips */}
                     {selectedFilters.length > 0 &&
                         selectedFilters.map((filter) => {
-                            const isSchoolOrCity =
-                                filter.value === "school" ||
-                                filter.value === "city";
-                            const isProjectType =
-                                filter.value === "project-type";
                             const isSchoolCityOrProjectType =
                                 filter.value === "school" ||
                                 filter.value === "city" ||

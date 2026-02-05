@@ -11,8 +11,6 @@
 "use client";
 
 import {
-    BarChart,
-    Calendar,
     CalendarDays,
     ChartColumn,
     ChevronDown,

@@ -15,7 +15,6 @@ import { FolderOpenDot, GraduationCap, School, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Checkbox } from "@/components/Checkbox";
 import type { SpreadsheetData, CellValue } from "@/types/spreadsheet";
-import { requiredColumns } from "@/lib/required-spreadsheet-columns";
 
 type ConfirmationProps = {
     year?: number | null;

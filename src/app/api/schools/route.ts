@@ -152,8 +152,6 @@ export async function GET(req: NextRequest) {
 
         return NextResponse.json(schoolsToReturn);
     } catch (error) {
-        // eslint-disable-next-line no-console
-        console.error("Error fetching school data:", error);
         return NextResponse.json(
             { message: "Internal server error" },
             { status: 500 },

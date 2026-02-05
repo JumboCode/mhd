@@ -37,7 +37,7 @@ const words_to_remove: string[] = [
 
 export function standardize(name: string) {
     // Trim whitespace
-    var school_name = name.trim();
+    let school_name = name.trim();
 
     // Convert to lowercase
     school_name = school_name.toLowerCase();

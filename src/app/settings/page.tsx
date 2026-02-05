@@ -58,7 +58,6 @@ export default function Settings() {
     };
 
     const handleSave = () => {
-        console.log("Saving cities:", selectedCities);
         setHasUnsavedChanges(false);
     };
 

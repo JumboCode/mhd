@@ -230,9 +230,6 @@ export default function SpreadsheetState() {
                     header.toLowerCase().trim(),
                 );
 
-                console.log("Formatted Headers:", formattedHeaders);
-                console.log("Required Columns:", requiredColumns);
-
                 const hasAllColumns = requiredColumns.every((col) =>
                     formattedHeaders.includes(col.toLowerCase()),
                 );

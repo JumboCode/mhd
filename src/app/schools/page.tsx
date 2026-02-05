@@ -40,7 +40,6 @@ export default function SchoolsPage() {
                 setSchoolInfo(data);
             })
             .catch((error) => {
-                console.log(error);
                 setError(error.message || "Failed to load school data");
             });
     }, [year]);

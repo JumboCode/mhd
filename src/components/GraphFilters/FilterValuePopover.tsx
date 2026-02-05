@@ -51,7 +51,7 @@ export function FilterValuePopover({
 
     // Filter out null/undefined values and filter options based on search query
     const validOptions = (options || []).filter(
-        (option) => option != null && typeof option === "string",
+        (option) => option !== null && typeof option === "string",
     );
     const filteredOptions = validOptions.filter((option) =>
         option.toLowerCase().includes(searchQuery.toLowerCase()),

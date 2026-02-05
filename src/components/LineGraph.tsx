@@ -2,6 +2,7 @@
 
 import * as d3 from "d3";
 import { useEffect, useMemo, useRef } from "react";
+import { toast } from "sonner";
 
 export type GraphDataset = {
     label: string;
@@ -85,13 +86,13 @@ export default function MultiLineGraph({
             .filter((v): v is number => v !== null);
 
         if (xValues.length === 0) {
-            console.warn("LineGraph: No valid numeric x values found");
+            toast.warning("LineGraph: No valid numeric x values found");
             return;
         }
 
         const xExtent = d3.extent(xValues);
         if (!xExtent[0] || !xExtent[1]) {
-            console.warn("LineGraph: Invalid x extent");
+            toast.warning("LineGraph: Invalid x extent");
             return;
         }
 
@@ -286,7 +287,6 @@ export default function MultiLineGraph({
 
         // Update circles within each group
         dotsGroupsUpdate.each(function (dataset) {
-            const safeLabel = dataset.label.replace(/[^a-zA-Z0-9-_]/g, "-");
             const group = d3.select(this);
             const circles = group
                 .selectAll<

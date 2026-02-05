@@ -1,4 +1,3 @@
-import { sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { yearlySchoolParticipation } from "@/lib/schema";

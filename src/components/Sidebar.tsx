@@ -14,6 +14,7 @@ import {
     User,
 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
+import Image from "next/image";
 
 export default function Sidebar() {
     const pathname = usePathname();
@@ -74,10 +75,11 @@ export default function Sidebar() {
             <div className="flex-1 overflow-hidden">
                 <div className="px-6 py-5 flex items-center justify-center">
                     <h1>
-                        <img
+                        <Image
                             src="/images/logo.png"
                             alt="Logo"
-                            className="w-20 h-12"
+                            width={80}
+                            height={40}
                         />
                     </h1>
                 </div>
@@ -206,10 +208,12 @@ export default function Sidebar() {
             <div className="px-4 py-5 self-center flex items-center gap-3">
                 <div className="w-8 h-8 rounded-full overflow-hidden bg-muted flex items-center justify-center">
                     {session?.user?.image ? (
-                        <img
+                        <Image
                             src={session.user.image}
                             alt="Profile"
                             className="w-full h-full object-cover"
+                            width={20}
+                            height={20}
                         />
                     ) : (
                         <User size={16} className="text-muted-foreground" />

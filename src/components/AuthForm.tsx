@@ -28,7 +28,6 @@ export default function AuthForm() {
             setStep("otp");
         } catch (error) {
             setError("Failed to send verification code. Please try again.");
-            console.error(error);
         } finally {
             setIsLoading(false);
         }
@@ -46,7 +45,6 @@ export default function AuthForm() {
             router.push("/");
         } catch (error) {
             setError("Invalid or expired code. Please try again.");
-            console.error(error);
         } finally {
             setIsLoading(false);
         }
@@ -63,7 +61,6 @@ export default function AuthForm() {
             setOtp("");
         } catch (err) {
             setError("Failed to resend code. Please try again.");
-            console.error(err);
         } finally {
             setIsLoading(false);
         }
@@ -72,7 +69,7 @@ export default function AuthForm() {
     return (
         <div className="w-full md:w-1/2 max-w-md mx-auto p-6 mt-16 flex flex-col gap-16 items-center overflow-y-auto">
             <Image
-                src="/mhs-logo.png"
+                src="/images/mhs-logo.png"
                 alt="MHS Logo Image"
                 width={256}
                 height={128}
