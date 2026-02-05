@@ -16,13 +16,35 @@ export async function downloadGraph(
     svgRef: React.RefObject<SVGSVGElement | null>,
 ) {
     const newSVG = getClonedSvg(svgRef);
+    if (!newSVG) return;
 
-    // Adds the svg element to the page temporarily
-    const wrapper = document.createElement("div");
-    if (newSVG != null) {
-        wrapper.appendChild(newSVG);
+    // Get SVG dimensions from viewBox or attributes with fallbacks
+    const viewBox = newSVG.getAttribute("viewBox");
+    let svgWidth = 1000;
+    let svgHeight = 400;
+    let aspectRatio = svgHeight / svgWidth;
+
+    if (viewBox) {
+        const viewBoxValues = viewBox.split(" ");
+        svgWidth = parseFloat(viewBoxValues[2]) || 1000;
+        svgHeight = parseFloat(viewBoxValues[3]) || 400;
+    } else {
+        const width = newSVG.getAttribute("width");
+        const height = newSVG.getAttribute("height");
+        if (width) svgWidth = parseFloat(width) || 1000;
+        if (height) svgHeight = parseFloat(height) || 400;
     }
 
+    aspectRatio = svgHeight / svgWidth;
+
+    // Adds the svg element to the page temporarily (offscreen)
+    const wrapper = document.createElement("div");
+    wrapper.style.position = "fixed";
+    wrapper.style.left = "-9999px";
+    wrapper.style.top = "-9999px";
+    wrapper.style.width = `${svgWidth}px`;
+    wrapper.style.height = `${svgHeight}px`;
+    wrapper.appendChild(newSVG);
     document.body.append(wrapper);
 
     const canvas = await html2canvas(wrapper, {
@@ -31,11 +53,10 @@ export async function downloadGraph(
     });
 
     const pdf = new jsPDF();
-
     const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = pdf.internal.pageSize.getHeight();
+    const pdfHeight = pdfWidth * aspectRatio;
 
-    //Creates a jsPDF object with the following specifications
+    // Add image with proper dimensions that match PDF width while preserving aspect ratio
     pdf.addImage(canvas, "JPEG", 0, 0, pdfWidth, pdfHeight);
     pdf.save("graph.pdf");
 
