@@ -1,6 +1,6 @@
 /***************************************************************
  *
- *         /src/lib/exporttopdf.ts
+ *         /src/lib/export-to-pdf.ts
  *
  *         Author: Will and Justin
  *         Date: 2/1/2025

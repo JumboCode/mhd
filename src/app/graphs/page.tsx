@@ -35,7 +35,7 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { downloadGraph } from "@/lib/exporttopdf";
+import { downloadGraph } from "@/lib/export-to-pdf";
 
 // define Project type
 type Project = {
