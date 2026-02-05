@@ -8,7 +8,7 @@
  *        Summary: Export an svg graph as a pdf
  **************************************************************/
 
-import React, { ReactElement, SVGProps } from "react";
+import React from "react";
 import html2canvas from "html2canvas-pro";
 import jsPDF from "jspdf";
 
