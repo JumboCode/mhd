@@ -160,47 +160,6 @@ export default function GraphFilters({
         updateFilters({ groupBy: value });
     };
 
-    const handleSchoolsChange = (values: string[]) => {
-        setSelectedSchools(values);
-        updateFilters({ selectedSchools: values });
-    };
-
-    const handleCitiesChange = (values: string[]) => {
-        setSelectedCities(values);
-        updateFilters({ selectedCities: values });
-    };
-
-    const handleProjectTypesChange = (values: string[]) => {
-        setSelectedProjectTypes(values);
-        updateFilters({ selectedProjectTypes: values });
-    };
-
-    const handleSchoolCheckboxToggle = (school: string, checked: boolean) => {
-        const newSelection = checked
-            ? [...selectedSchools, school]
-            : selectedSchools.filter((s) => s !== school);
-        setSelectedSchools(newSelection);
-        updateFilters({ selectedSchools: newSelection });
-    };
-
-    const handleCityCheckboxToggle = (city: string, checked: boolean) => {
-        const newSelection = checked
-            ? [...selectedCities, city]
-            : selectedCities.filter((c) => c !== city);
-        setSelectedCities(newSelection);
-        updateFilters({ selectedCities: newSelection });
-    };
-
-    const handleTeacherYearsOperatorChange = (value: string) => {
-        setTeacherYearsOperator(value);
-        updateFilters({ teacherYearsOperator: value });
-    };
-
-    const handleTeacherYearsValueChange = (value: string) => {
-        setTeacherYearsValue(value);
-        updateFilters({ teacherYearsValue: value });
-    };
-
     const handleFilterSelect = (value: Filter) => {
         setSelectedFilters((prev) => [...prev, value]);
         // Initialize teacher participation filter with default values
@@ -249,30 +208,6 @@ export default function GraphFilters({
         } else if (filterType === "project-type") {
             setSelectedProjectTypes(values);
             updateFilters({ selectedProjectTypes: values });
-        }
-    };
-
-    const handleTeacherParticipationFinish = (
-        operator: string,
-        value: string,
-        value2?: string,
-    ) => {
-        setTeacherYearsOperator(operator);
-        setTeacherYearsValue(value);
-        if (value2 !== undefined) {
-            setTeacherYearsValue2(value2);
-            updateFilters({
-                teacherYearsOperator: operator,
-                teacherYearsValue: value,
-                teacherYearsValue2: value2,
-            });
-        } else {
-            setTeacherYearsValue2("");
-            updateFilters({
-                teacherYearsOperator: operator,
-                teacherYearsValue: value,
-                teacherYearsValue2: undefined,
-            });
         }
     };
 
