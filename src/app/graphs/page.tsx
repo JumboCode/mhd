@@ -96,7 +96,7 @@ export default function GraphsPage() {
     const [timePeriod, setTimePeriod] = useQueryState(
         "period",
         parseAsString.withDefault("all"),
-    ); //should work
+    );
     const [startYear, setStartYear] = useQueryState(
         "startYear",
         parseAsInteger.withDefault(2020),
@@ -112,11 +112,6 @@ export default function GraphsPage() {
         }),
         [startYear, endYear],
     );
-    // const [yearRange, setYearRange] = useQueryStates({
-    //     start: parseAsInteger.withDefault(2020),
-    //     end: parseAsInteger.withDefault(2025)
-    // });
-
     const [tempYearRange, setTempYearRange] = useState({
         start: startYear,
         end: endYear,
