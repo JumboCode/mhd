@@ -56,6 +56,19 @@ type Project = {
     numStudents: number;
 };
 
+const defaultFilters: Filters = {
+    individualProjects: true,
+    groupProjects: true,
+    selectedSchools: [],
+    selectedCities: [],
+    selectedProjectTypes: [],
+    teacherYearsValue: "",
+    teacherYearsOperator: "=",
+    teacherYearsValue2: undefined,
+    groupBy: "region",
+    measuredAs: "total-school-count",
+};
+
 // possible values for measured as filter
 const measuredAsLabels: Record<string, string> = {
     "total-school-count": "Total School Count",
@@ -223,6 +236,33 @@ export default function GraphsPage() {
             console.log(error);
         }
     };
+
+    // Calculate the current year range based on time period selection
+    useMemo(() => {
+        if (timePeriod === "custom") {
+            return;
+        }
+
+        const allYears = allProjects.map((p) => p.year);
+        const maxYear = Math.max(...allYears, new Date().getFullYear()) - 1;
+
+        if (timePeriod === "3y") {
+            //return { start: maxYear - 2, end: maxYear };
+            setStartYear(maxYear - 2);
+            setEndYear(maxYear);
+            return;
+        } else if (timePeriod === "5y") {
+            //return { start: maxYear - 4, end: maxYear };
+            setStartYear(maxYear - 4);
+            setEndYear(maxYear);
+            return;
+        }
+
+        // "all" - use full range
+        const minYear = Math.min(...allYears);
+        setStartYear(minYear);
+        setEndYear(maxYear);
+    }, [timePeriod, allProjects]);
 
     // Memoize graph dataset calculation to run only when data or filters change
     const graphDataset: BarDataset[] = useMemo(() => {
