@@ -4,17 +4,22 @@ import {
     integer,
     text,
     serial,
+    doublePrecision,
     boolean,
     timestamp,
     index,
 } from "drizzle-orm/pg-core";
 
 // Represents metadata (relatively unchanging data) about a school
+
 export const schools = pgTable("schools", {
     id: serial("id").primaryKey(),
     name: text("name").notNull(),
-    town: text("town"), // Can't be not null b/c regional schools may not have associated town
+    town: text("town"), // regional schools may not have a town
     schoolId: text("school_id").unique().notNull(),
+    latitude: doublePrecision("latitude"),
+    longitude: doublePrecision("longitude"),
+    zipcode: text("zipcode"),
 });
 
 // Ties a school to the years it has participated

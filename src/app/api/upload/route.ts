@@ -13,6 +13,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { eq, and } from "drizzle-orm";
 import { db } from "@/lib/db";
+import { SchoolID, updateLocation } from "@/lib/geocoding";
 import {
     schools,
     teachers,
@@ -88,17 +89,27 @@ export async function POST(req: NextRequest) {
                 where: eq(schools.schoolId, schoolIdValue),
             });
 
+            let schoolName = row[COLUMN_INDICES.schoolName] as string;
+            let schoolTown = row[COLUMN_INDICES.city] as string;
+
             if (!school) {
                 const [inserted] = await db
                     .insert(schools)
                     .values({
                         schoolId: schoolIdValue,
-                        name: row[COLUMN_INDICES.schoolName] as string,
-                        town: row[COLUMN_INDICES.city] as string,
+                        name: schoolName,
+                        town: schoolTown,
                     })
                     .returning();
                 school = inserted;
             }
+
+            // Ensure geocoded coordinates using name and city
+            const schoolID: SchoolID = {
+                name: schoolName,
+                city: schoolTown,
+            };
+            updateLocation(schoolID);
 
             // Find or create teacher using teacherId
             const teacherIdValue = String(row[COLUMN_INDICES.teacherId]);
