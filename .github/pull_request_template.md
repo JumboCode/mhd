@@ -5,6 +5,11 @@
 
 
 ## Who worked on this sprint?
+<!-- List partner names --> 
+
+
+## Who did what on this sprint?
+<!-- Which features were implemented by whom? Did you all work together? -->
 
 
 ## Features Implemented
@@ -21,7 +26,8 @@
 
 
 ## Acceptance Criteria
-<!-- Please include the acceptance criteria from the issue here -->
+<!-- Please include the acceptance criteria from the issue here 
+     and whether or not you completed each requirement -->
 
 
 ## Testing: how did you test?
@@ -30,6 +36,11 @@
 
 ## Features Not Implemented/Incomplete
 <!-- What features may not work yet or might have been broken by this PR -->
+
+
+## Bugs Discovered
+<!-- List any existing bugs you encountered and 
+     whether or not you fixed them -->
 
 
 ## Screenshots:
