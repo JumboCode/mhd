@@ -89,6 +89,7 @@ export async function updateLocation(schoolID: SchoolID) {
     }
 
     if (schoolLocation === null) {
+        // TO DO: Replace with building a list of unmatched schools and then send to frontend for map popup
         console.error(
             `School location could not be found in ${csvPath} for ${schoolID.name} in ${schoolID.city}.`,
         );
@@ -106,10 +107,7 @@ export async function updateLocation(schoolID: SchoolID) {
  * @returns True if name and city match
  */
 export function doSchoolsMatch(schoolID: SchoolID, other: SchoolID) {
-    return (
-        schoolID.name.toLowerCase() === other.name.toLowerCase() &&
-        schoolID.city.toLowerCase() === other.city.toLowerCase()
-    );
+    return schoolID.name === other.name && schoolID.city === other.city;
 }
 
 /**
@@ -178,8 +176,8 @@ export async function dbHasSchool(schoolID: SchoolID): Promise<number | null> {
         .from(schools)
         .where(
             sql`
-                lower(${schools.name}) = ${schoolID.name.toLowerCase()}
-            AND lower(${schools.town}) = ${schoolID.city.toLowerCase()}
+                lower(${schools.name}) = lower(${schoolID.name})
+            AND lower(${schools.town}) = lower(${schoolID.city})
             `,
         )
         .limit(1);
