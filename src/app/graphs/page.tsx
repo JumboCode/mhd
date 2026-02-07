@@ -2,8 +2,8 @@
  *
  *                graphs/page.tsx
  *
- *         Author: Elki, Zander, Chiara, and Steven
- *         Date: 12/6/2025
+ *         Author: Jack, Anne, Elki, Zander, Chiara, and Steven
+ *           Date: 1/30/2026
  *
  *         Summary: display bar/line graph of project data with toggle
  *
@@ -33,8 +33,13 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+    useQueryState,
+    parseAsInteger,
+    parseAsString,
+    parseAsArrayOf,
+} from "nuqs";
 
-// define Project type
 type Project = {
     id: number;
     title: string;
@@ -51,7 +56,6 @@ type Project = {
     numStudents: number;
 };
 
-// define default filters type
 const defaultFilters: Filters = {
     individualProjects: true,
     groupProjects: true,
@@ -86,21 +90,101 @@ const groupByLabels: Record<string, string> = {
 
 export default function GraphsPage() {
     const [allProjects, setAllProjects] = useState<Project[]>([]);
-    const [filters, setFilters] = useState<Filters>(defaultFilters);
     const [gatewayCities, setGatewayCities] = useState<string[]>([]);
-    const [chartType, setChartType] = useState<"line" | "bar">("line");
-    const [timePeriod, setTimePeriod] = useState<
-        "all" | "3y" | "5y" | "custom"
-    >("all");
-    const [yearRange, setYearRange] = useState<{ start: number; end: number }>({
-        start: 2020,
-        end: 2025,
+
+    // Setting hooks
+    const [timePeriod, setTimePeriod] = useQueryState(
+        "period",
+        parseAsString.withDefault("all"),
+    );
+    const [startYear, setStartYear] = useQueryState(
+        "startYear",
+        parseAsInteger.withDefault(2020),
+    );
+    const [endYear, setEndYear] = useQueryState(
+        "endYear",
+        parseAsInteger.withDefault(2025),
+    );
+    const yearRange = useMemo(
+        () => ({
+            start: startYear,
+            end: endYear,
+        }),
+        [startYear, endYear],
+    );
+    const [tempYearRange, setTempYearRange] = useState({
+        start: startYear,
+        end: endYear,
     });
     const [yearRangeOpen, setYearRangeOpen] = useState(false);
-    const [tempYearRange, setTempYearRange] = useState({
-        start: 2020,
-        end: 2025,
-    });
+
+    const [chartType, setChartType] = useQueryState(
+        "type",
+        parseAsString.withDefault("line"),
+    );
+
+    // Filter hooks
+    const [groupBy, setGroupBy] = useQueryState(
+        "groupBy",
+        parseAsString.withDefault("region"),
+    );
+    const [measuredAs, setMeasuredAs] = useQueryState(
+        "measuredAs",
+        parseAsString.withDefault("total-school-count"),
+    );
+    const [selectedSchools, setSelectedSchools] = useQueryState(
+        "schools",
+        parseAsArrayOf(parseAsString).withDefault([]),
+    );
+    const [selectedCities, setSelectedCities] = useQueryState(
+        "cities",
+        parseAsArrayOf(parseAsString).withDefault([]),
+    );
+    const [selectedProjectTypes, setSelectedProjectTypes] = useQueryState(
+        "projectTypes",
+        parseAsArrayOf(parseAsString).withDefault([]),
+    );
+    const [teacherYearsValue, setTeacherYearsValue] = useQueryState(
+        "teacherYearsValue",
+        parseAsString.withDefault(""),
+    );
+    const [teacherYearsOperator, setTeacherYearsOperator] = useQueryState(
+        "teacherYearsOperator",
+        parseAsString.withDefault("="),
+    );
+    const [teacherYearsValue2, setTeacherYearsValue2] = useQueryState(
+        "teacherYearsValue2",
+        parseAsString.withDefault(""),
+    );
+
+    const filters: Filters = useMemo(
+        () => ({
+            individualProjects: true,
+            groupProjects: true,
+            selectedSchools,
+            selectedCities,
+            selectedProjectTypes,
+            teacherYearsValue,
+            teacherYearsOperator: teacherYearsOperator as
+                | "="
+                | ">"
+                | "<"
+                | "between",
+            teacherYearsValue2: teacherYearsValue2 || undefined,
+            groupBy: groupBy as any,
+            measuredAs: measuredAs as any,
+        }),
+        [
+            selectedSchools,
+            selectedCities,
+            selectedProjectTypes,
+            teacherYearsValue,
+            teacherYearsOperator,
+            teacherYearsValue2,
+            groupBy,
+            measuredAs,
+        ],
+    );
 
     // Fetch all project data
     useEffect(() => {
@@ -142,25 +226,43 @@ export default function GraphsPage() {
         }
     }, [yearRangeOpen, timePeriod, yearRange]);
 
+    // Could break when loggin in using liveshare? (network url issue w/ "npm run dev")
+    const copyURLtoClipboard = async () => {
+        try {
+            const url = window.location.href;
+            await navigator.clipboard.writeText(url);
+            toast.success("URL copied to clipboard!");
+        } catch (error) {
+            console.log(error);
+        }
+    };
+
     // Calculate the current year range based on time period selection
-    const currentYearRange = useMemo(() => {
+    useMemo(() => {
         if (timePeriod === "custom") {
-            return yearRange;
+            return;
         }
 
         const allYears = allProjects.map((p) => p.year);
-        const maxYear = Math.max(...allYears, new Date().getFullYear());
+        const maxYear = Math.max(...allYears, new Date().getFullYear()) - 1;
 
         if (timePeriod === "3y") {
-            return { start: maxYear - 2, end: maxYear };
+            //return { start: maxYear - 2, end: maxYear };
+            setStartYear(maxYear - 2);
+            setEndYear(maxYear);
+            return;
         } else if (timePeriod === "5y") {
-            return { start: maxYear - 4, end: maxYear };
+            //return { start: maxYear - 4, end: maxYear };
+            setStartYear(maxYear - 4);
+            setEndYear(maxYear);
+            return;
         }
 
         // "all" - use full range
         const minYear = Math.min(...allYears);
-        return { start: minYear, end: maxYear };
-    }, [timePeriod, yearRange, allProjects]);
+        setStartYear(minYear);
+        setEndYear(maxYear);
+    }, [timePeriod, allProjects]);
 
     // Memoize graph dataset calculation to run only when data or filters change
     const graphDataset: BarDataset[] = useMemo(() => {
@@ -184,10 +286,7 @@ export default function GraphsPage() {
             if (!filters) return true;
 
             // Year range filter
-            if (
-                p.year < currentYearRange.start ||
-                p.year > currentYearRange.end
-            ) {
+            if (p.year < yearRange.start || p.year > yearRange.end) {
                 return false;
             }
 
@@ -255,16 +354,21 @@ export default function GraphsPage() {
 
         // set groupKey based on filter selection
         if (filters?.groupBy === "division") {
+            setGroupBy("division");
             groupKey = "division";
         } else if (filters?.groupBy === "project-type") {
+            setGroupBy("project-type");
             groupKey = "category";
         } else if (filters?.groupBy === "region") {
+            setGroupBy("region");
             // TO DO: Add proper 'region' field to Project type and database. Currently using schoolTown (city) as a temporary substitute
             groupKey = "schoolTown";
         } else if (filters?.groupBy === "school-type") {
+            setGroupBy("school-type");
             // TO DO: Add 'schoolType' field to Project type and database, then map it here
             groupKey = "category"; // Temporary fallback
         } else if (filters?.groupBy === "implementation-type") {
+            setGroupBy("implementation-type");
             // TO DO: Add 'implementationType' field to Project type and database, then map it here
             groupKey = "category"; // Temporary fallback
         }
@@ -332,6 +436,7 @@ export default function GraphsPage() {
                 projectsByYear[p.year].push(p);
             });
 
+            setMeasuredAs(filters?.measuredAs || "total-school-count");
             const metric = filters?.measuredAs || "total-school-count";
 
             const dataPoints = Object.entries(projectsByYear)
@@ -346,7 +451,18 @@ export default function GraphsPage() {
                 data: dataPoints,
             };
         });
-    }, [allProjects, filters, currentYearRange]);
+    }, [
+        allProjects,
+        selectedSchools,
+        selectedCities,
+        selectedProjectTypes,
+        teacherYearsValue,
+        teacherYearsOperator,
+        teacherYearsValue2,
+        groupBy,
+        measuredAs,
+        yearRange,
+    ]);
 
     // Calculate filtered count (based on selected 'measured by' category)
     const filteredProjectCount = useMemo(() => {
@@ -378,7 +494,23 @@ export default function GraphsPage() {
                     cities={cities}
                     projectTypes={projectTypes}
                     gatewayCities={gatewayCities}
-                    onFiltersChange={setFilters}
+                    filters={filters}
+                    onFiltersChange={(newFilters) => {
+                        setSelectedSchools(newFilters.selectedSchools);
+                        setSelectedCities(newFilters.selectedCities);
+                        setSelectedProjectTypes(
+                            newFilters.selectedProjectTypes,
+                        );
+                        setGroupBy(newFilters.groupBy);
+                        setMeasuredAs(newFilters.measuredAs);
+                        setTeacherYearsValue(newFilters.teacherYearsValue);
+                        setTeacherYearsOperator(
+                            newFilters.teacherYearsOperator,
+                        );
+                        setTeacherYearsValue2(
+                            newFilters.teacherYearsValue2 ?? "",
+                        );
+                    }}
                 />
             </div>
 
@@ -404,6 +536,7 @@ export default function GraphsPage() {
                                     variant="outline"
                                     size="sm"
                                     className="flex items-center gap-2"
+                                    onClick={copyURLtoClipboard}
                                 >
                                     <Link className="w-4 h-4" />
                                     Share
@@ -487,8 +620,7 @@ export default function GraphsPage() {
                                             className="rounded-r-md rounded-l-none border-l-0 -ml-px flex items-center gap-2"
                                         >
                                             <CalendarDays />
-                                            {currentYearRange.start} -{" "}
-                                            {currentYearRange.end}
+                                            {yearRange.start} - {yearRange.end}
                                             <ChevronDown />
                                         </Button>
                                     </PopoverTrigger>
@@ -562,8 +694,11 @@ export default function GraphsPage() {
                                                 <Button
                                                     size="sm"
                                                     onClick={() => {
-                                                        setYearRange(
-                                                            tempYearRange,
+                                                        setStartYear(
+                                                            tempYearRange.start,
+                                                        );
+                                                        setEndYear(
+                                                            tempYearRange.end,
                                                         );
                                                         setTimePeriod("custom");
                                                         setYearRangeOpen(false);
@@ -579,25 +714,37 @@ export default function GraphsPage() {
                         </div>
 
                         {/* Chart Area */}
-                        <div className="flex-1 flex items-center justify-center px-8 bg-background overflow-auto">
-                            {chartType === "bar" ? (
-                                <BarGraph
-                                    dataset={graphDataset}
-                                    yAxisLabel={
-                                        measuredAsLabels[filters.measuredAs]
-                                    }
-                                    xAxisLabel={groupByLabels[filters.groupBy]}
-                                />
-                            ) : (
-                                <LineGraph
-                                    datasets={graphDataset}
-                                    yAxisLabel={
-                                        measuredAsLabels[filters.measuredAs]
-                                    }
-                                    xAxisLabel={groupByLabels[filters.groupBy]}
-                                />
-                            )}
-                        </div>
+
+                        {Math.round(filteredProjectCount) != 0 ? (
+                            <div className="flex-1 flex items-center justify-center px-8 bg-background overflow-auto">
+                                {chartType === "bar" ? (
+                                    <BarGraph
+                                        dataset={graphDataset}
+                                        yAxisLabel={
+                                            measuredAsLabels[filters.measuredAs]
+                                        }
+                                        xAxisLabel={
+                                            groupByLabels[filters.groupBy]
+                                        }
+                                    />
+                                ) : (
+                                    <LineGraph
+                                        datasets={graphDataset}
+                                        yAxisLabel={
+                                            measuredAsLabels[filters.measuredAs]
+                                        }
+                                        xAxisLabel={
+                                            groupByLabels[filters.groupBy]
+                                        }
+                                    />
+                                )}
+                            </div>
+                        ) : (
+                            /* If no data is found that fits the filters, display this */
+                            <div className="flex-1 flex items-center justify-center px-8 bg-background overflow-auto">
+                                No Data Found
+                            </div>
+                        )}
 
                         {/* Footer */}
                         <div className="flex flex-col justify-center items-end gap-3 px-8 pb-4 text-xs text-foreground shrink-0">
