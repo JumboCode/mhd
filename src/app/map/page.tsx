@@ -22,7 +22,7 @@ const counties = Object.values(countiesData).map((county) => ({
 export default function HeatMapPage() {
     return (
         <div className="flex h-screen w-full items-center justify-center">
-            <div className="h-[600px] w-[800px] rounded-2xl overflow-hidden border border-slate-200">
+            <div className="w-9/10 h-9/10 rounded-2xl overflow-hidden border border-slate-200">
                 <Map center={[-72, 42.272]} zoom={7}>
                     {counties.map((county) => (
                         <MapRoute
