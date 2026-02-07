@@ -205,7 +205,7 @@ export default function Sidebar() {
                 </div>
             </div>
 
-            <div className="px-4 py-5 self-center flex items-center gap-3">
+            {/*<div className="px-4 py-5 self-center flex items-center gap-3">
                 <div className="w-8 h-8 rounded-full overflow-hidden bg-muted flex items-center justify-center">
                     {session?.user?.image ? (
                         <Image
@@ -222,7 +222,7 @@ export default function Sidebar() {
                 <span className="text-sm font-medium text-foreground overflow-hidden whitespace-nowrap">
                     {session?.user?.email || "Loading..."}
                 </span>
-            </div>
+            </div>*/}
         </aside>
     );
 }

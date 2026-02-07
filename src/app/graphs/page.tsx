@@ -18,7 +18,7 @@ import {
     Link,
     Share,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import BarGraph, { type BarDataset } from "@/components/BarGraph";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
@@ -39,6 +39,7 @@ import {
     parseAsString,
     parseAsArrayOf,
 } from "nuqs";
+import { downloadGraph } from "@/lib/export-to-pdf";
 
 type Project = {
     id: number;
@@ -185,6 +186,7 @@ export default function GraphsPage() {
             measuredAs,
         ],
     );
+    const svgRef = useRef<SVGSVGElement | null>(null);
 
     // Fetch all project data
     useEffect(() => {
@@ -528,6 +530,7 @@ export default function GraphsPage() {
                                     variant="outline"
                                     size="sm"
                                     className="flex items-center gap-2"
+                                    onClick={() => downloadGraph(svgRef)}
                                 >
                                     <Share className="w-4 h-4" />
                                     Export
@@ -726,6 +729,7 @@ export default function GraphsPage() {
                                         xAxisLabel={
                                             groupByLabels[filters.groupBy]
                                         }
+                                        svgRefCopy={svgRef}
                                     />
                                 ) : (
                                     <LineGraph
@@ -736,6 +740,7 @@ export default function GraphsPage() {
                                         xAxisLabel={
                                             groupByLabels[filters.groupBy]
                                         }
+                                        svgRefCopy={svgRef}
                                     />
                                 )}
                             </div>

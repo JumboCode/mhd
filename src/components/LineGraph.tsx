@@ -13,12 +13,14 @@ type MultiLineGraphProps = {
     datasets: GraphDataset[];
     yAxisLabel: string;
     xAxisLabel: string;
+    svgRefCopy: React.RefObject<SVGSVGElement | null>;
 };
 
 export default function MultiLineGraph({
     datasets,
     yAxisLabel,
     xAxisLabel,
+    svgRefCopy,
 }: MultiLineGraphProps) {
     const svgRef = useRef<SVGSVGElement | null>(null);
     const wrapperRef = useRef<HTMLDivElement | null>(null);
@@ -40,7 +42,11 @@ export default function MultiLineGraph({
     }>({});
 
     // Memoize color scale to prevent re-running useEffect unnecessarily
-    const colorScale = useMemo(() => d3.scaleOrdinal(d3.schemeCategory10), []);
+    //const colorScale = useMemo(() => d3.scaleOrdinal(d3.schemeCategory10), []);
+    const colorScale = useMemo(
+        () => d3.scaleOrdinal(d3.schemeCategory10.map((c) => c.toString())),
+        [],
+    );
 
     useEffect(() => {
         const svg = d3.select(svgRef.current);
@@ -390,6 +396,8 @@ export default function MultiLineGraph({
                 return transform;
             });
         });
+
+        svgRefCopy.current = svgRef.current;
     }, [datasets, xAxisLabel, yAxisLabel, colorScale]);
 
     return (
