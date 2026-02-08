@@ -80,6 +80,7 @@ export default function Sidebar() {
                             alt="Logo"
                             width={80}
                             height={40}
+                            priority
                         />
                     </h1>
                 </div>
