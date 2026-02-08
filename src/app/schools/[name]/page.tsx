@@ -51,7 +51,7 @@ export default function SchoolProfilePage() {
             .catch((error) => {
                 setError(error.message);
                 toast.error(
-                    "Failed to load school data. Redirecting to schools page.",
+                    "Failed to load school data. Redirecting to schools page...",
                 );
                 // Redirect after showing error
                 setTimeout(() => {
