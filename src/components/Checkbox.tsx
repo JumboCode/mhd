@@ -1,7 +1,7 @@
 "use client";
 
 import * as CheckboxPrimitive from "@radix-ui/react-checkbox";
-import { X } from "lucide-react";
+import { Check } from "lucide-react";
 import type * as React from "react";
 
 import { cn } from "@/lib/utils";
@@ -23,7 +23,7 @@ function Checkbox({
                 data-slot="checkbox-indicator"
                 className="flex items-center justify-center w-full h-full text-current transition-none"
             >
-                <X className="size-3.5" />
+                <Check className="size-3" />
             </CheckboxPrimitive.Indicator>
         </CheckboxPrimitive.Root>
     );

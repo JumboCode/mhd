@@ -155,7 +155,7 @@ export function FilterValuePopover({
                                         key={option}
                                         value={option}
                                         onSelect={() => handleToggle(option)}
-                                        className="cursor-pointer"
+                                        className={`cursor-pointer ${isSelected ? "text-blue-800" : ""}`}
                                     >
                                         <div className="flex items-center gap-2 w-full">
                                             <Checkbox
@@ -170,9 +170,6 @@ export function FilterValuePopover({
                                             <span className="flex-1">
                                                 {option}
                                             </span>
-                                            {isSelected && (
-                                                <Check className="h-4 w-4 text-primary" />
-                                            )}
                                         </div>
                                     </CommandItem>
                                 );
