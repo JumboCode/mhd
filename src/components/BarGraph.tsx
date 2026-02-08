@@ -64,7 +64,7 @@ export default function BarGraph({
             .scaleBand()
             .domain(xValues.map(String))
             .range([margin.left, width - margin.right])
-            .padding(0.2);
+            .padding(0.1); // Spacing between x-axis values
 
         const y = d3
             .scaleLinear()
