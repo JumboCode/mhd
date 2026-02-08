@@ -23,6 +23,7 @@ import SpreadsheetPreview from "./SpreadsheetPreview";
 import SpreadsheetPreviewFail from "./SpreadsheetPreviewFail";
 import SpreadsheetUpload from "./SpreadsheetUpload";
 import { requiredColumns } from "@/lib/required-spreadsheet-columns";
+import { ErrorReport, identifyErrors } from "@/lib/error-identification";
 
 export default function SpreadsheetState() {
     const [file, setFile] = useState<File | undefined>();
@@ -196,64 +197,36 @@ export default function SpreadsheetState() {
 
             // Parse spreadsheet and check format
             checkFormat((jsonData) => {
-                if (!jsonData || jsonData.length === 0) {
+                let report: ErrorReport = identifyErrors(jsonData);
+                if (report.errors.length != 0) {
                     setTab(
                         <SpreadsheetPreviewFail
                             fileName={file?.name ?? "None"}
                             numRows={0}
+                            errorReport={report}
                         />,
                     );
                     setCanNext(false);
                     setHasError(true);
                     return;
                 }
+                if (!jsonData || jsonData.length === 0) {
+                    // Placeholder
+                    return;
+                }
 
                 // Store the parsed data
                 setSpreadsheetData(jsonData);
 
-                // Calculate number of rows (count non-empty rows, excluding header)
-                const nonEmptyRows = jsonData
-                    .slice(1)
-                    .filter((row) =>
-                        row.some(
-                            (cell) =>
-                                cell !== null &&
-                                cell !== undefined &&
-                                cell !== "",
-                        ),
-                    );
-                const calculatedNumRows = nonEmptyRows.length;
-
-                // Check if format is valid
-                const headers = jsonData[0] as string[];
-                const formattedHeaders = headers.map((header) =>
-                    header.toLowerCase().trim(),
+                setTab(
+                    <SpreadsheetPreview
+                        fileName={file?.name ?? "None"}
+                        numRows={report.calculatedNumRows}
+                        spreadsheetData={jsonData}
+                    />,
                 );
-
-                const hasAllColumns = requiredColumns.every((col) =>
-                    formattedHeaders.includes(col.toLowerCase()),
-                );
-
-                if (hasAllColumns) {
-                    setTab(
-                        <SpreadsheetPreview
-                            fileName={file?.name ?? "None"}
-                            numRows={calculatedNumRows}
-                            spreadsheetData={jsonData}
-                        />,
-                    );
-                    setCanNext(true);
-                    setHasError(false);
-                } else {
-                    setTab(
-                        <SpreadsheetPreviewFail
-                            fileName={file?.name ?? "None"}
-                            numRows={calculatedNumRows}
-                        />,
-                    );
-                    setCanNext(false);
-                    setHasError(true);
-                }
+                setCanNext(true);
+                setHasError(false);
             });
 
             setNextText("Next");
