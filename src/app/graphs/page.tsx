@@ -96,7 +96,7 @@ export default function GraphsPage() {
     // Setting hooks
     const [timePeriod, setTimePeriod] = useQueryState(
         "period",
-        parseAsString.withDefault("all"),
+        parseAsString.withDefault("custom"),
     );
     const [startYear, setStartYear] = useQueryState(
         "startYear",
