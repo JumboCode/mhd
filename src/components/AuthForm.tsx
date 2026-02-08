@@ -75,6 +75,7 @@ export default function AuthForm() {
                     alt="MHS Logo Image"
                     width={200}
                     height={100}
+                    priority
                 />
             </div>
 
