@@ -86,7 +86,7 @@ export default function BarGraph({
                     const barX = (x(String(d.x)) || 0) + i * barWidth;
                     const barY = y(d.y);
                     const barHeight = y(0) - y(d.y);
-                    const r = 4;
+                    const r = 2;
                     const w = barWidth;
                     return `
                   M${barX},${barY + r}
