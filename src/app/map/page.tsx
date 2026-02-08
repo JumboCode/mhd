@@ -16,7 +16,7 @@ import countiesData from "@/data/counties.json";
 const counties = Object.values(countiesData).map((county) => ({
     name: county.name,
     coordinates: county.coordinates as [number, number][],
-    color: "#FF0000",
+    color: "#af272f", // MHD red
 }));
 
 export default function HeatMapPage() {
