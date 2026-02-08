@@ -201,11 +201,9 @@ export default function MultiLineGraph({
         }
 
         // Update X-axis
+        const xTicks = x.ticks().filter((t) => Number.isInteger(t));
         groupsRef.current.xAxis.call(
-            d3
-                .axisBottom(x)
-                .ticks(Math.min(width / 100, 10)) // Reasonable tick count based on width
-                .tickFormat(d3.format("d")),
+            d3.axisBottom(x).tickValues(xTicks).tickFormat(d3.format("d")),
         );
         groupsRef.current.xAxis.selectAll(".tick line").remove();
         groupsRef.current.xAxis.select(".domain").remove();
