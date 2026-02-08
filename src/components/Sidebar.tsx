@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
     Map,
     BarChart3,
@@ -12,14 +12,32 @@ import {
     ChevronDown,
     ChevronRight,
     User,
+    LogOut,
 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import Image from "next/image";
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover";
 
 export default function Sidebar() {
     const pathname = usePathname();
+    const router = useRouter();
     const [isOverviewOpen, setIsOverviewOpen] = useState(false);
+    const [isPopoverOpen, setIsPopoverOpen] = useState(false);
     const { data: session } = authClient.useSession();
+
+    const handleSignOut = async () => {
+        await authClient.signOut({
+            fetchOptions: {
+                onSuccess: () => {
+                    router.push("/signin");
+                },
+            },
+        });
+    };
 
     // Automatically open Overview if any subitem is active
     useEffect(() => {
@@ -206,8 +224,8 @@ export default function Sidebar() {
                 </div>
             </div>
 
-            {/*<div className="px-4 py-5 self-center flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full overflow-hidden bg-muted flex items-center justify-center">
+            <div className="px-4 py-5 self-center flex items-center gap-3">
+                {/* <div className="w-8 h-8 rounded-full overflow-hidden bg-muted flex items-center justify-center">
                     {session?.user?.image ? (
                         <Image
                             src={session.user.image}
@@ -219,11 +237,26 @@ export default function Sidebar() {
                     ) : (
                         <User size={16} className="text-muted-foreground" />
                     )}
-                </div>
-                <span className="text-sm font-medium text-foreground overflow-hidden whitespace-nowrap">
-                    {session?.user?.email || "Loading..."}
-                </span>
-            </div>*/}
+                </div> */}
+                <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+                    <PopoverTrigger asChild>
+                        <button className="text-sm font-medium text-foreground overflow-hidden whitespace-nowrap hover:text-accent-foreground cursor-pointer">
+                            {session?.user?.email || "Loading..."}
+                        </button>
+                    </PopoverTrigger>
+                    <PopoverContent align="center" className="w-48">
+                        <div className="flex flex-col space-y-2">
+                            <button
+                                onClick={handleSignOut}
+                                className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-accent text-sm font-medium w-full text-left"
+                            >
+                                <LogOut size={16} />
+                                Sign Out
+                            </button>
+                        </div>
+                    </PopoverContent>
+                </Popover>
+            </div>
         </aside>
     );
 }
