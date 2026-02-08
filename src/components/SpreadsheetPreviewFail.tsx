@@ -15,6 +15,7 @@
 
 import React from "react";
 import { CircleX, FileChartColumn } from "lucide-react";
+import SpreadsheetErrors from "@/components/SpreadsheetErrors";
 
 type PreviewProps = {
     fileName: string;
@@ -53,8 +54,7 @@ export default function SpreadsheetPreviewFail({
                 </div>
                 <div className="self-start flex flex-col w-full gap-4">
                     <h2 className="font-bold text-xl">Errors</h2>
-                    {/* Placeholder for table to be placed here */}
-                    <div className="border rounded-lg w-full h-32"></div>
+                    <SpreadsheetErrors />
                 </div>
                 <div>
                     <p className="text-[#646464] text-base">
