@@ -16,6 +16,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { SchoolProfileSkeleton } from "@/components/skeletons/SchoolProfileSkeleton";
+import { MapPlacer } from "@/components/ui/mapPlacer";
 
 // interface such that data can be blank if API is loading
 type SchoolData = {
@@ -28,6 +29,11 @@ type SchoolData = {
     instructionalModel: string;
 };
 
+type MapCoordinates = {
+    latitude: number | null;
+    longitude: number | null;
+};
+
 export default function SchoolProfilePage() {
     const params = useParams();
     const schoolName = params.name as string;
@@ -36,6 +42,7 @@ export default function SchoolProfilePage() {
 
     const [schoolData, setSchoolData] = useState<SchoolData | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [coordinates, setCoordinates] = useState<MapCoordinates | null>(null);
 
     useEffect(() => {
         fetch(`/api/schools/${schoolName}`)
@@ -121,6 +128,37 @@ export default function SchoolProfilePage() {
                         className="col-span-2"
                     />
                     <PlaceholderCard title="% Highschool" />
+                </div>
+
+                {/* School location map */}
+                <div className="border border-border rounded-lg p-6">
+                    <h2 className="text-xl font-semibold mb-4 text-foreground">
+                        School Location
+                    </h2>
+                    <div className="h-80 rounded-lg overflow-hidden border border-border">
+                        <MapPlacer
+                            schoolId={schoolName}
+                            onCoordinatesLoaded={setCoordinates}
+                        />
+                    </div>
+                    <div className="mt-3 text-sm text-muted-foreground flex justify-between items-center">
+                        <div>
+                            {coordinates &&
+                            coordinates.latitude !== null &&
+                            coordinates.longitude !== null ? (
+                                <span>
+                                    Latitude: {coordinates.latitude.toFixed(4)},
+                                    Longitude:{" "}
+                                    {coordinates.longitude.toFixed(4)}
+                                </span>
+                            ) : (
+                                <span>Loading coordinates...</span>
+                            )}
+                        </div>
+                        <div>
+                            Last updated: {new Date().toLocaleDateString()}
+                        </div>
+                    </div>
                 </div>
 
                 {/* Data table placeholder */}

@@ -81,6 +81,8 @@ export async function GET(
         return NextResponse.json({
             name: school.name,
             town: school.town,
+            latitude: school.latitude,
+            longitude: school.longitude,
             studentCount: studentCount[0]?.total
                 ? Number(studentCount[0].total)
                 : 0,
