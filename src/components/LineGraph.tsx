@@ -262,17 +262,17 @@ export default function MultiLineGraph({
             .attr("d", (d) => lineGen(d.data));
 
         // Animate line drawing only on first render
-        if (isFirstRender.current) {
-            linesUpdate.each(function () {
-                const path = d3.select(this);
-                const length = path.node()?.getTotalLength() || 0;
-                path.attr("stroke-dasharray", `${length} ${length}`)
-                    .attr("stroke-dashoffset", length)
-                    .transition()
-                    .duration(1500)
-                    .attr("stroke-dashoffset", 0);
-            });
-        }
+        // if (isFirstRender.current) {
+        //     linesUpdate.each(function () {
+        //         const path = d3.select(this);
+        //         const length = path.node()?.getTotalLength() || 0;
+        //         path.attr("stroke-dasharray", `${length} ${length}`)
+        //             .attr("stroke-dashoffset", length)
+        //             .transition()
+        //             .duration(1500)
+        //             .attr("stroke-dashoffset", 0);
+        //     });
+        // }
 
         // Update dots using join pattern
         if (!groupsRef.current.dots) return;
