@@ -80,7 +80,7 @@ export default function Sidebar() {
             items: [
                 { href: "/map", label: "Map", icon: <Map size={20} /> },
                 {
-                    href: "/graphs",
+                    href: "/graph",
                     label: "Chart",
                     icon: <BarChart3 size={20} />,
                 },
