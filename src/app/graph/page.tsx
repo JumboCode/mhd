@@ -122,7 +122,7 @@ export default function GraphsPage() {
 
     const [chartType, setChartType] = useQueryState(
         "type",
-        parseAsString.withDefault("line"),
+        parseAsString.withDefault("bar"),
     );
 
     // Filter hooks
@@ -567,23 +567,23 @@ export default function GraphsPage() {
                                 <Tabs
                                     value={chartType}
                                     onValueChange={(value) =>
-                                        setChartType(value as "line" | "bar")
+                                        setChartType(value as "bar" | "line")
                                     }
                                 >
                                     <TabsList>
-                                        <TabsTrigger
-                                            value="line"
-                                            className="gap-2"
-                                        >
-                                            <LineChart className="w-4 h-4" />
-                                            Line
-                                        </TabsTrigger>
                                         <TabsTrigger
                                             value="bar"
                                             className="gap-2"
                                         >
                                             <ChartColumn className="w-4 h-4" />
                                             Bar
+                                        </TabsTrigger>
+                                        <TabsTrigger
+                                            value="line"
+                                            className="gap-2"
+                                        >
+                                            <LineChart className="w-4 h-4" />
+                                            Line
                                         </TabsTrigger>
                                     </TabsList>
                                 </Tabs>
