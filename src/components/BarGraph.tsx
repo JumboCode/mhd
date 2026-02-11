@@ -23,6 +23,7 @@ type BarGraphProps = {
     dataset: BarDataset[];
     yAxisLabel: string;
     xAxisLabel: string;
+    legendTitle?: string;
     svgRefCopy: React.RefObject<SVGSVGElement | null>;
 };
 
@@ -30,6 +31,7 @@ export default function BarGraph({
     dataset,
     yAxisLabel,
     xAxisLabel,
+    legendTitle,
     svgRefCopy,
 }: BarGraphProps) {
     const svgRef = useRef<SVGSVGElement | null>(null);
@@ -144,8 +146,20 @@ export default function BarGraph({
             .attr("class", "legend")
             .attr(
                 "transform",
-                `translate(${margin.left}, ${height - margin.bottom + 60})`,
+                `translate(${margin.left}, ${height - margin.bottom + 80})`,
             );
+
+        // Add legend title if provided
+        if (legendTitle) {
+            legendGroup
+                .append("text")
+                .attr("x", 0)
+                .attr("y", -10)
+                .text(legendTitle)
+                .style("font-size", "14px")
+                .style("font-weight", "600")
+                .attr("fill", "currentColor");
+        }
 
         const legendWidth = width - margin.left - margin.right;
         const itemMargin = 10;
@@ -192,7 +206,12 @@ export default function BarGraph({
 
     return (
         <div>
-            <svg ref={svgRef} width={900} height={400}></svg>
+            <svg
+                ref={svgRef}
+                width={900}
+                height={400}
+                style={{ overflow: "visible" }}
+            ></svg>
         </div>
     );
 }

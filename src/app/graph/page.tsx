@@ -740,8 +740,11 @@ export default function GraphsPage() {
                                         yAxisLabel={
                                             measuredAsLabels[filters.measuredAs]
                                         }
-                                        xAxisLabel={
-                                            groupByLabels[filters.groupBy]
+                                        xAxisLabel="Year"
+                                        legendTitle={
+                                            filters.groupBy === "none"
+                                                ? undefined
+                                                : groupByLabels[filters.groupBy]
                                         }
                                         svgRefCopy={svgRef}
                                     />
@@ -751,8 +754,11 @@ export default function GraphsPage() {
                                         yAxisLabel={
                                             measuredAsLabels[filters.measuredAs]
                                         }
-                                        xAxisLabel={
-                                            groupByLabels[filters.groupBy]
+                                        xAxisLabel="Year"
+                                        legendTitle={
+                                            filters.groupBy === "none"
+                                                ? undefined
+                                                : groupByLabels[filters.groupBy]
                                         }
                                         svgRefCopy={svgRef}
                                     />

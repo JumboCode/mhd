@@ -13,6 +13,7 @@ type MultiLineGraphProps = {
     datasets: GraphDataset[];
     yAxisLabel: string;
     xAxisLabel: string;
+    legendTitle?: string;
     svgRefCopy: React.RefObject<SVGSVGElement | null>;
 };
 
@@ -20,6 +21,7 @@ export default function MultiLineGraph({
     datasets,
     yAxisLabel,
     xAxisLabel,
+    legendTitle,
     svgRefCopy,
 }: MultiLineGraphProps) {
     const svgRef = useRef<SVGSVGElement | null>(null);
@@ -196,7 +198,7 @@ export default function MultiLineGraph({
                 .attr("class", "legend")
                 .attr(
                     "transform",
-                    `translate(${margin.left}, ${height - margin.bottom + 60})`,
+                    `translate(${margin.left}, ${height - margin.bottom + 80})`,
                 );
         }
 
@@ -349,6 +351,25 @@ export default function MultiLineGraph({
         const itemMargin = 10;
         const rowHeight = 20;
 
+        // Add or update legend title
+        const legendTitleSelection = groupsRef.current.legend
+            .selectAll<SVGTextElement, string>("text.legend-title")
+            .data(legendTitle ? [legendTitle] : []);
+
+        legendTitleSelection.exit().remove();
+
+        legendTitleSelection
+            .enter()
+            .append("text")
+            .attr("class", "legend-title")
+            .attr("x", 0)
+            .attr("y", -10)
+            .style("font-size", "14px")
+            .style("font-weight", "600")
+            .attr("fill", "currentColor")
+            .merge(legendTitleSelection)
+            .text((d) => d);
+
         const legendItems = groupsRef.current.legend
             .selectAll<SVGGElement, GraphDataset>("g.legend-item")
             .data(datasets, (d) => d.label);
@@ -400,7 +421,12 @@ export default function MultiLineGraph({
 
     return (
         <div ref={wrapperRef} style={{ position: "relative" }}>
-            <svg ref={svgRef} width={900} height={400}></svg>
+            <svg
+                ref={svgRef}
+                width={900}
+                height={400}
+                style={{ overflow: "visible" }}
+            ></svg>
         </div>
     );
 }
