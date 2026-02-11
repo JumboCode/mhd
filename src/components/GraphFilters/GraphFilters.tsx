@@ -44,6 +44,7 @@ const measuredAsOptions = [
 ];
 
 const groupByOptions = [
+    { value: "none", label: "None" },
     { value: "region", label: "Region" },
     { value: "school-type", label: "School Type" },
     { value: "division", label: "Division (Junior/Senior)" },
@@ -82,7 +83,7 @@ export default function GraphFilters({
     filters,
 }: GraphFiltersProps) {
     const [measuredAs, setMeasuredAs] = useState("total-school-count");
-    const [groupBy, setGroupBy] = useState("region");
+    const [groupBy, setGroupBy] = useState("none");
     const [individualProjects, setIndividualProjects] = useState(true);
     const [groupProjects, setGroupProjects] = useState(true);
     const [selectedSchools, setSelectedSchools] = useState<string[]>([]);
@@ -98,7 +99,7 @@ export default function GraphFilters({
     useEffect(() => {
         if (!filters) return;
         setMeasuredAs(filters.measuredAs || "total-school-count");
-        setGroupBy(filters.groupBy || "region");
+        setGroupBy(filters.groupBy || "none");
         setIndividualProjects(filters.individualProjects ?? true);
         setGroupProjects(filters.groupProjects ?? true);
         setSelectedSchools(filters.selectedSchools || []);

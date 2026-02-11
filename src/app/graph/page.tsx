@@ -66,7 +66,7 @@ const defaultFilters: Filters = {
     teacherYearsValue: "",
     teacherYearsOperator: "=",
     teacherYearsValue2: undefined,
-    groupBy: "region",
+    groupBy: "none",
     measuredAs: "total-school-count",
 };
 
@@ -82,6 +82,7 @@ const measuredAsLabels: Record<string, string> = {
 
 // possible values for group by filter
 const groupByLabels: Record<string, string> = {
+    "none": "None",
     "region": "Region",
     "school-type": "School Type",
     "division": "Division",
@@ -127,7 +128,7 @@ export default function GraphsPage() {
     // Filter hooks
     const [groupBy, setGroupBy] = useQueryState(
         "groupBy",
-        parseAsString.withDefault("region"),
+        parseAsString.withDefault("none"),
     );
     const [measuredAs, setMeasuredAs] = useQueryState(
         "measuredAs",
@@ -352,10 +353,13 @@ export default function GraphsPage() {
         });
 
         // Determine the key to group data by for different lines on the graph
-        let groupKey: keyof Project = "category"; // Default fallback
+        let groupKey: keyof Project | null = null;
 
         // set groupKey based on filter selection
-        if (filters?.groupBy === "division") {
+        if (filters?.groupBy === "none") {
+            setGroupBy("none");
+            groupKey = null; // No grouping
+        } else if (filters?.groupBy === "division") {
             setGroupBy("division");
             groupKey = "division";
         } else if (filters?.groupBy === "project-type") {
@@ -375,12 +379,18 @@ export default function GraphsPage() {
             groupKey = "category"; // Temporary fallback
         }
 
-        // Get a sorted list of unique group names (e.g., all categories or all towns)
-        const uniqueGroups = Array.from(
-            new Set(
-                filteredProjects.map((p) => String(p[groupKey] || "Unknown")),
-            ),
-        ).sort();
+        // Get a sorted list of unique group names
+        // If groupKey is null (none grouping), use a single "All" group
+        const uniqueGroups =
+            groupKey === null
+                ? ["All"]
+                : Array.from(
+                      new Set(
+                          filteredProjects.map((p) =>
+                              String(p[groupKey] || "Unknown"),
+                          ),
+                      ),
+                  ).sort();
 
         // added to handle measured by filter!
         function computeMetric(projects: Project[], metric: string) {
@@ -427,9 +437,13 @@ export default function GraphsPage() {
         // Format the filtered and grouped data for the graph components
         return uniqueGroups.map((groupName) => {
             // Isolate projects belonging to the current group
-            const projectsInGroup = filteredProjects.filter(
-                (p) => String(p[groupKey] || "Unknown") === groupName,
-            );
+            // If groupKey is null (none grouping), include all filtered projects
+            const projectsInGroup =
+                groupKey === null
+                    ? filteredProjects
+                    : filteredProjects.filter(
+                          (p) => String(p[groupKey] || "Unknown") === groupName,
+                      );
 
             const projectsByYear: Record<number, Project[]> = {};
 
