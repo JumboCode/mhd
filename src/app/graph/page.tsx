@@ -16,6 +16,7 @@ import {
     ChevronDown,
     LineChart,
     Link,
+    Plus,
     Share,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -39,7 +40,11 @@ import {
     parseAsString,
     parseAsArrayOf,
 } from "nuqs";
-import { downloadGraph } from "@/lib/export-to-pdf";
+import {
+    addToCart,
+    downloadGraph,
+    downloadSingleGraph,
+} from "@/lib/export-to-pdf";
 
 type Project = {
     id: number;
@@ -157,6 +162,8 @@ export default function GraphsPage() {
         "teacherYearsValue2",
         parseAsString.withDefault(""),
     );
+
+    const [cart, setCart] = useState<HTMLCanvasElement[]>([]);
 
     const filters: Filters = useMemo(
         () => ({
@@ -530,10 +537,21 @@ export default function GraphsPage() {
                                     variant="outline"
                                     size="sm"
                                     className="flex items-center gap-2"
-                                    onClick={() => downloadGraph(svgRef)}
+                                    onClick={() => downloadSingleGraph(svgRef)}
                                 >
                                     <Share className="w-4 h-4" />
                                     Export
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="flex items-center gap-2"
+                                    onClick={() =>
+                                        addToCart(svgRef, cart, setCart)
+                                    }
+                                >
+                                    <Plus className="w-4 h-4" />
+                                    Add to
                                 </Button>
                                 <Button
                                     variant="outline"
