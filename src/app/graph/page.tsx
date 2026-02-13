@@ -16,7 +16,7 @@ import {
     ChevronDown,
     LineChart,
     Link,
-    Plus,
+    PlusCircle,
     Share,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -40,11 +40,13 @@ import {
     parseAsString,
     parseAsArrayOf,
 } from "nuqs";
+import { addToCart, downloadSingleGraph } from "@/lib/export-to-pdf";
 import {
-    addToCart,
-    downloadGraph,
-    downloadSingleGraph,
-} from "@/lib/export-to-pdf";
+    HoverCard,
+    HoverCardContent,
+    HoverCardTrigger,
+} from "@/components/ui/hover-card";
+import { Cart } from "@/components/Cart";
 
 type Project = {
     id: number;
@@ -163,7 +165,9 @@ export default function GraphsPage() {
         parseAsString.withDefault(""),
     );
 
-    const [cart, setCart] = useState<HTMLCanvasElement[]>([]);
+    const [cart, setCart] = useState<string[]>([]);
+
+    const [filterNames, setFilterNames] = useState<string[]>([]);
 
     const filters: Filters = useMemo(
         () => ({
@@ -493,6 +497,29 @@ export default function GraphsPage() {
         new Set(allProjects.map((p) => p.category)),
     ).sort();
 
+    const filterName = `Projects by ${groupByLabels[filters.groupBy]}`;
+
+    useEffect(() => {
+        const cartStorage = sessionStorage.getItem("cartStorage");
+        const cartNameStorage = sessionStorage.getItem("cartNameStorage");
+
+        if (cartStorage) {
+            setCart(JSON.parse(cartStorage));
+        }
+
+        if (cartNameStorage) {
+            setFilterNames(JSON.parse(cartNameStorage));
+        }
+    }, []);
+
+    useEffect(() => {
+        sessionStorage.setItem("cartStorage", JSON.stringify(cart));
+    }, [cart]);
+
+    useEffect(() => {
+        sessionStorage.setItem("cartNameStorage", JSON.stringify(filterNames));
+    }, [filterNames]);
+
     return (
         <div className="w-full min-h-screen flex bg-background">
             {/* Left Sidebar - Filter Panel */}
@@ -542,17 +569,41 @@ export default function GraphsPage() {
                                     <Share className="w-4 h-4" />
                                     Export
                                 </Button>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="flex items-center gap-2"
-                                    onClick={() =>
-                                        addToCart(svgRef, cart, setCart)
-                                    }
-                                >
-                                    <Plus className="w-4 h-4" />
-                                    Add to
-                                </Button>
+                                <HoverCard>
+                                    <HoverCardTrigger
+                                        delay={10}
+                                        closeDelay={100}
+                                        render={
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="flex items-center gap-2"
+                                                onClick={() =>
+                                                    addToCart(
+                                                        svgRef,
+                                                        cart,
+                                                        setCart,
+                                                        filterNames,
+                                                        setFilterNames,
+                                                        filterName,
+                                                    )
+                                                }
+                                            >
+                                                <PlusCircle className="w-4 h-4" />
+                                                Add to
+                                            </Button>
+                                        }
+                                    />
+                                    <HoverCardContent className="flex w-64 flex-col gap-0.5">
+                                        <Cart
+                                            filterNames={filterNames}
+                                            cart={cart}
+                                            setCart={setCart}
+                                            setFilterNames={setFilterNames}
+                                        />
+                                    </HoverCardContent>
+                                </HoverCard>
+
                                 <Button
                                     variant="outline"
                                     size="sm"

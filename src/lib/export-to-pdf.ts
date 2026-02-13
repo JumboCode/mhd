@@ -11,20 +11,60 @@
 import React, { Dispatch, SetStateAction } from "react";
 import html2canvas from "html2canvas-pro";
 import jsPDF from "jspdf";
+import logoImg from "../../public/images/logo.png";
+import { toast } from "sonner";
 
-export function downloadGraph(cart: HTMLCanvasElement[]) {
+export function downloadGraphs(cart: string[], filterNames: string[]) {
+    // Displays toast when there are no images to export
+    if (cart.length == 0) {
+        toast.error("Cart is empty");
+    }
+
     const pdf = new jsPDF();
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    //const pdfHeight = pdfWidth * aspectRatio;
-    const pdfHeight = pdf.internal.pageSize.getHeight();
 
-    // Add image with proper dimensions that match PDF width while preserving aspect ratio
-    cart.forEach((canvas: HTMLCanvasElement, i: number) => {
-        pdf.addImage(canvas, "JPEG", 0, i * pdfHeight, pdfWidth, pdfHeight);
-        i++;
+    // Does process for each graph in the cart
+    cart.forEach((canvas: string, idx: number) => {
+        const img = new Image();
+        img.src = canvas;
+
+        // Date data for image
+        const time = new Date();
+        const year = String(time.getFullYear());
+        const month = String(time.getMonth());
+        const day = String(time.getDate());
+
+        img.onload = () => {
+            const imgWidth = pdf.internal.pageSize.getWidth();
+            const imgHeight = (img.height / img.width) * imgWidth;
+
+            pdf.setFont("Interstate", "bold");
+
+            pdf.text(`${month}/${day}/${year}`, 180, 15);
+            pdf.addImage(
+                logoImg.src,
+                "PNG",
+                20,
+                10,
+                logoImg.width * 0.03,
+                logoImg.height * 0.03,
+            );
+
+            pdf.text(filterNames[idx], 25, 50);
+
+            pdf.addImage(
+                canvas,
+                "JPEG",
+                10,
+                55,
+                imgWidth * 0.9,
+                imgHeight * 0.9,
+            );
+
+            if (idx < cart.length - 1) pdf.addPage();
+
+            if (idx === cart.length - 1) pdf.save("graph.pdf");
+        };
     });
-
-    pdf.save("graph.pdf");
 }
 
 export function getClonedSvg(
@@ -41,8 +81,11 @@ export function getClonedSvg(
 
 export async function addToCart(
     svgRef: React.RefObject<SVGSVGElement | null>,
-    cart: HTMLCanvasElement[],
-    setCart: Dispatch<SetStateAction<HTMLCanvasElement[]>>,
+    cart: string[],
+    setCart: Dispatch<SetStateAction<string[]>>,
+    filterNames: string[],
+    setFilterNames: Dispatch<SetStateAction<string[]>>,
+    filterName: string,
 ): Promise<void> {
     const newSVG = getClonedSvg(svgRef);
     if (!newSVG) return;
@@ -51,7 +94,6 @@ export async function addToCart(
     const viewBox = newSVG.getAttribute("viewBox");
     let svgWidth = 1000;
     let svgHeight = 400;
-    let aspectRatio = svgHeight / svgWidth;
 
     if (viewBox) {
         const viewBoxValues = viewBox.split(" ");
@@ -63,8 +105,6 @@ export async function addToCart(
         if (width) svgWidth = parseFloat(width) || 1000;
         if (height) svgHeight = parseFloat(height) || 400;
     }
-
-    aspectRatio = svgHeight / svgWidth;
 
     // Adds the svg element to the page temporarily (offscreen)
     const wrapper = document.createElement("div");
@@ -81,7 +121,9 @@ export async function addToCart(
         scale: 2,
     });
 
-    setCart([...cart, canvas]);
+    // Updates cart and filter names
+    setCart([...cart, canvas.toDataURL()]);
+    setFilterNames([...filterNames, filterName]);
 
     document.body.removeChild(wrapper);
 }
@@ -135,4 +177,27 @@ export async function downloadSingleGraph(
     pdf.save("graph.pdf");
 
     document.body.removeChild(wrapper);
+}
+
+export function clearCart(
+    setCart: Dispatch<SetStateAction<string[]>>,
+    setFilterNames: Dispatch<SetStateAction<string[]>>,
+) {
+    // Resets cart and filter names
+    setCart([]);
+    setFilterNames([]);
+}
+
+export function deleteFromCart(
+    cart: string[],
+    setCart: Dispatch<SetStateAction<string[]>>,
+    filterNames: string[],
+    setFilterNames: Dispatch<SetStateAction<string[]>>,
+    filterName: string,
+) {
+    // Locates index where a filter occurs and removes it from cart
+    // NOTE: slightly buggy when there are multiple graphs with same name
+    var idx = filterNames.indexOf(filterName);
+    setCart(cart.filter((_, index) => index !== idx));
+    setFilterNames(filterNames.filter((_, index) => index !== idx));
 }
