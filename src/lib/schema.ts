@@ -4,6 +4,7 @@ import {
     integer,
     text,
     serial,
+    doublePrecision,
     boolean,
     timestamp,
     index,
@@ -15,6 +16,9 @@ export const schools = pgTable("schools", {
     name: text("name").notNull(),
     town: text("town"), // Can't be not null b/c regional schools may not have associated town
     schoolId: text("school_id").unique().notNull(),
+    latitude: doublePrecision("latitude"),
+    longitude: doublePrecision("longitude"),
+    zipcode: text("zipcode"),
 });
 
 // Ties a school to the years it has participated
