@@ -45,7 +45,6 @@ export default function HeatMapPage() {
 
     const handleClick = () => {
         setShowSchools(!showSchools);
-        console.log("button clicked");
     };
 
     //fetch school point data for heat layer
