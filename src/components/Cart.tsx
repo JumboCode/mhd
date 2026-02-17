@@ -51,7 +51,9 @@ export function Cart({
                     </button>
                 </div>
             ))}
-            <div className="flex flex-row gap-7 border-t pt-2">
+            <div
+                className={`flex flex-row gap-7 ${cart.length > 0 ? "border-t pt-2" : ""}`}
+            >
                 <button
                     onClick={() => clearCart(setCart, setFilterNames)}
                     className="hover:cursor-pointer"
