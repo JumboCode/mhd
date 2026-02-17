@@ -11,7 +11,6 @@
 
 import { requiredColumns } from "@/lib/required-spreadsheet-columns";
 import type { SpreadsheetData } from "@/types/spreadsheet";
-import { type ReactElement, useEffect, useState } from "react";
 
 /**
  * Enum representing the types of spreadsheet errors.
@@ -54,7 +53,7 @@ export const requiredColumnsDict: Record<string, ColumnType> = {
     schoolId: "number",
     teacherName: "string",
     teacherEmail: "string",
-    teacherId: "number",
+    teacherId: "string",
     projectId: "number",
     title: "string",
     categoryId: "number",
