@@ -13,6 +13,7 @@ import html2canvas from "html2canvas-pro";
 import jsPDF from "jspdf";
 import logoImg from "../../public/images/logo.png";
 import { toast } from "sonner";
+import "../app/fonts/interstate-bold-normal";
 
 export function downloadGraphs(cart: string[], filterNames: string[]) {
     // Displays toast when there are no images to export
@@ -37,9 +38,9 @@ export function downloadGraphs(cart: string[], filterNames: string[]) {
             const imgWidth = pdf.internal.pageSize.getWidth();
             const imgHeight = (img.height / img.width) * imgWidth;
 
-            pdf.setFont("Interstate", "bold");
+            pdf.setFont("interstate-bold", "normal");
 
-            pdf.text(`${month}/${day}/${year}`, 180, 15);
+            pdf.text(`${month}/${day}/${year}`, 170, 15);
             pdf.addImage(
                 logoImg.src,
                 "PNG",
