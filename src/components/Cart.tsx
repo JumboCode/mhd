@@ -52,7 +52,10 @@ export function Cart({
                 </div>
             ))}
             <div className="flex flex-row gap-7 border-t pt-2">
-                <button onClick={() => clearCart(setCart, setFilterNames)}>
+                <button
+                    onClick={() => clearCart(setCart, setFilterNames)}
+                    className="hover:cursor-pointer"
+                >
                     Clear All
                 </button>
                 <Button onClick={() => downloadGraphs(cart, filterNames)}>
