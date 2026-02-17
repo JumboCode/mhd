@@ -6,12 +6,13 @@
  *         Author: Anne, Chiara & Elki, Steven
  *         Last updated: 2/14/26
  *
- *        Summary: Heatmap + Clusters POC with MA region
+ *        Summary: Heatmap + Clusters within MA region
  *
  **************************************************************/
 
-import { Map, MapRoute } from "@/components/ui/map";
+import { Map } from "@/components/ui/map";
 import { useEffect, useState, useRef } from "react";
+import { toast } from "sonner";
 
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
@@ -32,10 +33,9 @@ export default function HeatMapPage() {
     // Controlled by dropdowns
     // Year dropdown, set to range of our data
     const [year, setYear] = useState<number | null>(2025);
+
     // totalStudents | totalProjects |totalTeachers
     const [metric, setMetric] = useState<string>("Projects");
-
-    const [error, setError] = useState<string | null>(null);
 
     // Reference to the map, needed for updating the heat layer
     const mapRef = useRef<any>(null);
@@ -47,7 +47,7 @@ export default function HeatMapPage() {
         setShowSchools(!showSchools);
     };
 
-    //fetch school point data for heat layer
+    // Fetch school point data for heat layer
     useEffect(() => {
         fetch(`/api/heat-layer?year=${year}`)
             .then((response) => {
@@ -60,7 +60,7 @@ export default function HeatMapPage() {
                 setSchoolPoints(data);
             })
             .catch((error) => {
-                setError(error.message || "Failed to load school data");
+                toast.error(error.message || "Failed to load school data");
             });
     }, [year]);
 
@@ -109,9 +109,20 @@ export default function HeatMapPage() {
 
         // Heat layer, retrieve source from fetch data on page load
         const updateHeatLayer = () => {
+            // Filter to only include schools with data for the selected metric
+            const allFeatures = schoolPoints.features || [];
+            const filteredFeatures = allFeatures.filter(
+                (f: any) => (f.properties[metric] || 0) > 0,
+            );
+            const filteredData = {
+                ...schoolPoints,
+                features: filteredFeatures,
+            };
+
             // Calculate maximum for weight based on the max by metric
-            const features = schoolPoints.features || [];
-            const values = features.map((f: any) => f.properties[metric] || 0);
+            const values = filteredFeatures.map(
+                (f: any) => f.properties[metric] || 0,
+            );
             const maxValue = Math.max(...values, 1);
 
             // The minimum intensity expressed is 0, and the school with
@@ -128,11 +139,11 @@ export default function HeatMapPage() {
 
             // Store each coordinate pair as a single point in schoolPoints
             if (map.getSource("schoolSource")) {
-                map.getSource("schoolSource").setData(schoolPoints);
+                map.getSource("schoolSource").setData(filteredData);
             } else {
                 map.addSource("schoolSource", {
                     type: "geojson",
-                    data: schoolPoints,
+                    data: filteredData,
                 });
             }
 
