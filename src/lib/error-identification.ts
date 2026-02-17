@@ -17,8 +17,7 @@ import type { SpreadsheetData } from "@/types/spreadsheet";
  */
 export enum ErrorType {
     MISSING_COL = "Missing column",
-    MISSING_ENTRY = "Missing an entry",
-    INVALID_TYPE = "Invalid data type",
+    INVALID_TYPE = "Invalid spreadsheet type",
     INVALID_CELL_TYPE = "Invalid cell type",
     EMPTY_REQUIRED_CELL = "Empty Cell",
     EMPTY_ROW = "Empty row in middle of data",
