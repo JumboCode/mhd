@@ -20,6 +20,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import countiesData from "@/data/counties.json";
 import YearDropdown from "@/components/YearDropdown";
 import CountDropdown from "@/components/CountDropdown";
+import { Button } from "@/components/ui/button";
 
 const counties = Object.values(countiesData).map((county) => ({
     name: county.name,
@@ -297,18 +298,17 @@ export default function HeatMapPage() {
     return (
         <div className="flex p-4 flex-col h-screen w-screen justify-center">
             <h1 className="text-2xl py-4 font-semibold">Heatmap</h1>
-            <div className="flex items-center gap-4 shrink-0 pb-5">
-                <CountDropdown
-                    selectedCount={metric}
-                    onCountChange={setMetric}
-                />
-                <YearDropdown selectedYear={year} onYearChange={setYear} />
-                <button
-                    onClick={handleClick}
-                    className="ml-auto px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded transition-colors duration-200"
-                >
+            <div className="flex flex-row justify-between items-center gap-4 shrink-0 pb-5">
+                <div className="flex flex-row items-center gap-4">
+                    <CountDropdown
+                        selectedCount={metric}
+                        onCountChange={setMetric}
+                    />
+                    <YearDropdown selectedYear={year} onYearChange={setYear} />
+                </div>
+                <Button onClick={handleClick} className="w-32 py-2">
                     {showSchools ? "Hide Schools" : "Show Schools"}
-                </button>
+                </Button>
             </div>
             <div className="flex-1 rounded-2xl overflow-hidden border border-slate-200">
                 <Map
