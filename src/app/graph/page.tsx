@@ -232,6 +232,34 @@ export default function GraphsPage() {
         fetchGatewayCities();
     }, []);
 
+    /* Fetch and set cart to and from session storage to persist between refreshes */
+
+    const filterName = `Projects by ${groupByLabels[filters.groupBy]}`;
+
+    // Fetch all graphs from session storage on load
+    useEffect(() => {
+        const cartStorage = sessionStorage.getItem("cartStorage");
+        const cartNameStorage = sessionStorage.getItem("cartNameStorage");
+
+        if (cartStorage) {
+            setCart(JSON.parse(cartStorage));
+        }
+
+        if (cartNameStorage) {
+            setFilterNames(JSON.parse(cartNameStorage));
+        }
+    }, []);
+
+    // Update cart in session storage when user changes cart
+    useEffect(() => {
+        sessionStorage.setItem("cartStorage", JSON.stringify(cart));
+    }, [cart]);
+
+    // Update cart names when use changes the filters
+    useEffect(() => {
+        sessionStorage.setItem("cartNameStorage", JSON.stringify(filterNames));
+    }, [filterNames]);
+
     // Sync tempYearRange with yearRange only when popover opens in custom mode
     useEffect(() => {
         if (yearRangeOpen && timePeriod === "custom") {
@@ -239,7 +267,6 @@ export default function GraphsPage() {
         }
     }, [yearRangeOpen, timePeriod, yearRange]);
 
-    // Could break when loggin in using liveshare? (network url issue w/ "npm run dev")
     const copyURLtoClipboard = async () => {
         try {
             const url = window.location.href;
@@ -496,29 +523,6 @@ export default function GraphsPage() {
     const projectTypes = Array.from(
         new Set(allProjects.map((p) => p.category)),
     ).sort();
-
-    const filterName = `Projects by ${groupByLabels[filters.groupBy]}`;
-
-    useEffect(() => {
-        const cartStorage = sessionStorage.getItem("cartStorage");
-        const cartNameStorage = sessionStorage.getItem("cartNameStorage");
-
-        if (cartStorage) {
-            setCart(JSON.parse(cartStorage));
-        }
-
-        if (cartNameStorage) {
-            setFilterNames(JSON.parse(cartNameStorage));
-        }
-    }, []);
-
-    useEffect(() => {
-        sessionStorage.setItem("cartStorage", JSON.stringify(cart));
-    }, [cart]);
-
-    useEffect(() => {
-        sessionStorage.setItem("cartNameStorage", JSON.stringify(filterNames));
-    }, [filterNames]);
 
     return (
         <div className="w-full min-h-screen flex bg-background">
