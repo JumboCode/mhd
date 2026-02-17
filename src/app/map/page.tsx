@@ -206,24 +206,38 @@ export default function HeatMapPage() {
                 });
             }
 
-            // Circles for school points
-            if (!map.getLayer("circles")) {
-                map.addLayer({
-                    id: "circles",
-                    type: "circle",
-                    source: "schoolSource",
-                    paint: {
-                        "circle-radius": 6,
-                        "circle-color": "gray",
-                        "circle-stroke-width": 0.5,
-                        "circle-stroke-color": "#ffffff",
-                    },
-                });
+            // School icon points
+            const addSchoolIcons = () => {
+                if (!map.getLayer("school-icons")) {
+                    map.addLayer({
+                        id: "school-icons",
+                        type: "symbol",
+                        source: "schoolSource",
+                        layout: {
+                            "icon-image": "school-icon",
+                            "icon-size": 1,
+                            "icon-allow-overlap": true,
+                        },
+                    });
+                }
+            };
+
+            if (map.hasImage("school-icon")) {
+                addSchoolIcons();
+            } else {
+                const img = new Image(26, 26);
+                img.onload = () => {
+                    if (!map.hasImage("school-icon")) {
+                        map.addImage("school-icon", img);
+                    }
+                    addSchoolIcons();
+                };
+                img.src = "/images/school-heatmap-icon.svg";
             }
 
             // Tooltips displaying information on hover
             // Only when schools are shown, does not appear otherwise.
-            map.on("mouseenter", "circles", (e: any) => {
+            map.on("mouseenter", "school-icons", (e: any) => {
                 map.getCanvas().style.cursor = "pointer";
 
                 const feature = e.features[0];
@@ -270,7 +284,7 @@ export default function HeatMapPage() {
             });
 
             // On hover off, remove popup
-            map.on("mouseleave", "circles", () => {
+            map.on("mouseleave", "school-icons", () => {
                 map.getCanvas().style.cursor = "";
                 popup.remove();
             });
@@ -279,7 +293,7 @@ export default function HeatMapPage() {
             if (map.getLayer("counties-layer")) map.moveLayer("counties-layer");
             if (map.getLayer("schoolHeatLayer"))
                 map.moveLayer("schoolHeatLayer");
-            if (map.getLayer("circles")) map.moveLayer("circles");
+            if (map.getLayer("school-icons")) map.moveLayer("school-icons");
         };
 
         // Force update if map loads properly
@@ -290,8 +304,8 @@ export default function HeatMapPage() {
         }
 
         // Gets rid of schools layer on button click
-        if (!showSchools) {
-            map.removeLayer("circles");
+        if (!showSchools && map.getLayer("school-icons")) {
+            map.removeLayer("school-icons");
         }
     }, [metric, schoolPoints, showSchools]);
 
