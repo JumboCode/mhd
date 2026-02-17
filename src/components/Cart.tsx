@@ -28,7 +28,7 @@ export function Cart({
     setFilterNames,
 }: CartProps) {
     return (
-        <div className="flex flex-col gap-2 w-full max-w-5xl px-3 py-1 mr-5">
+        <div className="flex flex-col gap-2 p-2 w-full max-w-5xl">
             {filterNames.map((filterName, index) => (
                 <div
                     key={index}
@@ -45,18 +45,18 @@ export function Cart({
                                 filterName,
                             )
                         }
-                        className="text-gray-400 hover:text-red-500 p-1 transition-colors duration-150 ease-in-out"
+                        className="text-gray-400 hover:text-red-500 p-1 pr-2 transition-colors duration-150 ease-in-out"
                     >
                         <Trash2 className="h-4 w-4" />
                     </button>
                 </div>
             ))}
             <div
-                className={`flex flex-row gap-7 ${cart.length > 0 ? "border-t pt-2" : ""}`}
+                className={`flex flex-row justify-between ${cart.length > 0 && "border-t pt-2"}`}
             >
                 <button
                     onClick={() => clearCart(setCart, setFilterNames)}
-                    className="hover:cursor-pointer"
+                    className="hover:cursor-pointer pl-2"
                 >
                     Clear All
                 </button>
