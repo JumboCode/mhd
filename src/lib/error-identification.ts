@@ -1,3 +1,14 @@
+/***************************************************************
+ *
+ *                error-identification.ts
+ *
+ *         Author: Zander and Chiara
+ *           Date: 2/16/2026
+ *
+ *        Summary: Validates spreadsheet upload and reports errors
+ *
+ **************************************************************/
+
 import { requiredColumns } from "@/lib/required-spreadsheet-columns";
 import type { SpreadsheetData } from "@/types/spreadsheet";
 import { type ReactElement, useEffect, useState } from "react";
