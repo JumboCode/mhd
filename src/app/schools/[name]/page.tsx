@@ -138,6 +138,7 @@ export default function SchoolProfilePage() {
                     <div className="h-80 rounded-lg overflow-hidden border border-border">
                         <MapPlacer
                             schoolId={schoolName}
+                            schoolName={schoolData.name}
                             onCoordinatesLoaded={setCoordinates}
                         />
                     </div>

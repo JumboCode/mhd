@@ -21,6 +21,20 @@ function percentageChange(curr: number, past: number) {
 export async function GET(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url);
+
+        // Lightweight list mode: returns id, name, lat, lng for all schools
+        if (searchParams.get("list") === "true") {
+            const allSchools = await db
+                .select({
+                    id: schools.id,
+                    name: schools.name,
+                    latitude: schools.latitude,
+                    longitude: schools.longitude,
+                })
+                .from(schools);
+            return NextResponse.json(allSchools);
+        }
+
         const yearString = searchParams.get("year");
         const currentYear = Number(yearString);
 

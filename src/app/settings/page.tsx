@@ -11,9 +11,12 @@
 
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { MultiSelectCombobox } from "../../components/ui/multi-select-combobox";
-import { Trash, Plus } from "lucide-react";
+import { Trash, Plus, Pencil } from "lucide-react";
+import { Combobox } from "@/components/Combobox";
+import { Map, MapMarker, MapControls, useMap } from "@/components/ui/map";
+import { toast } from "sonner";
 
 interface PermittedUser {
     email: string;
@@ -226,6 +229,9 @@ export default function Settings() {
                         )}
                     </div>
 
+                    {/* School Locations Section */}
+                    <SchoolLocationEditor />
+
                     {/* Permitted Users Section */}
                     <div className="space-y-3">
                         <div className="flex items-center justify-between">
@@ -330,6 +336,253 @@ export default function Settings() {
                     </div>
                 </div>
             </section>
+        </div>
+    );
+}
+
+// Helper: registers click events on the map for the settings editor
+function SettingsMapClickHandler({
+    onMapClick,
+}: {
+    onMapClick: (lng: number, lat: number) => void;
+}) {
+    const { map } = useMap();
+
+    useEffect(() => {
+        if (!map) return;
+
+        const handleClick = (e: { lngLat: { lng: number; lat: number } }) => {
+            onMapClick(e.lngLat.lng, e.lngLat.lat);
+        };
+
+        map.on("click", handleClick);
+        map.getCanvas().style.cursor = "crosshair";
+
+        return () => {
+            map.off("click", handleClick);
+            map.getCanvas().style.cursor = "";
+        };
+    }, [map, onMapClick]);
+
+    return null;
+}
+
+interface SchoolEntry {
+    id: number;
+    name: string;
+    latitude: number | null;
+    longitude: number | null;
+}
+
+function SchoolLocationEditor() {
+    const [schools, setSchools] = useState<SchoolEntry[]>([]);
+    const [selectedSchoolId, setSelectedSchoolId] = useState("");
+    const [editing, setEditing] = useState(false);
+    const [newPin, setNewPin] = useState<{
+        latitude: number;
+        longitude: number;
+    } | null>(null);
+    const [saving, setSaving] = useState(false);
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    useEffect(() => {
+        fetch("/api/schools?list=true")
+            .then((res) => res.json())
+            .then((data) => setSchools(data))
+            .catch(() => toast.error("Failed to load schools"));
+    }, []);
+
+    const selectedSchool = schools.find(
+        (s) => String(s.id) === selectedSchoolId,
+    );
+
+    const schoolOptions = schools.map((s) => ({
+        value: String(s.id),
+        label: s.name,
+    }));
+
+    const handleSchoolChange = (value: string) => {
+        setSelectedSchoolId(value);
+        setEditing(false);
+        setNewPin(null);
+    };
+
+    const handleMapClick = useCallback((lng: number, lat: number) => {
+        setNewPin({ latitude: lat, longitude: lng });
+    }, []);
+
+    const handleSave = async () => {
+        if (!newPin || !selectedSchool) return;
+
+        setSaving(true);
+        try {
+            const encodedName = encodeURIComponent(
+                selectedSchool.name.replace(/ /g, "-"),
+            );
+            const response = await fetch(`/api/schools/${encodedName}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    latitude: newPin.latitude,
+                    longitude: newPin.longitude,
+                }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(
+                    errorData.error || "Failed to update school location",
+                );
+            }
+
+            // Update local state
+            setSchools((prev) =>
+                prev.map((s) =>
+                    s.id === selectedSchool.id
+                        ? {
+                              ...s,
+                              latitude: newPin.latitude,
+                              longitude: newPin.longitude,
+                          }
+                        : s,
+                ),
+            );
+            setEditing(false);
+            setNewPin(null);
+            toast.success(`Location updated for ${selectedSchool.name}`);
+        } catch (err) {
+            const errorMsg =
+                err instanceof Error ? err.message : "Failed to save location";
+            toast.error(errorMsg);
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleCancel = () => {
+        setEditing(false);
+        setNewPin(null);
+    };
+
+    const mapCenter: [number, number] =
+        selectedSchool?.longitude != null && selectedSchool?.latitude != null
+            ? [selectedSchool.longitude, selectedSchool.latitude]
+            : [-72, 42.272];
+
+    return (
+        <div className="space-y-3">
+            <div className="flex items-center justify-between">
+                <h3 className="font-bold">School Locations</h3>
+            </div>
+            <p className="text-sm text-gray-600">
+                Search for a school to view and edit its location on the map.
+            </p>
+            <div className="w-72">
+                <Combobox
+                    options={schoolOptions}
+                    value={selectedSchoolId}
+                    onChange={handleSchoolChange}
+                    placeholder="Search for a school..."
+                />
+            </div>
+
+            {selectedSchool && mounted && (
+                <div className="space-y-3">
+                    <div className="h-80 rounded-lg overflow-hidden border border-gray-200 relative">
+                        <Map
+                            key={selectedSchool.id}
+                            center={mapCenter}
+                            zoom={12}
+                            styles={{
+                                light: "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json",
+                                dark: "https://basemaps.cartocdn.com/gl/voyager-nolabels-gl-style/style.json",
+                            }}
+                            scrollZoom={true}
+                            dragPan={editing}
+                            dragRotate={false}
+                            doubleClickZoom={editing}
+                            touchZoomRotate={editing}
+                        >
+                            {/* Current school location (red) */}
+                            {selectedSchool.latitude != null &&
+                                selectedSchool.longitude != null && (
+                                    <MapMarker
+                                        longitude={selectedSchool.longitude}
+                                        latitude={selectedSchool.latitude}
+                                    >
+                                        <div
+                                            className={`flex h-8 w-8 items-center justify-center rounded-full shadow-lg border-2 border-white transition-colors ${
+                                                newPin
+                                                    ? "bg-red-500/60"
+                                                    : "bg-red-500"
+                                            }`}
+                                        />
+                                    </MapMarker>
+                                )}
+                            {/* New pin (blue) */}
+                            {newPin && (
+                                <MapMarker
+                                    longitude={newPin.longitude}
+                                    latitude={newPin.latitude}
+                                >
+                                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500 shadow-lg border-2 border-white" />
+                                </MapMarker>
+                            )}
+                            {editing && (
+                                <SettingsMapClickHandler
+                                    onMapClick={handleMapClick}
+                                />
+                            )}
+                            <MapControls
+                                showZoom={true}
+                                position="bottom-right"
+                            />
+                        </Map>
+                        {!editing && (
+                            <button
+                                onClick={() => setEditing(true)}
+                                className="absolute top-3 right-3 z-10 flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium shadow-sm hover:bg-gray-50 transition-colors"
+                            >
+                                <Pencil className="h-3.5 w-3.5" />
+                                Edit
+                            </button>
+                        )}
+                    </div>
+
+                    {editing && (
+                        <div className="flex items-center justify-between">
+                            <p className="text-sm text-gray-600">
+                                {newPin
+                                    ? `New: ${newPin.latitude.toFixed(4)}, ${newPin.longitude.toFixed(4)}`
+                                    : "Click on the map to set a new location"}
+                            </p>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={handleCancel}
+                                    className="rounded-md border border-gray-300 px-4 py-1.5 text-sm font-medium hover:bg-gray-50 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleSave}
+                                    disabled={!newPin || saving}
+                                    className={`rounded-md px-4 py-1.5 text-sm font-medium text-white transition-colors ${
+                                        newPin && !saving
+                                            ? "bg-blue-600 hover:bg-blue-700"
+                                            : "bg-gray-300 cursor-not-allowed"
+                                    }`}
+                                >
+                                    {saving ? "Saving..." : "Save"}
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
         </div>
     );
 }
