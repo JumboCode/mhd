@@ -21,6 +21,7 @@ export enum ErrorType {
     INVALID_TYPE = "Invalid data type",
     INVALID_CELL_TYPE = "Invalid cell type",
     EMPTY_REQUIRED_CELL = "Empty Cell",
+    EMPTY_ROW = "Empty row in middle of data",
 }
 
 /**
@@ -42,7 +43,12 @@ export type ErrorReport = {
 /**
  * Supported column data types for validation.
  */
-export type ColumnType = "string" | "number" | "boolean" | "date";
+export type ColumnType =
+    | "string"
+    | "number"
+    | "boolean"
+    | "date"
+    | "string_or_number";
 
 /**
  * Dictionary mapping required column names to their expected types.
@@ -53,7 +59,7 @@ export const requiredColumnsDict: Record<string, ColumnType> = {
     schoolId: "number",
     teacherName: "string",
     teacherEmail: "string",
-    teacherId: "string",
+    teacherId: "string_or_number",
     projectId: "number",
     title: "string",
     categoryId: "number",
@@ -87,6 +93,8 @@ export function identifyErrors(jsonData: SpreadsheetData | null): ErrorReport {
         return report;
     }
 
+    trimTrailingAndCheckEmptyRows(jsonData, report);
+
     const validSheet: boolean = checkRequiredColumns(jsonData, report);
     if (validSheet) {
         trimTownCommas(jsonData);
@@ -94,6 +102,50 @@ export function identifyErrors(jsonData: SpreadsheetData | null): ErrorReport {
     }
 
     return report;
+}
+
+/**
+ * Checks if a row is entirely empty.
+ */
+function isRowEmpty(row: (string | number | boolean | null | undefined)[]) {
+    return row.every(
+        (cell) => cell === null || cell === undefined || cell === "",
+    );
+}
+
+/**
+ * Trims trailing empty rows from jsonData (mutates the array).
+ * Reports an error for any empty rows found in the middle of the data.
+ * @param jsonData - The spreadsheet data.
+ * @param report - The report to push errors into.
+ */
+function trimTrailingAndCheckEmptyRows(
+    jsonData: SpreadsheetData,
+    report: ErrorReport,
+) {
+    // Find the last non-empty data row (skip header at index 0)
+    let lastNonEmptyIdx = 0;
+    for (let i = jsonData.length - 1; i >= 1; i--) {
+        if (!isRowEmpty(jsonData[i])) {
+            lastNonEmptyIdx = i;
+            break;
+        }
+    }
+
+    // Trim trailing empty rows
+    jsonData.length = lastNonEmptyIdx + 1;
+
+    // Check for empty rows in the middle (between row 1 and lastNonEmptyIdx)
+    const emptyRowNumbers: string[] = [];
+    for (let i = 1; i < jsonData.length; i++) {
+        if (isRowEmpty(jsonData[i])) {
+            emptyRowNumbers.push(String(i + 1));
+        }
+    }
+
+    if (emptyRowNumbers.length > 0) {
+        pushError(report, ErrorType.EMPTY_ROW, emptyRowNumbers);
+    }
 }
 
 /**
@@ -234,6 +286,9 @@ export function checkRequiredColumnTypes(
                     break;
                 case "date":
                     isValid = !isNaN(new Date(cell as any).getTime());
+                    break;
+                case "string_or_number":
+                    isValid = typeof cell === "string" || !isNaN(Number(cell));
                     break;
                 default:
                     isValid = true;
