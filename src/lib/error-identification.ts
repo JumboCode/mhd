@@ -1,118 +1,118 @@
 import { requiredColumns } from "@/lib/required-spreadsheet-columns";
-
 import type { SpreadsheetData } from "@/types/spreadsheet";
-import { json } from "zod";
 import { type ReactElement, useEffect, useState } from "react";
 
-enum ErrorType {
-    MISSING_COL = "Missing a column",
+/**
+ * Enum representing the types of spreadsheet errors.
+ */
+export enum ErrorType {
+    MISSING_COL = "Missing column",
     MISSING_ENTRY = "Missing an entry",
     INVALID_TYPE = "Invalid data type",
+    INVALID_CELL_TYPE = "Invalid cell type",
+    EMPTY_REQUIRED_CELL = "Empty Cell",
 }
 
+/**
+ * Represents a single spreadsheet error.
+ */
 export type SpreadsheetErrorTuple = {
     type: ErrorType;
-    coords: string;
+    args: string[];
 };
 
+/**
+ * Report containing all detected errors and additional metadata.
+ */
 export type ErrorReport = {
     errors: SpreadsheetErrorTuple[];
     calculatedNumRows: number;
 };
 
-const expectedTypes: ("string" | "number" | "boolean")[] = [
-    "string", // Student Last
-    "string", // Student First
-    "string", // Address 1
-    "string", // Address 2
-    "string", // City
-    "string", // State
-    "number", // Zip
-    "string", // Student Phone
-    "string", // Student Cell
-    "string", // Student Email
-    "string", // Parent Email
-    "string", // Student Gender
-    "string", // Student Ethnicity
-    "number", // Grade
-    "string", // Advanced
-    "string", // Implementation model
-    "string", // Returning student
-    "string", // Division
-    "number", // Student ID
-    "string", // Teacher First
-    "string", // Teacher Last
-    "string", // Teacher Email
-    "string", // Teacher Phone
-    "number", // Project ID
-    "string", // Title
-    "number", // Category ID
-    "string", // Category Name
-    // sub category
-    // project abstract
-    // project plan
-    // paper url
-    // nhd web central url
-    "string", // Entry video link
-    // written materials
-    "boolean", // Team project
-    "string", // Team key
-    "number", // Internal Project ID
-    "string", // School ID
-    // school type
-    // gateway city
-    // district id
-    // district name
-    // affiliate
-    "number", // Fair ID
-    "string", // FMS ID
-    "number", // Id Int
-    "string", // Media release allowed
-    "string", // Media release sign date
-    "string", // Hold harmless sign date
-    "string", // Shwon permissions
-    "number", // projectIntId
-    "number", // idInt
-    "string", // permission
-];
+/**
+ * Supported column data types for validation.
+ */
+export type ColumnType = "string" | "number" | "boolean" | "date";
 
-function pushError(
-    report: ErrorReport,
-    type: ErrorType,
-    row: number = -1,
-    col: number = -1,
-) {
-    let coords = "N/A";
+/**
+ * Dictionary mapping required column names to their expected types.
+ */
+export const requiredColumnsDict: Record<string, ColumnType> = {
+    schoolName: "string",
+    city: "string",
+    schoolId: "number",
+    teacherName: "string",
+    teacherEmail: "string",
+    teacherId: "number",
+    projectId: "number",
+    title: "string",
+    categoryId: "number",
+    categoryName: "string",
+    teamProject: "boolean",
+};
 
-    if (row !== -1 && col !== -1) {
-        const colLetter = colIndexToLetter(col);
-        coords = `${colLetter}${row + 1}`; // +1 for 1-indexed like Excel
-    }
-
-    report.errors.push({
-        type,
-        coords,
-    });
+/**
+ * Adds an error to the report.
+ * @param report - The report object to update.
+ * @param type - The type of error.
+ * @param args - The arguments or coordinates associated with the error.
+ */
+function pushError(report: ErrorReport, type: ErrorType, args: string[]) {
+    report.errors.push({ type, args });
 }
 
+/**
+ * Main entry point to identify spreadsheet errors.
+ * @param jsonData - The spreadsheet data as an array of rows.
+ * @returns An ErrorReport containing all detected errors.
+ */
 export function identifyErrors(jsonData: SpreadsheetData | null): ErrorReport {
     let report: ErrorReport = {
         errors: [],
         calculatedNumRows: 0,
     };
 
-    // Perform error checks
-    if (!jsonData || jsonData.length == 0) {
-        pushError(report, ErrorType.INVALID_TYPE);
+    if (!jsonData || jsonData.length === 0) {
+        pushError(report, ErrorType.INVALID_TYPE, []);
         return report;
     }
 
-    checkColumns(jsonData, report);
+    const validSheet: boolean = checkRequiredColumns(jsonData, report);
+    if (validSheet) {
+        trimTownCommas(jsonData);
+        checkRequiredColumnTypes(jsonData, report);
+    }
 
     return report;
 }
 
-export function checkColumns(jsonData: SpreadsheetData, report: ErrorReport) {
+/**
+ * Removes ", MA" from all cells in the "city" column and trims whitespace.
+ * @param jsonData - The spreadsheet data.
+ */
+function trimTownCommas(jsonData: SpreadsheetData) {
+    const cityColIdx = jsonData[0].indexOf("city");
+
+    for (let row = 1; row < jsonData.length; row++) {
+        const currentRow = jsonData[row];
+        const cell: string = String(currentRow[cityColIdx]);
+        const output = cell.replace(", MA", "").trim();
+        if (output !== cell) {
+            currentRow[cityColIdx] = output;
+        }
+    }
+}
+
+/**
+ * Checks if all required columns exist in the spreadsheet.
+ * @param jsonData - The spreadsheet data.
+ * @param report - The report to push errors into.
+ * @returns True if all required columns are present, false otherwise.
+ */
+export function checkRequiredColumns(
+    jsonData: SpreadsheetData,
+    report: ErrorReport,
+): boolean {
     const headers = jsonData[0] as string[];
 
     const nonEmptyRows = jsonData
@@ -128,48 +128,153 @@ export function checkColumns(jsonData: SpreadsheetData, report: ErrorReport) {
         header.toLowerCase().trim(),
     );
 
-    const hasAllColumns = requiredColumns.every((col) =>
-        formattedHeaders.includes(col.toLowerCase()),
+    const missingColumns: string[] = requiredColumns.filter(
+        (col) => !formattedHeaders.includes(col.toLowerCase()),
     );
 
-    if (!hasAllColumns) {
-        // push error to report
-        pushError(report, ErrorType.MISSING_COL);
+    if (missingColumns.length > 0) {
+        pushError(report, ErrorType.MISSING_COL, missingColumns);
+    }
+
+    return missingColumns.length === 0;
+}
+
+/**
+ * Checks for empty cells in required columns.
+ * @param jsonData - The spreadsheet data.
+ * @param report - The report to push errors into.
+ */
+export function checkRequiredColumnCells(
+    jsonData: SpreadsheetData,
+    report: ErrorReport,
+) {
+    const headers = jsonData[0] as string[];
+    const formattedHeaders = headers.map((header) =>
+        header?.toString().toLowerCase().trim(),
+    );
+    const requiredColIndexes: number[] = requiredColumns
+        .map((col) => formattedHeaders.indexOf(col.toLowerCase()))
+        .filter((idx) => idx !== -1);
+
+    const emptyCoords: string[] = [];
+
+    for (let row = 1; row < jsonData.length; row++) {
+        const currentRow = jsonData[row];
+
+        requiredColIndexes.forEach((colIdx) => {
+            const cell = currentRow[colIdx];
+            if (cell === null || cell === undefined || cell === "") {
+                emptyCoords.push(xytoCoords(row, colIdx));
+            }
+        });
+    }
+
+    if (emptyCoords.length > 0) {
+        pushError(report, ErrorType.EMPTY_REQUIRED_CELL, emptyCoords);
     }
 }
 
-export function checkEntries(jsonData: SpreadsheetData, report: ErrorReport) {
+/**
+ * Checks for empty cells and type mismatches in required columns.
+ * Prioritizes empty cells and pushes at most two errors.
+ * @param jsonData - The spreadsheet data.
+ * @param report - The report to push errors into.
+ */
+export function checkRequiredColumnTypes(
+    jsonData: SpreadsheetData,
+    report: ErrorReport,
+) {
     const headers = jsonData[0] as string[];
-
     const formattedHeaders = headers.map((header) =>
-        header.toLowerCase().trim(),
+        header?.toString().toLowerCase().trim(),
     );
 
-    const dataRows = jsonData.slice(1);
+    const emptyCellCoords: string[] = [];
+    const typeErrorCoords: string[] = [];
 
-    requiredColumns.forEach((colName) => {
-        const colIndex = formattedHeaders.indexOf(colName.toLowerCase().trim());
-        // if you cant find column
-        if (colIndex == -1) {
-            return;
-        }
+    for (let row = 1; row < jsonData.length; row++) {
+        const currentRow = jsonData[row];
 
-        dataRows.forEach((row, rowIndex) => {
-            const cell = row[colIndex];
+        for (const [colName, expectedType] of Object.entries(
+            requiredColumnsDict,
+        )) {
+            const colIdx = formattedHeaders.findIndex(
+                (h) => h === colName.toLowerCase(),
+            );
+            if (colIdx === -1) continue;
 
-            if (cell == null || cell == undefined || cell == "") {
-                pushError(
-                    report,
-                    ErrorType.MISSING_ENTRY,
-                    rowIndex + 2,
-                    colIndex + 1,
-                );
+            const cell = currentRow[colIdx];
+            const coords = xytoCoords(row, colIdx);
+
+            if (cell === null || cell === undefined || cell === "") {
+                emptyCellCoords.push(coords);
+                continue;
             }
+
+            let isValid = true;
+            switch (expectedType) {
+                case "string":
+                    isValid = typeof cell === "string";
+                    break;
+                case "number":
+                    isValid = !isNaN(Number(cell));
+                    break;
+                case "boolean":
+                    isValid = typeof cell === "boolean";
+                    break;
+                case "date":
+                    isValid = !isNaN(new Date(cell as any).getTime());
+                    break;
+                default:
+                    isValid = true;
+            }
+
+            if (!isValid) {
+                typeErrorCoords.push(coords);
+            }
+        }
+    }
+
+    const errorsToPush = [];
+
+    // Empty cells take precedence
+    if (emptyCellCoords.length > 0) {
+        errorsToPush.push({
+            type: ErrorType.EMPTY_REQUIRED_CELL,
+            args: emptyCellCoords,
         });
-    });
+    }
+
+    if (errorsToPush.length < 2 && typeErrorCoords.length > 0) {
+        errorsToPush.push({
+            type: ErrorType.INVALID_CELL_TYPE,
+            args: typeErrorCoords,
+        });
+    }
+
+    for (let i = 0; i < Math.min(errorsToPush.length, 2); i++) {
+        const err = errorsToPush[i];
+        pushError(report, err.type, err.args);
+    }
 }
 
-export function colIndexToLetter(col: number): string {
+/**
+ * Converts zero-based row/column indexes to Excel-style coordinates (e.g., A1, B2).
+ * @param row - Zero-based row index.
+ * @param col - Zero-based column index.
+ * @returns Excel-style coordinate string.
+ */
+function xytoCoords(row: number, col: number): string {
+    const colLetter = colIndexToLetter(col);
+    return `${colLetter}${row + 1}`;
+}
+
+/**
+ * Converts a zero-based column index to a column letter (e.g., 0 -> A, 27 -> AB).
+ * @param col - Zero-based column index.
+ * @returns Excel column letter.
+ */
+function colIndexToLetter(col: number): string {
     let letter = "";
     let n = col;
 
@@ -180,5 +285,3 @@ export function colIndexToLetter(col: number): string {
 
     return letter;
 }
-
-export function validDataType(jsonData: SpreadsheetData, report: ErrorReport) {}
