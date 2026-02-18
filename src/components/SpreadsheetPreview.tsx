@@ -109,7 +109,7 @@ export default function SpreadsheetPreview({
                     <div className="flex flex-col gap-2">
                         <div className="flex gap-4 items-center">
                             <p className="font-bold w-32">File</p>
-                            <div className="bg-muted px-2 rounded border flex items-center gap-1">
+                            <div className="bg-muted pl-1 pr-2 rounded border flex items-center gap-1">
                                 <FileChartColumn className="h-4 text-muted-foreground" />
                                 <p>{fileName}</p>
                             </div>
