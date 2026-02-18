@@ -108,42 +108,6 @@ export const MapPlacer = ({
                 setCoordinates(coords);
                 onCoordinatesLoaded?.(coords);
             } else {
-                // Fallback: try to fetch from CSV
-                const csvResponse = await fetch("/MA_schools_long_lat.csv");
-                if (csvResponse.ok) {
-                    const csvText = await csvResponse.text();
-                    const lines = csvText.split("\n");
-                    for (let i = 1; i < lines.length; i++) {
-                        const line = lines[i].trim();
-                        if (!line) continue;
-
-                        const parts = line.split(",");
-                        if (parts.length < 7) continue;
-
-                        const csvSchoolName = parts[0].trim().toLowerCase();
-                        const normalizedId = schoolId
-                            .toLowerCase()
-                            .replace(/-/g, " ");
-                        if (
-                            csvSchoolName === normalizedId ||
-                            csvSchoolName.includes(normalizedId) ||
-                            normalizedId.includes(csvSchoolName)
-                        ) {
-                            const lat = parseFloat(parts[6].trim());
-                            const lng = parseFloat(parts[7].trim());
-
-                            if (!isNaN(lat) && !isNaN(lng)) {
-                                const coords = {
-                                    latitude: lat,
-                                    longitude: lng,
-                                };
-                                setCoordinates(coords);
-                                onCoordinatesLoaded?.(coords);
-                                return;
-                            }
-                        }
-                    }
-                }
                 toast.error("School coordinates not found");
             }
         } catch (error) {
