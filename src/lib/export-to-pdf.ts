@@ -63,7 +63,7 @@ export function downloadGraphs(cart: string[], filterNames: string[]) {
 
             if (idx < cart.length - 1) pdf.addPage();
 
-            if (idx === cart.length - 1) pdf.save("graph.pdf");
+            if (idx === cart.length - 1) pdf.save("chart.pdf");
         };
     });
 }
@@ -175,7 +175,7 @@ export async function downloadSingleGraph(
 
     // Add image with proper dimensions that match PDF width while preserving aspect ratio
     pdf.addImage(canvas, "JPEG", 0, 0, pdfWidth, pdfHeight);
-    pdf.save("graph.pdf");
+    pdf.save("chart.pdf");
 
     document.body.removeChild(wrapper);
 }

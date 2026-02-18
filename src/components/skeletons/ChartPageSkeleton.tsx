@@ -1,6 +1,6 @@
 import { Skeleton } from "@/components/ui/skeleton";
 
-export function GraphsPageSkeleton() {
+export function ChartPageSkeleton() {
     return (
         <div className="w-full min-h-screen flex bg-background">
             {/* Left Sidebar - Filter Panel */}

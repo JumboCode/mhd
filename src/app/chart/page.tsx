@@ -1,11 +1,11 @@
 /***************************************************************
  *
- *                graphs/page.tsx
+ *                chart/page.tsx
  *
  *         Author: Jack, Anne, Elki, Zander, Chiara, and Steven
  *           Date: 1/30/2026
  *
- *         Summary: display bar/line graph of project data with toggle
+ *         Summary: display bar/line chart of project data with toggle
  *
  **************************************************************/
 "use client";
