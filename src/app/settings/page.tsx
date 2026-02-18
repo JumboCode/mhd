@@ -15,7 +15,13 @@ import { useCallback, useEffect, useState } from "react";
 import { MultiSelectCombobox } from "../../components/ui/multi-select-combobox";
 import { Trash, Plus, Pencil } from "lucide-react";
 import { Combobox } from "@/components/Combobox";
-import { Map, MapMarker, MapControls, useMap } from "@/components/ui/map";
+import {
+    Map,
+    MapMarker,
+    MarkerContent,
+    MapControls,
+    useMap,
+} from "@/components/ui/map";
 import { toast } from "sonner";
 
 interface PermittedUser {
@@ -499,7 +505,7 @@ function SchoolLocationEditor() {
                             zoom={12}
                             styles={{
                                 light: "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json",
-                                dark: "https://basemaps.cartocdn.com/gl/voyager-nolabels-gl-style/style.json",
+                                dark: "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
                             }}
                             scrollZoom={true}
                             dragPan={editing}
@@ -514,13 +520,15 @@ function SchoolLocationEditor() {
                                         longitude={selectedSchool.longitude}
                                         latitude={selectedSchool.latitude}
                                     >
-                                        <div
-                                            className={`flex h-8 w-8 items-center justify-center rounded-full shadow-lg border-2 border-white transition-colors ${
-                                                newPin
-                                                    ? "bg-red-500/60"
-                                                    : "bg-red-500"
-                                            }`}
-                                        />
+                                        <MarkerContent>
+                                            <div
+                                                className={`flex h-8 w-8 items-center justify-center rounded-full shadow-lg border-2 border-white transition-colors ${
+                                                    newPin
+                                                        ? "bg-red-500/60"
+                                                        : "bg-red-500"
+                                                }`}
+                                            />
+                                        </MarkerContent>
                                     </MapMarker>
                                 )}
                             {/* New pin (blue) */}
@@ -529,7 +537,9 @@ function SchoolLocationEditor() {
                                     longitude={newPin.longitude}
                                     latitude={newPin.latitude}
                                 >
-                                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500 shadow-lg border-2 border-white" />
+                                    <MarkerContent>
+                                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500 shadow-lg border-2 border-white" />
+                                    </MarkerContent>
                                 </MapMarker>
                             )}
                             {editing && (

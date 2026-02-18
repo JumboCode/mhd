@@ -1,7 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Map, MapMarker, MapControls, useMap } from "@/components/ui/map";
+import {
+    Map,
+    MapMarker,
+    MarkerContent,
+    MapControls,
+    useMap,
+} from "@/components/ui/map";
 import {
     Dialog,
     DialogContent,
@@ -11,7 +17,7 @@ import {
     DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Pencil } from "lucide-react";
+import { Pencil, MapPin } from "lucide-react";
 
 interface SchoolCoordinates {
     latitude: number | null;
@@ -72,6 +78,7 @@ export const MapPlacer = ({
         longitude: number;
     } | null>(null);
     const [saving, setSaving] = useState(false);
+    const [mapKey, setMapKey] = useState(0);
 
     useEffect(() => {
         setMounted(true);
@@ -120,10 +127,14 @@ export const MapPlacer = ({
                         const parts = line.split(",");
                         if (parts.length < 7) continue;
 
-                        const csvSchoolName = parts[0].trim();
+                        const csvSchoolName = parts[0].trim().toLowerCase();
+                        const normalizedId = schoolId
+                            .toLowerCase()
+                            .replace(/-/g, " ");
                         if (
-                            csvSchoolName.toLowerCase() ===
-                            schoolId.toLowerCase()
+                            csvSchoolName === normalizedId ||
+                            csvSchoolName.includes(normalizedId) ||
+                            normalizedId.includes(csvSchoolName)
                         ) {
                             const lat = parseFloat(parts[6].trim());
                             const lng = parseFloat(parts[7].trim());
@@ -197,6 +208,8 @@ export const MapPlacer = ({
             setCoordinates(updatedCoords);
             onCoordinatesLoaded?.(updatedCoords);
             setEditDialogOpen(false);
+            setError(null);
+            setMapKey((k) => k + 1);
             toast.success("School location updated successfully!");
         } catch (err) {
             const errorMsg =
@@ -227,6 +240,7 @@ export const MapPlacer = ({
         <>
             <div className="relative w-full h-full">
                 <Map
+                    key={mapKey}
                     center={
                         coordinates?.longitude != null &&
                         coordinates?.latitude != null
@@ -241,7 +255,7 @@ export const MapPlacer = ({
                     }
                     styles={{
                         light: "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json",
-                        dark: "https://basemaps.cartocdn.com/gl/voyager-nolabels-gl-style/style.json",
+                        dark: "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
                     }}
                     scrollZoom={true}
                     dragPan={false}
@@ -256,7 +270,11 @@ export const MapPlacer = ({
                                 longitude={coordinates.longitude}
                                 latitude={coordinates.latitude}
                             >
-                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-red-500 shadow-lg cursor-pointer border-2 border-white hover:bg-red-600 transition-colors" />
+                                <MarkerContent>
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-teal-500 shadow-lg cursor-pointer border-2 border-white">
+                                        <MapPin className="h-5 w-5 text-white" />
+                                    </div>
+                                </MarkerContent>
                             </MapMarker>
                         )}
                     <MapControls showZoom={true} position="bottom-right" />
@@ -276,7 +294,7 @@ export const MapPlacer = ({
                     className="absolute top-3 right-3 z-10 flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-sm font-medium shadow-sm hover:bg-accent transition-colors"
                 >
                     <Pencil className="h-3.5 w-3.5" />
-                    Edit
+                    Edit Location
                 </button>
             </div>
 
@@ -309,7 +327,9 @@ export const MapPlacer = ({
                                         longitude={coordinates.longitude}
                                         latitude={coordinates.latitude}
                                     >
-                                        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-red-500/60 border-2 border-red-500 shadow-lg" />
+                                        <MarkerContent>
+                                            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-red-500/60 border-2 border-red-500 shadow-lg" />
+                                        </MarkerContent>
                                     </MapMarker>
                                 )}
                             {/* New pin location (blue) */}
@@ -318,7 +338,9 @@ export const MapPlacer = ({
                                     longitude={newPin.longitude}
                                     latitude={newPin.latitude}
                                 >
-                                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500 shadow-lg border-2 border-white" />
+                                    <MarkerContent>
+                                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500 shadow-lg border-2 border-white" />
+                                    </MarkerContent>
                                 </MapMarker>
                             )}
                             <MapClickHandler onMapClick={handleMapClick} />

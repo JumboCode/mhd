@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { SchoolProfileSkeleton } from "@/components/skeletons/SchoolProfileSkeleton";
 import { MapPlacer } from "@/components/ui/mapPlacer";
+import { Pencil } from "lucide-react";
 
 // interface such that data can be blank if API is loading
 type SchoolData = {
@@ -143,21 +144,29 @@ export default function SchoolProfilePage() {
                         />
                     </div>
                     <div className="mt-3 text-sm text-muted-foreground flex justify-between items-center">
-                        <div>
+                        <div className="flex items-center gap-1.5">
                             {coordinates &&
                             coordinates.latitude !== null &&
                             coordinates.longitude !== null ? (
-                                <span>
-                                    Latitude: {coordinates.latitude.toFixed(4)},
-                                    Longitude:{" "}
-                                    {coordinates.longitude.toFixed(4)}
-                                </span>
+                                <>
+                                    <span>
+                                        Coordinates:{" "}
+                                        {coordinates.latitude.toFixed(6)},{" "}
+                                        {coordinates.longitude.toFixed(6)}
+                                    </span>
+                                    <Pencil className="h-3 w-3 cursor-pointer hover:text-foreground transition-colors" />
+                                </>
                             ) : (
                                 <span>Loading coordinates...</span>
                             )}
                         </div>
                         <div>
-                            Last updated: {new Date().toLocaleDateString()}
+                            Last Updated:{" "}
+                            {new Date().toLocaleDateString("en-US", {
+                                month: "2-digit",
+                                day: "2-digit",
+                                year: "numeric",
+                            })}
                         </div>
                     </div>
                 </div>
