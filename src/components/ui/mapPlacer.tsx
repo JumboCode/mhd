@@ -1,7 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { Map, MapMarker, MarkerContent, useMap } from "@/components/ui/map";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+    Map,
+    MapMarker,
+    MarkerContent,
+    useMap,
+    type MapRef,
+} from "@/components/ui/map";
 import {
     Dialog,
     DialogContent,
@@ -73,10 +79,24 @@ export const MapPlacer = ({
     } | null>(null);
     const [saving, setSaving] = useState(false);
     const [mapKey, setMapKey] = useState(0);
+    const mapRef = useRef<MapRef>(null);
 
     useEffect(() => {
         setMounted(true);
     }, []);
+
+    useEffect(() => {
+        if (
+            !coordinates?.latitude ||
+            !coordinates?.longitude ||
+            !mapRef.current
+        )
+            return;
+        mapRef.current.jumpTo({
+            center: [coordinates.longitude, coordinates.latitude],
+            zoom: 12,
+        });
+    }, [coordinates]);
 
     const fetchSchoolCoordinates = useCallback(async () => {
         try {
@@ -198,6 +218,7 @@ export const MapPlacer = ({
         <>
             <div className="relative w-full h-full">
                 <Map
+                    ref={mapRef}
                     key={mapKey}
                     center={
                         coordinates?.longitude != null &&
