@@ -17,7 +17,7 @@ import "../app/fonts/interstate-bold-normal";
 
 export function downloadGraphs(cart: string[], filterNames: string[]) {
     // Displays toast when there are no images to export
-    if (cart.length == 0) {
+    if (cart.length === 0) {
         toast.error("Cart is empty");
     }
 
