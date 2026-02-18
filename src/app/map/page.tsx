@@ -29,7 +29,8 @@ const counties = Object.values(countiesData).map((county) => ({
 }));
 
 export default function HeatMapPage() {
-    const [schoolPoints, setSchoolPoints] = useState<any>(null);
+    const [schoolPoints, setSchoolPoints] =
+        useState<GeoJSON.FeatureCollection | null>(null);
 
     // Controlled by dropdowns
     // Year dropdown, set to range of our data
@@ -39,6 +40,7 @@ export default function HeatMapPage() {
     const [metric, setMetric] = useState<string>("Projects");
 
     // Reference to the map, needed for updating the heat layer
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const mapRef = useRef<any>(null);
 
     // Boolean to hide/show schools
@@ -111,9 +113,9 @@ export default function HeatMapPage() {
         // Heat layer, retrieve source from fetch data on page load
         const updateHeatLayer = () => {
             // Filter to only include schools with data for the selected metric
-            const allFeatures = schoolPoints.features || [];
+            const allFeatures = schoolPoints?.features || [];
             const filteredFeatures = allFeatures.filter(
-                (f: any) => (f.properties[metric] || 0) > 0,
+                (f: GeoJSON.Feature) => (f.properties?.[metric] || 0) > 0,
             );
             const filteredData = {
                 ...schoolPoints,
@@ -122,7 +124,7 @@ export default function HeatMapPage() {
 
             // Calculate maximum for weight based on the max by metric
             const values = filteredFeatures.map(
-                (f: any) => f.properties[metric] || 0,
+                (f: GeoJSON.Feature) => f.properties?.[metric] || 0,
             );
             const maxValue = Math.max(...values, 1);
 
@@ -237,15 +239,21 @@ export default function HeatMapPage() {
 
             // Tooltips displaying information on hover
             // Only when schools are shown, does not appear otherwise.
-            map.on("mouseenter", "school-icons", (e: any) => {
-                map.getCanvas().style.cursor = "pointer";
+            map.on(
+                "mouseenter",
+                "school-icons",
+                (e: maplibregl.MapLayerMouseEvent) => {
+                    map.getCanvas().style.cursor = "pointer";
 
-                const feature = e.features[0];
-                const coordinates = feature.geometry.coordinates.slice();
-                const { name } = feature.properties;
-                const value = feature.properties[metric] || 0;
+                    const feature = e.features?.[0];
+                    if (!feature) return;
+                    const coordinates = (
+                        feature.geometry as GeoJSON.Point
+                    ).coordinates.slice() as [number, number];
+                    const { name } = feature.properties;
+                    const value = feature.properties[metric] || 0;
 
-                const html = `
+                    const html = `
                     <div style="
                         background: white; 
                         padding: 16px; 
@@ -263,25 +271,26 @@ export default function HeatMapPage() {
                     </div>
                 `;
 
-                // Place popup right above the point
-                popup.setLngLat(coordinates).setHTML(html).addTo(map);
+                    // Place popup right above the point
+                    popup.setLngLat(coordinates).setHTML(html).addTo(map);
 
-                const popupElement = popup.getElement();
-                if (popupElement) {
-                    const content = popupElement.querySelector(
-                        ".maplibregl-popup-content",
-                    ) as HTMLElement;
-                    const tip = popupElement.querySelector(
-                        ".maplibregl-popup-tip",
-                    ) as HTMLElement;
-                    if (content) {
-                        content.style.background = "transparent";
-                        content.style.boxShadow = "none";
-                        content.style.padding = "0";
+                    const popupElement = popup.getElement();
+                    if (popupElement) {
+                        const content = popupElement.querySelector(
+                            ".maplibregl-popup-content",
+                        ) as HTMLElement;
+                        const tip = popupElement.querySelector(
+                            ".maplibregl-popup-tip",
+                        ) as HTMLElement;
+                        if (content) {
+                            content.style.background = "transparent";
+                            content.style.boxShadow = "none";
+                            content.style.padding = "0";
+                        }
+                        if (tip) tip.style.display = "none";
                     }
-                    if (tip) tip.style.display = "none";
-                }
-            });
+                },
+            );
 
             // On hover off, remove popup
             map.on("mouseleave", "school-icons", () => {

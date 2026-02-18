@@ -13,6 +13,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { schools, projects, yearlyTeacherParticipation } from "@/lib/schema";
 import { eq, isNotNull } from "drizzle-orm";
+
 export async function GET(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url);
@@ -55,24 +56,24 @@ export async function GET(req: NextRequest) {
             .from(yearlyTeacherParticipation)
             .where(eq(yearlyTeacherParticipation.year, currentYear));
 
-        const mapData: any[] = [];
+        const mapData: GeoJSON.Feature[] = [];
 
         // Calculate counts, populate geoJSON for that year
         schoolsPerYear.forEach((school) => {
-            let currentID = school.id;
+            const currentID = school.id;
             let totalProjects = 0;
             let totalStudents = 0;
             let totalTeachers = 0;
 
             projectsPerYear.forEach((project) => {
-                if (currentID == project.schoolId) {
+                if (currentID === project.schoolId) {
                     totalProjects++;
                     totalStudents += project.num_students;
                 }
             });
 
             teachersPerYear.forEach((teacher) => {
-                if (currentID == teacher.schoolId) {
+                if (currentID === teacher.schoolId) {
                     totalTeachers++;
                 }
             });
@@ -97,7 +98,7 @@ export async function GET(req: NextRequest) {
             }
         });
 
-        let collection = {
+        const collection = {
             type: "FeatureCollection",
             crs: {
                 type: "name",
