@@ -202,7 +202,7 @@ export default function SpreadsheetState() {
                     setTab(
                         <SpreadsheetPreviewFail
                             fileName={file?.name ?? "None"}
-                            numRows={0}
+                            numRows={report.calculatedNumRows}
                             errorReport={report}
                         />,
                     );
