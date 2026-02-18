@@ -329,16 +329,16 @@ export default function MultiLineGraph({
                 .attr("cy", (d) => y(d.y));
 
             // Animate points appearing only on first render
-            if (isFirstRender.current) {
-                circlesUpdate
-                    .attr("opacity", 0)
-                    .transition()
-                    .delay(500)
-                    .duration(1000)
-                    .attr("opacity", 1);
-            } else {
-                circlesUpdate.attr("opacity", 1);
-            }
+            // if (isFirstRender.current) {
+            //     circlesUpdate
+            //         .attr("opacity", 0)
+            //         .transition()
+            //         .delay(500)
+            //         .duration(1000)
+            //         .attr("opacity", 1);
+            // } else {
+            circlesUpdate.attr("opacity", 1);
+            // }
         });
 
         // Mark that first render is complete
