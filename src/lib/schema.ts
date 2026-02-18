@@ -11,7 +11,6 @@ import {
 } from "drizzle-orm/pg-core";
 
 // Represents metadata (relatively unchanging data) about a school
-
 export const schools = pgTable("schools", {
     id: serial("id").primaryKey(),
     name: text("name").notNull(),

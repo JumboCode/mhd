@@ -16,6 +16,7 @@ import {
     ChevronDown,
     LineChart,
     Link,
+    PlusCircle,
     Share,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -41,7 +42,13 @@ import {
     parseAsString,
     parseAsArrayOf,
 } from "nuqs";
-import { downloadGraph } from "@/lib/export-to-pdf";
+import { addToCart, downloadSingleGraph } from "@/lib/export-to-pdf";
+import {
+    HoverCard,
+    HoverCardContent,
+    HoverCardTrigger,
+} from "@/components/ui/hover-card";
+import { Cart } from "@/components/Cart";
 
 type Project = {
     id: number;
@@ -148,6 +155,10 @@ export default function GraphsPage() {
         parseAsString.withDefault(""),
     );
 
+    const [cart, setCart] = useState<string[]>([]);
+
+    const [filterNames, setFilterNames] = useState<string[]>([]);
+
     const filters: Filters = useMemo(
         () => ({
             individualProjects: true,
@@ -211,6 +222,34 @@ export default function GraphsPage() {
         fetchGatewayCities();
     }, []);
 
+    /* Fetch and set cart to and from session storage to persist between refreshes */
+
+    const filterName = `Projects by ${groupByLabels[filters.groupBy]}`;
+
+    // Fetch all graphs from session storage on load
+    useEffect(() => {
+        const cartStorage = sessionStorage.getItem("cartStorage");
+        const cartNameStorage = sessionStorage.getItem("cartNameStorage");
+
+        if (cartStorage) {
+            setCart(JSON.parse(cartStorage));
+        }
+
+        if (cartNameStorage) {
+            setFilterNames(JSON.parse(cartNameStorage));
+        }
+    }, []);
+
+    // Update cart in session storage when user changes cart
+    useEffect(() => {
+        sessionStorage.setItem("cartStorage", JSON.stringify(cart));
+    }, [cart]);
+
+    // Update cart names when use changes the filters
+    useEffect(() => {
+        sessionStorage.setItem("cartNameStorage", JSON.stringify(filterNames));
+    }, [filterNames]);
+
     // Sync tempYearRange with yearRange only when popover opens in custom mode
     useEffect(() => {
         if (yearRangeOpen && timePeriod === "custom") {
@@ -218,7 +257,6 @@ export default function GraphsPage() {
         }
     }, [yearRangeOpen, timePeriod, yearRange]);
 
-    // Could break when loggin in using liveshare? (network url issue w/ "npm run dev")
     const copyURLtoClipboard = async () => {
         try {
             const url = window.location.href;
@@ -533,11 +571,49 @@ export default function GraphsPage() {
                                     variant="outline"
                                     size="sm"
                                     className="flex items-center gap-2"
-                                    onClick={() => downloadGraph(svgRef)}
+                                    onClick={() => downloadSingleGraph(svgRef)}
                                 >
                                     <Share className="w-4 h-4" />
                                     Export
                                 </Button>
+                                <HoverCard>
+                                    <HoverCardTrigger
+                                        delay={10}
+                                        closeDelay={100}
+                                        render={
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="flex items-center gap-2"
+                                                onClick={() =>
+                                                    addToCart(
+                                                        svgRef,
+                                                        cart,
+                                                        setCart,
+                                                        filterNames,
+                                                        setFilterNames,
+                                                        filterName,
+                                                    )
+                                                }
+                                            >
+                                                <PlusCircle className="w-4 h-4" />
+                                                Add to
+                                            </Button>
+                                        }
+                                    />
+                                    <HoverCardContent
+                                        className="flex flex-col gap-0.5 mt-2"
+                                        align="end"
+                                    >
+                                        <Cart
+                                            filterNames={filterNames}
+                                            cart={cart}
+                                            setCart={setCart}
+                                            setFilterNames={setFilterNames}
+                                        />
+                                    </HoverCardContent>
+                                </HoverCard>
+
                                 <Button
                                     variant="outline"
                                     size="sm"
