@@ -132,7 +132,7 @@ export default function SchoolProfilePage() {
                 </div>
 
                 {/* School location map */}
-                <div className="border border-border rounded-lg p-6">
+                <div className="border border-border rounded-lg px-6 py-4">
                     <h2 className="text-xl font-semibold mb-4 text-foreground">
                         School Location
                     </h2>
@@ -148,14 +148,13 @@ export default function SchoolProfilePage() {
                             {coordinates &&
                             coordinates.latitude !== null &&
                             coordinates.longitude !== null ? (
-                                <>
+                                <div className="bg-muted text-black px-2 rounded border">
                                     <span>
                                         Coordinates:{" "}
                                         {coordinates.latitude.toFixed(6)},{" "}
                                         {coordinates.longitude.toFixed(6)}
                                     </span>
-                                    <Pencil className="h-3 w-3 cursor-pointer hover:text-foreground transition-colors" />
-                                </>
+                                </div>
                             ) : (
                                 <span>Loading coordinates...</span>
                             )}
