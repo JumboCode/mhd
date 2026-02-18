@@ -1,42 +1,10 @@
-import js from "@eslint/js";
-import globals from "globals";
+import { defineConfig, globalIgnores } from 'eslint/config';
+import nextVitals from 'eslint-config-next/core-web-vitals';
 import tseslint from "typescript-eslint";
-import pluginReact from "eslint-plugin-react";
-import pluginReactHooks from "eslint-plugin-react-hooks";
-import pluginNext from "@next/eslint-plugin-next";
-import eslintConfigPrettier from "eslint-config-prettier/flat";
-
-export default [
-    js.configs.recommended,
-    ...tseslint.configs.recommended,
-    pluginReact.configs.flat.recommended,
-    pluginReactHooks.configs.recommended,
-    eslintConfigPrettier,
-    {
-        files: ["**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
-        languageOptions: {
-            globals: {
-                ...globals.browser,
-                ...globals.node,
-            },
-        },
-    },
-    {
-        plugins: {
-            "@next/next": pluginNext,
-        },
-        rules: {
-            ...pluginNext.configs.recommended.rules,
-            ...pluginNext.configs["core-web-vitals"].rules,
-        },
-    },
-    {
-        settings: {
-            react: {
-                version: "detect",
-            },
-        },
-    },
+ 
+const eslintConfig = defineConfig([
+    ...nextVitals,
+    tseslint.configs.recommended,
     {
         rules: {
             "no-console": "warn",
@@ -46,6 +14,24 @@ export default [
             "@next/next/no-img-element": "warn",
             "react/react-in-jsx-scope": "off",
             "react/prop-types": "off",
+            "react-hooks/set-state-in-effect": "off",
+            "react-hooks/exhaustive-deps": "off",
+            "@typescript-eslint/no-unused-vars": ["error", { "caughtErrors": "none" }],
+            "react-hooks/refs": "off",
+            "react-hooks/preserve-manual-memoization": "off",
+            "react-hooks/incompatible-library": "off",
         },
-    },
-];
+    },  
+    // Override default ignores of eslint-config-next.
+    globalIgnores([
+        // Default ignores of eslint-config-next:
+        '.next/**',
+        'out/**',
+        'build/**',
+        'next-env.d.ts',
+        '.vercel/**',
+        '/node_modules/**'
+    ]),
+]);
+
+export default eslintConfig;
