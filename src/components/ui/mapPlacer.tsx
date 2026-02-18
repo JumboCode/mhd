@@ -1,13 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import {
-    Map,
-    MapMarker,
-    MarkerContent,
-    MapControls,
-    useMap,
-} from "@/components/ui/map";
+import { Map, MapMarker, MarkerContent, useMap } from "@/components/ui/map";
 import {
     Dialog,
     DialogContent,
@@ -71,7 +65,6 @@ export const MapPlacer = ({
         null,
     );
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
     const [editDialogOpen, setEditDialogOpen] = useState(false);
     const [newPin, setNewPin] = useState<{
         latitude: number;
@@ -87,7 +80,6 @@ export const MapPlacer = ({
     const fetchSchoolCoordinates = useCallback(async () => {
         try {
             setLoading(true);
-            setError(null);
 
             const url = `/api/schools/${encodeURIComponent(schoolId)}`;
             const response = await fetch(url);
@@ -151,12 +143,12 @@ export const MapPlacer = ({
                         }
                     }
                 }
-                setError("School coordinates not found");
+                toast.error("School coordinates not found");
             }
-        } catch (err) {
+        } catch (error) {
             const errorMsg =
-                err instanceof Error ? err.message : "An error occurred";
-            setError(errorMsg);
+                error instanceof Error ? error.message : "An error occurred";
+            toast.error(errorMsg);
         } finally {
             setLoading(false);
         }
@@ -208,12 +200,13 @@ export const MapPlacer = ({
             setCoordinates(updatedCoords);
             onCoordinatesLoaded?.(updatedCoords);
             setEditDialogOpen(false);
-            setError(null);
             setMapKey((k) => k + 1);
             toast.success("School location updated successfully!");
-        } catch (err) {
+        } catch (error) {
             const errorMsg =
-                err instanceof Error ? err.message : "Failed to save location";
+                error instanceof Error
+                    ? error.message
+                    : "Failed to save location";
             toast.error(errorMsg);
         } finally {
             setSaving(false);
@@ -276,11 +269,6 @@ export const MapPlacer = ({
                     {loading && (
                         <div className="absolute top-4 left-4 text-sm text-muted-foreground">
                             Loading school location...
-                        </div>
-                    )}
-                    {error && (
-                        <div className="absolute top-4 left-4 text-sm text-red-500">
-                            {error}
                         </div>
                     )}
                 </Map>
