@@ -42,7 +42,7 @@ export function Cart({
                                 setCart,
                                 filterNames,
                                 setFilterNames,
-                                filterName,
+                                index,
                             )
                         }
                         className="text-gray-400 hover:text-red-500 p-1 pr-2 transition-colors duration-150 ease-in-out"

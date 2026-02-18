@@ -194,11 +194,8 @@ export function deleteFromCart(
     setCart: Dispatch<SetStateAction<string[]>>,
     filterNames: string[],
     setFilterNames: Dispatch<SetStateAction<string[]>>,
-    filterName: string,
+    idx: number,
 ) {
-    // Locates index where a filter occurs and removes it from cart
-    // NOTE: slightly buggy when there are multiple graphs with same name
-    var idx = filterNames.indexOf(filterName);
     setCart(cart.filter((_, index) => index !== idx));
     setFilterNames(filterNames.filter((_, index) => index !== idx));
 }
