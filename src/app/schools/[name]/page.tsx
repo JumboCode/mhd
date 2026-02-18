@@ -16,6 +16,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { SchoolProfileSkeleton } from "@/components/skeletons/SchoolProfileSkeleton";
+import { MapPlacer } from "@/components/ui/mapPlacer";
 
 // interface such that data can be blank if API is loading
 type SchoolData = {
@@ -28,6 +29,11 @@ type SchoolData = {
     instructionalModel: string;
 };
 
+type MapCoordinates = {
+    latitude: number | null;
+    longitude: number | null;
+};
+
 export default function SchoolProfilePage() {
     const params = useParams();
     const schoolName = params.name as string;
@@ -35,7 +41,7 @@ export default function SchoolProfilePage() {
     const router = useRouter();
 
     const [schoolData, setSchoolData] = useState<SchoolData | null>(null);
-    const [error, setError] = useState<string | null>(null);
+    const [coordinates, setCoordinates] = useState<MapCoordinates | null>(null);
 
     useEffect(() => {
         fetch(`/api/schools/${schoolName}`)
@@ -48,8 +54,7 @@ export default function SchoolProfilePage() {
             .then((data) => {
                 setSchoolData(data);
             })
-            .catch((error) => {
-                setError(error.message);
+            .catch(() => {
                 toast.error(
                     "Failed to load school data. Redirecting to schools page...",
                 );
@@ -59,20 +64,6 @@ export default function SchoolProfilePage() {
                 }, 2000);
             });
     }, [schoolName, router]);
-
-    // Redirect to schools page if school cannot be found
-    if (error) {
-        return (
-            <div className="h-screen w-full bg-background overflow-y-auto flex justify-center">
-                <div className="w-full flex flex-col gap-8 py-8 max-w-5xl px-6">
-                    <Breadcrumbs />
-                    <div className="p-4 bg-destructive/10 border border-destructive rounded-md text-destructive">
-                        {error}
-                    </div>
-                </div>
-            </div>
-        );
-    }
 
     if (!schoolData) {
         return <SchoolProfileSkeleton />;
@@ -121,6 +112,44 @@ export default function SchoolProfilePage() {
                         className="col-span-2"
                     />
                     <PlaceholderCard title="% Highschool" />
+                </div>
+
+                {/* School location map */}
+                <div className="border border-border rounded-lg px-6 py-4 space-y-4">
+                    <h2 className="text-xl font-semibold mb-4 text-foreground">
+                        School Location
+                    </h2>
+                    <div className="h-80 rounded-lg overflow-hidden border border-border">
+                        <MapPlacer
+                            schoolId={schoolName}
+                            schoolName={schoolData.name}
+                            onCoordinatesLoaded={setCoordinates}
+                        />
+                    </div>
+                    <div className="mt-3 text-sm text-muted-foreground flex justify-between items-center">
+                        <div className="flex items-center gap-1.5">
+                            {coordinates &&
+                                coordinates.latitude !== null &&
+                                coordinates.longitude !== null && (
+                                    <div className="bg-muted text-black px-2 rounded border">
+                                        <span>
+                                            Coordinates:{" "}
+                                            {coordinates.latitude.toFixed(6)},{" "}
+                                            {coordinates.longitude.toFixed(6)}
+                                        </span>
+                                    </div>
+                                )}
+                        </div>
+                        <div>
+                            {/* TO DO: Replace with actual dates from db */}
+                            Last Updated:{" "}
+                            {new Date().toLocaleDateString("en-US", {
+                                month: "2-digit",
+                                day: "2-digit",
+                                year: "numeric",
+                            })}
+                        </div>
+                    </div>
                 </div>
 
                 {/* Data table placeholder */}

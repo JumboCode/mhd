@@ -15,6 +15,60 @@ import { db } from "@/lib/db";
 import { schools, projects, yearlyTeacherParticipation } from "@/lib/schema";
 import { eq, sql, and, sum } from "drizzle-orm";
 
+export async function PATCH(
+    req: NextRequest,
+    { params }: { params: Promise<{ name: string }> },
+) {
+    try {
+        const { name } = await params;
+        const searchName = name.replace(/-/g, " ");
+
+        const body = await req.json();
+        const { latitude, longitude } = body;
+
+        if (
+            typeof latitude !== "number" ||
+            typeof longitude !== "number" ||
+            isNaN(latitude) ||
+            isNaN(longitude)
+        ) {
+            return NextResponse.json(
+                { error: "Invalid latitude or longitude" },
+                { status: 400 },
+            );
+        }
+
+        const schoolResult = await db
+            .select({ id: schools.id })
+            .from(schools)
+            .where(eq(sql`LOWER(${schools.name})`, searchName.toLowerCase()))
+            .limit(1);
+
+        if (!schoolResult || schoolResult.length === 0) {
+            return NextResponse.json(
+                { error: "School not found" },
+                { status: 404 },
+            );
+        }
+
+        await db
+            .update(schools)
+            .set({ latitude, longitude })
+            .where(eq(schools.id, schoolResult[0].id));
+
+        return NextResponse.json({
+            message: "School location updated successfully",
+            latitude,
+            longitude,
+        });
+    } catch (error) {
+        return NextResponse.json(
+            { error: "Internal server error: " + (error as Error).message },
+            { status: 500 },
+        );
+    }
+}
+
 export async function GET(
     req: NextRequest,
     { params }: { params: Promise<{ name: string }> },
@@ -81,6 +135,8 @@ export async function GET(
         return NextResponse.json({
             name: school.name,
             town: school.town,
+            latitude: school.latitude,
+            longitude: school.longitude,
             studentCount: studentCount[0]?.total
                 ? Number(studentCount[0].total)
                 : 0,
