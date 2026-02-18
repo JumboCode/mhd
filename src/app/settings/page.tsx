@@ -504,7 +504,7 @@ function SchoolLocationEditor() {
                             center={mapCenter}
                             zoom={12}
                             scrollZoom={true}
-                            dragPan={editing}
+                            dragPan={true}
                             dragRotate={false}
                             doubleClickZoom={editing}
                             touchZoomRotate={editing}
@@ -544,18 +544,20 @@ function SchoolLocationEditor() {
                                 className="absolute top-3 right-3 z-10 flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium shadow-sm hover:bg-gray-50 transition-colors"
                             >
                                 <Pencil className="h-3.5 w-3.5" />
-                                Edit
+                                Edit Location
                             </button>
                         )}
                     </div>
 
                     {editing && (
                         <div className="flex items-center justify-between">
-                            <p className="text-sm text-gray-600">
-                                {newPin
-                                    ? `New: ${newPin.latitude.toFixed(4)}, ${newPin.longitude.toFixed(4)}`
-                                    : "Click on the map to set a new location"}
-                            </p>
+                            <div className="text-sm">
+                                {newPin ? (
+                                    <div className="bg-muted text-black px-2 rounded border">{`New location: ${newPin.latitude.toFixed(4)}, ${newPin.longitude.toFixed(4)}`}</div>
+                                ) : (
+                                    "Click on the map to set a new location"
+                                )}
+                            </div>
                             <div className="flex gap-2">
                                 <button
                                     onClick={handleCancel}
