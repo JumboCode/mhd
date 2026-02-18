@@ -517,13 +517,7 @@ function SchoolLocationEditor() {
                                         latitude={selectedSchool.latitude}
                                     >
                                         <MarkerContent>
-                                            <div
-                                                className={`flex h-8 w-8 items-center justify-center rounded-full shadow-lg border-2 border-white transition-colors ${
-                                                    newPin
-                                                        ? "bg-red-500/60"
-                                                        : "bg-red-500"
-                                                }`}
-                                            />
+                                            <div className="flex h-4 w-4 items-center justify-center rounded-full bg-red-500/60 border-2 border-red-500 shadow-lg" />
                                         </MarkerContent>
                                     </MapMarker>
                                 )}
@@ -534,7 +528,7 @@ function SchoolLocationEditor() {
                                     latitude={newPin.latitude}
                                 >
                                     <MarkerContent>
-                                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500 shadow-lg border-2 border-white" />
+                                        <div className="flex h-4 w-4 items-center justify-center rounded-full bg-blue-500/60 border-2 border-blue-500 shadow-lg" />
                                     </MarkerContent>
                                 </MapMarker>
                             )}
@@ -543,10 +537,6 @@ function SchoolLocationEditor() {
                                     onMapClick={handleMapClick}
                                 />
                             )}
-                            <MapControls
-                                showZoom={true}
-                                position="bottom-right"
-                            />
                         </Map>
                         {!editing && (
                             <button
