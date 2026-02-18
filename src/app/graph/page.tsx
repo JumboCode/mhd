@@ -598,7 +598,10 @@ export default function GraphsPage() {
                                             </Button>
                                         }
                                     />
-                                    <HoverCardContent className="flex w-64 flex-col gap-0.5">
+                                    <HoverCardContent
+                                        className="flex flex-col gap-0.5 mt-2"
+                                        align="end"
+                                    >
                                         <Cart
                                             filterNames={filterNames}
                                             cart={cart}
