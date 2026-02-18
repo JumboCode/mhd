@@ -132,7 +132,7 @@ export default function SchoolProfilePage() {
                 </div>
 
                 {/* School location map */}
-                <div className="border border-border rounded-lg px-6 py-4">
+                <div className="border border-border rounded-lg px-6 py-4 space-y-4">
                     <h2 className="text-xl font-semibold mb-4 text-foreground">
                         School Location
                     </h2>
@@ -160,6 +160,7 @@ export default function SchoolProfilePage() {
                             )}
                         </div>
                         <div>
+                            {/* TO DO: Replace with actual dates from db */}
                             Last Updated:{" "}
                             {new Date().toLocaleDateString("en-US", {
                                 month: "2-digit",
