@@ -503,10 +503,6 @@ function SchoolLocationEditor() {
                             key={selectedSchool.id}
                             center={mapCenter}
                             zoom={12}
-                            styles={{
-                                light: "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json",
-                                dark: "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
-                            }}
                             scrollZoom={true}
                             dragPan={editing}
                             dragRotate={false}

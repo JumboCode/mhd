@@ -253,12 +253,8 @@ export const MapPlacer = ({
                             ? 12
                             : zoom
                     }
-                    styles={{
-                        light: "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json",
-                        dark: "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
-                    }}
                     scrollZoom={true}
-                    dragPan={false}
+                    dragPan={true}
                     dragRotate={false}
                     doubleClickZoom={false}
                     touchZoomRotate={false}
@@ -311,14 +307,7 @@ export const MapPlacer = ({
                         </DialogDescription>
                     </DialogHeader>
                     <div className="flex-1 rounded-lg overflow-hidden border border-border">
-                        <Map
-                            center={editMapCenter}
-                            zoom={12}
-                            styles={{
-                                light: "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json",
-                                dark: "https://basemaps.cartocdn.com/gl/voyager-nolabels-gl-style/style.json",
-                            }}
-                        >
+                        <Map center={editMapCenter} zoom={12}>
                             {/* Current location marker (red) */}
                             {coordinates &&
                                 coordinates.latitude !== null &&
@@ -328,7 +317,7 @@ export const MapPlacer = ({
                                         latitude={coordinates.latitude}
                                     >
                                         <MarkerContent>
-                                            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-red-500/60 border-2 border-red-500 shadow-lg" />
+                                            <div className="flex h-4 w-4 items-center justify-center rounded-full bg-red-500/60 border-2 border-red-500 shadow-lg" />
                                         </MarkerContent>
                                     </MapMarker>
                                 )}
@@ -339,7 +328,7 @@ export const MapPlacer = ({
                                     latitude={newPin.latitude}
                                 >
                                     <MarkerContent>
-                                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500 shadow-lg border-2 border-white" />
+                                        <div className="flex h-4 w-4 items-center justify-center rounded-full bg-blue-500/60 border-2 border-blue-500 shadow-lg" />
                                     </MarkerContent>
                                 </MapMarker>
                             )}
@@ -350,30 +339,34 @@ export const MapPlacer = ({
                             />
                         </Map>
                     </div>
-                    {newPin && (
-                        <p className="text-sm text-muted-foreground">
-                            New location: {newPin.latitude.toFixed(4)},{" "}
-                            {newPin.longitude.toFixed(4)}
-                        </p>
-                    )}
                     <DialogFooter>
-                        <button
-                            onClick={handleCancel}
-                            className="rounded-md border border-border px-4 py-2 text-sm font-medium hover:bg-accent transition-colors"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            onClick={handleSave}
-                            disabled={!newPin || saving}
-                            className={`rounded-md px-4 py-2 text-sm font-medium text-white transition-colors ${
-                                newPin && !saving
-                                    ? "bg-blue-600 hover:bg-blue-700"
-                                    : "bg-gray-300 cursor-not-allowed"
-                            }`}
-                        >
-                            {saving ? "Saving..." : "Save"}
-                        </button>
+                        <div className="w-full flex flex-row items-center justify-between">
+                            {newPin && (
+                                <p className="text-sm text-muted-foreground">
+                                    New location: {newPin.latitude.toFixed(4)},{" "}
+                                    {newPin.longitude.toFixed(4)}
+                                </p>
+                            )}
+                            <div className="space-x-2">
+                                <button
+                                    onClick={handleCancel}
+                                    className="rounded-md border border-border px-4 py-2 text-sm font-medium hover:bg-accent transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleSave}
+                                    disabled={!newPin || saving}
+                                    className={`rounded-md px-4 py-2 text-sm font-medium text-white transition-colors ${
+                                        newPin && !saving
+                                            ? "bg-blue-600 hover:bg-blue-700"
+                                            : "bg-gray-300 cursor-not-allowed"
+                                    }`}
+                                >
+                                    {saving ? "Saving..." : "Save"}
+                                </button>
+                            </div>
+                        </div>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
