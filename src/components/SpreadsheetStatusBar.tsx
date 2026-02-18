@@ -28,9 +28,9 @@ export default function StatusBar({
     const barColor = hasError ? "bg-destructive" : "bg-primary";
 
     return (
-        <div className="w-full h-3 bg-muted rounded-full">
+        <div className="w-full h-1 bg-muted rounded-full">
             <div
-                className={`h-3 ${barColor} rounded-full transition-all duration-300`}
+                className={`h-1 ${barColor} rounded-full transition-all duration-300`}
                 style={{ width: `${fillPercentage}%` }}
             ></div>
         </div>

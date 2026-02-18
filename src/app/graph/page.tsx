@@ -24,6 +24,8 @@ import BarGraph, { type BarDataset } from "@/components/BarGraph";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import GraphFilters, {
     type Filters,
+    type GroupBy,
+    type MeasuredAs,
 } from "@/components/GraphFilters/GraphFilters";
 import LineGraph from "@/components/LineGraph";
 import { Button } from "@/components/ui/button";
@@ -55,19 +57,6 @@ type Project = {
     teacherName: string;
     teacherEmail: string;
     numStudents: number;
-};
-
-const defaultFilters: Filters = {
-    individualProjects: true,
-    groupProjects: true,
-    selectedSchools: [],
-    selectedCities: [],
-    selectedProjectTypes: [],
-    teacherYearsValue: "",
-    teacherYearsOperator: "=",
-    teacherYearsValue2: undefined,
-    groupBy: "none",
-    measuredAs: "total-school-count",
 };
 
 // possible values for measured as filter
@@ -173,8 +162,8 @@ export default function GraphsPage() {
                 | "<"
                 | "between",
             teacherYearsValue2: teacherYearsValue2 || undefined,
-            groupBy: groupBy as any,
-            measuredAs: measuredAs as any,
+            groupBy: groupBy as GroupBy,
+            measuredAs: measuredAs as MeasuredAs,
         }),
         [
             selectedSchools,
@@ -236,7 +225,7 @@ export default function GraphsPage() {
             await navigator.clipboard.writeText(url);
             toast.success("URL copied to clipboard!");
         } catch (error) {
-            console.log(error);
+            toast.error("Failed to copy URL to clipboard");
         }
     };
 
@@ -732,7 +721,7 @@ export default function GraphsPage() {
 
                         {/* Chart Area */}
 
-                        {Math.round(filteredProjectCount) != 0 ? (
+                        {Math.round(filteredProjectCount) !== 0 ? (
                             <div className="flex-1 flex items-center justify-center px-8 bg-background overflow-auto">
                                 {chartType === "bar" ? (
                                     <BarGraph

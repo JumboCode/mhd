@@ -52,9 +52,24 @@ const groupByOptions = [
     { value: "project-type", label: "Project Type" },
 ];
 
+export type MeasuredAs =
+    | "total-school-count"
+    | "total-student-count"
+    | "total-city-count"
+    | "total-project-count"
+    | "total-teacher-count"
+    | "school-return-rate";
+export type GroupBy =
+    | "none"
+    | "region"
+    | "school-type"
+    | "division"
+    | "implementation-type"
+    | "project-type";
+
 export type Filters = {
-    measuredAs: string;
-    groupBy: string;
+    measuredAs: MeasuredAs;
+    groupBy: GroupBy;
     individualProjects: boolean;
     groupProjects: boolean;
     selectedSchools: string[];
@@ -82,8 +97,9 @@ export default function GraphFilters({
     onFiltersChange,
     filters,
 }: GraphFiltersProps) {
-    const [measuredAs, setMeasuredAs] = useState("total-school-count");
-    const [groupBy, setGroupBy] = useState("none");
+    const [measuredAs, setMeasuredAs] =
+        useState<MeasuredAs>("total-school-count");
+    const [groupBy, setGroupBy] = useState<GroupBy>("none");
     const [individualProjects, setIndividualProjects] = useState(true);
     const [groupProjects, setGroupProjects] = useState(true);
     const [selectedSchools, setSelectedSchools] = useState<string[]>([]);
@@ -151,12 +167,12 @@ export default function GraphFilters({
         onFiltersChange(newFilters);
     };
 
-    const handleMeasuredAsChange = (value: string) => {
+    const handleMeasuredAsChange = (value: MeasuredAs) => {
         setMeasuredAs(value);
         updateFilters({ measuredAs: value });
     };
 
-    const handleGroupByChange = (value: string) => {
+    const handleGroupByChange = (value: GroupBy) => {
         setGroupBy(value);
         updateFilters({ groupBy: value });
     };
@@ -277,7 +293,9 @@ export default function GraphFilters({
                 <Combobox
                     options={measuredAsOptions}
                     value={measuredAs}
-                    onChange={handleMeasuredAsChange}
+                    onChange={(value) =>
+                        handleMeasuredAsChange(value as MeasuredAs)
+                    }
                 />
             </div>
 
@@ -292,7 +310,7 @@ export default function GraphFilters({
                 <Combobox
                     options={groupByOptions}
                     value={groupBy}
-                    onChange={handleGroupByChange}
+                    onChange={(value) => handleGroupByChange(value as GroupBy)}
                 />
             </div>
 

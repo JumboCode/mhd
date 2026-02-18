@@ -89,8 +89,8 @@ export async function POST(req: NextRequest) {
                 where: eq(schools.schoolId, schoolIdValue),
             });
 
-            let schoolName = row[COLUMN_INDICES.schoolName] as string;
-            let schoolTown = row[COLUMN_INDICES.city] as string;
+            const schoolName = row[COLUMN_INDICES.schoolName] as string;
+            const schoolTown = row[COLUMN_INDICES.city] as string;
 
             if (!school) {
                 const [inserted] = await db
