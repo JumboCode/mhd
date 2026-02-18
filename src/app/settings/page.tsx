@@ -16,13 +16,7 @@ import { MultiSelectCombobox } from "../../components/ui/multi-select-combobox";
 import { Trash, Plus, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/Combobox";
-import {
-    Map,
-    MapMarker,
-    MarkerContent,
-    MapControls,
-    useMap,
-} from "@/components/ui/map";
+import { Map, MapMarker, MarkerContent, useMap } from "@/components/ui/map";
 import { toast } from "sonner";
 
 interface PermittedUser {
@@ -476,8 +470,8 @@ function SchoolLocationEditor() {
     };
 
     const mapCenter: [number, number] =
-        selectedSchool?.longitude != null && selectedSchool?.latitude != null
-            ? [selectedSchool.longitude, selectedSchool.latitude]
+        selectedSchool?.longitude && selectedSchool?.latitude
+            ? [selectedSchool?.longitude, selectedSchool?.latitude]
             : [-72, 42.272];
 
     return (
@@ -511,8 +505,8 @@ function SchoolLocationEditor() {
                             touchZoomRotate={editing}
                         >
                             {/* Current school location (red) */}
-                            {selectedSchool.latitude != null &&
-                                selectedSchool.longitude != null && (
+                            {selectedSchool.latitude &&
+                                selectedSchool.longitude && (
                                     <MapMarker
                                         longitude={selectedSchool.longitude}
                                         latitude={selectedSchool.latitude}

@@ -208,7 +208,7 @@ export const MapPlacer = ({
 
     // Compute map center for the edit dialog
     const editMapCenter: [number, number] =
-        coordinates?.longitude != null && coordinates?.latitude != null
+        coordinates?.longitude && coordinates?.latitude
             ? [coordinates.longitude, coordinates.latitude]
             : center;
 
@@ -221,14 +221,12 @@ export const MapPlacer = ({
                     ref={mapRef}
                     key={mapKey}
                     center={
-                        coordinates?.longitude != null &&
-                        coordinates?.latitude != null
+                        coordinates?.longitude && coordinates?.latitude
                             ? [coordinates.longitude, coordinates.latitude]
                             : center
                     }
                     zoom={
-                        coordinates?.longitude != null &&
-                        coordinates?.latitude != null
+                        coordinates?.longitude && coordinates?.latitude
                             ? 12
                             : zoom
                     }
@@ -239,8 +237,8 @@ export const MapPlacer = ({
                     touchZoomRotate={false}
                 >
                     {coordinates &&
-                        coordinates.latitude !== null &&
-                        coordinates.longitude !== null && (
+                        coordinates.latitude &&
+                        coordinates.longitude && (
                             <MapMarker
                                 longitude={coordinates.longitude}
                                 latitude={coordinates.latitude}
@@ -285,8 +283,8 @@ export const MapPlacer = ({
                         <Map center={editMapCenter} zoom={12}>
                             {/* Current location marker (red) */}
                             {coordinates &&
-                                coordinates.latitude !== null &&
-                                coordinates.longitude !== null && (
+                                coordinates.latitude &&
+                                coordinates.longitude && (
                                     <MapMarker
                                         longitude={coordinates.longitude}
                                         latitude={coordinates.latitude}
