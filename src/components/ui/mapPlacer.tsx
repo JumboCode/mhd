@@ -273,7 +273,6 @@ export const MapPlacer = ({
                                 </MarkerContent>
                             </MapMarker>
                         )}
-                    <MapControls showZoom={true} position="bottom-right" />
                     {loading && (
                         <div className="absolute top-4 left-4 text-sm text-muted-foreground">
                             Loading school location...
@@ -333,14 +332,12 @@ export const MapPlacer = ({
                                 </MapMarker>
                             )}
                             <MapClickHandler onMapClick={handleMapClick} />
-                            <MapControls
-                                showZoom={true}
-                                position="bottom-right"
-                            />
                         </Map>
                     </div>
                     <DialogFooter>
-                        <div className="w-full flex flex-row items-center justify-between">
+                        <div
+                            className={`w-full flex flex-row items-center ${newPin ? "justify-between" : "justify-end"}`}
+                        >
                             {newPin && (
                                 <p className="text-sm text-muted-foreground">
                                     New location: {newPin.latitude.toFixed(4)},{" "}
