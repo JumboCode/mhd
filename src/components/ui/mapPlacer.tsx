@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Pencil, MapPin } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface SchoolCoordinates {
     latitude: number | null;
@@ -272,13 +273,15 @@ export const MapPlacer = ({
                         </div>
                     )}
                 </Map>
-                <button
+                <Button
+                    variant="outline"
+                    size="sm"
                     onClick={handleEditClick}
-                    className="absolute top-3 right-3 z-10 flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-sm font-medium shadow-sm hover:bg-accent transition-colors"
+                    className="absolute top-3 right-3 z-10 shadow-sm"
                 >
                     <Pencil className="h-3.5 w-3.5" />
                     Edit Location
-                </button>
+                </Button>
             </div>
 
             <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
@@ -327,29 +330,24 @@ export const MapPlacer = ({
                             className={`w-full flex flex-row items-center ${newPin ? "justify-between" : "justify-end"}`}
                         >
                             {newPin && (
-                                <p className="text-sm text-muted-foreground">
+                                <div className="bg-muted text-sm text-black px-2 rounded border">
                                     New location: {newPin.latitude.toFixed(4)},{" "}
                                     {newPin.longitude.toFixed(4)}
-                                </p>
+                                </div>
                             )}
                             <div className="space-x-2">
-                                <button
+                                <Button
+                                    variant="outline"
                                     onClick={handleCancel}
-                                    className="rounded-md border border-border px-4 py-2 text-sm font-medium hover:bg-accent transition-colors"
                                 >
                                     Cancel
-                                </button>
-                                <button
+                                </Button>
+                                <Button
                                     onClick={handleSave}
                                     disabled={!newPin || saving}
-                                    className={`rounded-md px-4 py-2 text-sm font-medium text-white transition-colors ${
-                                        newPin && !saving
-                                            ? "bg-blue-600 hover:bg-blue-700"
-                                            : "bg-gray-300 cursor-not-allowed"
-                                    }`}
                                 >
                                     {saving ? "Saving..." : "Save"}
-                                </button>
+                                </Button>
                             </div>
                         </div>
                     </DialogFooter>

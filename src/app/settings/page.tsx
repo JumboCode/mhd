@@ -14,6 +14,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { MultiSelectCombobox } from "../../components/ui/multi-select-combobox";
 import { Trash, Plus, Pencil } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/Combobox";
 import {
     Map,
@@ -539,13 +540,15 @@ function SchoolLocationEditor() {
                             )}
                         </Map>
                         {!editing && (
-                            <button
+                            <Button
+                                variant="outline"
+                                size="sm"
                                 onClick={() => setEditing(true)}
-                                className="absolute top-3 right-3 z-10 flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium shadow-sm hover:bg-gray-50 transition-colors"
+                                className="absolute top-3 right-3 z-10 shadow-sm"
                             >
                                 <Pencil className="h-3.5 w-3.5" />
                                 Edit Location
-                            </button>
+                            </Button>
                         )}
                     </div>
 
@@ -559,23 +562,18 @@ function SchoolLocationEditor() {
                                 )}
                             </div>
                             <div className="flex gap-2">
-                                <button
+                                <Button
+                                    variant="outline"
                                     onClick={handleCancel}
-                                    className="rounded-md border border-gray-300 px-4 py-1.5 text-sm font-medium hover:bg-gray-50 transition-colors"
                                 >
                                     Cancel
-                                </button>
-                                <button
+                                </Button>
+                                <Button
                                     onClick={handleSave}
                                     disabled={!newPin || saving}
-                                    className={`rounded-md px-4 py-1.5 text-sm font-medium text-white transition-colors ${
-                                        newPin && !saving
-                                            ? "bg-blue-600 hover:bg-blue-700"
-                                            : "bg-gray-300 cursor-not-allowed"
-                                    }`}
                                 >
                                     {saving ? "Saving..." : "Save"}
-                                </button>
+                                </Button>
                             </div>
                         </div>
                     )}
