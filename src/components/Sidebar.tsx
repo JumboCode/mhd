@@ -11,7 +11,6 @@ import {
     Settings as SettingsIcon,
     ChevronDown,
     ChevronRight,
-    User,
     LogOut,
 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";

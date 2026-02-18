@@ -1,5 +1,4 @@
 import AuthForm from "@/components/AuthForm";
-import Dashboard from "@/components/Dashboard";
 import WarpShader from "@/components/WarpShader";
 
 export default function SignInPage() {

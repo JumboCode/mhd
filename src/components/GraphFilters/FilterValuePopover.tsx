@@ -18,7 +18,6 @@ import {
     CommandGroup,
     CommandItem,
 } from "@/components/ui/command";
-import { Check } from "lucide-react";
 
 interface FilterValuePopoverProps {
     filterType: "school" | "city" | "project-type";

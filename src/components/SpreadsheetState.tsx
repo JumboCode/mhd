@@ -22,7 +22,6 @@ import SpreadsheetConfirmation from "./SpreadsheetConfirmation";
 import SpreadsheetPreview from "./SpreadsheetPreview";
 import SpreadsheetPreviewFail from "./SpreadsheetPreviewFail";
 import SpreadsheetUpload from "./SpreadsheetUpload";
-import { requiredColumns } from "@/lib/required-spreadsheet-columns";
 import { ErrorReport, identifyErrors } from "@/lib/error-identification";
 
 export default function SpreadsheetState() {
@@ -197,8 +196,8 @@ export default function SpreadsheetState() {
 
             // Parse spreadsheet and check format
             checkFormat((jsonData) => {
-                let report: ErrorReport = identifyErrors(jsonData);
-                if (report.errors.length != 0) {
+                const report: ErrorReport = identifyErrors(jsonData);
+                if (report.errors.length !== 0) {
                     setTab(
                         <SpreadsheetPreviewFail
                             fileName={file?.name ?? "None"}

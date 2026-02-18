@@ -82,7 +82,7 @@ function pushError(report: ErrorReport, type: ErrorType, args: string[]) {
  * @returns An ErrorReport containing all detected errors.
  */
 export function identifyErrors(jsonData: SpreadsheetData | null): ErrorReport {
-    let report: ErrorReport = {
+    const report: ErrorReport = {
         errors: [],
         calculatedNumRows: 0,
     };
@@ -284,7 +284,9 @@ export function checkRequiredColumnTypes(
                     isValid = typeof cell === "boolean";
                     break;
                 case "date":
-                    isValid = !isNaN(new Date(cell as any).getTime());
+                    isValid = !isNaN(
+                        new Date(cell as string | number).getTime(),
+                    );
                     break;
                 case "string_or_number":
                     isValid = typeof cell === "string" || !isNaN(Number(cell));
