@@ -52,6 +52,7 @@ export default function Dashboard() {
             <h1 className="text-2xl font-semibold">Overview Dashboard</h1>
             <div className="">
                 <YearDropdown
+                    showDataIndicator={true}
                     selectedYear={year}
                     onYearChange={(selectedYear) => {
                         if (selectedYear !== null) {

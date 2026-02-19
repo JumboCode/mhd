@@ -327,7 +327,11 @@ export default function HeatMapPage() {
                         selectedCount={metric}
                         onCountChange={setMetric}
                     />
-                    <YearDropdown selectedYear={year} onYearChange={setYear} />
+                    <YearDropdown
+                        showDataIndicator={true}
+                        selectedYear={year}
+                        onYearChange={setYear}
+                    />
                 </div>
                 <Button onClick={handleClick} className="w-32 py-2">
                     {showSchools ? "Hide Schools" : "Show Schools"}
