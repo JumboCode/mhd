@@ -92,23 +92,26 @@ export default function YearDropdown({
     const isAtNewestYear = year === years[0];
 
     return (
-        <div className="flex items-stretch w-[180px]">
+        <div className="flex items-stretch w-[180px] shadow-sm rounded-md">
+            {/* Left Arrow Button */}
             <Button
                 variant="outline"
                 onClick={handlePreviousYear}
                 disabled={!year || isAtOldestYear}
-                className="h-10 w-10 rounded-r-none border-r-0 shadow-none"
+                className="h-9 w-10 rounded-r-none border-r-0 shadow-none z-[1]"
             >
                 <ChevronLeft className="h-4 w-4" />
             </Button>
+
+            {/* Multi-year Dropdown */}
             <Select
                 value={year?.toString() ?? ""}
                 onValueChange={handleValueChange}
             >
-                <SelectTrigger className="w-[100px] rounded-none h-10 text-center shadow-none">
+                <SelectTrigger className="w-[100px] rounded-none h-9 text-center shadow-none z-[10]">
                     <SelectValue placeholder="Select a year" />
                 </SelectTrigger>
-                <SelectContent className="z-[9999]">
+                <SelectContent className="z-[10]">
                     {years.map((y) => (
                         <SelectItem
                             key={y}
@@ -130,11 +133,13 @@ export default function YearDropdown({
                     ))}
                 </SelectContent>
             </Select>
+
+            {/* Right Arrow Button */}
             <Button
                 variant="outline"
                 onClick={handleNextYear}
                 disabled={!year || isAtNewestYear}
-                className="h-10 w-10 rounded-l-none border-l-0 shadow-none"
+                className="h-9 w-10 rounded-l-none border-l-0 shadow-none z-[1]"
             >
                 <ChevronRight className="h-4 w-4" />
             </Button>
