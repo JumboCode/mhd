@@ -35,6 +35,13 @@ export default function BarGraph({
     svgRefCopy,
 }: BarGraphProps) {
     const svgRef = useRef<SVGSVGElement | null>(null);
+    const wrapperRef = useRef<HTMLDivElement | null>(null);
+    const tooltipRef = useRef<d3.Selection<
+        HTMLDivElement,
+        unknown,
+        null,
+        undefined
+    > | null>(null);
 
     // Use same color scheme as LineGraph
     //const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
@@ -43,7 +50,9 @@ export default function BarGraph({
     );
 
     useEffect(() => {
-        if (!svgRef.current || dataset.length === 0) return;
+        if (!svgRef.current || !wrapperRef.current || dataset.length === 0) {
+            return;
+        }
 
         const width = 1000;
         const height = 400;
@@ -57,6 +66,25 @@ export default function BarGraph({
 
         const svg = d3.select(svgRef.current);
         svg.selectAll("*").remove(); // clear previous render
+
+        if (!tooltipRef.current) {
+            tooltipRef.current = d3
+                .select(wrapperRef.current)
+                .append("div")
+                .attr("class", "d3-tooltip")
+                .style("position", "absolute")
+                .style("opacity", 0)
+                .style("background", "black")
+                .style("color", "white")
+                .style("padding", "0.5rem")
+                .style("border-radius", "0.375rem")
+                .style("font-size", "0.875rem")
+                .style("pointer-events", "none")
+                .style("transform", "translate(-50%, -125%)")
+                .style("z-index", "1000");
+        }
+
+        const tooltip = tooltipRef.current;
 
         // Flatten data to determine axis domains
         const allPoints = dataset.flatMap((d) => d.data);
@@ -74,6 +102,39 @@ export default function BarGraph({
             .nice()
             .range([height - margin.bottom, margin.top]);
 
+        const positionTooltip = (
+            event: MouseEvent | FocusEvent,
+            d: { x: string | number; y: number },
+        ) => {
+            const wrapperRect = wrapperRef.current?.getBoundingClientRect();
+            if (!wrapperRect || !tooltip) return;
+
+            let clientX: number;
+            let clientY: number;
+
+            if (event.type === "focus") {
+                const bar = event.target as SVGPathElement;
+                const barRect = bar.getBoundingClientRect();
+                clientX = barRect.left + barRect.width / 2;
+                clientY = barRect.top + barRect.height / 2;
+            } else {
+                const mouseEvent = event as MouseEvent;
+                clientX = mouseEvent.clientX;
+                clientY = mouseEvent.clientY;
+            }
+
+            const wrapperX = clientX - wrapperRect.left;
+            const wrapperY = clientY - wrapperRect.top;
+
+            tooltip
+                .text(String(d.y))
+                .transition()
+                .duration(100)
+                .style("opacity", 1)
+                .style("left", `${wrapperX}px`)
+                .style("top", `${wrapperY}px`);
+        };
+
         // Draw bars
         const barWidth = x.bandwidth() / dataset.length;
 
@@ -84,6 +145,25 @@ export default function BarGraph({
                 .append("path")
                 .attr("fill", colorScale(ds.label))
                 .attr("stroke-width", 1)
+                .style("cursor", "pointer")
+                .attr("tabindex", 0)
+                .on("mouseover focus", function (event, d) {
+                    d3.select(this)
+                        .transition()
+                        .duration(100)
+                        .attr("opacity", 0.85);
+                    positionTooltip(event, d);
+                })
+                .on("mousemove", function (event, d) {
+                    positionTooltip(event, d);
+                })
+                .on("mouseout blur", function () {
+                    d3.select(this)
+                        .transition()
+                        .duration(100)
+                        .attr("opacity", 1);
+                    tooltip?.transition().duration(100).style("opacity", 0);
+                })
                 .attr("d", (d) => {
                     const barX = (x(String(d.x)) || 0) + i * barWidth;
                     const barY = y(d.y);
@@ -205,7 +285,7 @@ export default function BarGraph({
     }, [dataset]);
 
     return (
-        <div>
+        <div ref={wrapperRef} style={{ position: "relative" }}>
             <svg
                 ref={svgRef}
                 width={900}
