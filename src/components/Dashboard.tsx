@@ -13,13 +13,7 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
+import YearDropdown from "@/components/YearDropdown";
 
 type Stats = {
     totals: {
@@ -57,26 +51,14 @@ export default function Dashboard() {
         <div className="flex flex-col gap-8 w-full px-6 py-10">
             <h1 className="text-2xl font-semibold">Overview Dashboard</h1>
             <div className="">
-                <div className="w-40">
-                    <Select
-                        value={year.toString()}
-                        onValueChange={(value) => setYear(parseInt(value, 10))}
-                    >
-                        <SelectTrigger>
-                            <SelectValue placeholder="Select a year" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {[
-                                2026, 2025, 2024, 2023, 2022, 2021, 2020, 2019,
-                                2018,
-                            ].map((y) => (
-                                <SelectItem key={y} value={y.toString()}>
-                                    {y}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </div>
+                <YearDropdown
+                    selectedYear={year}
+                    onYearChange={(selectedYear) => {
+                        if (selectedYear !== null) {
+                            setYear(selectedYear);
+                        }
+                    }}
+                />
             </div>
 
             {stats ? (
