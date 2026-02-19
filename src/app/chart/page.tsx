@@ -68,11 +68,11 @@ type Project = {
 
 // possible values for measured as filter
 const measuredAsLabels: Record<string, string> = {
-    "total-school-count": "Total School Count",
-    "total-student-count": "Total Student Count",
-    "total-city-count": "Total City Count",
-    "total-project-count": "Total Project Count",
-    "total-teacher-count": "Total Teacher Count",
+    "total-school-count": "Total Schools",
+    "total-student-count": "Total Students",
+    "total-city-count": "Total Cities",
+    "total-project-count": "Total Projects",
+    "total-teacher-count": "Total Teachers",
     "school-return-rate": "School Return Rate",
 };
 
@@ -84,6 +84,74 @@ const groupByLabels: Record<string, string> = {
     "division": "Division",
     "implementation-type": "Implementation Type",
     "project-type": "Project Type",
+};
+
+// Helper function for generating dynamic titles
+const generateChartTitle = (
+    chartType: string,
+    measuredAs: string,
+    groupBy: string,
+    yearStart: number,
+    yearEnd: number,
+    activeFilters: {
+        schools: number;
+        cities: number;
+        projectTypes: number;
+        hasTeacherYearsFilter: boolean;
+    },
+): string => {
+    // Chart type
+    const chartTypeLabel = chartType === "bar" ? "Bar Chart" : "Line Chart";
+
+    // Measured as label
+    const measuredAsLabel = measuredAsLabels[measuredAs] || "Unknown Metric";
+
+    // Group by label
+    const groupByLabel = groupByLabels[groupBy] || "None";
+
+    // Date range
+    const dateRange =
+        yearStart === yearEnd ? `${yearStart}` : `${yearStart}-${yearEnd}`;
+
+    // Build main title
+    let mainTitle = `${chartTypeLabel} - ${measuredAsLabel}`;
+
+    // Add group by if not "None"
+    if (groupBy !== "none") {
+        mainTitle += ` by ${groupByLabel}`;
+    }
+
+    // Add date range
+    mainTitle += ` (${dateRange})`;
+
+    // Build filter details
+    const filterDetails: string[] = [];
+
+    if (activeFilters.schools > 0) {
+        filterDetails.push(
+            `${activeFilters.schools} school${activeFilters.schools > 1 ? "s" : ""}`,
+        );
+    }
+    if (activeFilters.cities > 0) {
+        filterDetails.push(
+            `${activeFilters.cities} cit${activeFilters.cities > 1 ? "ies" : "y"}`,
+        );
+    }
+    if (activeFilters.projectTypes > 0) {
+        filterDetails.push(
+            `${activeFilters.projectTypes} project type${activeFilters.projectTypes > 1 ? "s" : ""}`,
+        );
+    }
+    if (activeFilters.hasTeacherYearsFilter) {
+        filterDetails.push("teacher filter applied");
+    }
+
+    // Add filter details if any filters are active
+    if (filterDetails.length > 0) {
+        mainTitle += ` • Filtered: ${filterDetails.join(", ")}`;
+    }
+
+    return mainTitle;
 };
 
 export default function GraphsPage() {
@@ -564,7 +632,21 @@ export default function GraphsPage() {
                         {/* Header */}
                         <div className="flex items-center justify-between px-8 pt-4 shrink-0">
                             <h1 className="text-xl font-semibold text-foreground">
-                                Projects by {groupByLabels[filters.groupBy]}
+                                {generateChartTitle(
+                                    chartType,
+                                    measuredAs,
+                                    groupBy,
+                                    yearRange.start,
+                                    yearRange.end,
+                                    {
+                                        schools: selectedSchools.length,
+                                        cities: selectedCities.length,
+                                        projectTypes:
+                                            selectedProjectTypes.length,
+                                        hasTeacherYearsFilter:
+                                            teacherYearsValue !== "",
+                                    },
+                                )}
                             </h1>
                             <div className="flex gap-3">
                                 <Button
