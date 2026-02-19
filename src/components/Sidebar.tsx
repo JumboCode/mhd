@@ -51,6 +51,17 @@ export default function Sidebar() {
 
     const sections = [
         {
+            title: "ANALYSIS",
+            items: [
+                { href: "/map", label: "Map", icon: <Map size={20} /> },
+                {
+                    href: "/chart",
+                    label: "Chart",
+                    icon: <BarChart3 size={20} />,
+                },
+            ],
+        },
+        {
             title: "DATA",
             items: [
                 {
@@ -71,17 +82,6 @@ export default function Sidebar() {
                     href: "/settings",
                     label: "Settings",
                     icon: <SettingsIcon size={20} />,
-                },
-            ],
-        },
-        {
-            title: "ANALYSIS",
-            items: [
-                { href: "/map", label: "Map", icon: <Map size={20} /> },
-                {
-                    href: "/chart",
-                    label: "Chart",
-                    icon: <BarChart3 size={20} />,
                 },
             ],
         },
