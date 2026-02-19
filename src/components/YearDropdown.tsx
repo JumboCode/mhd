@@ -14,6 +14,7 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
     Select,
     SelectContent,
@@ -21,6 +22,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 
 type YearDropdownProps = {
     selectedYear?: number | null;
@@ -68,35 +70,74 @@ export default function YearDropdown({
 
     const hasData = (year: number) => yearsWithData.has(year);
 
+    const handlePreviousYear = () => {
+        const currentIndex = years.findIndex((y) => y === year);
+        if (currentIndex < years.length - 1) {
+            const newYear = years[currentIndex + 1];
+            setYear(newYear);
+            onYearChange?.(newYear);
+        }
+    };
+
+    const handleNextYear = () => {
+        const currentIndex = years.findIndex((y) => y === year);
+        if (currentIndex > 0) {
+            const newYear = years[currentIndex - 1];
+            setYear(newYear);
+            onYearChange?.(newYear);
+        }
+    };
+
+    const isAtOldestYear = year === years[years.length - 1];
+    const isAtNewestYear = year === years[0];
+
     return (
-        <Select
-            value={year?.toString() ?? ""}
-            onValueChange={handleValueChange}
-        >
-            <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Select a year" />
-            </SelectTrigger>
-            <SelectContent>
-                {years.map((y) => (
-                    <SelectItem
-                        key={y}
-                        value={y.toString()}
-                        rightContent={
-                            showDataIndicator ? (
-                                <div
-                                    className={`h-2 w-2 rounded-full shrink-0 ${
-                                        hasData(y)
-                                            ? "bg-green-500"
-                                            : "bg-red-500"
-                                    }`}
-                                />
-                            ) : null
-                        }
-                    >
-                        {y}
-                    </SelectItem>
-                ))}
-            </SelectContent>
-        </Select>
+        <div className="flex items-stretch w-[180px]">
+            <Button
+                variant="outline"
+                onClick={handlePreviousYear}
+                disabled={!year || isAtOldestYear}
+                className="h-10 w-10 rounded-r-none border-r-0 shadow-none"
+            >
+                <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Select
+                value={year?.toString() ?? ""}
+                onValueChange={handleValueChange}
+            >
+                <SelectTrigger className="w-[100px] rounded-none h-10 text-center shadow-none">
+                    <SelectValue placeholder="Select a year" />
+                </SelectTrigger>
+                <SelectContent className="z-[9999]">
+                    {years.map((y) => (
+                        <SelectItem
+                            key={y}
+                            value={y.toString()}
+                            rightContent={
+                                showDataIndicator ? (
+                                    <div
+                                        className={`h-2 w-2 rounded-full shrink-0 ${
+                                            hasData(y)
+                                                ? "bg-green-500"
+                                                : "bg-red-500"
+                                        }`}
+                                    />
+                                ) : null
+                            }
+                        >
+                            {y}
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+            <Button
+                variant="outline"
+                onClick={handleNextYear}
+                disabled={!year || isAtNewestYear}
+                className="h-10 w-10 rounded-l-none border-l-0 shadow-none"
+            >
+                <ChevronRight className="h-4 w-4" />
+            </Button>
+        </div>
     );
 }
