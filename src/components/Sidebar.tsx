@@ -53,7 +53,11 @@ export default function Sidebar() {
         {
             title: "ANALYSIS",
             items: [
-                { href: "/map", label: "Map", icon: <Map size={20} /> },
+                {
+                    href: "/map",
+                    label: "Map",
+                    icon: <Map size={20} />,
+                },
                 {
                     href: "/chart",
                     label: "Chart",
