@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { SchoolProfileSkeleton } from "@/components/skeletons/SchoolProfileSkeleton";
 import { MapPlacer } from "@/components/ui/mapPlacer";
+import { SchoolInfoRow } from "@/components/SchoolInfoRow";
 
 // interface such that data can be blank if API is loading
 type SchoolData = {
@@ -71,7 +72,7 @@ export default function SchoolProfilePage() {
 
     return (
         <div className="h-screen w-full bg-background overflow-y-auto flex justify-center">
-            <div className="w-full flex flex-col gap-8 py-8 max-w-5xl px-6">
+            <div className="w-full flex flex-col gap-6 py-8 max-w-5xl px-6">
                 <Breadcrumbs />
                 {/* Header with school name */}
                 <h1 className="text-2xl font-bold">{schoolData.name}</h1>
@@ -92,18 +93,12 @@ export default function SchoolProfilePage() {
                     />
                 </div>
 
-                {/* School information */}
-                <div className="space-y-2 text-base">
-                    <InfoRow label="Town" value={schoolData.town} />
-                    <InfoRow
-                        label="Instruction Model"
-                        value={schoolData.instructionalModel}
-                    />
-                    <InfoRow
-                        label="First Year Participating"
-                        value={schoolData.firstYear}
-                    />
-                </div>
+                {/* Info Row */}
+                <SchoolInfoRow
+                    town={schoolData.town}
+                    instructionalModel={schoolData.instructionalModel}
+                    firstYear={schoolData.firstYear}
+                />
 
                 {/* Placeholders for charts */}
                 <div className="grid grid-cols-3 gap-8">
@@ -176,16 +171,6 @@ function StatCard({ label, value }: { label: string; value: string }) {
             <span className="font-mono text-5xl font-bold leading-none">
                 {value}
             </span>
-        </div>
-    );
-}
-
-// Reusable info row component
-function InfoRow({ label, value }: { label: string; value: string }) {
-    return (
-        <div>
-            <span className="font-semibold text-foreground">{label}:</span>{" "}
-            <span className="text-foreground">{value}</span>
         </div>
     );
 }
