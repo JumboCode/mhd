@@ -33,7 +33,7 @@ export function SchoolInfoRow({
                     </span>
                 </div>
                 <span className="text-lg font-semibold text-foreground">
-                    {town}
+                    {town}, MA
                 </span>
             </div>
 
