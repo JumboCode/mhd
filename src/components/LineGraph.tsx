@@ -14,7 +14,7 @@ type MultiLineGraphProps = {
     yAxisLabel: string;
     xAxisLabel: string;
     legendTitle?: string;
-    svgRefCopy: React.RefObject<SVGSVGElement | null>;
+    svgRefCopy?: React.RefObject<SVGSVGElement | null>;
 };
 
 export default function MultiLineGraph({
@@ -416,7 +416,9 @@ export default function MultiLineGraph({
             });
         });
 
-        svgRefCopy.current = svgRef.current;
+        if (svgRefCopy != null) {
+            svgRefCopy.current = svgRef.current;
+        }
     }, [datasets, xAxisLabel, yAxisLabel, colorScale]);
 
     return (

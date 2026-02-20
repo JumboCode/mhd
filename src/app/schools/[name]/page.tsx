@@ -18,6 +18,7 @@ import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { SchoolProfileSkeleton } from "@/components/skeletons/SchoolProfileSkeleton";
 import { MapPlacer } from "@/components/ui/mapPlacer";
 import { SchoolInfoRow } from "@/components/SchoolInfoRow";
+import YearDropdown from "@/components/YearDropdown";
 
 // interface such that data can be blank if API is loading
 type SchoolData = {
@@ -43,6 +44,7 @@ export default function SchoolProfilePage() {
 
     const [schoolData, setSchoolData] = useState<SchoolData | null>(null);
     const [coordinates, setCoordinates] = useState<MapCoordinates | null>(null);
+    const [year, setYear] = useState<number | null>(null);
 
     useEffect(() => {
         fetch(`/api/schools/${schoolName}`)
@@ -76,6 +78,11 @@ export default function SchoolProfilePage() {
                 <Breadcrumbs />
                 {/* Header with school name */}
                 <h1 className="text-2xl font-bold">{schoolData.name}</h1>
+                <YearDropdown
+                    showDataIndicator={true}
+                    selectedYear={year}
+                    onYearChange={setYear}
+                />
 
                 {/* Stats cards */}
                 <div className="grid grid-cols-3 gap-8">

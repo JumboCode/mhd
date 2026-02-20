@@ -10,7 +10,9 @@
  **************************************************************/
 
 "use client";
-import React from "react";
+import React, { ReactNode } from "react";
+import { ArrowUp, ArrowDown, Minus } from "lucide-react";
+
 import {
     ColumnDef,
     flexRender,
@@ -19,6 +21,8 @@ import {
     useReactTable,
     SortingState,
     getSortedRowModel,
+    Cell,
+    Row,
 } from "@tanstack/react-table";
 
 import {
@@ -31,10 +35,12 @@ import {
 } from "@/components/ui/table";
 
 import Link from "next/link";
+import { Arrow } from "@radix-ui/react-popover";
 
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[];
     data: TData[];
+    prevData: TData[];
     globalFilter: string;
     setGlobalFilter: (value: string) => void;
 }
@@ -42,6 +48,7 @@ interface DataTableProps<TData, TValue> {
 export function SchoolsDataTable<TData, TValue>({
     columns,
     data,
+    prevData,
     globalFilter,
     setGlobalFilter,
 }: DataTableProps<TData, TValue>) {
@@ -61,6 +68,50 @@ export function SchoolsDataTable<TData, TValue>({
             globalFilter,
         },
     });
+
+    function yoyChange(cell: Cell<TData, number>, row: Row<TData>): ReactNode {
+        // Check if it is in students/teachers/projects column
+        if (
+            cell.column.getIndex() !== 5 &&
+            cell.column.getIndex() !== 6 &&
+            cell.column.getIndex() !== 7
+        ) {
+            return <></>;
+        }
+        const rowIndex: number = row.index;
+        const prevRow = prevData[rowIndex] as Record<string, number>;
+        const colIndex: number = cell.column.getIndex();
+        const prevYearValue: number = prevRow[cell.column.id];
+        const diff = cell.getValue() - prevYearValue;
+
+        const percentChange = Math.abs(diff / prevYearValue) * 100;
+
+        if (diff > 0) {
+            return (
+                <div>
+                    <ArrowUp />
+                    {percentChange}
+                </div>
+            );
+        } else if (diff < 0) {
+            return (
+                <div>
+                    <ArrowDown />
+                    {percentChange}
+                </div>
+            );
+        } else {
+            return (
+                <div>
+                    <ArrowDown />
+                    {percentChange}
+                </div>
+            );
+        }
+
+        // If so, calc year over year change
+        // Render icon/number based on that
+    }
 
     return (
         //Example code should be changed
@@ -127,6 +178,7 @@ export function SchoolsDataTable<TData, TValue>({
                                                     cell.column.columnDef.cell,
                                                     cell.getContext(),
                                                 )}
+                                                {yoyChange(cell, row)}
                                             </div>
                                         )}
                                     </TableCell>

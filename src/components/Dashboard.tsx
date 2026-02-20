@@ -14,6 +14,8 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import YearDropdown from "@/components/YearDropdown";
+import MultiLineGraph from "./LineGraph";
+import { GraphDataset } from "./LineGraph";
 
 type Stats = {
     totals: {
@@ -46,6 +48,70 @@ export default function Dashboard() {
 
         fetchStats(year);
     }, [year]);
+    const [projectsyearData, setprojectsYearData] = useState<
+        { x: string | number; y: number }[]
+    >([]);
+    const [schoolyearData, setschoolYearData] = useState<
+        { x: string | number; y: number }[]
+    >([]);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            for (let i = 5; i >= 0; i--) {
+                try {
+                    const res = await fetch(
+                        `/api/yearly-totals?year=${year - i}`,
+                    );
+                    const yearInfo = await res.json();
+
+                    const thisYear: { x: string | number; y: number } = {
+                        x: year - i,
+                        y: yearInfo.yearlyStats.totals.total_projects,
+                    };
+                    setprojectsYearData((prev) => [thisYear, ...prev]);
+                } catch {
+                    toast.error(
+                        "Failed to load dashboard data. Please try again.",
+                    );
+                }
+            }
+        };
+        fetchData();
+    }, [year]);
+
+    const projectsData: GraphDataset = {
+        label: "Projects by Year",
+        data: projectsyearData,
+    };
+
+    useEffect(() => {
+        const fetchData = async () => {
+            for (let i = 5; i >= 0; i--) {
+                try {
+                    const res = await fetch(
+                        `/api/yearly-totals?year=${year - i}`,
+                    );
+                    const yearInfo = await res.json();
+
+                    const thisYear: { x: string | number; y: number } = {
+                        x: year - i,
+                        y: yearInfo.yearlyStats.totals.total_schools,
+                    };
+                    setschoolYearData((prev) => [thisYear, ...prev]);
+                } catch {
+                    toast.error(
+                        "Failed to load dashboard data. Please try again.",
+                    );
+                }
+            }
+        };
+        fetchData();
+    }, [year]);
+
+    const schoolData: GraphDataset = {
+        label: "Schools by Year",
+        data: schoolyearData,
+    };
 
     return (
         <div className="flex flex-col gap-8 w-full px-6 py-10">
@@ -83,6 +149,16 @@ export default function Dashboard() {
                         />
                         {/* TODO: Once we store type of school, make this correct */}
                         <StatCard label="% Highschool" value={12} />
+                        <MultiLineGraph
+                            datasets={[projectsData]}
+                            yAxisLabel={"Total # Projects"}
+                            xAxisLabel="Year"
+                        />
+                        <MultiLineGraph
+                            datasets={[schoolData]}
+                            yAxisLabel={"Total # Schools"}
+                            xAxisLabel="Year"
+                        />
                     </div>
                 </div>
             ) : null}

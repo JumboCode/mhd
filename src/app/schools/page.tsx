@@ -20,6 +20,7 @@ import YearDropdown from "@/components/YearDropdown";
 
 export default function SchoolsPage() {
     const [schoolInfo, setSchoolInfo] = useState([]);
+    const [prevYearSchoolInfo, setPrevYearSchoolInfo] = useState([]);
     const [year, setYear] = useState<number | null>(2025);
     const [search, setSearch] = useState("");
     const [error, setError] = useState<string | null>(null);
@@ -38,6 +39,26 @@ export default function SchoolsPage() {
             })
             .then((data) => {
                 setSchoolInfo(data);
+            })
+            .catch((error) => {
+                setError(error.message || "Failed to load school data");
+            });
+    }, [year]);
+
+    useEffect(() => {
+        if (!year) return;
+
+        setError(null);
+
+        fetch(`/api/schools?year=${year - 1}`)
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch school data`);
+                }
+                return response.json();
+            })
+            .then((data) => {
+                setPrevYearSchoolInfo(data);
             })
             .catch((error) => {
                 setError(error.message || "Failed to load school data");
@@ -68,6 +89,7 @@ export default function SchoolsPage() {
                     <SchoolsDataTable
                         columns={columns}
                         data={schoolInfo}
+                        prevData={prevYearSchoolInfo}
                         globalFilter={search}
                         setGlobalFilter={setSearch}
                     />
