@@ -24,7 +24,7 @@ type BarGraphProps = {
     yAxisLabel: string;
     xAxisLabel: string;
     legendTitle?: string;
-    svgRefCopy: React.RefObject<SVGSVGElement | null>;
+    svgRefCopy?: React.RefObject<SVGSVGElement | null>;
 };
 
 export default function BarGraph({
@@ -281,7 +281,9 @@ export default function BarGraph({
             return transform;
         });
 
-        svgRefCopy.current = svgRef.current;
+        if (svgRefCopy !== undefined) {
+            svgRefCopy.current = svgRef.current;
+        }
     }, [dataset]);
 
     return (

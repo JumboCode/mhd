@@ -16,6 +16,8 @@ import { toast } from "sonner";
 import YearDropdown from "@/components/YearDropdown";
 import MultiLineGraph from "./LineGraph";
 import { GraphDataset } from "./LineGraph";
+import { Button } from "./ui/button";
+import { useRouter } from "next/navigation";
 
 type Stats = {
     totals: {
@@ -26,6 +28,12 @@ type Stats = {
         total_cities: number;
     };
     year: number;
+};
+
+type chartFilters = {
+    yearStart: number;
+    yearEnd: number;
+    isProjects: boolean;
 };
 
 export default function Dashboard() {
@@ -57,6 +65,7 @@ export default function Dashboard() {
 
     useEffect(() => {
         const fetchData = async () => {
+            setschoolYearData([]);
             for (let i = 5; i >= 0; i--) {
                 try {
                     const res = await fetch(
@@ -86,6 +95,7 @@ export default function Dashboard() {
 
     useEffect(() => {
         const fetchData = async () => {
+            setprojectsYearData([]);
             for (let i = 5; i >= 0; i--) {
                 try {
                     const res = await fetch(
@@ -107,6 +117,33 @@ export default function Dashboard() {
         };
         fetchData();
     }, [year]);
+
+    const router = useRouter();
+
+    const projectChartFilters = {
+        yearStart: year - 5,
+        yearEnd: year,
+        isProjects: true,
+    };
+
+    const schoolChartFilters = {
+        yearStart: year - 5,
+        yearEnd: year,
+        isProjects: false,
+    };
+
+    function linkToGraph(filters: chartFilters) {
+        if (filters.isProjects) {
+            router.push(
+                `/chart?type=line&startYear=${filters.yearStart}&endYear=${filters.yearEnd}&measuredAs=total-project-count`,
+            );
+            return;
+        }
+
+        router.push(
+            `/chart?type=line&startYear=${filters.yearStart}&endYear=${filters.yearEnd}`,
+        );
+    }
 
     const schoolData: GraphDataset = {
         label: "Schools by Year",
@@ -149,16 +186,26 @@ export default function Dashboard() {
                         />
                         {/* TODO: Once we store type of school, make this correct */}
                         <StatCard label="% Highschool" value={12} />
-                        <MultiLineGraph
-                            datasets={[projectsData]}
-                            yAxisLabel={"Total # Projects"}
-                            xAxisLabel="Year"
-                        />
-                        <MultiLineGraph
-                            datasets={[schoolData]}
-                            yAxisLabel={"Total # Schools"}
-                            xAxisLabel="Year"
-                        />
+                    </div>
+                    <div className="flex flex-col m-5">
+                        Total # Projects
+                        <button
+                            onClick={() => linkToGraph(projectChartFilters)}
+                        >
+                            <MultiLineGraph
+                                datasets={[projectsData]}
+                                yAxisLabel={"Total # Projects"}
+                                xAxisLabel="Year"
+                            />
+                        </button>
+                        Total # Schools
+                        <button onClick={() => linkToGraph(schoolChartFilters)}>
+                            <MultiLineGraph
+                                datasets={[schoolData]}
+                                yAxisLabel={"Total # Schools"}
+                                xAxisLabel="Year"
+                            />
+                        </button>
                     </div>
                 </div>
             ) : null}

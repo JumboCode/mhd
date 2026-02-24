@@ -80,31 +80,35 @@ export function SchoolsDataTable<TData, TValue>({
         }
         const rowIndex: number = row.index;
         const prevRow = prevData[rowIndex] as Record<string, number>;
+
+        if (!prevRow) return <></>;
         const colIndex: number = cell.column.getIndex();
-        const prevYearValue: number = prevRow[cell.column.id];
+        const prevYearValue: number = prevRow[cell.column.id] ?? 0;
         const diff = cell.getValue() - prevYearValue;
 
-        const percentChange = Math.abs(diff / prevYearValue) * 100;
+        const percentChange =
+            prevYearValue !== 0 ? Math.abs(diff / prevYearValue) * 100 : 0;
 
-        if (diff > 0) {
+        const formattedPercent = percentChange.toFixed(0);
+        if (percentChange < 0.5) {
             return (
-                <div>
+                <div className="flex items-center justify-center space-x-1 text-[#808080]">
+                    <Minus />
+                    {formattedPercent}%
+                </div>
+            );
+        } else if (diff > 0) {
+            return (
+                <div className="flex items-center justify-center space-x-1 text-[#46A758]">
                     <ArrowUp />
-                    {percentChange}
+                    {formattedPercent}%
                 </div>
             );
         } else if (diff < 0) {
             return (
-                <div>
+                <div className="flex items-center justify-center space-x-1 text-[#E5484D]">
                     <ArrowDown />
-                    {percentChange}
-                </div>
-            );
-        } else {
-            return (
-                <div>
-                    <ArrowDown />
-                    {percentChange}
+                    {formattedPercent}%
                 </div>
             );
         }
@@ -173,7 +177,7 @@ export function SchoolsDataTable<TData, TValue>({
                                                 )}
                                             </Link>
                                         ) : (
-                                            <div>
+                                            <div className="flex flex-row items-center justify-center space-x-1 gap-2 h-12">
                                                 {flexRender(
                                                     cell.column.columnDef.cell,
                                                     cell.getContext(),

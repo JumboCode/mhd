@@ -19,6 +19,10 @@ import { SchoolProfileSkeleton } from "@/components/skeletons/SchoolProfileSkele
 import { MapPlacer } from "@/components/ui/mapPlacer";
 import { SchoolInfoRow } from "@/components/SchoolInfoRow";
 import YearDropdown from "@/components/YearDropdown";
+import MultiLineGraph from "@/components/LineGraph";
+import BarGraph from "@/components/BarGraph";
+import { DataTable } from "@/components/DataTable";
+import { ColumnDef } from "@tanstack/react-table";
 
 // interface such that data can be blank if API is loading
 type SchoolData = {
@@ -28,12 +32,20 @@ type SchoolData = {
     teacherCount: string;
     projectCount: string;
     firstYear: string;
+    projects: ProjectRow[];
     instructionalModel: string;
 };
 
 type MapCoordinates = {
     latitude: number | null;
     longitude: number | null;
+};
+
+type ProjectRow = {
+    id: string;
+    title: string;
+    numStudents: number;
+    year: number;
 };
 
 export default function SchoolProfilePage() {
@@ -44,10 +56,28 @@ export default function SchoolProfilePage() {
 
     const [schoolData, setSchoolData] = useState<SchoolData | null>(null);
     const [coordinates, setCoordinates] = useState<MapCoordinates | null>(null);
-    const [year, setYear] = useState<number | null>(null);
+    const [year, setYear] = useState<number | null>(2025);
+    const [projects, setProjects] = useState<ProjectRow[]>([]);
+
+    const projectColumns: ColumnDef<ProjectRow>[] = [
+        {
+            accessorKey: "title",
+            header: "Title",
+        },
+        {
+            accessorKey: "numStudents",
+            header: "Students",
+        },
+        {
+            accessorKey: "year",
+            header: "Year",
+        },
+    ];
 
     useEffect(() => {
-        fetch(`/api/schools/${schoolName}`)
+        if (!year) return;
+
+        fetch(`/api/schools/${schoolName}?year=${year}`)
             .then((response) => {
                 if (!response.ok) {
                     throw new Error(`Failed to fetch school data`);
@@ -56,6 +86,7 @@ export default function SchoolProfilePage() {
             })
             .then((data) => {
                 setSchoolData(data);
+                setProjects(data.projects);
             })
             .catch(() => {
                 toast.error(
@@ -66,7 +97,7 @@ export default function SchoolProfilePage() {
                     router.push("/schools");
                 }, 2000);
             });
-    }, [schoolName, router]);
+    }, [schoolName, router, year]);
 
     if (!schoolData) {
         return <SchoolProfileSkeleton />;
@@ -159,11 +190,10 @@ export default function SchoolProfilePage() {
                     <h2 className="text-xl font-semibold mb-4 text-foreground">
                         View and edit data
                     </h2>
-                    <div className="h-48 flex items-center justify-center bg-muted rounded">
-                        <p className="text-sm text-muted-foreground">
-                            Data table placeholder
-                        </p>
-                    </div>
+                    <DataTable
+                        columns={projectColumns}
+                        data={projects}
+                    ></DataTable>
                 </div>
             </div>
         </div>
