@@ -19,10 +19,11 @@ import { SchoolProfileSkeleton } from "@/components/skeletons/SchoolProfileSkele
 import { MapPlacer } from "@/components/ui/mapPlacer";
 import { SchoolInfoRow } from "@/components/SchoolInfoRow";
 import YearDropdown from "@/components/YearDropdown";
-import MultiLineGraph from "@/components/LineGraph";
-import BarGraph from "@/components/BarGraph";
+import MultiLineGraph, { GraphDataset } from "@/components/LineGraph";
 import { DataTable } from "@/components/DataTable";
 import { ColumnDef } from "@tanstack/react-table";
+import { ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 // interface such that data can be blank if API is loading
 type SchoolData = {
@@ -48,6 +49,12 @@ type ProjectRow = {
     year: number;
 };
 
+type chartFilters = {
+    yearStart: number;
+    yearEnd: number;
+    isProjects: boolean;
+};
+
 export default function SchoolProfilePage() {
     const params = useParams();
     const schoolName = params.name as string;
@@ -56,8 +63,11 @@ export default function SchoolProfilePage() {
 
     const [schoolData, setSchoolData] = useState<SchoolData | null>(null);
     const [coordinates, setCoordinates] = useState<MapCoordinates | null>(null);
-    const [year, setYear] = useState<number | null>(2025);
+    const [year, setYear] = useState<number>(2025);
     const [projects, setProjects] = useState<ProjectRow[]>([]);
+    const [studentYearData, setstudentYearData] = useState<
+        { x: string | number; y: number }[]
+    >([]);
 
     const projectColumns: ColumnDef<ProjectRow>[] = [
         {
@@ -99,6 +109,43 @@ export default function SchoolProfilePage() {
             });
     }, [schoolName, router, year]);
 
+    // Fetches student data for the last 5 years
+    useEffect(() => {
+        const fetchData = async () => {
+            setstudentYearData([]);
+            for (let i = 5; i >= 0; i--) {
+                try {
+                    const res = await fetch(
+                        `/api/schools/${schoolName}?year=${year - i}`,
+                    );
+                    const yearInfo = await res.json();
+
+                    const thisYear: { x: string | number; y: number } = {
+                        x: year - i,
+                        y: yearInfo.studentCount,
+                    };
+                    setstudentYearData((prev) => [thisYear, ...prev]);
+                } catch {
+                    toast.error(
+                        "Failed to load dashboard data. Please try again.",
+                    );
+                }
+            }
+        };
+        fetchData();
+    }, [year]);
+
+    const studentData: GraphDataset = {
+        label: "Students by Year",
+        data: studentYearData,
+    };
+
+    const studentChartFilters: chartFilters = {
+        yearStart: year - 5,
+        yearEnd: year,
+        isProjects: false,
+    };
+
     if (!schoolData) {
         return <SchoolProfileSkeleton />;
     }
@@ -112,7 +159,12 @@ export default function SchoolProfilePage() {
                 <YearDropdown
                     showDataIndicator={true}
                     selectedYear={year}
-                    onYearChange={setYear}
+                    onYearChange={(selectedYear) => {
+                        if (selectedYear !== null) {
+                            setYear(selectedYear);
+                        }
+                    }}
+                    school={schoolData.name}
                 />
 
                 {/* Stats cards */}
@@ -137,6 +189,28 @@ export default function SchoolProfilePage() {
                     instructionalModel={schoolData.instructionalModel}
                     firstYear={schoolData.firstYear}
                 />
+                <div className="flex flex-col m-5">
+                    <div className="flex flex-row gap-3 items-center">
+                        Total # Students
+                        <Button
+                            onClick={() =>
+                                router.push(
+                                    `/chart?type=line&startYear=${studentChartFilters.yearStart}&endYear=${studentChartFilters.yearEnd}&measuredAs=total-student-count&schools=${schoolData.name}`,
+                                )
+                            }
+                        >
+                            <div className="flex flex-row gap-3">
+                                View More
+                                <ArrowRight></ArrowRight>
+                            </div>
+                        </Button>
+                    </div>
+                    <MultiLineGraph
+                        datasets={[studentData]}
+                        yAxisLabel={"Total # Students"}
+                        xAxisLabel="Year"
+                    />
+                </div>
 
                 {/* Placeholders for charts */}
                 <div className="grid grid-cols-3 gap-8">
@@ -188,7 +262,7 @@ export default function SchoolProfilePage() {
                 {/* Data table placeholder */}
                 <div className="border border-border rounded-lg p-6">
                     <h2 className="text-xl font-semibold mb-4 text-foreground">
-                        View and edit data
+                        Project Data
                     </h2>
                     <DataTable
                         columns={projectColumns}

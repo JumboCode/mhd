@@ -35,7 +35,6 @@ import {
 } from "@/components/ui/table";
 
 import Link from "next/link";
-import { Arrow } from "@radix-ui/react-popover";
 
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[];
@@ -69,6 +68,13 @@ export function SchoolsDataTable<TData, TValue>({
         },
     });
 
+    /**
+     * yoyChange
+     * Calculates the yoy change for applicable fields of the data table
+     * @param cell The cell of the table to calculate year over year change for
+     * returns: A lucide react icon, either up arrow, down arrow, or dash, and a
+     *          number corresponding to the percent change
+     */
     function yoyChange(cell: Cell<TData, number>, row: Row<TData>): ReactNode {
         // Check if it is in students/teachers/projects column
         if (

@@ -28,16 +28,17 @@ type YearDropdownProps = {
     selectedYear?: number | null;
     onYearChange?: (year: number | null) => void;
     showDataIndicator?: boolean;
+    school?: string | null;
 };
 
 export default function YearDropdown({
     selectedYear,
     onYearChange,
     showDataIndicator = false,
+    school,
 }: YearDropdownProps) {
     const [year, setYear] = useState<number | null>(null);
     const [yearsWithData, setYearsWithData] = useState<Set<number>>(new Set());
-
     // Years from current year down to 10 years ago
     const currentYear = new Date().getFullYear();
     const years = Array.from({ length: 10 }, (_, i) => currentYear - i);
@@ -48,18 +49,42 @@ export default function YearDropdown({
 
     // Fetch years with data
     useEffect(() => {
-        const fetchYearsWithData = async () => {
-            try {
-                const response = await fetch("/api/years");
-                if (response.ok) {
-                    const data = await response.json();
-                    setYearsWithData(new Set(data.yearsWithData));
-                }
-            } catch (error) {
-                toast.error("Failed to load year data");
+        // If a school is passed in, gets the years with data for that specific
+        // school
+        if (school != null) {
+            for (let i = currentYear; i > 2016; i--) {
+                const fetchYearsWithData = async () => {
+                    try {
+                        const response = await fetch(
+                            `/api/schools/${school}?year=${i}`,
+                        );
+                        if (response.ok) {
+                            const data = await response.json();
+                            // Ensures that school has data for that year
+                            if (data.studentCount !== 0) {
+                                setYearsWithData(yearsWithData.add(i));
+                            }
+                        }
+                    } catch (error) {
+                        toast.error("Failed to load year data");
+                    }
+                };
+                fetchYearsWithData();
             }
-        };
-        fetchYearsWithData();
+        } else {
+            const fetchYearsWithData = async () => {
+                try {
+                    const response = await fetch("/api/years");
+                    if (response.ok) {
+                        const data = await response.json();
+                        setYearsWithData(new Set(data.yearsWithData));
+                    }
+                } catch (error) {
+                    toast.error("Failed to load year data");
+                }
+            };
+            fetchYearsWithData();
+        }
     }, []);
 
     const handleValueChange = (value: string) => {

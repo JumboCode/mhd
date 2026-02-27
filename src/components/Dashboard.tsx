@@ -16,7 +16,6 @@ import { toast } from "sonner";
 import YearDropdown from "@/components/YearDropdown";
 import MultiLineGraph from "./LineGraph";
 import { GraphDataset } from "./LineGraph";
-import { Button } from "./ui/button";
 import { useRouter } from "next/navigation";
 
 type Stats = {
@@ -63,9 +62,12 @@ export default function Dashboard() {
         { x: string | number; y: number }[]
     >([]);
 
+    /*
+     * Fetches data for the chart with total # of projects
+     */
     useEffect(() => {
         const fetchData = async () => {
-            setschoolYearData([]);
+            setprojectsYearData([]);
             for (let i = 5; i >= 0; i--) {
                 try {
                     const res = await fetch(
@@ -93,9 +95,17 @@ export default function Dashboard() {
         data: projectsyearData,
     };
 
+    const schoolData: GraphDataset = {
+        label: "Schools by Year",
+        data: schoolyearData,
+    };
+
+    /*
+     * Fetches data for the chart with total # of schools
+     */
     useEffect(() => {
         const fetchData = async () => {
-            setprojectsYearData([]);
+            setschoolYearData([]);
             for (let i = 5; i >= 0; i--) {
                 try {
                     const res = await fetch(
@@ -132,6 +142,14 @@ export default function Dashboard() {
         isProjects: false,
     };
 
+    /**
+     * linkToGraph
+     * Routes the user to the page corresponding to a chart with the filters
+     * passed in
+     * @param filters The chart filters that are used to produce a link to a
+     *                a chart on the actual charts page
+     * returns: none
+     */
     function linkToGraph(filters: chartFilters) {
         if (filters.isProjects) {
             router.push(
@@ -145,29 +163,26 @@ export default function Dashboard() {
         );
     }
 
-    const schoolData: GraphDataset = {
-        label: "Schools by Year",
-        data: schoolyearData,
-    };
-
     return (
         <div className="flex flex-col gap-8 w-full px-6 py-10">
-            <h1 className="text-2xl font-semibold">Overview Dashboard</h1>
-            <div className="">
-                <YearDropdown
-                    showDataIndicator={true}
-                    selectedYear={year}
-                    onYearChange={(selectedYear) => {
-                        if (selectedYear !== null) {
-                            setYear(selectedYear);
-                        }
-                    }}
-                />
+            <div className="flex flex-row gap-5">
+                <h1 className="text-2xl font-semibold">Overview Dashboard</h1>
+                <div className="">
+                    <YearDropdown
+                        showDataIndicator={true}
+                        selectedYear={year}
+                        onYearChange={(selectedYear) => {
+                            if (selectedYear !== null) {
+                                setYear(selectedYear);
+                            }
+                        }}
+                    />
+                </div>
             </div>
 
             {stats ? (
                 <div className="">
-                    <div className="grid grid-cols-3 gap-5">
+                    <div className="grid grid-cols-4 gap-5">
                         <StatCard
                             label="Total # Projects"
                             value={stats.totals.total_projects}
@@ -185,9 +200,8 @@ export default function Dashboard() {
                             value={stats.totals.total_schools}
                         />
                         {/* TODO: Once we store type of school, make this correct */}
-                        <StatCard label="% Highschool" value={12} />
                     </div>
-                    <div className="flex flex-col m-5">
+                    <div className="flex flex-col m-5 items-center justify-center rounded-lg border py-6 border-border">
                         Total # Projects
                         <button
                             onClick={() => linkToGraph(projectChartFilters)}
