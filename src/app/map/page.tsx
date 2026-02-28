@@ -13,6 +13,7 @@
 import { Map } from "@/components/ui/map";
 import { useEffect, useState, useRef } from "react";
 import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
@@ -46,12 +47,16 @@ export default function HeatMapPage() {
     // Boolean to hide/show schools
     const [showSchools, setShowSchools] = useState(true);
 
+    // Loading state
+    const [isLoaded, setIsLoaded] = useState(false);
+
     const handleClick = () => {
         setShowSchools(!showSchools);
     };
 
     // Fetch school point data for heat layer
     useEffect(() => {
+        setIsLoaded(false);
         fetch(`/api/heat-layer?year=${year}`)
             .then((response) => {
                 if (!response.ok) {
@@ -61,9 +66,11 @@ export default function HeatMapPage() {
             })
             .then((data) => {
                 setSchoolPoints(data);
+                setIsLoaded(true);
             })
             .catch((error) => {
                 toast.error(error.message || "Failed to load school data");
+                setIsLoaded(true);
             });
     }, [year]);
 
@@ -337,7 +344,7 @@ export default function HeatMapPage() {
                     {showSchools ? "Hide Schools" : "Show Schools"}
                 </Button>
             </div>
-            <div className="flex-1 rounded-2xl overflow-hidden border border-slate-200">
+            <div className="flex-1 rounded-2xl overflow-hidden border border-slate-200 relative">
                 <Map
                     center={[-71.7, 42.2]}
                     zoom={7}
@@ -352,6 +359,11 @@ export default function HeatMapPage() {
                     // Allows layers to be added
                     ref={mapRef}
                 />
+                {!isLoaded && (
+                    <div className="absolute inset-0 z-50 flex items-center justify-center bg-slate-500/20 backdrop-blur-sm">
+                        <Loader2 className="h-12 w-12 animate-spin text-slate-800" />
+                    </div>
+                )}
             </div>
         </div>
     );
