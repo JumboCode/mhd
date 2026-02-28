@@ -18,14 +18,14 @@ import { Loader2 } from "lucide-react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 
-import countiesData from "@/data/counties.json";
+import regionsData from "@/data/regions.json";
 import YearDropdown from "@/components/YearDropdown";
 import CountDropdown from "@/components/CountDropdown";
 import { Button } from "@/components/ui/button";
 
-const counties = Object.values(countiesData).map((county) => ({
-    name: county.name,
-    coordinates: county.coordinates as [number, number][],
+const regions = Object.values(regionsData).map((region) => ({
+    name: region.name,
+    coordinates: region.coordinates as [number, number][],
     color: "#af272f", // MHD red
 }));
 
@@ -81,13 +81,13 @@ export default function HeatMapPage() {
 
         const map = mapCurrent?.getMap ? mapCurrent.getMap() : mapCurrent;
 
-        // Draw routes for counties
-        if (!map.getSource("counties-source")) {
-            map.addSource("counties-source", {
+        // Draw routes for regions
+        if (!map.getSource("regions-source")) {
+            map.addSource("regions-source", {
                 type: "geojson",
                 data: {
                     type: "FeatureCollection",
-                    features: counties.map((c) => ({
+                    features: regions.map((c) => ({
                         type: "Feature",
                         geometry: {
                             type: "LineString",
@@ -98,9 +98,9 @@ export default function HeatMapPage() {
                 },
             });
             map.addLayer({
-                id: "counties-layer",
+                id: "regions-layer",
                 type: "line",
-                source: "counties-source",
+                source: "regions-source",
                 paint: {
                     "line-color": "#FF0000",
                     "line-width": 4,
@@ -306,7 +306,7 @@ export default function HeatMapPage() {
             });
 
             // Fixed ordering for layers
-            if (map.getLayer("counties-layer")) map.moveLayer("counties-layer");
+            if (map.getLayer("regions-layer")) map.moveLayer("regions-layer");
             if (map.getLayer("schoolHeatLayer"))
                 map.moveLayer("schoolHeatLayer");
             if (map.getLayer("school-icons")) map.moveLayer("school-icons");
