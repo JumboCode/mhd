@@ -13,7 +13,10 @@
 import { Map } from "@/components/ui/map";
 import { useEffect, useState, useRef } from "react";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, Link } from "lucide-react";
+
+// queryStates required for URL sharing with nuqs
+import { useQueryState, parseAsInteger, parseAsString } from "nuqs";
 
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
@@ -33,12 +36,18 @@ export default function HeatMapPage() {
     const [schoolPoints, setSchoolPoints] =
         useState<GeoJSON.FeatureCollection | null>(null);
 
-    // Controlled by dropdowns
+    // Controlled by dropdowns, parameterized for link sharing
     // Year dropdown, set to range of our data
-    const [year, setYear] = useState<number | null>(2025);
+    const [year, setYear] = useQueryState(
+        "year",
+        parseAsInteger.withDefault(2025),
+    );
 
     // totalStudents | totalProjects |totalTeachers
-    const [metric, setMetric] = useState<string>("Projects");
+    const [metric, setMetric] = useQueryState(
+        "metric",
+        parseAsString.withDefault("Projects"),
+    );
 
     // Reference to the map, needed for updating the heat layer
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -52,6 +61,16 @@ export default function HeatMapPage() {
 
     const handleClick = () => {
         setShowSchools(!showSchools);
+    };
+
+    const copyURLtoClipboard = async () => {
+        try {
+            const url = window.location.href;
+            await navigator.clipboard.writeText(url);
+            toast.success("URL copied to clipboard!");
+        } catch (error) {
+            toast.error("Failed to copy URL to clipboard.");
+        }
     };
 
     // Fetch school point data for heat layer
@@ -327,7 +346,20 @@ export default function HeatMapPage() {
 
     return (
         <div className="flex p-4 flex-col h-screen w-screen justify-center">
-            <h1 className="text-2xl py-4 font-semibold mb-4">Heatmap</h1>
+            <div className="flex justify-between items-center mb-4">
+                <h1 className="text-2xl py-4 font-semibold">Heatmap</h1>
+                <div className="flex gap-3">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex items-center gap-2"
+                        onClick={copyURLtoClipboard}
+                    >
+                        <Link className="w-4 h-4" />
+                        Share
+                    </Button>
+                </div>
+            </div>
             <div className="flex flex-row justify-between items-end gap-4 shrink-0 pb-5">
                 <div className="flex flex-row items-center gap-4">
                     <div className="flex flex-col gap-1.5 w-48">
