@@ -328,17 +328,27 @@ export default function HeatMapPage() {
     return (
         <div className="flex p-4 flex-col h-screen w-screen justify-center">
             <h1 className="text-2xl py-4 font-semibold mb-4">Heatmap</h1>
-            <div className="flex flex-row justify-between items-center gap-4 shrink-0 pb-5">
+            <div className="flex flex-row justify-between items-end gap-4 shrink-0 pb-5">
                 <div className="flex flex-row items-center gap-4">
-                    <CountDropdown
-                        selectedCount={metric}
-                        onCountChange={setMetric}
-                    />
-                    <YearDropdown
-                        showDataIndicator={true}
-                        selectedYear={year}
-                        onYearChange={setYear}
-                    />
+                    <div className="flex flex-col gap-1.5 w-48">
+                        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pl-1">
+                            Counts
+                        </label>
+                        <CountDropdown
+                            selectedCount={metric}
+                            onCountChange={setMetric}
+                        />
+                    </div>
+                    <div className="flex flex-col gap-1.5 w-48">
+                        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pl-1">
+                            Year
+                        </label>
+                        <YearDropdown
+                            showDataIndicator={true}
+                            selectedYear={year}
+                            onYearChange={setYear}
+                        />
+                    </div>
                 </div>
                 <Button onClick={handleClick} className="w-32 py-2">
                     {showSchools ? "Hide Schools" : "Show Schools"}
