@@ -13,7 +13,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { eq, and } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { SchoolID, updateLocation } from "@/lib/geocoding";
 import {
     schools,
     teachers,
@@ -25,11 +24,31 @@ import { requiredColumns } from "@/lib/required-spreadsheet-columns";
 
 type RowData = Array<string | number | boolean | null>;
 
+/**
+ * School coordinates sent from frontend after matching
+ */
+type SchoolCoordinateData = {
+    schoolId: string;
+    lat: number | null;
+    long: number | null;
+};
+
 export async function POST(req: NextRequest) {
     try {
         const jsonReq = await req.json();
         const year: number = jsonReq.formYear;
         const rawData: RowData[] = JSON.parse(jsonReq.formData);
+        const schoolCoordinates: SchoolCoordinateData[] =
+            jsonReq.schoolCoordinates || [];
+
+        // Create a map for quick lookup of school coordinates by schoolId
+        const coordsMap = new Map<
+            string,
+            { lat: number | null; long: number | null }
+        >();
+        for (const coord of schoolCoordinates) {
+            coordsMap.set(coord.schoolId, { lat: coord.lat, long: coord.long });
+        }
 
         if (rawData.length === 0) {
             return NextResponse.json(
@@ -93,23 +112,35 @@ export async function POST(req: NextRequest) {
             const schoolTown = row[COLUMN_INDICES.city] as string;
 
             if (!school) {
+                // Get coordinates from frontend matching
+                const coords = coordsMap.get(schoolIdValue);
+
                 const [inserted] = await db
                     .insert(schools)
                     .values({
                         schoolId: schoolIdValue,
                         name: schoolName,
                         town: schoolTown,
+                        latitude: coords?.lat ?? null,
+                        longitude: coords?.long ?? null,
                     })
                     .returning();
                 school = inserted;
+            } else if (!school.latitude || !school.longitude) {
+                // School exists but missing coordinates - update if we have them
+                const coords = coordsMap.get(schoolIdValue);
+                if (coords?.lat && coords?.long) {
+                    const [updated] = await db
+                        .update(schools)
+                        .set({
+                            latitude: coords.lat,
+                            longitude: coords.long,
+                        })
+                        .where(eq(schools.id, school.id))
+                        .returning();
+                    school = updated;
+                }
             }
-
-            // Ensure geocoded coordinates using name and city
-            const schoolID: SchoolID = {
-                name: schoolName,
-                city: schoolTown,
-            };
-            updateLocation(schoolID);
 
             // Find or create teacher using teacherId
             const teacherIdValue = String(row[COLUMN_INDICES.teacherId]);

@@ -6,14 +6,14 @@
  *           Date: 11/14/2025
  *
  *        Summary: Manage the state of the spreadsheet uploading
- *        pipeline, including the uploading, previewing, and
- *        confirmation of data upload.
+ *        pipeline, including the uploading, previewing, school
+ *        matching, and confirmation of data upload.
  *
  **************************************************************/
 
 "use client";
 
-import { type ReactElement, useEffect, useState } from "react";
+import { type ReactElement, useEffect, useState, useCallback } from "react";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import SpreadsheetStatusBar from "@/components/SpreadsheetStatusBar";
@@ -22,7 +22,16 @@ import SpreadsheetConfirmation from "./SpreadsheetConfirmation";
 import SpreadsheetPreview from "./SpreadsheetPreview";
 import SpreadsheetPreviewFail from "./SpreadsheetPreviewFail";
 import SpreadsheetUpload from "./SpreadsheetUpload";
+import SpreadsheetEdits from "./ui/SpreadsheetEdits";
 import { ErrorReport, identifyErrors } from "@/lib/error-identification";
+import {
+    type KnownSchool,
+    type SchoolWithCoordinates,
+    type UploadedSchool,
+    extractSchoolsFromSpreadsheet,
+    getSchoolColumnIndices,
+    matchSchools,
+} from "@/lib/school-matching";
 
 export default function SpreadsheetState() {
     const [file, setFile] = useState<File | undefined>();
@@ -46,6 +55,46 @@ export default function SpreadsheetState() {
     const [yearHasData, setYearHasData] = useState(false);
     const [yearsWithData, setYearsWithData] = useState<Set<number>>(new Set());
 
+    // School matching state
+    const [knownSchools, setKnownSchools] = useState<KnownSchool[]>([]);
+    const [matchedSchools, setMatchedSchools] = useState<
+        SchoolWithCoordinates[]
+    >([]);
+    const [unmatchedSchools, setUnmatchedSchools] = useState<UploadedSchool[]>(
+        [],
+    );
+    const [assignedLocations, setAssignedLocations] = useState<
+        Map<string, { lat: number; long: number }>
+    >(new Map());
+    const [currentSchoolIndex, setCurrentSchoolIndex] = useState(0);
+
+    // Handler for when a school location is assigned via the map
+    const handleSchoolLocationAssigned = useCallback(
+        (schoolId: string, lat: number, long: number) => {
+            setAssignedLocations((prev) => {
+                const newMap = new Map(prev);
+                newMap.set(schoolId, { lat, long });
+                return newMap;
+            });
+        },
+        [],
+    );
+
+    // Check if current school has a location assigned
+    const currentSchoolHasLocation =
+        unmatchedSchools.length === 0 ||
+        (unmatchedSchools[currentSchoolIndex] &&
+            assignedLocations.has(
+                unmatchedSchools[currentSchoolIndex].schoolId,
+            ));
+
+    // Check if all unmatched schools have been assigned locations
+    const allSchoolsHaveLocations =
+        unmatchedSchools.length === 0 ||
+        unmatchedSchools.every((school) =>
+            assignedLocations.has(school.schoolId),
+        );
+
     // Fetch years with data once on mount
     useEffect(() => {
         const fetchYearsWithData = async () => {
@@ -61,6 +110,23 @@ export default function SpreadsheetState() {
         };
 
         fetchYearsWithData();
+    }, []);
+
+    // Fetch known schools for matching on mount
+    useEffect(() => {
+        const fetchKnownSchools = async () => {
+            try {
+                const response = await fetch("/api/schools/known");
+                if (response.ok) {
+                    const data = await response.json();
+                    setKnownSchools(data);
+                }
+            } catch (error) {
+                toast.error("Failed to load known schools for matching");
+            }
+        };
+
+        fetchKnownSchools();
     }, []);
 
     // Check if selected year has data whenever year changes
@@ -83,10 +149,40 @@ export default function SpreadsheetState() {
     };
 
     useEffect(() => {
-        if (tabIndex === 2) {
+        if (tabIndex === 3) {
             setCanNext(confirmed === true);
         }
     }, [confirmed, tabIndex]);
+
+    // Update canNext when assignedLocations changes (for school matching step)
+    // User can proceed if current school has a location
+    useEffect(() => {
+        if (tabIndex === 2) {
+            setCanNext(currentSchoolHasLocation);
+        }
+    }, [tabIndex, currentSchoolHasLocation]);
+
+    // Re-render SpreadsheetEdits when assignedLocations or currentSchoolIndex changes
+    useEffect(() => {
+        if (tabIndex === 2 && unmatchedSchools.length > 0) {
+            setTab(
+                <SpreadsheetEdits
+                    matchedSchools={matchedSchools}
+                    unmatchedSchools={unmatchedSchools}
+                    currentSchoolIndex={currentSchoolIndex}
+                    onSchoolLocationAssigned={handleSchoolLocationAssigned}
+                    assignedLocations={assignedLocations}
+                />,
+            );
+        }
+    }, [
+        assignedLocations,
+        tabIndex,
+        unmatchedSchools.length,
+        matchedSchools,
+        handleSchoolLocationAssigned,
+        currentSchoolIndex,
+    ]);
 
     const checkFormat = (
         callback: (jsonData: SpreadsheetData | null) => void,
@@ -129,6 +225,32 @@ export default function SpreadsheetState() {
 
         setIsSubmitting(true);
 
+        // Build school coordinates array from matched schools and user-assigned locations
+        const schoolCoordinates: {
+            schoolId: string;
+            lat: number | null;
+            long: number | null;
+        }[] = [];
+
+        // Add matched schools
+        for (const school of matchedSchools) {
+            schoolCoordinates.push({
+                schoolId: school.schoolId,
+                lat: school.lat,
+                long: school.long,
+            });
+        }
+
+        // Add user-assigned locations for unmatched schools
+        for (const school of unmatchedSchools) {
+            const assigned = assignedLocations.get(school.schoolId);
+            schoolCoordinates.push({
+                schoolId: school.schoolId,
+                lat: assigned?.lat ?? null,
+                long: assigned?.long ?? null,
+            });
+        }
+
         try {
             const response = await fetch("/api/upload", {
                 method: "POST",
@@ -138,6 +260,7 @@ export default function SpreadsheetState() {
                 body: JSON.stringify({
                     formYear: year,
                     formData: JSON.stringify(spreadsheetData),
+                    schoolCoordinates,
                 }),
             });
 
@@ -163,16 +286,38 @@ export default function SpreadsheetState() {
 
     const next = async () => {
         if (canNext) {
-            // If on confirmation page (index 2), submit data
+            // If on school matching page (index 2), handle sequential school navigation
             if (tabIndex === 2) {
+                // Check if current school has location
+                if (!currentSchoolHasLocation) {
+                    toast.error(
+                        "Please place a pin on the map to assign a location.",
+                    );
+                    return;
+                }
+
+                // If there are more schools to process, go to next school
+                if (currentSchoolIndex < unmatchedSchools.length - 1) {
+                    setCurrentSchoolIndex(currentSchoolIndex + 1);
+                    return; // Stay on tab 2
+                }
+                // All schools done, proceed to confirmation
+            }
+            // If on confirmation page (index 3), submit data
+            if (tabIndex === 3) {
                 await handleSubmit();
             }
-            switchTab((tabIndex + 1) % 3);
+            switchTab((tabIndex + 1) % 4);
         }
     };
 
     const previous = () => {
         if (canPrevious) {
+            // If on school matching page and not on first school, go back to previous school
+            if (tabIndex === 2 && currentSchoolIndex > 0) {
+                setCurrentSchoolIndex(currentSchoolIndex - 1);
+                return;
+            }
             switchTab(tabIndex - 1);
         }
     };
@@ -231,7 +376,61 @@ export default function SpreadsheetState() {
             setNextText("Next");
             setCanPrevious(true);
         } else if (tabIndex === 2) {
+            // School matching step - run matching and show SpreadsheetEdits
             setTabIndex(2);
+            setCurrentSchoolIndex(0); // Reset to first school
+
+            if (spreadsheetData.length > 0 && knownSchools.length > 0) {
+                const headers = spreadsheetData[0];
+                const columnIndices = getSchoolColumnIndices(headers);
+
+                if (columnIndices) {
+                    const uploadedSchools = extractSchoolsFromSpreadsheet(
+                        spreadsheetData,
+                        columnIndices,
+                    );
+                    const result = matchSchools(uploadedSchools, knownSchools);
+
+                    setMatchedSchools(result.matched);
+                    setUnmatchedSchools(result.unmatched);
+
+                    // If all schools matched, allow proceeding immediately
+                    if (result.unmatched.length === 0) {
+                        setCanNext(true);
+                    } else {
+                        // Check if first school has a location
+                        const firstSchoolHasLocation = assignedLocations.has(
+                            result.unmatched[0].schoolId,
+                        );
+                        setCanNext(firstSchoolHasLocation);
+                    }
+
+                    setTab(
+                        <SpreadsheetEdits
+                            matchedSchools={result.matched}
+                            unmatchedSchools={result.unmatched}
+                            currentSchoolIndex={0}
+                            onSchoolLocationAssigned={
+                                handleSchoolLocationAssigned
+                            }
+                            assignedLocations={assignedLocations}
+                        />,
+                    );
+                } else {
+                    toast.error(
+                        "Could not identify school columns in spreadsheet",
+                    );
+                    setCanNext(false);
+                }
+            } else if (knownSchools.length === 0) {
+                toast.error("Known schools data not loaded yet. Please wait.");
+                setCanNext(false);
+            }
+
+            setNextText("Next");
+            setCanPrevious(true);
+        } else if (tabIndex === 3) {
+            setTabIndex(3);
             setTab(
                 <SpreadsheetConfirmation
                     spreadsheetData={spreadsheetData}
@@ -246,27 +445,34 @@ export default function SpreadsheetState() {
     };
 
     return (
-        <div className="flex flex-col items-center justify-between max-w-2xl mx-auto py-8 gap-12">
-            <div className="max-w-md w-full">
+        <div
+            className={`flex flex-col items-center justify-between mx-auto py-8 gap-12 ${tabIndex === 2 ? "w-full max-w-[90vw] px-8" : "max-w-2xl"}`}
+        >
+            <div
+                className={`w-full ${tabIndex === 2 ? "max-w-xl" : "max-w-md"}`}
+            >
                 <div className="mb-2">
                     <SpreadsheetStatusBar
                         tabIndex={tabIndex}
-                        maxTabs={2}
+                        maxTabs={3}
                         hasError={hasError}
                     />
                 </div>
-                <div className="flex flex-row justify-between w-full font-semibold">
-                    <p className="text-left flex-1 -translate-x-4">Upload</p>
+                <div className="flex flex-row justify-between w-full font-semibold text-sm">
+                    <p className="text-left flex-1">Upload</p>
                     <p className="text-center flex-1">Preview</p>
-                    <p className="text-right flex-1 translate-x-10">
-                        Confirmation
-                    </p>
+                    <p className="text-center flex-1">Schools</p>
+                    <p className="text-right flex-1">Confirm</p>
                 </div>
             </div>
 
-            <div className="flex-1">{tab}</div>
+            <div className={`flex-1 ${tabIndex === 2 ? "w-full" : ""}`}>
+                {tab}
+            </div>
 
-            <div className="flex justify-between w-full pb-4">
+            <div
+                className={`flex justify-between pb-4 ${tabIndex === 2 ? "w-full" : "w-full"}`}
+            >
                 {canPrevious && (
                     <button
                         className="py-1 w-40 rounded-lg bg-card text-foreground border border-border hover:bg-accent hover:cursor-pointer transition duration-300"
