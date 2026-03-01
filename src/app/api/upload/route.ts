@@ -81,6 +81,13 @@ export async function POST(req: NextRequest) {
         // Remove header row and filter out empty rows
         const filteredRows = rawData.slice(1).filter((row) => row.length > 0);
 
+        // Delete any existing data before uploading new data
+        fetch(`/api/delete-year?year=${year}`).then((res) => {
+            if (!res.ok) {
+                throw new Error("Failed to delete previous data");
+            }
+        });
+
         let insertedCount = 0;
         for (const row of filteredRows) {
             // Find or create school using schoolId

@@ -24,6 +24,8 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 
+//import { getExistingYears } from "@/lib/yearly-data";
+
 type YearDropdownProps = {
     selectedYear?: number | null;
     onYearChange?: (year: number | null) => void;
@@ -37,10 +39,41 @@ export default function YearDropdown({
 }: YearDropdownProps) {
     const [year, setYear] = useState<number | null>(null);
     const [yearsWithData, setYearsWithData] = useState<Set<number>>(new Set());
+    const [years, setYears] = useState<number[]>([]);
 
     // Years from current year down to 10 years ago
     const currentYear = new Date().getFullYear();
-    const years = Array.from({ length: 10 }, (_, i) => currentYear - i);
+
+    useEffect(() => {
+        async function fetchYears() {
+            try {
+                const res = await fetch("/api/years-with-data");
+
+                if (!res.ok) throw new Error("Failed to fetch years");
+
+                const data = await res.json();
+                const existingYears: number[] = data.years;
+
+                if (existingYears.length == 0) return;
+
+                const minYear = Math.min(...existingYears);
+                const maxYear = Math.max(...existingYears);
+
+                const allYears = Array.from(
+                    { length: maxYear - minYear + 1 },
+                    (_, i) => maxYear - i,
+                );
+
+                setYears(allYears);
+                setYearsWithData(new Set(data.years));
+            } catch (err) {
+                console.error(err);
+            }
+        }
+        fetchYears();
+
+        // setYears(Array.from({ length: 10 }, (_, i) => currentYear - i));
+    }, []);
 
     useEffect(() => {
         setYear(selectedYear ?? null);

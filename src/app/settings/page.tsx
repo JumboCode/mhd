@@ -16,6 +16,7 @@ import { MultiSelectCombobox } from "../../components/ui/multi-select-combobox";
 import { Trash, Plus, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/Combobox";
+import YearsOfData from "@/components/YearsOfData";
 import { Map, MapMarker, MarkerContent, useMap } from "@/components/ui/map";
 import { toast } from "sonner";
 
@@ -152,6 +153,17 @@ export default function Settings() {
                         These settings configure how data is calculated. Only
                         edit these settings if you really mean to.
                     </p>
+                </div>
+
+                <div className="mt-6 space-y-6">
+                    <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                            <h3 className="font-bold">Uploaded Data</h3>
+                        </div>
+                        <div className="w-50 flex flex-row justify-between ">
+                            <YearsOfData />
+                        </div>
+                    </div>
                 </div>
 
                 <div className="mt-6 space-y-6">
