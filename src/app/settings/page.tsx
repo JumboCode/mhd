@@ -19,6 +19,7 @@ import { Combobox } from "@/components/Combobox";
 import YearsOfData from "@/components/YearsOfData";
 import { Map, MapMarker, MarkerContent, useMap } from "@/components/ui/map";
 import { toast } from "sonner";
+import GatewaySchools from "@/components/GatewaySchools";
 
 interface PermittedUser {
     email: string;
@@ -158,19 +159,9 @@ export default function Settings() {
                 <div className="mt-6 space-y-6">
                     <div className="space-y-3">
                         <div className="flex items-center justify-between">
-                            <h3 className="font-bold">Uploaded Data</h3>
-                        </div>
-                        <div className="w-50 flex flex-row justify-between ">
-                            <YearsOfData />
-                        </div>
-                    </div>
-                </div>
-
-                <div className="mt-6 space-y-6">
-                    <div className="space-y-3">
-                        <div className="flex items-center justify-between">
                             <h3 className="font-bold">Gateway Cities</h3>
                         </div>
+                        <GatewaySchools />
                         <div className="w-50 flex flex-row justify-between ">
                             <MultiSelectCombobox
                                 options={cityOptions}
@@ -319,6 +310,15 @@ export default function Settings() {
                                     ))}
                                 </tbody>
                             </table>
+                        </div>
+                    </div>
+
+                    <div className="mt-6 space-y-6">
+                        <div className="space-y-3">
+                            <div className="space-y-6 w-full">
+                                <h3 className="font-bold">Available Data</h3>
+                                <YearsOfData />
+                            </div>
                         </div>
                     </div>
                 </div>
