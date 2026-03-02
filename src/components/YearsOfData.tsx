@@ -38,9 +38,10 @@ export default function YearsOfData() {
 
         fetchYears();
     }, []);
-
     function handleRemoveYear(year: number) {
-        fetch(`/api/delete-year?year=${year}`)
+        fetch(`/api/delete-year?year=${year}`, {
+            method: "DELETE", // ← important
+        })
             .then((response) => {
                 if (!response.ok) {
                     toast(`Failed to delete data for ${year}.`);

@@ -40,6 +40,9 @@ export async function DELETE(req: NextRequest) {
         await db
             .delete(yearlyTeacherParticipation)
             .where(eq(yearlyTeacherParticipation.year, currentYear));
+
+        // <-- add a response so fetch.ok becomes true
+        return NextResponse.json({ success: true });
     } catch (error) {
         return NextResponse.json(
             { error: "Internal server error: " + (error as Error).message },

@@ -10,14 +10,15 @@ interface SchoolEntry {
     name: string;
     latitude: number | null;
     longitude: number | null;
+    gateway?: boolean;
 }
 
 export default function GatewaySchools() {
     const [schools, setSchools] = useState<SchoolEntry[]>([]);
-    const [selectedSchoolId, setSelectedSchoolId] = useState("");
     const [gatewaySchools, setGatewaySchools] = useState<SchoolEntry[]>([]);
+    const [selectedSchoolId, setSelectedSchoolId] = useState("");
 
-    // Load all schools
+    // Load all schools for dropdown
     useEffect(() => {
         fetch("/api/schools?list=true")
             .then((res) => res.json())
@@ -25,28 +26,75 @@ export default function GatewaySchools() {
             .catch(() => toast.error("Failed to load schools"));
     }, []);
 
+    // Load only gateway schools on mount
+    useEffect(() => {
+        fetch("/api/schools?gateway=true&list=true")
+            .then((res) => res.json())
+            .then((data) => setGatewaySchools(data))
+            .catch(() => toast.error("Failed to load gateway schools"));
+    }, []);
+
     const schoolOptions = schools.map((s) => ({
         value: String(s.id),
         label: s.name,
     }));
 
-    const handleAddSchool = (value: string) => {
+    // Add school as gateway
+    const handleAddSchool = async (value: string) => {
         setSelectedSchoolId(value);
 
         const school = schools.find((s) => String(s.id) === value);
         if (!school) return;
 
-        // prevent duplicates
         if (gatewaySchools.some((s) => s.id === school.id)) {
             toast("School already added");
             return;
         }
 
+        // Optimistic update
         setGatewaySchools((prev) => [...prev, school]);
+
+        try {
+            const res = await fetch(`/api/schools/${school.name}/gateway`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ gateway: true }),
+            });
+
+            if (!res.ok) throw new Error("Failed to update school");
+            toast.success(`${school.name} set as gateway`);
+        } catch (err) {
+            setGatewaySchools((prev) => prev.filter((s) => s.id !== school.id));
+            toast.error(
+                err instanceof Error ? err.message : "Failed to add school",
+            );
+        }
     };
 
-    const handleRemoveSchool = (id: number) => {
+    // Remove school as gateway
+    const handleRemoveSchool = async (id: number) => {
+        const school = gatewaySchools.find((s) => s.id === id);
+        if (!school) return;
+
+        // Optimistic update
         setGatewaySchools((prev) => prev.filter((s) => s.id !== id));
+
+        try {
+            const res = await fetch(`/api/schools/${school.name}/gateway`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ gateway: false }),
+            });
+
+            if (!res.ok) throw new Error("Failed to update school");
+            toast.success(`${school.name} removed as gateway`);
+        } catch (err) {
+            // Revert optimistic update on failure
+            setGatewaySchools((prev) => [...prev, school]);
+            toast.error(
+                err instanceof Error ? err.message : "Failed to remove school",
+            );
+        }
     };
 
     return (
