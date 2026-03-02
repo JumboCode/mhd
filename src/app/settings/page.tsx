@@ -159,80 +159,10 @@ export default function Settings() {
                 <div className="mt-6 space-y-6">
                     <div className="space-y-3">
                         <div className="flex items-center justify-between">
-                            <h3 className="font-bold">Gateway Cities</h3>
+                            <h3 className="font-bold">Gateway Schools</h3>
                         </div>
                         <GatewaySchools />
-                        <div className="w-50 flex flex-row justify-between ">
-                            <MultiSelectCombobox
-                                options={cityOptions}
-                                value={selectedCities}
-                                onValueChange={handleCityChange}
-                                placeholder="Select cities"
-                                searchable
-                            />
-                            {/* TO DO: Once we have map, add toggle between map and table generated below */}
-                        </div>
-                        {selectedCities.length > 0 && (
-                            <>
-                                <p className="text-sm text-gray-600">
-                                    {selectedCities.length}{" "}
-                                    {selectedCities.length === 1
-                                        ? "city"
-                                        : "cities"}{" "}
-                                    selected
-                                </p>
-                                <div className="bg-white rounded-lg border border-gray-200 mt-4">
-                                    <table className="min-w-full">
-                                        <thead className="bg-gray-50">
-                                            <tr>
-                                                <th
-                                                    scope="col"
-                                                    className="px-6 py-3 text-left text-sm font-medium text-gray-500 tracking-wider w-3/4 border-b border-gray-200"
-                                                >
-                                                    City
-                                                </th>
-                                                <th
-                                                    scope="col"
-                                                    className="px-6 py-3 text-center text-sm font-medium text-gray-500 tracking-wider w-1/4 border-b border-gray-200"
-                                                >
-                                                    Actions
-                                                </th>
-                                            </tr>
-                                        </thead>
-
-                                        <tbody className="divide-y divide-gray-100">
-                                            {selectedCities.map((cityValue) => (
-                                                <tr
-                                                    key={cityValue}
-                                                    className="hover:bg-gray-50"
-                                                >
-                                                    <td className="px-6 py-3 whitespace-nowrap text-base font-normal text-gray-900">
-                                                        {getCityLabel(
-                                                            cityValue,
-                                                        )}
-                                                    </td>
-                                                    <td className="px-6 py-3 whitespace-nowrap text-sm text-center">
-                                                        <button
-                                                            onClick={() =>
-                                                                handleDeleteCity(
-                                                                    cityValue,
-                                                                )
-                                                            }
-                                                            className="text-gray-400 hover:text-red-500 p-1 transition-colors duration-150 ease-in-out"
-                                                            title={`Delete ${getCityLabel(cityValue)}`}
-                                                        >
-                                                            <Trash className="h-4 w-4" />
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </>
-                        )}
                     </div>
-
                     {/* School Locations Section */}
                     <SchoolLocationEditor />
 
