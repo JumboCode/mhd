@@ -141,7 +141,7 @@ export default function Sidebar() {
 
                     {sections.map((section) => (
                         <div key={section.title} className="mb-5 relative z-10">
-                            <p className="text-xs font-semibold text-brand mb-2 px-2 overflow-hidden whitespace-nowrap">
+                            <p className="text-xs font-semibold text-anti-brand-dark mb-2 px-2 overflow-hidden whitespace-nowrap">
                                 {section.title}
                             </p>
 
