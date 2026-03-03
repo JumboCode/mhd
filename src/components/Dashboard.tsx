@@ -201,7 +201,7 @@ export default function Dashboard() {
                         />
                         {/* TODO: Once we store type of school, make this correct */}
                     </div>
-                    <div className="flex flex-col m-5 items-center justify-center rounded-lg border py-6 border-border">
+                    <div className="flex flex-col my-5 items-center justify-center rounded-lg border py-6 border-border">
                         Total # Projects
                         <button
                             onClick={() => linkToGraph(projectChartFilters)}
