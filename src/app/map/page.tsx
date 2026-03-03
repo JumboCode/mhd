@@ -74,34 +74,6 @@ export default function HeatMapPage() {
 
         const map = mapCurrent?.getMap ? mapCurrent.getMap() : mapCurrent;
 
-        // Draw routes for counties
-        if (!map.getSource("counties-source")) {
-            map.addSource("counties-source", {
-                type: "geojson",
-                data: {
-                    type: "FeatureCollection",
-                    features: counties.map((c) => ({
-                        type: "Feature",
-                        geometry: {
-                            type: "LineString",
-                            coordinates: c.coordinates,
-                        },
-                        properties: {},
-                    })),
-                },
-            });
-            map.addLayer({
-                id: "counties-layer",
-                type: "line",
-                source: "counties-source",
-                paint: {
-                    "line-color": "#FF0000",
-                    "line-width": 4,
-                    "line-opacity": 0.5,
-                },
-            });
-        }
-
         // Dropdowns for hovering
         const popup = new maplibregl.Popup({
             closeButton: false,
@@ -112,6 +84,33 @@ export default function HeatMapPage() {
 
         // Heat layer, retrieve source from fetch data on page load
         const updateHeatLayer = () => {
+            // Draw routes for counties (must be inside style loaded check)
+            if (!map.getSource("counties-source")) {
+                map.addSource("counties-source", {
+                    type: "geojson",
+                    data: {
+                        type: "FeatureCollection",
+                        features: counties.map((c) => ({
+                            type: "Feature",
+                            geometry: {
+                                type: "LineString",
+                                coordinates: c.coordinates,
+                            },
+                            properties: {},
+                        })),
+                    },
+                });
+                map.addLayer({
+                    id: "counties-layer",
+                    type: "line",
+                    source: "counties-source",
+                    paint: {
+                        "line-color": "#FF0000",
+                        "line-width": 4,
+                        "line-opacity": 0.5,
+                    },
+                });
+            }
             // Filter to only include schools with data for the selected metric
             const allFeatures = schoolPoints?.features || [];
             const filteredFeatures = allFeatures.filter(
