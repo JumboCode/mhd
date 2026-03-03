@@ -109,7 +109,7 @@ export default function Sidebar() {
                 <div className="mt-4 px-3">
                     {sections.map((section) => (
                         <div key={section.title} className="mb-5">
-                            <p className="text-xs font-semibold text-muted-foreground mb-2 px-2 overflow-hidden whitespace-nowrap">
+                            <p className="text-xs font-bold text-muted-foreground mb-2 px-2 overflow-hidden whitespace-nowrap">
                                 {section.title}
                             </p>
 

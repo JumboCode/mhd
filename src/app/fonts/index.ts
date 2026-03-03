@@ -1,10 +1,9 @@
 import localFont from "next/font/local";
-import { IBM_Plex_Sans } from "next/font/google";
+import { DM_Sans } from "next/font/google";
 
-export const ibmPlexSans = IBM_Plex_Sans({
+export const dmSans = DM_Sans({
     subsets: ["latin"],
-    weight: ["300", "400", "500", "600", "700"],
-    variable: "--font-ibm-plex-sans",
+    variable: "--font-dm-sans",
     display: "swap",
 });
 

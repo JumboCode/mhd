@@ -4,7 +4,7 @@ module.exports = {
     theme: {
         extend: {
             fontFamily: {
-                sans: ["var(--font-ibm-plex-sans)"],
+                sans: ["var(--font-dm-sans)"],
                 serif: ["var(--font-miller-text)"],
                 display: [
                     "var(--font-miller-display)",

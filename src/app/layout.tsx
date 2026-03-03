@@ -13,12 +13,7 @@ import "./globals.css";
 
 import { Toaster } from "sonner";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
-import {
-    ibmPlexSans,
-    millerBanner,
-    millerDisplay,
-    millerText,
-} from "@/app/fonts";
+import { dmSans, millerBanner, millerDisplay, millerText } from "@/app/fonts";
 import ConditionalLayout from "@/components/ConditionalLayout";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
@@ -35,7 +30,7 @@ export default function RootLayout({
     return (
         <html
             lang="en"
-            className={`${millerBanner.variable} ${millerDisplay.variable} ${millerText.variable} ${ibmPlexSans.variable}`}
+            className={`${millerBanner.variable} ${millerDisplay.variable} ${millerText.variable} ${dmSans.variable}`}
         >
             <body className="font-sans flex flex-row h-screen overflow-hidden">
                 <NuqsAdapter>

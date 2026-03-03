@@ -5,12 +5,12 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-    "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 cursor-pointer",
+    "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-regular transition-all duration-150 ease-out focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 cursor-pointer active:scale-[0.97]",
     {
         variants: {
             variant: {
                 default:
-                    "relative bg-gradient-to-t from-[#0F38B9] to-[#265AFF] text-primary-foreground shadow hover:brightness-110",
+                    "relative overflow-hidden bg-gradient-to-t from-[#0F38B9] to-[#265AFF] text-primary-foreground shadow hover:brightness-110",
                 destructive:
                     "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
                 outline:
@@ -56,7 +56,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
             >
                 {isDefault ? (
                     <>
-                        <span className="absolute inset-[1px] rounded-[5px] bg-primary" />
+                        <span className="absolute inset-[1px] rounded-[calc(var(--radius-md)-1px)] bg-primary" />
                         <span className="relative z-10 flex items-center gap-2">
                             {children}
                         </span>
