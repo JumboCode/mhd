@@ -12,7 +12,6 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { MultiSelectCombobox } from "../../components/ui/multi-select-combobox";
 import { Trash, Plus, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/Combobox";
@@ -27,7 +26,6 @@ interface PermittedUser {
 }
 
 export default function Settings() {
-    const [selectedCities, setSelectedCities] = useState<string[]>([]);
     const [emailInput, setEmailInput] = useState("");
     const [permittedUsers, setPermittedUsers] = useState<PermittedUser[]>([
         {
@@ -44,38 +42,10 @@ export default function Settings() {
         },
     ]);
 
-    // TO DO: Replace with actual gateway cities
-    const cityOptions = [
-        { value: "city-1", label: "City 1" },
-        { value: "city-2", label: "City 2" },
-        { value: "city-3", label: "City 3" },
-        { value: "city-4", label: "City 4" },
-        { value: "city-5", label: "City 5" },
-        { value: "city-6", label: "City 6" },
-        { value: "city-7", label: "City 7" },
-        { value: "city-8", label: "City 8" },
-    ];
-
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-
-    const handleCityChange = (values: string[]) => {
-        setSelectedCities(values);
-        setHasUnsavedChanges(true);
-    };
 
     const handleSave = () => {
         setHasUnsavedChanges(false);
-    };
-
-    const handleDeleteCity = (cityValue: string) => {
-        setSelectedCities((prevCities) =>
-            prevCities.filter((value) => value !== cityValue),
-        );
-        setHasUnsavedChanges(true);
-    };
-
-    const getCityLabel = (value: string) => {
-        return cityOptions.find((opt) => opt.value === value)?.label || value;
     };
 
     // Email validation function

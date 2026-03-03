@@ -41,6 +41,7 @@ import {
     parseAsInteger,
     parseAsString,
     parseAsArrayOf,
+    parseAsBoolean,
 } from "nuqs";
 import { addToCart, downloadSingleGraph } from "@/lib/export-to-pdf";
 import {
@@ -55,6 +56,7 @@ type Project = {
     title: string;
     division: string;
     category: string;
+    gatewaySchool: string;
     year: number;
     teamProject: boolean;
     schoolId: number;
@@ -84,6 +86,7 @@ const groupByLabels: Record<string, string> = {
     "division": "Division",
     "implementation-type": "Implementation Type",
     "project-type": "Project Type",
+    "gateway-school": "Gateway School",
 };
 
 // Helper function for generating dynamic titles
@@ -154,9 +157,9 @@ const generateChartTitle = (
     return mainTitle;
 };
 
-export default function GraphsPage() {
+export default function ChartPage() {
     const [allProjects, setAllProjects] = useState<Project[]>([]);
-    const [gatewayCities, setGatewayCities] = useState<string[]>([]);
+    const [gatewaySchools, setGatewaySchools] = useState<string[]>([]);
 
     // Setting hooks
     const [timePeriod, setTimePeriod] = useQueryState(
@@ -223,6 +226,11 @@ export default function GraphsPage() {
         parseAsString.withDefault(""),
     );
 
+    const [onlyGatewaySchools, setOnlyGatewaySchools] = useQueryState(
+        "onlyGatewaySchools",
+        parseAsBoolean.withDefault(false),
+    );
+
     const [cart, setCart] = useState<string[]>([]);
 
     const [filterNames, setFilterNames] = useState<string[]>([]);
@@ -242,6 +250,7 @@ export default function GraphsPage() {
                 | "between",
             teacherYearsValue2: teacherYearsValue2 || undefined,
             groupBy: groupBy as GroupBy,
+            onlyGatewaySchools: onlyGatewaySchools,
             measuredAs: measuredAs as MeasuredAs,
         }),
         [
@@ -253,6 +262,7 @@ export default function GraphsPage() {
             teacherYearsValue2,
             groupBy,
             measuredAs,
+            onlyGatewaySchools,
         ],
     );
     const svgRef = useRef<SVGSVGElement | null>(null);
@@ -263,31 +273,41 @@ export default function GraphsPage() {
             try {
                 const response = await fetch("/api/projects");
                 if (!response.ok) throw new Error("Failed to fetch");
+
                 const data = await response.json();
-                setAllProjects(data);
+
+                const updatedProjects = data.map((p: Project) => ({
+                    ...p,
+                    gatewaySchool: gatewaySchools.includes(p.schoolName)
+                        ? "Gateway"
+                        : "Non-Gateway",
+                }));
+
+                setAllProjects(updatedProjects);
             } catch {
                 toast.error(
                     "Failed to load project data. Please refresh the page.",
                 );
             }
         };
-        fetchProjects();
-    }, []);
 
-    // Fetch gateway cities
+        if (gatewaySchools.length > 0) {
+            fetchProjects();
+        }
+    }, [gatewaySchools]);
+
+    // Fetch gateway schools
     useEffect(() => {
-        const fetchGatewayCities = async () => {
-            try {
-                const response = await fetch("/api/gateway-cities");
-                if (!response.ok) throw new Error("Failed to fetch");
-                const data = await response.json();
-                setGatewayCities(data);
-            } catch {
-                // Silently fail - gateway cities are optional
-                setGatewayCities([]);
-            }
-        };
-        fetchGatewayCities();
+        fetch("/api/schools?gateway=true&list=true")
+            .then((res) => res.json())
+            .then((data) => {
+                const schoolNames: string[] = data.map(
+                    (school: { name: string }) => school.name,
+                );
+
+                setGatewaySchools(schoolNames);
+            })
+            .catch(() => toast.error("Failed to load gateway schools"));
     }, []);
 
     /* Fetch and set cart to and from session storage to persist between refreshes */
@@ -409,6 +429,10 @@ export default function GraphsPage() {
             )
                 return false;
 
+            if (filters.onlyGatewaySchools && p.gatewaySchool !== "Gateway") {
+                return false;
+            }
+
             // Selected Cities
             if (
                 filters.selectedCities.length > 0 &&
@@ -450,28 +474,28 @@ export default function GraphsPage() {
         // Determine the key to group data by for different lines on the graph
         let groupKey: keyof Project | null = null;
 
-        // set groupKey based on filter selection
-        if (filters?.groupBy === "none") {
-            setGroupBy("none");
-            groupKey = null; // No grouping
-        } else if (filters?.groupBy === "division") {
-            setGroupBy("division");
-            groupKey = "division";
-        } else if (filters?.groupBy === "project-type") {
-            setGroupBy("project-type");
-            groupKey = "category";
-        } else if (filters?.groupBy === "region") {
-            setGroupBy("region");
-            // TO DO: Add proper 'region' field to Project type and database. Currently using schoolTown (city) as a temporary substitute
-            groupKey = "schoolTown";
-        } else if (filters?.groupBy === "school-type") {
-            setGroupBy("school-type");
-            // TO DO: Add 'schoolType' field to Project type and database, then map it here
-            groupKey = "category"; // Temporary fallback
-        } else if (filters?.groupBy === "implementation-type") {
-            setGroupBy("implementation-type");
-            // TO DO: Add 'implementationType' field to Project type and database, then map it here
-            groupKey = "category"; // Temporary fallback
+        switch (filters.groupBy) {
+            case "none":
+                groupKey = null;
+                break;
+            case "division":
+                groupKey = "division";
+                break;
+            case "project-type":
+                groupKey = "category";
+                break;
+            case "region":
+                groupKey = "schoolTown"; // temp
+                break;
+            case "school-type":
+                groupKey = "category"; // temp
+                break;
+            case "implementation-type":
+                groupKey = "category"; // temp
+                break;
+            case "gateway-school":
+                groupKey = "gatewaySchool";
+                break;
         }
 
         // Get a sorted list of unique group names
@@ -573,6 +597,7 @@ export default function GraphsPage() {
         groupBy,
         measuredAs,
         yearRange,
+        onlyGatewaySchools,
     ]);
 
     // Calculate filtered count (based on selected 'measured by' category)
@@ -604,7 +629,7 @@ export default function GraphsPage() {
                     schools={schools}
                     cities={cities}
                     projectTypes={projectTypes}
-                    gatewayCities={gatewayCities}
+                    gatewaySchools={gatewaySchools}
                     filters={filters}
                     onFiltersChange={(newFilters) => {
                         setSelectedSchools(newFilters.selectedSchools);
@@ -621,6 +646,7 @@ export default function GraphsPage() {
                         setTeacherYearsValue2(
                             newFilters.teacherYearsValue2 ?? "",
                         );
+                        setOnlyGatewaySchools(newFilters.onlyGatewaySchools);
                     }}
                 />
             </div>

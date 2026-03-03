@@ -9,11 +9,11 @@
  *
  ***************************************************************/
 
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { yearlySchoolParticipation } from "@/lib/schema";
 
-export async function GET(_req: NextRequest) {
+export async function GET() {
     try {
         const result = await db
             .select({

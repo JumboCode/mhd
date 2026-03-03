@@ -1,21 +1,43 @@
+/***************************************************************
+ *
+ *                /components/YearsOfData.tsx
+ *
+ *         Author: Zander & Anne
+ *           Date: 3/1/2026
+ *
+ *        Summary: Component for displaying the existing years
+ *                 of data and option to delete.
+ *
+ **************************************************************/
+
 "use client";
 
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Trash } from "lucide-react";
 
+/**
+ * React component for managing yearly dataset entries.
+ *
+ * - Loads all years that exist in the system
+ * - Visually indicates which years contain data
+ * - Allows deletion of an entire year's data
+ */
 export default function YearsOfData() {
     const [years, setYears] = useState<number[]>([]);
     const [yearsWithData, setYearsWithData] = useState<Set<number>>(new Set());
 
-    // Fetch years and determine which ones have data
+    /**
+     * Loads all years from the API and determines which contain data.
+     * Generates a continuous descending range between min and max year.
+     */
     useEffect(() => {
         async function fetchYears() {
             try {
                 const res = await fetch("/api/years-with-data");
                 if (!res.ok) throw new Error("Failed to fetch years");
 
-                const data = await res.json(); // expects { years: number[] }
+                const data = await res.json();
                 if (!data.years || data.years.length === 0) return;
 
                 const existingYears: number[] = data.years;
@@ -31,16 +53,22 @@ export default function YearsOfData() {
                 setYears(allYears);
                 setYearsWithData(new Set(existingYears));
             } catch (err) {
-                console.error(err);
                 toast.error("Failed to load years");
             }
         }
 
         fetchYears();
     }, []);
+
+    /**
+     * Deletes all data associated with a given year.
+     * Uses optimistic UI updates on success.
+     *
+     * @param year Year to delete
+     */
     function handleRemoveYear(year: number) {
         fetch(`/api/delete-year?year=${year}`, {
-            method: "DELETE", // ← important
+            method: "DELETE",
         })
             .then((response) => {
                 if (!response.ok) {
@@ -61,17 +89,17 @@ export default function YearsOfData() {
     }
 
     return (
-        <div className="border border-gray-200 rounded-lg overflow-hidden w-full">
+        <div className="border-2 border-gray-200 rounded-lg overflow-hidden w-full">
             <table className="w-full">
-                <thead className="bg-gray-50">
-                    <tr>
-                        <th className="text-left px-4 py-3 text-sm font-medium text-gray-700">
+                <thead className="bg-gray-50 border-b-2 border-gray-200">
+                    <tr className="divide-x-2 divide-gray-200">
+                        <th className="text-center px-4 py-3 text-sm font-medium text-gray-500 w-[40%]">
                             Year
                         </th>
-                        <th className="text-left px-4 py-3 text-sm font-medium text-gray-700">
+                        <th className="text-center px-4 py-3 text-sm font-medium text-gray-500 w-[40%]">
                             Status
                         </th>
-                        <th className="text-left px-4 py-3 text-sm font-medium text-gray-700">
+                        <th className="text-center px-4 py-3 text-sm font-medium text-gray-500 w-[20%]">
                             Actions
                         </th>
                     </tr>
@@ -80,9 +108,11 @@ export default function YearsOfData() {
                     {years.length > 0 ? (
                         years.map((year) => (
                             <tr key={year} className="hover:bg-gray-50">
-                                <td className="px-4 py-3 text-sm">{year}</td>
-                                <td className="px-4 py-3 text-sm">
-                                    <div className="flex items-center gap-2">
+                                <td className="px-4 py-3 text-sm text-center">
+                                    {year}
+                                </td>
+                                <td className="px-4 py-3 text-sm text-center">
+                                    <div className="flex items-center justify-center gap-2">
                                         <span
                                             className={`h-2 w-2 rounded-full ${
                                                 yearsWithData.has(year)
@@ -97,10 +127,10 @@ export default function YearsOfData() {
                                         </span>
                                     </div>
                                 </td>
-                                <td className="px-4 py-3 text-sm">
+                                <td className="px-4 py-3 text-sm text-center">
                                     <button
                                         onClick={() => handleRemoveYear(year)}
-                                        className="text-gray-400 hover:text-red-500 transition-colors"
+                                        className="text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
                                         aria-label={`Remove ${year}`}
                                     >
                                         <Trash className="w-4 h-4" />

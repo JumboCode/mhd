@@ -5,7 +5,8 @@
  *         Author: Zander & Anne
  *           Date: 3/1/2026
  *
- *        Summary: Endpoint to fetch or update a school's gateway flag
+ *        Summary: Endpoint to fetch or update a school's
+ *                 "gateway" flag in the database.
  *
  **************************************************************/
 
@@ -14,6 +15,13 @@ import { db } from "@/lib/db";
 import { schools } from "@/lib/schema";
 import { eq, sql } from "drizzle-orm";
 
+/**
+ * Fetch the gateway status of a school.
+ *
+ * @param req NextRequest object
+ * @param params Promise containing the school `name` param
+ * @returns JSON response with { gateway: boolean } or error
+ */
 export async function GET(
     req: NextRequest,
     { params }: { params: Promise<{ name: string }> },
@@ -22,7 +30,6 @@ export async function GET(
         const { name } = await params;
         const searchName = name.replace(/-/g, " ");
 
-        // Find school by lowercase name
         const schoolResult = await db
             .select({ id: schools.id, gateway: schools.gateway })
             .from(schools)
@@ -45,6 +52,13 @@ export async function GET(
     }
 }
 
+/**
+ * Update the gateway status of a school.
+ *
+ * @param req NextRequest object
+ * @param params Promise containing the school `name` param
+ * @returns JSON response with { message, gateway } or error
+ */
 export async function PATCH(
     req: NextRequest,
     { params }: { params: Promise<{ name: string }> },
@@ -63,7 +77,6 @@ export async function PATCH(
             );
         }
 
-        // Find school by lowercase name
         const schoolResult = await db
             .select({ id: schools.id })
             .from(schools)
@@ -77,7 +90,6 @@ export async function PATCH(
             );
         }
 
-        // Update gateway flag
         await db
             .update(schools)
             .set({ gateway })

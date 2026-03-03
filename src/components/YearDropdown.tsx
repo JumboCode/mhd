@@ -42,7 +42,6 @@ export default function YearDropdown({
     const [years, setYears] = useState<number[]>([]);
 
     // Years from current year down to 10 years ago
-    const currentYear = new Date().getFullYear();
 
     useEffect(() => {
         async function fetchYears() {
@@ -54,7 +53,7 @@ export default function YearDropdown({
                 const data = await res.json();
                 const existingYears: number[] = data.years;
 
-                if (existingYears.length == 0) return;
+                if (existingYears.length === 0) return;
 
                 const minYear = Math.min(...existingYears);
                 const maxYear = Math.max(...existingYears);
@@ -66,9 +65,7 @@ export default function YearDropdown({
 
                 setYears(allYears);
                 setYearsWithData(new Set(data.years));
-            } catch (err) {
-                console.error(err);
-            }
+            } catch (err) {}
         }
         fetchYears();
 

@@ -1,3 +1,15 @@
+/***************************************************************
+ *
+ *                /components/GatewaySchools.tsx
+ *
+ *         Author: Zander & Anne
+ *           Date: 3/1/2026
+ *
+ *        Summary: Component for displaying current gateway
+ *                 schools and modifying this flag for each.
+ *
+ **************************************************************/
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -5,6 +17,9 @@ import { Combobox } from "@/components/Combobox";
 import { Trash } from "lucide-react";
 import { toast } from "sonner";
 
+/**
+ * Represents a single school entry in the system.
+ */
 interface SchoolEntry {
     id: number;
     name: string;
@@ -13,6 +28,13 @@ interface SchoolEntry {
     gateway?: boolean;
 }
 
+/**
+ * React component for managing gateway schools.
+ *
+ * - Loads all schools for selection
+ * - Displays current gateway schools in a table
+ * - Allows adding/removing schools from gateway status
+ */
 export default function GatewaySchools() {
     const [schools, setSchools] = useState<SchoolEntry[]>([]);
     const [gatewaySchools, setGatewaySchools] = useState<SchoolEntry[]>([]);
@@ -39,7 +61,12 @@ export default function GatewaySchools() {
         label: s.name,
     }));
 
-    // Add school as gateway
+    /**
+     * Adds a school as a gateway school.
+     * Uses optimistic UI updates.
+     *
+     * @param value ID of the school to add
+     */
     const handleAddSchool = async (value: string) => {
         setSelectedSchoolId(value);
 
@@ -51,7 +78,6 @@ export default function GatewaySchools() {
             return;
         }
 
-        // Optimistic update
         setGatewaySchools((prev) => [...prev, school]);
 
         try {
@@ -71,12 +97,16 @@ export default function GatewaySchools() {
         }
     };
 
-    // Remove school as gateway
+    /**
+     * Removes a school from the gateway list.
+     * Uses optimistic UI updates.
+     *
+     * @param id ID of the school to remove
+     */
     const handleRemoveSchool = async (id: number) => {
         const school = gatewaySchools.find((s) => s.id === id);
         if (!school) return;
 
-        // Optimistic update
         setGatewaySchools((prev) => prev.filter((s) => s.id !== id));
 
         try {
@@ -89,7 +119,6 @@ export default function GatewaySchools() {
             if (!res.ok) throw new Error("Failed to update school");
             toast.success(`${school.name} removed as gateway`);
         } catch (err) {
-            // Revert optimistic update on failure
             setGatewaySchools((prev) => [...prev, school]);
             toast.error(
                 err instanceof Error ? err.message : "Failed to remove school",
@@ -103,7 +132,6 @@ export default function GatewaySchools() {
                 Select schools to include as gateway schools.
             </p>
 
-            {/* Dropdown */}
             <div className="w-72">
                 <Combobox
                     options={schoolOptions}
@@ -113,15 +141,14 @@ export default function GatewaySchools() {
                 />
             </div>
 
-            {/* Table */}
-            <div className="border border-gray-200 rounded-lg overflow-hidden">
+            <div className="border-2 border-gray-200 rounded-lg overflow-hidden">
                 <table className="w-full">
-                    <thead className="bg-gray-50">
-                        <tr>
-                            <th className="text-left px-4 py-3 text-sm font-medium text-gray-700">
+                    <thead className="bg-gray-50 border-b-2 border-gray-200">
+                        <tr className="divide-x-2 divide-gray-200">
+                            <th className="text-center px-4 py-3 text-sm font-medium text-gray-500 w-[80%]">
                                 School
                             </th>
-                            <th className="text-left px-4 py-3 text-sm font-medium text-gray-700">
+                            <th className="text-center px-4 py-3 text-sm font-medium text-gray-500">
                                 Actions
                             </th>
                         </tr>
@@ -133,15 +160,15 @@ export default function GatewaySchools() {
                                     key={school.id}
                                     className="hover:bg-gray-50"
                                 >
-                                    <td className="px-4 py-3 text-sm">
+                                    <td className="px-4 py-3 text-sm w-[80%]">
                                         {school.name}
                                     </td>
-                                    <td className="px-4 py-3 text-sm">
+                                    <td className="px-4 py-3 text-sm text-center">
                                         <button
                                             onClick={() =>
                                                 handleRemoveSchool(school.id)
                                             }
-                                            className="text-gray-400 hover:text-red-500 transition-colors"
+                                            className="text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
                                             aria-label={`Remove ${school.name}`}
                                         >
                                             <Trash className="w-4 h-4" />

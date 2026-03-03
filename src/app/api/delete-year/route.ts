@@ -5,7 +5,7 @@
  *         Author: Anne & Zander
  *           Date: 2/20/2026
  *
- *        Summary: api to delete all data for a given year
+ *        Summary: API to delete all data for a given year
  *
  **************************************************************/
 
@@ -18,10 +18,15 @@ import {
 } from "@/lib/schema";
 import { eq } from "drizzle-orm";
 
+/**
+ * Deletes all data for the specified year.
+ *
+ * @param req NextRequest object
+ * @returns JSON response with success or error
+ */
 export async function DELETE(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url);
-
         const yearString = searchParams.get("year");
         const currentYear = Number(yearString);
 
@@ -32,7 +37,7 @@ export async function DELETE(req: NextRequest) {
             );
         }
 
-        // delete content from tables if year matches year param
+        // Delete rows for the specified year
         await db.delete(projects).where(eq(projects.year, currentYear));
         await db
             .delete(yearlySchoolParticipation)
@@ -41,7 +46,7 @@ export async function DELETE(req: NextRequest) {
             .delete(yearlyTeacherParticipation)
             .where(eq(yearlyTeacherParticipation.year, currentYear));
 
-        // <-- add a response so fetch.ok becomes true
+        // Return a success response so fetch.ok becomes true
         return NextResponse.json({ success: true });
     } catch (error) {
         return NextResponse.json(
