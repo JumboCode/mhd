@@ -318,7 +318,7 @@ export default function HeatMapPage() {
     }, [metric, schoolPoints, showSchools]);
 
     return (
-        <div className="flex p-4 flex-col h-screen w-screen justify-center">
+        <div className="flex p-4 flex-col h-full w-full justify-center">
             <h1 className="text-2xl py-4 font-semibold mb-4">Heatmap</h1>
             <div className="flex flex-row justify-between items-center gap-4 shrink-0 pb-5">
                 <div className="flex flex-row items-center gap-4">

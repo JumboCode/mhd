@@ -18,6 +18,7 @@ import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { SchoolProfileSkeleton } from "@/components/skeletons/SchoolProfileSkeleton";
 import { MapPlacer } from "@/components/ui/mapPlacer";
 import { SchoolInfoRow } from "@/components/SchoolInfoRow";
+import { StatCard } from "@/components/ui/stat-card";
 
 // interface such that data can be blank if API is loading
 type SchoolData = {
@@ -82,14 +83,17 @@ export default function SchoolProfilePage() {
                     <StatCard
                         label="Total # Projects"
                         value={schoolData.projectCount}
+                        variant="with-aspect"
                     />
                     <StatCard
                         label="Total # Teachers"
                         value={schoolData.teacherCount}
+                        variant="with-aspect"
                     />
                     <StatCard
                         label="Total # Students"
                         value={schoolData.studentCount}
+                        variant="with-aspect"
                     />
                 </div>
 
@@ -159,18 +163,6 @@ export default function SchoolProfilePage() {
                     </div>
                 </div>
             </div>
-        </div>
-    );
-}
-
-// Reusable stat card component
-function StatCard({ label, value }: { label: string; value: string }) {
-    return (
-        <div className="flex flex-col items-center justify-center rounded-lg border border-border p-6 aspect-[247/138] gap-5">
-            <span className="text-sm text-muted-foreground">{label}</span>
-            <span className="font-mono text-5xl font-bold leading-none">
-                {value}
-            </span>
         </div>
     );
 }

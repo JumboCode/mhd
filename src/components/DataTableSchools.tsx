@@ -65,9 +65,9 @@ export function SchoolsDataTable<TData, TValue>({
     return (
         //Example code should be changed
         //border for school name column disappears when scrolling right
-        <div className="h-full overflow-auto rounded-md border text-center">
+        <div className="text-center">
             <Table className="border-separate border-spacing-0">
-                <TableHeader className="sticky top-0 z-10">
+                <TableHeader className="sticky top-16 z-30">
                     {table.getHeaderGroups().map((headerGroup) => (
                         <TableRow key={headerGroup.id}>
                             {headerGroup.headers.map((header) => {
@@ -76,7 +76,7 @@ export function SchoolsDataTable<TData, TValue>({
                                         key={header.id}
                                         className={
                                             header.index === 0
-                                                ? "sticky left-0 z-30 text-center bg-muted border-r border-b min-w-[200px] w-[200px]"
+                                                ? "sticky left-0 z-40 text-center bg-muted border-r border-b min-w-[200px] w-[200px]"
                                                 : "text-center border-r border-b z-0 bg-muted"
                                         }
                                     >
