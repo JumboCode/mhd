@@ -41,7 +41,7 @@ export async function exportMapToPDF(
 
         pdf.setFont("interstate-bold", "normal");
 
-        pdf.text(`${month}/${day}/${year}`, 170, 15);
+        pdf.text(`${month}/${day}/${year}`, 155, 15);
         pdf.addImage(
             logoImg.src,
             "PNG",
@@ -51,11 +51,11 @@ export async function exportMapToPDF(
             logoImg.height * 0.03,
         );
 
-        pdf.text(title, 25, 50);
+        pdf.text(title, 20, 50);
 
         // Calculate dimensions to maintain aspect ratio
         // 10px margin
-        const margin = 10;
+        const margin = 20;
         const imgWidth = pdfWidth - margin * 2;
         const imgHeight = imgWidth * aspectRatio;
 
