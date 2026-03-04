@@ -13,6 +13,7 @@
     },
     "dependencies": {
         "@base-ui/react": "^1.2.0",
+        "@better-auth/drizzle-adapter": "^1.5.3",
         "@floating-ui/dom": "^1.7.4",
         "@hookform/resolvers": "^5.2.2",
         "@mantine/core": "^8.3.4",

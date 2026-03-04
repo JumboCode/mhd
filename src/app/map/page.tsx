@@ -11,7 +11,7 @@
  **************************************************************/
 
 import { Map } from "@/components/ui/map";
-import { useEffect, useState, useRef } from "react";
+import { Suspense, useEffect, useState, useRef } from "react";
 import { toast } from "sonner";
 import { Loader2, Link, Share } from "lucide-react";
 
@@ -27,7 +27,7 @@ import regionsData from "@/data/regions.json";
 import YearDropdown from "@/components/YearDropdown";
 import CountDropdown from "@/components/CountDropdown";
 import { Button } from "@/components/ui/button";
-import { exportMapToPDF, useMapExport } from "@/lib/heatmap-export";
+import { exportMapToPDF } from "@/lib/heatmap-export";
 
 const regions = Object.values(regionsData).map((region) => ({
     name: region.name,
@@ -35,7 +35,7 @@ const regions = Object.values(regionsData).map((region) => ({
     color: "#af272f", // MHD red
 }));
 
-export default function HeatMapPage() {
+function HeatMapPage() {
     const [schoolPoints, setSchoolPoints] =
         useState<GeoJSON.FeatureCollection | null>(null);
 
@@ -493,5 +493,13 @@ export default function HeatMapPage() {
                 )}
             </div>
         </div>
+    );
+}
+
+export default function MapPage() {
+    return (
+        <Suspense>
+            <HeatMapPage />
+        </Suspense>
     );
 }
