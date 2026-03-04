@@ -13,7 +13,7 @@
 import { Map } from "@/components/ui/map";
 import { useEffect, useState, useRef } from "react";
 import { toast } from "sonner";
-import { Loader2, Link } from "lucide-react";
+import { Loader2, Link, Share } from "lucide-react";
 
 // queryStates required for URL sharing with nuqs
 import { useQueryState, parseAsInteger, parseAsString } from "nuqs";
@@ -25,6 +25,7 @@ import regionsData from "@/data/regions.json";
 import YearDropdown from "@/components/YearDropdown";
 import CountDropdown from "@/components/CountDropdown";
 import { Button } from "@/components/ui/button";
+import { exportMapToPDF, useMapExport } from "@/lib/heatmap-export";
 
 const regions = Object.values(regionsData).map((region) => ({
     name: region.name,
@@ -408,6 +409,20 @@ export default function HeatMapPage() {
                     >
                         <Link className="w-4 h-4" />
                         Share
+                    </Button>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex items-center gap-2"
+                        onClick={() => {
+                            const mapCurrent = mapRef.current;
+                            if (!mapCurrent) return;
+                            // Call the heatmap export function
+                            exportMapToPDF(mapCurrent);
+                        }}
+                    >
+                        <Share className="w-4 h-4" />
+                        Export
                     </Button>
                 </div>
             </div>
