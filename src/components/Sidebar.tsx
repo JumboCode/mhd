@@ -1,16 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useRef, useCallback } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
     Map,
     BarChart3,
     LayoutDashboard,
+    School,
     FileUp,
     Settings as SettingsIcon,
-    ChevronDown,
-    ChevronRight,
     LogOut,
 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
@@ -24,9 +23,36 @@ import {
 export default function Sidebar() {
     const pathname = usePathname();
     const router = useRouter();
-    const [isOverviewOpen, setIsOverviewOpen] = useState(false);
     const [isPopoverOpen, setIsPopoverOpen] = useState(false);
     const { data: session } = authClient.useSession();
+
+    // Magnetic hover effect state
+    const navContainerRef = useRef<HTMLDivElement>(null);
+    const [hoverStyle, setHoverStyle] = useState({
+        top: 0,
+        height: 0,
+        opacity: 0,
+    });
+
+    const handleItemMouseEnter = useCallback(
+        (e: React.MouseEvent<HTMLElement>) => {
+            const target = e.currentTarget;
+            const container = navContainerRef.current;
+            if (!container) return;
+            const containerRect = container.getBoundingClientRect();
+            const targetRect = target.getBoundingClientRect();
+            setHoverStyle({
+                top: targetRect.top - containerRect.top,
+                height: targetRect.height,
+                opacity: 1,
+            });
+        },
+        [],
+    );
+
+    const handleNavMouseLeave = useCallback(() => {
+        setHoverStyle((prev) => ({ ...prev, opacity: 0 }));
+    }, []);
 
     const handleSignOut = async () => {
         await authClient.signOut({
@@ -37,17 +63,6 @@ export default function Sidebar() {
             },
         });
     };
-
-    // Automatically open Overview if any subitem is active
-    useEffect(() => {
-        const overviewSubitems = ["/", "/schools"];
-        const isAnyOverviewSubitemActive = overviewSubitems.some(
-            (href) => pathname === href,
-        );
-        if (isAnyOverviewSubitemActive) {
-            setIsOverviewOpen(true);
-        }
-    }, [pathname]);
 
     const sections = [
         {
@@ -69,13 +84,14 @@ export default function Sidebar() {
             title: "DATA",
             items: [
                 {
-                    label: "Overview",
+                    href: "/",
+                    label: "Dashboard",
                     icon: <LayoutDashboard size={20} />,
-                    isExpandable: true,
-                    subitems: [
-                        { href: "/", label: "Dashboard" },
-                        { href: "/schools", label: "Schools" },
-                    ],
+                },
+                {
+                    href: "/schools",
+                    label: "Schools",
+                    icon: <School size={20} />,
                 },
                 {
                     href: "/upload",
@@ -106,120 +122,55 @@ export default function Sidebar() {
                     </h1>
                 </div>
 
-                <div className="mt-4 px-3">
+                <div
+                    className="mt-4 px-3 relative"
+                    ref={navContainerRef}
+                    onMouseLeave={handleNavMouseLeave}
+                >
+                    {/* Magnetic hover highlight */}
+                    <div
+                        className="absolute left-2 right-2 bg-accent rounded-lg pointer-events-none z-0"
+                        style={{
+                            top: hoverStyle.top,
+                            height: hoverStyle.height,
+                            opacity: hoverStyle.opacity,
+                            transition:
+                                "top 150ms ease-out, height 150ms ease-out, opacity 150ms ease-out",
+                        }}
+                    />
+
                     {sections.map((section) => (
-                        <div key={section.title} className="mb-5">
-                            <p className="text-xs font-semibold text-muted-foreground mb-2 px-2 overflow-hidden whitespace-nowrap">
+                        <div key={section.title} className="mb-5 relative z-10">
+                            <p className="text-xs font-semibold text-anti-brand-dark mb-2 px-2 overflow-hidden whitespace-nowrap">
                                 {section.title}
                             </p>
 
                             <nav className="flex flex-col space-y-1">
                                 {section.items.map((item) => {
-                                    if (item.isExpandable && item.subitems) {
-                                        // Expandable item (Overview)
-                                        const isAnySubitemActive =
-                                            item.subitems.some(
-                                                (sub) => pathname === sub.href,
-                                            );
+                                    const isActive = pathname === item.href;
 
-                                        return (
-                                            <div key={item.label}>
-                                                <button
-                                                    onClick={() =>
-                                                        setIsOverviewOpen(
-                                                            !isOverviewOpen,
-                                                        )
-                                                    }
-                                                    className={`
-                                                        w-full flex items-center justify-between px-3 py-2 rounded-lg transition-colors
-                                                        ${
-                                                            isAnySubitemActive
-                                                                ? "text-foreground hover:bg-accent hover:text-accent-foreground"
-                                                                : "text-foreground hover:bg-accent hover:text-accent-foreground"
-                                                        }
-                                                    `}
-                                                >
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="flex items-center justify-center w-6">
-                                                            {item.icon}
-                                                        </div>
-                                                        <span className="text-sm overflow-hidden whitespace-nowrap">
-                                                            {item.label}
-                                                        </span>
-                                                    </div>
-                                                    {isOverviewOpen ? (
-                                                        <ChevronDown
-                                                            size={16}
-                                                        />
-                                                    ) : (
-                                                        <ChevronRight
-                                                            size={16}
-                                                        />
-                                                    )}
-                                                </button>
-
-                                                {isOverviewOpen && (
-                                                    <div className="ml-12 mt-1 flex flex-col space-y-1">
-                                                        {item.subitems.map(
-                                                            (subitem) => {
-                                                                const isActive =
-                                                                    pathname ===
-                                                                    subitem.href;
-
-                                                                return (
-                                                                    <Link
-                                                                        key={
-                                                                            subitem.href
-                                                                        }
-                                                                        href={
-                                                                            subitem.href
-                                                                        }
-                                                                        className={`
-                                                                            px-3 py-1.5 rounded-lg transition-colors text-sm
-                                                                            ${
-                                                                                isActive
-                                                                                    ? "text-foreground font-semibold bg-accent"
-                                                                                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                                                                            }
-                                                                        `}
-                                                                    >
-                                                                        {
-                                                                            subitem.label
-                                                                        }
-                                                                    </Link>
-                                                                );
-                                                            },
-                                                        )}
-                                                    </div>
-                                                )}
+                                    return (
+                                        <Link
+                                            key={item.href}
+                                            href={item.href}
+                                            onMouseEnter={handleItemMouseEnter}
+                                            className={`
+                                                flex items-center gap-3 px-3 py-2 rounded-lg transition-colors relative z-10
+                                                ${
+                                                    isActive
+                                                        ? "font-semibold bg-accent"
+                                                        : ""
+                                                }
+                                            `}
+                                        >
+                                            <div className="flex items-center justify-center w-6">
+                                                {item.icon}
                                             </div>
-                                        );
-                                    } else {
-                                        // Regular item
-                                        const isActive = pathname === item.href;
-
-                                        return (
-                                            <Link
-                                                key={item.href}
-                                                href={item.href!}
-                                                className={`
-                                                    flex items-center gap-3 px-3 py-2 rounded-lg transition-colors
-                                                    ${
-                                                        isActive
-                                                            ? "text-foreground font-semibold bg-accent"
-                                                            : "text-foreground hover:bg-accent hover:text-accent-foreground"
-                                                    }
-                                                `}
-                                            >
-                                                <div className="flex items-center justify-center w-6">
-                                                    {item.icon}
-                                                </div>
-                                                <span className="text-sm overflow-hidden whitespace-nowrap">
-                                                    {item.label}
-                                                </span>
-                                            </Link>
-                                        );
-                                    }
+                                            <span className="text-sm overflow-hidden whitespace-nowrap">
+                                                {item.label}
+                                            </span>
+                                        </Link>
+                                    );
                                 })}
                             </nav>
                         </div>
@@ -228,26 +179,13 @@ export default function Sidebar() {
             </div>
 
             <div className="px-4 py-5 self-center flex items-center gap-3">
-                {/* <div className="w-8 h-8 rounded-full overflow-hidden bg-muted flex items-center justify-center">
-                    {session?.user?.image ? (
-                        <Image
-                            src={session.user.image}
-                            alt="Profile"
-                            className="w-full h-full object-cover"
-                            width={20}
-                            height={20}
-                        />
-                    ) : (
-                        <User size={16} className="text-muted-foreground" />
-                    )}
-                </div> */}
                 <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
                     <PopoverTrigger asChild>
                         <button className="text-sm font-medium text-foreground overflow-hidden whitespace-nowrap hover:text-accent-foreground cursor-pointer">
                             {session?.user?.email || "Loading..."}
                         </button>
                     </PopoverTrigger>
-                    <PopoverContent align="center" className="w-48">
+                    <PopoverContent align="center" className="w-48 p-0">
                         <div className="flex flex-col space-y-2">
                             <button
                                 onClick={handleSignOut}
