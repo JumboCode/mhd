@@ -185,7 +185,7 @@ export default function Sidebar() {
                             {session?.user?.email || "Loading..."}
                         </button>
                     </PopoverTrigger>
-                    <PopoverContent align="center" className="w-48">
+                    <PopoverContent align="center" className="w-48 p-0">
                         <div className="flex flex-col space-y-2">
                             <button
                                 onClick={handleSignOut}
