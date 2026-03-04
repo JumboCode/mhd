@@ -51,8 +51,7 @@ export default function HeatMapPage() {
     );
 
     // Reference to the map, needed for updating the heat layer
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const mapRef = useRef<any>(null);
+    const mapRef = useRef<import("maplibre-gl").Map | null>(null);
 
     const popupRef = useRef<maplibregl.Popup | null>(null); // stores the popup instance
     const pinnedRef = useRef(false); // tracks if tooltip is pinned
@@ -111,10 +110,8 @@ export default function HeatMapPage() {
 
     useEffect(() => {
         // Get reference to map, from reference get actual map
-        const mapCurrent = mapRef.current;
-        if (!mapCurrent) return;
-
-        const map = mapCurrent?.getMap ? mapCurrent.getMap() : mapCurrent;
+        const map = mapRef.current;
+        if (!map) return;
 
         // Dropdowns for hovering
         if (!popupRef.current) {
@@ -291,11 +288,16 @@ export default function HeatMapPage() {
 
             // Renders the tooltip popup and handles hover/click logic for
             // tooltips to persist/disappear
-            const renderPopup = (feature: any) => {
-                const coordinates = feature.geometry.coordinates.slice();
-                const { name } = feature.properties;
-                const value = feature.properties[metric] || 0;
-                const schoolSlug = name.toLowerCase().replace(/\s+/g, "-");
+            const renderPopup = (feature: GeoJSON.Feature) => {
+                const geometry = feature.geometry as GeoJSON.Point;
+                const coordinates = geometry.coordinates.slice() as [
+                    number,
+                    number,
+                ];
+                const { name } = feature.properties || {};
+                const value = feature.properties?.[metric] || 0;
+                const schoolSlug =
+                    name?.toLowerCase().replace(/\s+/g, "-") || "";
                 const profileUrl = `/schools/${schoolSlug}`;
 
                 const html = `
@@ -341,9 +343,13 @@ export default function HeatMapPage() {
 
             // Tooltips displaying information on hover
             // Only when schools are shown, does not appear otherwise
-            const onMouseEnter = (e: any) => {
+            const onMouseEnter = (
+                e: maplibregl.MapMouseEvent & {
+                    features?: maplibregl.MapGeoJSONFeature[];
+                },
+            ) => {
                 map.getCanvas().style.cursor = "pointer";
-                if (!pinnedRef.current && e.features.length)
+                if (!pinnedRef.current && e.features && e.features.length)
                     renderPopup(e.features[0]);
             };
 
@@ -354,7 +360,7 @@ export default function HeatMapPage() {
             };
 
             // Handle clicking on the map canvas
-            const onMapClick = (e: any) => {
+            const onMapClick = (e: maplibregl.MapMouseEvent) => {
                 // Check if a school pin was clicked
                 const features = map.queryRenderedFeatures(e.point, {
                     layers: ["school-icons"],
