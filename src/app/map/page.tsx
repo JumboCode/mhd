@@ -18,6 +18,8 @@ import { Loader2, Link, Share } from "lucide-react";
 // queryStates required for URL sharing with nuqs
 import { useQueryState, parseAsInteger, parseAsString } from "nuqs";
 
+const VALID_METRICS = ["Students", "Projects", "Teachers"];
+
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 
@@ -49,6 +51,16 @@ export default function HeatMapPage() {
         "metric",
         parseAsString.withDefault("Projects"),
     );
+
+    // Reset invalid query params to defaults
+    useEffect(() => {
+        const currentYear = new Date().getFullYear();
+        if (year > currentYear || year < 1990) setYear(2025);
+    }, []);
+
+    useEffect(() => {
+        if (!VALID_METRICS.includes(metric)) setMetric("Projects");
+    }, []);
 
     // Reference to the map, needed for updating the heat layer
     const mapRef = useRef<import("maplibre-gl").Map | null>(null);
