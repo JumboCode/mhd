@@ -1,12 +1,12 @@
 "use client";
 /***************************************************************
  *
- *                src/app/heat-map/page.tsx
+ * src/app/heat-map/page.tsx
  *
- *         Author: Anne, Chiara & Elki, Steven
- *         Last updated: 2/14/26
+ * Author: Anne, Chiara & Elki, Steven
+ * Last updated: 2/14/26
  *
- *        Summary: Heatmap + Clusters within MA region
+ * Summary: Heatmap + Clusters within MA region
  *
  **************************************************************/
 
@@ -55,7 +55,6 @@ export default function HeatMapPage() {
 
     const popupRef = useRef<maplibregl.Popup | null>(null); // stores the popup instance
     const pinnedRef = useRef(false); // tracks if tooltip is pinned
-    let pinned = false;
 
     // Boolean to hide/show schools
     const [showSchools, setShowSchools] = useState(true);
@@ -110,48 +109,13 @@ export default function HeatMapPage() {
     }, []);
 
     useEffect(() => {
-        const mapCurrent = mapRef.current;
-        if (!mapCurrent) return;
-
-        const map = mapCurrent.getMap ? mapCurrent.getMap() : mapCurrent;
-        const popup = popupRef.current!;
-
-        // Handler: clicks on the map canvas
-        const handleMapClick = (e: MouseEvent) => {
-            // Only care if tooltip is pinned
-            if (!pinnedRef.current) return;
-
-            // Check if a school pin was clicked
-            const features = map.queryRenderedFeatures(
-                map.unproject([e.clientX, e.clientY]), // convert click to map coordinates
-                { layers: ["school-icons"] }, // your school icon layer
-            );
-
-            if (features.length === 0) {
-                // Clicked somewhere else, close popup
-                popup.remove();
-                pinnedRef.current = false;
-            }
-        };
-
-        // Add listener to MapLibre's canvas container
-        map.getCanvasContainer().addEventListener("click", handleMapClick);
-
-        return () => {
-            map.getCanvasContainer().removeEventListener(
-                "click",
-                handleMapClick,
-            );
-        };
-    }, [isLoaded]);
-
-    useEffect(() => {
         // Get reference to map, from reference get actual map
         const mapCurrent = mapRef.current;
         if (!mapCurrent) return;
 
         const map = mapCurrent?.getMap ? mapCurrent.getMap() : mapCurrent;
 
+        // Dropdowns for hovering
         if (!popupRef.current) {
             popupRef.current = new maplibregl.Popup({
                 closeButton: false,
@@ -161,44 +125,36 @@ export default function HeatMapPage() {
             });
         }
 
-        // Draw routes for regions
-        if (!map.getSource("regions-source")) {
-            map.addSource("regions-source", {
-                type: "geojson",
-                data: {
-                    type: "FeatureCollection",
-                    features: regions.map((c) => ({
-                        type: "Feature",
-                        geometry: {
-                            type: "LineString",
-                            coordinates: c.coordinates,
-                        },
-                        properties: {},
-                    })),
-                },
-            });
-            map.addLayer({
-                id: "regions-layer",
-                type: "line",
-                source: "regions-source",
-                paint: {
-                    "line-color": "#FF0000",
-                    "line-width": 4,
-                    "line-opacity": 0.5,
-                },
-            });
-        }
-
-        // Dropdowns for hovering
-        const popup = new maplibregl.Popup({
-            closeButton: false,
-            closeOnClick: false,
-            className: "school-hover-popup",
-            offset: 10,
-        });
-
         // Heat layer, retrieve source from fetch data on page load
         const updateHeatLayer = () => {
+            // Draw routes for regions
+            if (!map.getSource("regions-source")) {
+                map.addSource("regions-source", {
+                    type: "geojson",
+                    data: {
+                        type: "FeatureCollection",
+                        features: regions.map((c) => ({
+                            type: "Feature",
+                            geometry: {
+                                type: "LineString",
+                                coordinates: c.coordinates,
+                            },
+                            properties: {},
+                        })),
+                    },
+                });
+                map.addLayer({
+                    id: "regions-layer",
+                    type: "line",
+                    source: "regions-source",
+                    paint: {
+                        "line-color": "#FF0000",
+                        "line-width": 4,
+                        "line-opacity": 0.5,
+                    },
+                });
+            }
+
             // Filter to only include schools with data for the selected metric
             const allFeatures = schoolPoints?.features || [];
             const filteredFeatures = allFeatures.filter(
@@ -207,7 +163,7 @@ export default function HeatMapPage() {
             const filteredData = {
                 ...schoolPoints,
                 features: filteredFeatures,
-            };
+            } as GeoJSON.FeatureCollection;
 
             // Calculate maximum for weight based on the max by metric
             const values = filteredFeatures.map(
@@ -217,7 +173,7 @@ export default function HeatMapPage() {
 
             // The minimum intensity expressed is 0, and the school with
             // the maximum for the given metric has maximum intensity
-            const weightExpression = [
+            const weightExpression: maplibregl.ExpressionSpecification = [
                 "interpolate",
                 ["linear"],
                 ["get", metric],
@@ -229,7 +185,9 @@ export default function HeatMapPage() {
 
             // Store each coordinate pair as a single point in schoolPoints
             if (map.getSource("schoolSource")) {
-                map.getSource("schoolSource").setData(filteredData);
+                (
+                    map.getSource("schoolSource") as maplibregl.GeoJSONSource
+                ).setData(filteredData);
             } else {
                 map.addSource("schoolSource", {
                     type: "geojson",
@@ -324,104 +282,116 @@ export default function HeatMapPage() {
                 img.src = "/images/school-heatmap-icon.svg";
             }
 
-            // Tooltips displaying information on hover
-            // Only when schools are shown, does not appear otherwise.
-            map.on(
-                "mouseenter",
-                "school-icons",
-                (e: maplibregl.MapLayerMouseEvent) => {
-                    map.getCanvas().style.cursor = "pointer";
-
-                    const feature = e.features?.[0];
-                    if (!feature) return;
-                    const coordinates = (
-                        feature.geometry as GeoJSON.Point
-                    ).coordinates.slice() as [number, number];
-                    const { name } = feature.properties;
-                    const value = feature.properties[metric] || 0;
-
-                    const schoolSlug = (name as string)
-                        .toLowerCase()
-                        .replace(/\s+/g, "-");
-                    const profileUrl = `/schools/${schoolSlug}`;
-
-                    const html = `
-                    <div style="
-                        background: white; 
-                        padding: 16px; 
-                        min-width: 140px; 
-                        border-radius: 6px; 
-                        border: 1px solid white; 
-                        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-                        font-family: 'Interstate', 'Interstate-Regular', sans-serif;
-                        animation: fadeIn 0.2s ease-out forwards;
-                    ">
-                        <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: #111;">${name}</h3>
-                        <p style="margin: 8px 0 0 0; font-size: 16px; color: #333; font-weight: 500;">
-                            ${value.toLocaleString()} ${metric.toLowerCase()}
-                        </p>
-                        <a href="${profileUrl}" style="color: #af272f; text-decoration: underline;">View Profile</a>
-                    </div>
-                `;
-
-                    // Place popup right above the point
-                    const popup = popupRef.current!;
-                    popup.setLngLat(coordinates).setHTML(html).addTo(map);
-
-                    // Click on the pin to pin the tooltip
-                    map.once("click", "school-icons", () => {
-                        pinnedRef.current = true;
-                    });
-
-                    const popupElement = popup.getElement();
-                    if (popupElement) {
-                        const content = popupElement.querySelector(
-                            ".maplibregl-popup-content",
-                        ) as HTMLElement;
-                        const tip = popupElement.querySelector(
-                            ".maplibregl-popup-tip",
-                        ) as HTMLElement;
-                        if (content) {
-                            content.style.background = "transparent";
-                            content.style.boxShadow = "none";
-                            content.style.padding = "0";
-                        }
-                        if (tip) tip.style.display = "none";
-                    }
-                },
-            );
-
-            // might need to put this back
-            // On hover off, remove popup
-            // map.on("mouseleave", "school-icons", () => {
-            //     map.getCanvas().style.cursor = "";
-            //     popup.remove();
-            // });
-
-            map.on("mouseleave", "school-icons", () => {
-                map.getCanvas().style.cursor = "";
-                if (!pinnedRef.current) {
-                    popupRef.current?.remove();
-                }
-            });
-
             // Fixed ordering for layers
             if (map.getLayer("regions-layer")) map.moveLayer("regions-layer");
             if (map.getLayer("schoolHeatLayer"))
                 map.moveLayer("schoolHeatLayer");
             if (map.getLayer("school-icons")) map.moveLayer("school-icons");
+
+            // Renders the tooltip popup and handles hover/click logic for
+            // tooltips to persist/disappear
+            const renderPopup = (feature: any) => {
+                const coordinates = feature.geometry.coordinates.slice();
+                const { name } = feature.properties;
+                const value = feature.properties[metric] || 0;
+                const schoolSlug = name.toLowerCase().replace(/\s+/g, "-");
+                const profileUrl = `/schools/${schoolSlug}`;
+
+                const html = `
+                <div style="
+                    background: white; 
+                    padding: 16px; 
+                    min-width: 140px; 
+                    border-radius: 6px; 
+                    border: 1px solid white; 
+                    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+                    font-family: 'Interstate', 'Interstate-Regular', sans-serif;
+                    animation: fadeIn 0.2s ease-out forwards;
+                ">
+                    <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: #111;">${name}</h3>
+                    <p style="margin: 8px 0 0 0; font-size: 16px; color: #333; font-weight: 500;">
+                        ${value.toLocaleString()} ${metric.toLowerCase()}
+                    </p>
+                    <a href="${profileUrl}" style="color: #af272f; text-decoration: underline;">View Profile</a>
+                </div>`;
+
+                // Place popup right above the point
+                popupRef
+                    .current!.setLngLat(coordinates)
+                    .setHTML(html)
+                    .addTo(map);
+
+                const el = popupRef.current!.getElement();
+                if (el) {
+                    const content = el.querySelector(
+                        ".maplibregl-popup-content",
+                    ) as HTMLElement;
+                    const tip = el.querySelector(
+                        ".maplibregl-popup-tip",
+                    ) as HTMLElement;
+                    if (content) {
+                        content.style.background = "transparent";
+                        content.style.boxShadow = "none";
+                        content.style.padding = "0";
+                    }
+                    if (tip) tip.style.display = "none";
+                }
+            };
+
+            // Tooltips displaying information on hover
+            // Only when schools are shown, does not appear otherwise
+            const onMouseEnter = (e: any) => {
+                map.getCanvas().style.cursor = "pointer";
+                if (!pinnedRef.current && e.features.length)
+                    renderPopup(e.features[0]);
+            };
+
+            // On hover off, remove popup
+            const onMouseLeave = () => {
+                map.getCanvas().style.cursor = "";
+                if (!pinnedRef.current) popupRef.current?.remove();
+            };
+
+            // Handle clicking on the map canvas
+            const onMapClick = (e: any) => {
+                // Check if a school pin was clicked
+                const features = map.queryRenderedFeatures(e.point, {
+                    layers: ["school-icons"],
+                });
+                if (features.length) {
+                    // Click on the pin to pin the tooltip
+                    pinnedRef.current = true;
+                    renderPopup(features[0]);
+                } else {
+                    // Clicked somewhere else, close popup
+                    pinnedRef.current = false;
+                    popupRef.current?.remove();
+                }
+            };
+
+            // Popup logic only relevant if schools are shown
+            if (showSchools) {
+                map.on("mouseenter", "school-icons", onMouseEnter);
+                map.on("mouseleave", "school-icons", onMouseLeave);
+                map.on("click", onMapClick);
+            }
+
+            return () => {
+                map.off("mouseenter", "school-icons", onMouseEnter);
+                map.off("mouseleave", "school-icons", onMouseLeave);
+                map.off("click", onMapClick);
+            };
         };
 
         // Force update if map loads properly
-        if (map.isStyleLoaded()) {
-            updateHeatLayer();
-        } else {
-            map.once("load", updateHeatLayer);
-        }
+        if (map.isStyleLoaded()) updateHeatLayer();
+        else map.once("load", updateHeatLayer);
 
         // Gets rid of schools layer on button click
         if (!showSchools && map.getLayer("school-icons")) {
             map.removeLayer("school-icons");
+            popupRef.current?.remove();
+            pinnedRef.current = false;
         }
     }, [metric, schoolPoints, showSchools]);
 
