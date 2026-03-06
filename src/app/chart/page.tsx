@@ -51,6 +51,8 @@ import {
     HoverCardTrigger,
 } from "@/components/ui/hover-card";
 import { Cart } from "@/components/Cart";
+import { Kbd } from "@/components/ui/kbd";
+import { useHotkey } from "@/hooks/useHotkey";
 
 type Project = {
     id: number;
@@ -200,6 +202,10 @@ export default function ChartPage() {
         },
         [setChartType],
     );
+
+    // Keyboard shortcuts for chart type
+    useHotkey("b", () => handleChartTypeChange("bar"));
+    useHotkey("l", () => handleChartTypeChange("line"));
 
     // Filter hooks
     const [groupBy, setGroupBy] = useQueryState(
@@ -664,26 +670,20 @@ export default function ChartPage() {
                     <div className="flex flex-col gap-4 h-full overflow-hidden">
                         {/* Header */}
                         <div className="flex items-center justify-between px-8 pt-4 shrink-0">
-                            <div className="relative overflow-hidden">
-                                <AnimatePresence initial={false}>
+                            <div className="relative">
+                                <AnimatePresence
+                                    initial={false}
+                                    mode="popLayout"
+                                >
                                     <motion.h1
                                         key={chartType}
                                         className="text-xl font-semibold text-foreground whitespace-nowrap"
-                                        initial={{
-                                            opacity: 0,
-                                            x: slideDirection.current * 50,
-                                        }}
+                                        initial={{ opacity: 0, x: -20 }}
                                         animate={{ opacity: 1, x: 0 }}
-                                        exit={{
-                                            opacity: 0,
-                                            x: slideDirection.current * -50,
-                                            position: "absolute",
-                                            top: 0,
-                                            left: 0,
-                                        }}
+                                        exit={{ opacity: 0, x: 20 }}
                                         transition={{
                                             duration: 0.15,
-                                            ease: "easeInOut",
+                                            ease: "easeOut",
                                         }}
                                     >
                                         {generateChartTitle(
@@ -778,6 +778,7 @@ export default function ChartPage() {
                                         >
                                             <ChartColumn className="w-4 h-4" />
                                             Bar
+                                            <Kbd>B</Kbd>
                                         </TabsTrigger>
                                         <TabsTrigger
                                             value="line"
@@ -785,6 +786,7 @@ export default function ChartPage() {
                                         >
                                             <LineChart className="w-4 h-4" />
                                             Line
+                                            <Kbd>L</Kbd>
                                         </TabsTrigger>
                                     </TabsList>
                                 </Tabs>
@@ -941,7 +943,7 @@ export default function ChartPage() {
                                         className="flex h-full w-full items-center justify-center px-8 bg-background overflow-auto"
                                         initial={{
                                             opacity: 0,
-                                            x: slideDirection.current * 50,
+                                            x: slideDirection.current * -50,
                                         }}
                                         animate={{ opacity: 1, x: 0 }}
                                         exit={{
