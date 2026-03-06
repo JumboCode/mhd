@@ -16,7 +16,7 @@ import { toast } from "sonner";
 import YearDropdown from "@/components/YearDropdown";
 import MultiLineGraph from "./LineGraph";
 import type { GraphDataset } from "./LineGraph";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 type Stats = {
     totals: {
@@ -27,12 +27,6 @@ type Stats = {
         total_cities: number;
     };
     year: number;
-};
-
-type chartFilters = {
-    yearStart: number;
-    yearEnd: number;
-    isProjects: boolean;
 };
 
 export default function Dashboard() {
@@ -104,40 +98,8 @@ export default function Dashboard() {
         data: schoolyearData,
     };
 
-    const router = useRouter();
-
-    const projectChartFilters = {
-        yearStart: year - 5,
-        yearEnd: year,
-        isProjects: true,
-    };
-
-    const schoolChartFilters = {
-        yearStart: year - 5,
-        yearEnd: year,
-        isProjects: false,
-    };
-
-    /**
-     * linkToGraph
-     * Routes the user to the page corresponding to a chart with the filters
-     * passed in
-     * @param filters The chart filters that are used to produce a link to a
-     *                a chart on the actual charts page
-     * returns: none
-     */
-    function linkToGraph(filters: chartFilters) {
-        if (filters.isProjects) {
-            router.push(
-                `/chart?type=line&startYear=${filters.yearStart}&endYear=${filters.yearEnd}&measuredAs=total-project-count`,
-            );
-            return;
-        }
-
-        router.push(
-            `/chart?type=line&startYear=${filters.yearStart}&endYear=${filters.yearEnd}`,
-        );
-    }
+    const projectsHref = `/chart?type=line&startYear=${year - 5}&endYear=${year}&measuredAs=total-project-count`;
+    const schoolsHref = `/chart?type=line&startYear=${year - 5}&endYear=${year}`;
 
     return (
         <div className="flex flex-col gap-8 w-full px-6 py-10">
@@ -177,29 +139,33 @@ export default function Dashboard() {
                         />
                         {/* TODO: Once we store type of school, make this correct */}
                     </div>
-                    <div className="flex flex-col my-5 rounded-lg border py-6 border-border">
-                        <p className="text-center">Total # Projects</p>
-                        <button
-                            className="w-full block"
-                            onClick={() => linkToGraph(projectChartFilters)}
+                    <div className="flex flex-col my-5 rounded-lg border border-border divide-y divide-border">
+                        <Link
+                            href={projectsHref}
+                            className="block px-6 pt-4 pb-2 hover:bg-muted/40 transition-colors"
                         >
+                            <p className="text-sm font-medium text-center mb-2">
+                                Total # Projects
+                            </p>
                             <MultiLineGraph
                                 datasets={[projectsData]}
                                 yAxisLabel={"Total # Projects"}
                                 xAxisLabel="Year"
                             />
-                        </button>
-                        <p className="text-center">Total # Schools</p>
-                        <button
-                            className="w-full block"
-                            onClick={() => linkToGraph(schoolChartFilters)}
+                        </Link>
+                        <Link
+                            href={schoolsHref}
+                            className="block px-6 pt-4 pb-2 hover:bg-muted/40 transition-colors"
                         >
+                            <p className="text-sm font-medium text-center mb-2">
+                                Total # Schools
+                            </p>
                             <MultiLineGraph
                                 datasets={[schoolData]}
                                 yAxisLabel={"Total # Schools"}
                                 xAxisLabel="Year"
                             />
-                        </button>
+                        </Link>
                     </div>
                 </div>
             ) : null}

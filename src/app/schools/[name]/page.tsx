@@ -12,6 +12,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
@@ -22,8 +23,6 @@ import YearDropdown from "@/components/YearDropdown";
 import MultiLineGraph, { GraphDataset } from "@/components/LineGraph";
 import { DataTable } from "@/components/DataTable";
 import { ColumnDef } from "@tanstack/react-table";
-import { ArrowRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
 // interface such that data can be blank if API is loading
 type SchoolData = {
@@ -49,16 +48,9 @@ type ProjectRow = {
     year: number;
 };
 
-type chartFilters = {
-    yearStart: number;
-    yearEnd: number;
-    isProjects: boolean;
-};
-
 export default function SchoolProfilePage() {
     const params = useParams();
     const schoolName = params.name as string;
-
     const router = useRouter();
 
     const [schoolData, setSchoolData] = useState<SchoolData | null>(null);
@@ -138,11 +130,7 @@ export default function SchoolProfilePage() {
         data: studentYearData,
     };
 
-    const studentChartFilters: chartFilters = {
-        yearStart: year - 5,
-        yearEnd: year,
-        isProjects: false,
-    };
+    const studentsHref = `/chart?type=line&startYear=${year - 5}&endYear=${year}&measuredAs=total-student-count&schools=${encodeURIComponent(schoolData?.name ?? "")}`;
 
     if (!schoolData) {
         return <SchoolProfileSkeleton />;
@@ -187,28 +175,19 @@ export default function SchoolProfilePage() {
                     instructionalModel={schoolData.instructionalModel}
                     firstYear={schoolData.firstYear}
                 />
-                <div className="flex flex-col m-5">
-                    <div className="flex flex-row gap-3 items-center">
+                <Link
+                    href={studentsHref}
+                    className="block rounded-lg border border-border px-6 pt-4 pb-2 hover:bg-muted/40 transition-colors"
+                >
+                    <p className="text-sm font-medium text-center mb-2">
                         Total # Students
-                        <Button
-                            onClick={() =>
-                                router.push(
-                                    `/chart?type=line&startYear=${studentChartFilters.yearStart}&endYear=${studentChartFilters.yearEnd}&measuredAs=total-student-count&schools=${schoolData.name}`,
-                                )
-                            }
-                        >
-                            <div className="flex flex-row gap-3">
-                                View More
-                                <ArrowRight></ArrowRight>
-                            </div>
-                        </Button>
-                    </div>
+                    </p>
                     <MultiLineGraph
                         datasets={[studentData]}
                         yAxisLabel={"Total # Students"}
                         xAxisLabel="Year"
                     />
-                </div>
+                </Link>
 
                 {/* Placeholders for charts */}
                 <div className="grid grid-cols-3 gap-8">
