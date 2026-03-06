@@ -54,7 +54,7 @@ export default function BarGraph({
             return;
         }
 
-        const width = 1000;
+        const width = 900;
         const height = 400;
 
         const margin = {
