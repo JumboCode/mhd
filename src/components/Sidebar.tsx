@@ -19,6 +19,7 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover";
+import { DEV_BYPASS } from "@/lib/dev-config"; // TO DO - REMOVE: dev auth bypass
 
 export default function Sidebar() {
     const pathname = usePathname();
@@ -55,6 +56,12 @@ export default function Sidebar() {
     }, []);
 
     const handleSignOut = async () => {
+        // TO DO - REMOVE: this is for dev auth bypass
+        if (DEV_BYPASS === true) {
+            router.push("/signin");
+            return;
+        }
+
         await authClient.signOut({
             fetchOptions: {
                 onSuccess: () => {
