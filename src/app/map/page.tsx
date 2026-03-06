@@ -125,7 +125,6 @@ function HeatMapPage() {
         const map = mapRef.current;
         if (!map) return;
 
-        // Dropdowns for hovering
         if (!popupRef.current) {
             popupRef.current = new maplibregl.Popup({
                 closeButton: false,
@@ -137,9 +136,9 @@ function HeatMapPage() {
 
         // Heat layer, retrieve source from fetch data on page load
         const updateHeatLayer = () => {
-            // Draw routes for regions
-            if (!map.getSource("regions-source")) {
-                map.addSource("regions-source", {
+            // Draw routes for counties (must be inside style loaded check)
+            if (!map.getSource("counties-source")) {
+                map.addSource("counties-source", {
                     type: "geojson",
                     data: {
                         type: "FeatureCollection",
@@ -164,7 +163,6 @@ function HeatMapPage() {
                     },
                 });
             }
-
             // Filter to only include schools with data for the selected metric
             const allFeatures = schoolPoints?.features || [];
             const filteredFeatures = allFeatures.filter(
@@ -313,22 +311,23 @@ function HeatMapPage() {
                 const profileUrl = `/schools/${schoolSlug}`;
 
                 const html = `
-                <div style="
-                    background: white; 
-                    padding: 16px; 
-                    min-width: 140px; 
-                    border-radius: 6px; 
-                    border: 1px solid white; 
-                    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-                    font-family: 'Interstate', 'Interstate-Regular', sans-serif;
-                    animation: fadeIn 0.2s ease-out forwards;
-                ">
-                    <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: #111;">${name}</h3>
-                    <p style="margin: 8px 0 0 0; font-size: 16px; color: #333; font-weight: 500;">
-                        ${value.toLocaleString()} ${metric.toLowerCase()}
-                    </p>
-                    <a href="${profileUrl}" style="color: #af272f; text-decoration: underline;">View Profile</a>
-                </div>`;
+                    <div style="
+                        background: white;
+                        padding: 16px;
+                        min-width: 140px;
+                        border-radius: 6px;
+                        border: 1px solid white;
+                        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+                        font-family: 'DM Sans', sans-serif;
+                        animation: fadeIn 0.2s ease-out forwards;
+                    ">
+                        <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: #111;">${name}</h3>
+                        <p style="margin: 8px 0 0 0; font-size: 16px; color: #333; font-weight: 500;">
+                            ${value.toLocaleString()} ${metric.toLowerCase()}
+                        </p>
+                        <a href="${profileUrl}" style="color: #af272f; text-decoration: underline;">View Profile</a>
+                    </div>
+                `;
 
                 // Place popup right above the point
                 popupRef
@@ -474,6 +473,8 @@ function HeatMapPage() {
                 <Map
                     center={[-71.7, 42.2]}
                     zoom={7}
+                    theme="light"
+                    styles={{ light: "/maps/positron.json" }}
                     // Restrict zoom to stay on MA approximately
                     maxZoom={24}
                     minZoom={7}

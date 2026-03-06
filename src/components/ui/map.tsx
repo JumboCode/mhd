@@ -92,7 +92,7 @@ function useMap() {
 
 const defaultStyles = {
     dark: "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
-    light: "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
+    light: "/maps/protomaps_light.json",
 };
 
 type MapStyleOption = string | MapLibreGL.StyleSpecification;

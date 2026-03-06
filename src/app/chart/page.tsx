@@ -19,7 +19,8 @@ import {
     PlusCircle,
     Share,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { toast } from "sonner";
 import BarGraph, { type BarDataset } from "@/components/BarGraph";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
@@ -50,6 +51,8 @@ import {
     HoverCardTrigger,
 } from "@/components/ui/hover-card";
 import { Cart } from "@/components/Cart";
+import { Kbd } from "@/components/ui/kbd";
+import { useHotkey } from "@/hooks/useHotkey";
 
 type Project = {
     id: number;
@@ -191,6 +194,18 @@ export default function ChartPage() {
         "type",
         parseAsString.withDefault("bar"),
     );
+    const slideDirection = useRef(0);
+    const handleChartTypeChange = useCallback(
+        (value: string) => {
+            slideDirection.current = value === "line" ? -1 : 1;
+            setChartType(value as "bar" | "line");
+        },
+        [setChartType],
+    );
+
+    // Keyboard shortcuts for chart type
+    useHotkey("b", () => handleChartTypeChange("bar"));
+    useHotkey("l", () => handleChartTypeChange("line"));
 
     // Filter hooks
     const [groupBy, setGroupBy] = useQueryState(
@@ -348,7 +363,7 @@ export default function ChartPage() {
             const url = window.location.href;
             await navigator.clipboard.writeText(url);
             toast.success("URL copied to clipboard!");
-        } catch (error) {
+        } catch {
             toast.error("Failed to copy URL to clipboard");
         }
     };
@@ -655,23 +670,40 @@ export default function ChartPage() {
                     <div className="flex flex-col gap-4 h-full overflow-hidden">
                         {/* Header */}
                         <div className="flex items-center justify-between px-8 pt-4 shrink-0">
-                            <h1 className="text-xl font-semibold text-foreground">
-                                {generateChartTitle(
-                                    chartType,
-                                    measuredAs,
-                                    groupBy,
-                                    yearRange.start,
-                                    yearRange.end,
-                                    {
-                                        schools: selectedSchools.length,
-                                        cities: selectedCities.length,
-                                        projectTypes:
-                                            selectedProjectTypes.length,
-                                        hasTeacherYearsFilter:
-                                            teacherYearsValue !== "",
-                                    },
-                                )}
-                            </h1>
+                            <div className="relative">
+                                <AnimatePresence
+                                    initial={false}
+                                    mode="popLayout"
+                                >
+                                    <motion.h1
+                                        key={chartType}
+                                        className="text-xl font-semibold text-foreground whitespace-nowrap"
+                                        initial={{ opacity: 0, x: -20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        exit={{ opacity: 0, x: 20 }}
+                                        transition={{
+                                            duration: 0.15,
+                                            ease: "easeOut",
+                                        }}
+                                    >
+                                        {generateChartTitle(
+                                            chartType,
+                                            measuredAs,
+                                            groupBy,
+                                            yearRange.start,
+                                            yearRange.end,
+                                            {
+                                                schools: selectedSchools.length,
+                                                cities: selectedCities.length,
+                                                projectTypes:
+                                                    selectedProjectTypes.length,
+                                                hasTeacherYearsFilter:
+                                                    teacherYearsValue !== "",
+                                            },
+                                        )}
+                                    </motion.h1>
+                                </AnimatePresence>
+                            </div>
                             <div className="flex gap-3">
                                 <Button
                                     variant="outline"
@@ -737,9 +769,7 @@ export default function ChartPage() {
                             <div className="flex items-center">
                                 <Tabs
                                     value={chartType}
-                                    onValueChange={(value) =>
-                                        setChartType(value as "bar" | "line")
-                                    }
+                                    onValueChange={handleChartTypeChange}
                                 >
                                     <TabsList>
                                         <TabsTrigger
@@ -748,6 +778,7 @@ export default function ChartPage() {
                                         >
                                             <ChartColumn className="w-4 h-4" />
                                             Bar
+                                            <Kbd>B</Kbd>
                                         </TabsTrigger>
                                         <TabsTrigger
                                             value="line"
@@ -755,6 +786,7 @@ export default function ChartPage() {
                                         >
                                             <LineChart className="w-4 h-4" />
                                             Line
+                                            <Kbd>L</Kbd>
                                         </TabsTrigger>
                                     </TabsList>
                                 </Tabs>
@@ -904,36 +936,66 @@ export default function ChartPage() {
                         {/* Chart Area */}
 
                         {Math.round(filteredProjectCount) !== 0 ? (
-                            <div className="flex-1 flex items-center justify-center px-8 bg-background overflow-auto">
-                                {chartType === "bar" ? (
-                                    <BarGraph
-                                        dataset={graphDataset}
-                                        yAxisLabel={
-                                            measuredAsLabels[filters.measuredAs]
-                                        }
-                                        xAxisLabel="Year"
-                                        legendTitle={
-                                            filters.groupBy === "none"
-                                                ? undefined
-                                                : groupByLabels[filters.groupBy]
-                                        }
-                                        svgRefCopy={svgRef}
-                                    />
-                                ) : (
-                                    <LineGraph
-                                        datasets={graphDataset}
-                                        yAxisLabel={
-                                            measuredAsLabels[filters.measuredAs]
-                                        }
-                                        xAxisLabel="Year"
-                                        legendTitle={
-                                            filters.groupBy === "none"
-                                                ? undefined
-                                                : groupByLabels[filters.groupBy]
-                                        }
-                                        svgRefCopy={svgRef}
-                                    />
-                                )}
+                            <div className="relative flex-1 overflow-hidden">
+                                <AnimatePresence initial={false}>
+                                    <motion.div
+                                        key={chartType}
+                                        className="flex h-full w-full items-center justify-center px-8 bg-background overflow-auto"
+                                        initial={{
+                                            opacity: 0,
+                                            x: slideDirection.current * -50,
+                                        }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        exit={{
+                                            opacity: 0,
+                                            x: slideDirection.current * -50,
+                                            position: "absolute",
+                                            inset: 0,
+                                        }}
+                                        transition={{
+                                            duration: 0.15,
+                                            ease: "easeInOut",
+                                        }}
+                                    >
+                                        {chartType === "bar" ? (
+                                            <BarGraph
+                                                dataset={graphDataset}
+                                                yAxisLabel={
+                                                    measuredAsLabels[
+                                                        filters.measuredAs
+                                                    ]
+                                                }
+                                                xAxisLabel="Year"
+                                                legendTitle={
+                                                    filters.groupBy === "none"
+                                                        ? undefined
+                                                        : groupByLabels[
+                                                              filters.groupBy
+                                                          ]
+                                                }
+                                                svgRefCopy={svgRef}
+                                            />
+                                        ) : (
+                                            <LineGraph
+                                                datasets={graphDataset}
+                                                yAxisLabel={
+                                                    measuredAsLabels[
+                                                        filters.measuredAs
+                                                    ]
+                                                }
+                                                xAxisLabel="Year"
+                                                legendTitle={
+                                                    filters.groupBy === "none"
+                                                        ? undefined
+                                                        : groupByLabels[
+                                                              filters.groupBy
+                                                          ]
+                                                }
+                                                svgRefCopy={svgRef}
+                                            />
+                                        )}
+                                    </motion.div>
+                                </AnimatePresence>
                             </div>
                         ) : (
                             /* If no data is found that fits the filters, display this */
