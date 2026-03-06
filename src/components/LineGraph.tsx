@@ -228,18 +228,40 @@ export default function MultiLineGraph({
                         );
                     })}
 
-                    {/* Dots: invisible hit target + visible dot */}
-                    {datasets.map((ds, si) =>
-                        ds.data.map((point, pi) => {
-                            const cx = xScale(Number(point.x));
-                            const cy = yScale(point.y);
-                            const color =
-                                CHART_COLORS[si % CHART_COLORS.length];
-                            const content = formatTooltip(point, ds.label);
-                            return (
-                                <g key={`${si}-${pi}`}>
+                    {/* Dots + hit targets sorted by cy desc so highest data value renders on top */}
+                    {(() => {
+                        const dots = datasets
+                            .flatMap((ds, si) =>
+                                ds.data.map((point) => ({
+                                    cx: xScale(Number(point.x)),
+                                    cy: yScale(point.y),
+                                    color: CHART_COLORS[
+                                        si % CHART_COLORS.length
+                                    ],
+                                    content: formatTooltip(point, ds.label),
+                                    key: `${si}-${String(point.x)}`,
+                                })),
+                            )
+                            .sort((a, b) => b.cy - a.cy); // high cy (low value) first, low cy (high value) last = on top
+
+                        return (
+                            <>
+                                {dots.map((dot) => (
                                     <path
-                                        d={`M ${cx} ${cy} l 0.0001 0`}
+                                        key={`dot-${dot.key}`}
+                                        d={`M ${dot.cx} ${dot.cy} l 0.0001 0`}
+                                        vectorEffect="non-scaling-stroke"
+                                        strokeWidth={dotRadius}
+                                        strokeLinecap="round"
+                                        fill="none"
+                                        stroke={dot.color}
+                                        style={{ pointerEvents: "none" }}
+                                    />
+                                ))}
+                                {dots.map((dot) => (
+                                    <path
+                                        key={`hit-${dot.key}`}
+                                        d={`M ${dot.cx} ${dot.cy} l 0.0001 0`}
                                         vectorEffect="non-scaling-stroke"
                                         strokeWidth={16}
                                         strokeLinecap="round"
@@ -250,31 +272,22 @@ export default function MultiLineGraph({
                                             setTooltip({
                                                 x: e.clientX,
                                                 y: e.clientY,
-                                                content,
+                                                content: dot.content,
                                             })
                                         }
                                         onMouseMove={(e) =>
                                             setTooltip({
                                                 x: e.clientX,
                                                 y: e.clientY,
-                                                content,
+                                                content: dot.content,
                                             })
                                         }
                                         onMouseLeave={() => setTooltip(null)}
                                     />
-                                    <path
-                                        d={`M ${cx} ${cy} l 0.0001 0`}
-                                        vectorEffect="non-scaling-stroke"
-                                        strokeWidth={dotRadius}
-                                        strokeLinecap="round"
-                                        fill="none"
-                                        stroke={color}
-                                        style={{ pointerEvents: "none" }}
-                                    />
-                                </g>
-                            );
-                        }),
-                    )}
+                                ))}
+                            </>
+                        );
+                    })()}
                 </svg>
             </div>
 
