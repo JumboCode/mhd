@@ -102,7 +102,6 @@ export async function GET() {
 
         return NextResponse.json(knownSchools);
     } catch (error) {
-        console.error("Error loading known schools:", error);
         return NextResponse.json(
             { message: "Failed to load known schools" },
             { status: 500 },

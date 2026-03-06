@@ -182,7 +182,7 @@ export function getSchoolColumnIndices(
 
     const headerMap = new Map<string, number>();
     headers.forEach((header, index) => {
-        if (header != null) {
+        if (header !== null) {
             headerMap.set(normalizeColumnName(String(header)), index);
         }
     });

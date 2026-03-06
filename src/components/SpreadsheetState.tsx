@@ -88,13 +88,6 @@ export default function SpreadsheetState() {
                 unmatchedSchools[currentSchoolIndex].schoolId,
             ));
 
-    // Check if all unmatched schools have been assigned locations
-    const allSchoolsHaveLocations =
-        unmatchedSchools.length === 0 ||
-        unmatchedSchools.every((school) =>
-            assignedLocations.has(school.schoolId),
-        );
-
     // Fetch years with data once on mount
     useEffect(() => {
         const fetchYearsWithData = async () => {

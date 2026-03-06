@@ -76,6 +76,21 @@ export default function SpreadsheetEdits({
     const totalMatched = matchedSchools.length;
     const totalUnmatched = unmatchedSchools.length;
 
+    const currentSchool = unmatchedSchools[currentSchoolIndex];
+    const currentAssignment = currentSchool
+        ? assignedLocations.get(currentSchool.schoolId)
+        : undefined;
+    const remainingCount = totalUnmatched - currentSchoolIndex;
+
+    const handleMapClick = useCallback(
+        (lng: number, lat: number) => {
+            if (currentSchool) {
+                onSchoolLocationAssigned(currentSchool.schoolId, lat, lng);
+            }
+        },
+        [currentSchool, onSchoolLocationAssigned],
+    );
+
     // If no unmatched schools, show success message
     if (unmatchedSchools.length === 0) {
         return (
@@ -96,21 +111,6 @@ export default function SpreadsheetEdits({
             </div>
         );
     }
-
-    const currentSchool = unmatchedSchools[currentSchoolIndex];
-    const currentAssignment = currentSchool
-        ? assignedLocations.get(currentSchool.schoolId)
-        : undefined;
-    const remainingCount = totalUnmatched - currentSchoolIndex;
-
-    const handleMapClick = useCallback(
-        (lng: number, lat: number) => {
-            if (currentSchool) {
-                onSchoolLocationAssigned(currentSchool.schoolId, lat, lng);
-            }
-        },
-        [currentSchool, onSchoolLocationAssigned],
-    );
 
     if (!mounted) return null;
 
