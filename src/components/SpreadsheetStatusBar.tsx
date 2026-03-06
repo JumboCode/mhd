@@ -11,8 +11,6 @@
 
 "use client";
 
-import React from "react";
-
 type StatusBarProps = {
     tabIndex: number;
     maxTabs?: number;

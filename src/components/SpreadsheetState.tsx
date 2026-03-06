@@ -22,7 +22,7 @@ import SpreadsheetConfirmation from "./SpreadsheetConfirmation";
 import SpreadsheetPreview from "./SpreadsheetPreview";
 import SpreadsheetPreviewFail from "./SpreadsheetPreviewFail";
 import SpreadsheetUpload from "./SpreadsheetUpload";
-import SpreadsheetEdits from "./ui/SpreadsheetEdits";
+import SpreadsheetEdits from "./SpreadsheetEdits";
 import { ErrorReport, identifyErrors } from "@/lib/error-identification";
 import {
     type KnownSchool,
