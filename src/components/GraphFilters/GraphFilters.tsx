@@ -50,6 +50,7 @@ const groupByOptions = [
     { value: "division", label: "Division (Junior/Senior)" },
     { value: "implementation-type", label: "Implementation Type" },
     { value: "project-type", label: "Project Type" },
+    { value: "gateway-school", label: "Gateway School" },
 ];
 
 export type MeasuredAs =
@@ -65,7 +66,8 @@ export type GroupBy =
     | "school-type"
     | "division"
     | "implementation-type"
-    | "project-type";
+    | "project-type"
+    | "gateway-school";
 
 export type Filters = {
     measuredAs: MeasuredAs;
@@ -78,13 +80,14 @@ export type Filters = {
     teacherYearsOperator: string;
     teacherYearsValue: string;
     teacherYearsValue2?: string; // For range filtering (between)
+    onlyGatewaySchools: boolean;
 };
 
 type GraphFiltersProps = {
     schools: string[];
     cities: string[];
     projectTypes?: string[]; // List of project type options
-    gatewayCities?: string[]; // List of gateway city names
+    gatewaySchools?: string[]; // List of gateway city names
     filters?: Filters;
     onFiltersChange: (filters: Filters) => void;
 };
@@ -93,7 +96,7 @@ export default function GraphFilters({
     schools,
     cities,
     projectTypes = [],
-    gatewayCities = [],
+    gatewaySchools = [],
     onFiltersChange,
     filters,
 }: GraphFiltersProps) {
@@ -102,6 +105,7 @@ export default function GraphFilters({
     const [groupBy, setGroupBy] = useState<GroupBy>("none");
     const [individualProjects, setIndividualProjects] = useState(true);
     const [groupProjects, setGroupProjects] = useState(true);
+    const [onlyGatewaySchools, setOnlyGatewaySchools] = useState(false);
     const [selectedSchools, setSelectedSchools] = useState<string[]>([]);
     const [selectedCities, setSelectedCities] = useState<string[]>([]);
     const [selectedProjectTypes, setSelectedProjectTypes] = useState<string[]>(
@@ -124,6 +128,7 @@ export default function GraphFilters({
         setTeacherYearsOperator(filters.teacherYearsOperator || "=");
         setTeacherYearsValue(filters.teacherYearsValue || "");
         setTeacherYearsValue2(filters.teacherYearsValue2 ?? "");
+        setOnlyGatewaySchools(filters.onlyGatewaySchools);
 
         const newSelectedFilters: Filter[] = [];
         if ((filters.selectedSchools || []).length) {
@@ -139,6 +144,11 @@ export default function GraphFilters({
         if ((filters.selectedProjectTypes || []).length) {
             newSelectedFilters.push(
                 filterOptions.find((f) => f.value === "project-type")!,
+            );
+        }
+        if (filters.onlyGatewaySchools) {
+            newSelectedFilters.push(
+                filterOptions.find((f) => f.value === "only-gateway-school")!,
             );
         }
         if (filters.teacherYearsValue) {
@@ -162,6 +172,7 @@ export default function GraphFilters({
             teacherYearsValue,
             teacherYearsValue2:
                 teacherYearsValue2 === "" ? undefined : teacherYearsValue2,
+            onlyGatewaySchools,
             ...updates,
         };
         onFiltersChange(newFilters);
@@ -183,6 +194,9 @@ export default function GraphFilters({
         if (value.value === "teacher-participation" && !teacherYearsValue) {
             setTeacherYearsValue("1");
             updateFilters({ teacherYearsValue: "1" });
+        } else if (value.value === "only-gateway-school") {
+            setOnlyGatewaySchools(true);
+            updateFilters({ onlyGatewaySchools: true });
         }
     };
 
@@ -209,6 +223,9 @@ export default function GraphFilters({
         } else if (value.value === "city") {
             setSelectedCities([]);
             updateFilters({ selectedCities: [] });
+        } else if (value.value === "only-gateway-school") {
+            setOnlyGatewaySchools(false);
+            updateFilters({ onlyGatewaySchools: false });
         }
     };
 
@@ -388,7 +405,7 @@ export default function GraphFilters({
                                         }
                                         gatewayCities={
                                             filter.value === "city"
-                                                ? gatewayCities
+                                                ? gatewaySchools
                                                 : undefined
                                         }
                                         onFinish={(values) =>

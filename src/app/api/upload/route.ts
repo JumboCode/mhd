@@ -81,6 +81,15 @@ export async function POST(req: NextRequest) {
         // Remove header row and filter out empty rows
         const filteredRows = rawData.slice(1).filter((row) => row.length > 0);
 
+        // Delete any existing data before uploading new data
+        await db.delete(projects).where(eq(projects.year, year));
+        await db
+            .delete(yearlySchoolParticipation)
+            .where(eq(yearlySchoolParticipation.year, year));
+        await db
+            .delete(yearlyTeacherParticipation)
+            .where(eq(yearlyTeacherParticipation.year, year));
+
         let insertedCount = 0;
         for (const row of filteredRows) {
             // Find or create school using schoolId
