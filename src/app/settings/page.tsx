@@ -410,6 +410,7 @@ function SchoolLocationEditor() {
                             key={selectedSchool.id}
                             center={mapCenter}
                             zoom={12}
+                            theme="light"
                             scrollZoom={true}
                             dragPan={true}
                             dragRotate={false}
