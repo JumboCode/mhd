@@ -82,14 +82,13 @@ export async function POST(req: NextRequest) {
         const filteredRows = rawData.slice(1).filter((row) => row.length > 0);
 
         // Delete any existing data before uploading new data
-        const res = await fetch(`/api/delete-year?year=${year}`, {
-            method: "DELETE",
-        });
-
-        if (!res.ok) {
-            const errData = await res.json();
-            throw new Error(errData?.error || "Failed to delete previous data");
-        }
+        await db.delete(projects).where(eq(projects.year, year));
+        await db
+            .delete(yearlySchoolParticipation)
+            .where(eq(yearlySchoolParticipation.year, year));
+        await db
+            .delete(yearlyTeacherParticipation)
+            .where(eq(yearlyTeacherParticipation.year, year));
 
         let insertedCount = 0;
         for (const row of filteredRows) {

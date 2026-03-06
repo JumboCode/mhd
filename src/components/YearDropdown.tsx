@@ -13,7 +13,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { toast } from "sonner";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
     Select,
@@ -39,58 +38,25 @@ export default function YearDropdown({
 }: YearDropdownProps) {
     const [year, setYear] = useState<number | null>(null);
     const [yearsWithData, setYearsWithData] = useState<Set<number>>(new Set());
-    const [years, setYears] = useState<number[]>([]);
 
-    // Years from current year down to 10 years ago
+    const currentYear = new Date().getFullYear();
+    const years = Array.from({ length: 10 }, (_, i) => currentYear - i);
 
     useEffect(() => {
-        async function fetchYears() {
+        async function fetchYearsWithData() {
             try {
                 const res = await fetch("/api/years-with-data");
-
-                if (!res.ok) throw new Error("Failed to fetch years");
-
+                if (!res.ok) return;
                 const data = await res.json();
-                const existingYears: number[] = data.years;
-
-                if (existingYears.length === 0) return;
-
-                const minYear = Math.min(...existingYears);
-                const maxYear = Math.max(...existingYears);
-
-                const allYears = Array.from(
-                    { length: maxYear - minYear + 1 },
-                    (_, i) => maxYear - i,
-                );
-
-                setYears(allYears);
                 setYearsWithData(new Set(data.years));
             } catch (err) {}
         }
-        fetchYears();
-
-        // setYears(Array.from({ length: 10 }, (_, i) => currentYear - i));
+        fetchYearsWithData();
     }, []);
 
     useEffect(() => {
         setYear(selectedYear ?? null);
     }, [selectedYear]);
-
-    // Fetch years with data
-    useEffect(() => {
-        const fetchYearsWithData = async () => {
-            try {
-                const response = await fetch("/api/years");
-                if (response.ok) {
-                    const data = await response.json();
-                    setYearsWithData(new Set(data.yearsWithData));
-                }
-            } catch (error) {
-                toast.error("Failed to load year data");
-            }
-        };
-        fetchYearsWithData();
-    }, []);
 
     const handleValueChange = (value: string) => {
         const selected = value ? Number(value) : null;
