@@ -291,9 +291,7 @@ export default function ChartPage() {
             }
         };
 
-        if (gatewaySchools.length > 0) {
-            fetchProjects();
-        }
+        fetchProjects();
     }, [gatewaySchools]);
 
     // Fetch gateway schools
