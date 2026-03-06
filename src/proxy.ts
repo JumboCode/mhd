@@ -1,21 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
-import { headers } from "next/headers";
-import { auth } from "@/lib/auth";
+// import { headers } from "next/headers";
+// import { auth } from "@/lib/auth";
 import { getSessionCookie } from "better-auth/cookies";
+import { getSession } from "@/lib/auth-session";
+import { DEV_BYPASS } from "@/lib/dev-config";
 
 export async function proxy(request: NextRequest) {
-    const session = await auth.api.getSession({
-        headers: await headers(),
-    });
+    const session = await getSession();
 
     if (!session) {
         return NextResponse.redirect(new URL("/signin", request.url));
     }
 
-    const sessionCookie = getSessionCookie(request);
-
-    if (!sessionCookie) {
-        return NextResponse.redirect(new URL("/", request.url));
+    // TO DO - REMOVE: dev auth bypass
+    if (process.env.NODE_ENV !== "development" || !DEV_BYPASS) {
+        const sessionCookie = getSessionCookie(request);
+        if (!sessionCookie) {
+            return NextResponse.redirect(new URL("/", request.url));
+        }
     }
 
     return NextResponse.next();

@@ -12,12 +12,13 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { MultiSelectCombobox } from "../../components/ui/multi-select-combobox";
 import { Trash, Plus, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/Combobox";
+import YearsOfData from "@/components/YearsOfData";
 import { Map, MapMarker, MarkerContent, useMap } from "@/components/ui/map";
 import { toast } from "sonner";
+import GatewaySchools from "@/components/GatewaySchools";
 
 interface PermittedUser {
     email: string;
@@ -25,7 +26,6 @@ interface PermittedUser {
 }
 
 export default function Settings() {
-    const [selectedCities, setSelectedCities] = useState<string[]>([]);
     const [emailInput, setEmailInput] = useState("");
     const [permittedUsers, setPermittedUsers] = useState<PermittedUser[]>([
         {
@@ -42,38 +42,10 @@ export default function Settings() {
         },
     ]);
 
-    // TO DO: Replace with actual gateway cities
-    const cityOptions = [
-        { value: "city-1", label: "City 1" },
-        { value: "city-2", label: "City 2" },
-        { value: "city-3", label: "City 3" },
-        { value: "city-4", label: "City 4" },
-        { value: "city-5", label: "City 5" },
-        { value: "city-6", label: "City 6" },
-        { value: "city-7", label: "City 7" },
-        { value: "city-8", label: "City 8" },
-    ];
-
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-
-    const handleCityChange = (values: string[]) => {
-        setSelectedCities(values);
-        setHasUnsavedChanges(true);
-    };
 
     const handleSave = () => {
         setHasUnsavedChanges(false);
-    };
-
-    const handleDeleteCity = (cityValue: string) => {
-        setSelectedCities((prevCities) =>
-            prevCities.filter((value) => value !== cityValue),
-        );
-        setHasUnsavedChanges(true);
-    };
-
-    const getCityLabel = (value: string) => {
-        return cityOptions.find((opt) => opt.value === value)?.label || value;
     };
 
     // Email validation function
@@ -157,79 +129,10 @@ export default function Settings() {
                 <div className="mt-6 space-y-6">
                     <div className="space-y-3">
                         <div className="flex items-center justify-between">
-                            <h3 className="font-bold">Gateway Cities</h3>
+                            <h3 className="font-bold">Gateway Schools</h3>
                         </div>
-                        <div className="w-50 flex flex-row justify-between ">
-                            <MultiSelectCombobox
-                                options={cityOptions}
-                                value={selectedCities}
-                                onValueChange={handleCityChange}
-                                placeholder="Select cities"
-                                searchable
-                            />
-                            {/* TO DO: Once we have map, add toggle between map and table generated below */}
-                        </div>
-                        {selectedCities.length > 0 && (
-                            <>
-                                <p className="text-sm text-gray-600">
-                                    {selectedCities.length}{" "}
-                                    {selectedCities.length === 1
-                                        ? "city"
-                                        : "cities"}{" "}
-                                    selected
-                                </p>
-                                <div className="bg-white rounded-lg border border-gray-200 mt-4">
-                                    <table className="min-w-full">
-                                        <thead className="bg-gray-50">
-                                            <tr>
-                                                <th
-                                                    scope="col"
-                                                    className="px-6 py-3 text-left text-sm font-medium text-gray-500 tracking-wider w-3/4 border-b border-gray-200"
-                                                >
-                                                    City
-                                                </th>
-                                                <th
-                                                    scope="col"
-                                                    className="px-6 py-3 text-center text-sm font-medium text-gray-500 tracking-wider w-1/4 border-b border-gray-200"
-                                                >
-                                                    Actions
-                                                </th>
-                                            </tr>
-                                        </thead>
-
-                                        <tbody className="divide-y divide-gray-100">
-                                            {selectedCities.map((cityValue) => (
-                                                <tr
-                                                    key={cityValue}
-                                                    className="hover:bg-gray-50"
-                                                >
-                                                    <td className="px-6 py-3 whitespace-nowrap text-base font-normal text-gray-900">
-                                                        {getCityLabel(
-                                                            cityValue,
-                                                        )}
-                                                    </td>
-                                                    <td className="px-6 py-3 whitespace-nowrap text-sm text-center">
-                                                        <button
-                                                            onClick={() =>
-                                                                handleDeleteCity(
-                                                                    cityValue,
-                                                                )
-                                                            }
-                                                            className="text-gray-400 hover:text-red-500 p-1 transition-colors duration-150 ease-in-out"
-                                                            title={`Delete ${getCityLabel(cityValue)}`}
-                                                        >
-                                                            <Trash className="h-4 w-4" />
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </>
-                        )}
+                        <GatewaySchools />
                     </div>
-
                     {/* School Locations Section */}
                     <SchoolLocationEditor />
 
@@ -307,6 +210,15 @@ export default function Settings() {
                                     ))}
                                 </tbody>
                             </table>
+                        </div>
+                    </div>
+
+                    <div className="mt-6 space-y-6">
+                        <div className="space-y-3">
+                            <div className="space-y-6 w-full">
+                                <h3 className="font-bold">Available Data</h3>
+                                <YearsOfData />
+                            </div>
                         </div>
                     </div>
                 </div>

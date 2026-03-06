@@ -66,6 +66,12 @@ export default function AuthForm() {
         }
     }
 
+    // TO DO - REMOVE: dev auth bypass
+    async function handleDevBypass() {
+        router.push("/");
+        router.refresh();
+    }
+
     return (
         <div className="w-full md:w-1/2 h-full flex flex-col items-center p-6 overflow-y-auto">
             {/* Logo at top */}
@@ -191,6 +197,17 @@ export default function AuthForm() {
                                 </div>
                             </div>
                         )}
+                    </div>
+
+                    {/* TO DO - REMOVE: dev auth bypass */}
+                    <div className="border border-dashed border-amber-400 rounded-lg p-4 bg-amber-50 flex flex-col gap-2">
+                        <Button
+                            type="button"
+                            onClick={handleDevBypass}
+                            className="w-full bg-amber-400 hover:bg-amber-500 text-black text-sm"
+                        >
+                            ENTER DEV MODE
+                        </Button>
                     </div>
                 </div>
             </div>

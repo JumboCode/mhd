@@ -3,7 +3,7 @@
  *         /src/lib/export-to-pdf.ts
  *
  *         Author: Will and Justin
- *         Date: 2/1/2025
+ *         Date: 2/1/2026
  *
  *        Summary: Export an svg graph as a pdf
  **************************************************************/
