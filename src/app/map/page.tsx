@@ -122,18 +122,17 @@ function HeatMapPage() {
 
     useEffect(() => {
         // Get reference to map, from reference get actual map
-        const mapCurrent = mapRef.current;
-        if (!mapCurrent) return;
+        const map = mapRef.current;
+        if (!map) return;
 
-        const map = mapCurrent?.getMap ? mapCurrent.getMap() : mapCurrent;
-
-        // Dropdowns for hovering
-        const popup = new maplibregl.Popup({
-            closeButton: false,
-            closeOnClick: false,
-            className: "school-hover-popup",
-            offset: 10,
-        });
+        if (!popupRef.current) {
+            popupRef.current = new maplibregl.Popup({
+                closeButton: false,
+                closeOnClick: false,
+                className: "school-hover-popup",
+                offset: 10,
+            });
+        }
 
         // Heat layer, retrieve source from fetch data on page load
         const updateHeatLayer = () => {
@@ -143,7 +142,7 @@ function HeatMapPage() {
                     type: "geojson",
                     data: {
                         type: "FeatureCollection",
-                        features: counties.map((c) => ({
+                        features: regions.map((c) => ({
                             type: "Feature",
                             geometry: {
                                 type: "LineString",
@@ -154,9 +153,9 @@ function HeatMapPage() {
                     },
                 });
                 map.addLayer({
-                    id: "counties-layer",
+                    id: "regions-layer",
                     type: "line",
-                    source: "counties-source",
+                    source: "regions-source",
                     paint: {
                         "line-color": "#FF0000",
                         "line-width": 4,
@@ -319,13 +318,14 @@ function HeatMapPage() {
                         border-radius: 6px;
                         border: 1px solid white;
                         box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-                        font-family: 'Interstate', 'Interstate-Regular', sans-serif;
+                        font-family: 'DM Sans', sans-serif;
                         animation: fadeIn 0.2s ease-out forwards;
                     ">
                         <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: #111;">${name}</h3>
                         <p style="margin: 8px 0 0 0; font-size: 16px; color: #333; font-weight: 500;">
                             ${value.toLocaleString()} ${metric.toLowerCase()}
                         </p>
+                        <a href="${profileUrl}" style="color: #af272f; text-decoration: underline;">View Profile</a>
                     </div>
                 `;
 
