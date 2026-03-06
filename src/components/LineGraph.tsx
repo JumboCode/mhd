@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { scaleLinear, max, extent, line as d3Line } from "d3";
+import { scaleLinear, max, extent, line as d3Line, area as d3Area } from "d3";
 import {
     ChartDataset,
     ChartConfig,
@@ -40,7 +40,7 @@ export default function MultiLineGraph({
     const mTop = config?.margin?.top ?? 6;
     const mRight = config?.margin?.right ?? 8;
     const mBottom = config?.margin?.bottom ?? 80;
-    const mLeft = config?.margin?.left ?? 50;
+    const mLeft = config?.margin?.left ?? 54;
     const strokeWidth = config?.strokeWidth ?? 2;
     const dotRadius = config?.dotRadius ?? 6;
 
@@ -62,6 +62,11 @@ export default function MultiLineGraph({
     const lineGen = d3Line<{ x: string | number; y: number }>()
         .x((d) => xScale(Number(d.x)))
         .y((d) => yScale(d.y));
+
+    const areaGen = d3Area<{ x: string | number; y: number }>()
+        .x((d) => xScale(Number(d.x)))
+        .y0(100)
+        .y1((d) => yScale(d.y));
 
     const formatTooltip: TooltipFormatter =
         tooltipFormatter ?? ((d) => String(d.y));
@@ -121,7 +126,7 @@ export default function MultiLineGraph({
                     <div
                         key={i}
                         style={{ top: `${yScale(value)}%`, left: 24, right: 0 }}
-                        className="absolute text-xs tabular-nums -translate-y-1/2 text-muted-foreground text-right pr-2"
+                        className="absolute text-xs tabular-nums -translate-y-1/2 text-muted-foreground text-right pr-4"
                     >
                         {value.toLocaleString()}
                     </div>
@@ -163,6 +168,49 @@ export default function MultiLineGraph({
                             />
                         </g>
                     ))}
+
+                    {/* Gradient defs */}
+                    <defs>
+                        {datasets.map((ds, i) => (
+                            <linearGradient
+                                key={ds.label}
+                                id={`area-gradient-${i}`}
+                                x1="0"
+                                y1="0"
+                                x2="0"
+                                y2="1"
+                            >
+                                <stop
+                                    offset="0%"
+                                    stopColor={
+                                        CHART_COLORS[i % CHART_COLORS.length]
+                                    }
+                                    stopOpacity={0.2}
+                                />
+                                <stop
+                                    offset="100%"
+                                    stopColor={
+                                        CHART_COLORS[i % CHART_COLORS.length]
+                                    }
+                                    stopOpacity={0}
+                                />
+                            </linearGradient>
+                        ))}
+                    </defs>
+
+                    {/* Area fills */}
+                    {datasets.map((ds, i) => {
+                        const a = areaGen(ds.data);
+                        if (!a) return null;
+                        return (
+                            <path
+                                key={ds.label}
+                                d={a}
+                                fill={`url(#area-gradient-${i})`}
+                                stroke="none"
+                            />
+                        );
+                    })}
 
                     {/* Lines */}
                     {datasets.map((ds, i) => {
