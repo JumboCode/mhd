@@ -19,10 +19,10 @@ import {
     useReactTable,
     SortingState,
     getSortedRowModel,
+    ColumnResizeMode,
 } from "@tanstack/react-table";
 
 import {
-    Table,
     TableBody,
     TableCell,
     TableHead,
@@ -46,16 +46,19 @@ export function SchoolsDataTable<TData, TValue>({
     setGlobalFilter,
 }: DataTableProps<TData, TValue>) {
     const [sorting, setSorting] = React.useState<SortingState>([]);
+    const [columnResizeMode] = React.useState<ColumnResizeMode>("onChange");
 
     const table = useReactTable({
         data,
         columns,
+        columnResizeMode,
         getSortedRowModel: getSortedRowModel(), //May not need this?
         onSortingChange: setSorting,
         onGlobalFilterChange: setGlobalFilter,
         getCoreRowModel: getCoreRowModel(),
         getFilteredRowModel: getFilteredRowModel(),
         globalFilterFn: "includesString",
+        enableColumnResizing: true,
         state: {
             sorting,
             globalFilter,
@@ -66,7 +69,13 @@ export function SchoolsDataTable<TData, TValue>({
         //Example code should be changed
         //border for school name column disappears when scrolling right
         <div className="h-full overflow-auto rounded-md border text-center">
-            <Table className="border-separate border-spacing-0">
+            <table
+                className="caption-bottom text-sm border-separate border-spacing-0"
+                style={{
+                    width: table.getCenterTotalSize(),
+                    tableLayout: "fixed",
+                }}
+            >
                 <TableHeader className="sticky top-0 z-10">
                     {table.getHeaderGroups().map((headerGroup) => (
                         <TableRow key={headerGroup.id}>
@@ -76,9 +85,13 @@ export function SchoolsDataTable<TData, TValue>({
                                         key={header.id}
                                         className={
                                             header.index === 0
-                                                ? "sticky left-0 z-30 text-center bg-muted border-r border-b min-w-[200px] w-[200px]"
-                                                : "text-center border-r border-b z-0 bg-muted"
+                                                ? "sticky left-0 z-30 text-center bg-muted border-r border-b relative"
+                                                : "text-center border-r border-b z-0 bg-muted relative"
                                         }
+                                        style={{
+                                            width: header.getSize(),
+                                            maxWidth: header.getSize(),
+                                        }}
                                     >
                                         <div>
                                             {header.isPlaceholder
@@ -89,6 +102,15 @@ export function SchoolsDataTable<TData, TValue>({
                                                       header.getContext(),
                                                   )}
                                         </div>
+                                        <div
+                                            onMouseDown={header.getResizeHandler()}
+                                            onTouchStart={header.getResizeHandler()}
+                                            className={`absolute right-0 top-0 h-full w-1 cursor-col-resize select-none touch-none hover:bg-blue-500 ${
+                                                header.column.getIsResizing()
+                                                    ? "bg-blue-500"
+                                                    : ""
+                                            }`}
+                                        />
                                     </TableHead>
                                 );
                             })}
@@ -107,9 +129,13 @@ export function SchoolsDataTable<TData, TValue>({
                                         key={cell.id}
                                         className={
                                             cell.column.getIndex() === 0
-                                                ? " text-center sticky left-0 z-20 bg-muted border-r border-b min-w-[200px] w-[200px]"
+                                                ? " text-center sticky left-0 z-20 bg-muted border-r border-b"
                                                 : " text-center z-0 border-b"
                                         }
+                                        style={{
+                                            width: cell.column.getSize(),
+                                            maxWidth: cell.column.getSize(),
+                                        }}
                                     >
                                         {cell.column.getIndex() === 0 ? (
                                             <Link
@@ -144,7 +170,7 @@ export function SchoolsDataTable<TData, TValue>({
                         </TableRow>
                     )}
                 </TableBody>
-            </Table>
+            </table>
         </div>
     );
 }
