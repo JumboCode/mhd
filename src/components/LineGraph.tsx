@@ -1,27 +1,15 @@
 "use client";
 
-import * as d3 from "d3";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { toast } from "sonner";
+import { useState } from "react";
+import { scaleLinear, max, extent, line as d3Line } from "d3";
 import {
     ChartDataset,
     ChartConfig,
-    ChartMargin,
     TooltipFormatter,
+    CHART_COLORS,
 } from "./chartTypes";
 
-// Re-export for callers that use the old name
 export type { ChartDataset as GraphDataset };
-
-const DEFAULT_MARGIN: ChartMargin = {
-    top: 20,
-    right: 20,
-    bottom: 100,
-    left: 60,
-};
-const DEFAULT_HEIGHT = 400;
-const DEFAULT_DOT_RADIUS = 4;
-const DEFAULT_STROKE_WIDTH = 2;
 
 type LineGraphProps = {
     datasets: ChartDataset[];
@@ -42,321 +30,272 @@ export default function MultiLineGraph({
     config,
     tooltipFormatter,
 }: LineGraphProps) {
-    const svgRef = useRef<SVGSVGElement | null>(null);
-    const wrapperRef = useRef<HTMLDivElement | null>(null);
-    const tooltipRef = useRef<d3.Selection<
-        HTMLDivElement,
-        unknown,
-        null,
-        undefined
-    > | null>(null);
-    const [containerWidth, setContainerWidth] = useState(0);
+    const [tooltip, setTooltip] = useState<{
+        x: number;
+        y: number;
+        content: string;
+    } | null>(null);
 
-    const margin: ChartMargin = { ...DEFAULT_MARGIN, ...config?.margin };
-    const height = config?.height ?? DEFAULT_HEIGHT;
-    const dotRadius = config?.dotRadius ?? DEFAULT_DOT_RADIUS;
-    const strokeWidth = config?.strokeWidth ?? DEFAULT_STROKE_WIDTH;
+    const height = config?.height ?? 400;
+    const mTop = config?.margin?.top ?? 6;
+    const mRight = config?.margin?.right ?? 8;
+    const mBottom = config?.margin?.bottom ?? 80;
+    const mLeft = config?.margin?.left ?? 50;
+    const strokeWidth = config?.strokeWidth ?? 2;
+    const dotRadius = config?.dotRadius ?? 6;
 
-    const colorScale = useMemo(
-        () => d3.scaleOrdinal(d3.schemeCategory10.map((c) => c.toString())),
-        [],
-    );
+    const allPoints = datasets.flatMap((d) => d.data);
+    if (allPoints.length === 0) return null;
 
-    // Track container width responsively
-    useEffect(() => {
-        if (!wrapperRef.current) return;
-        const observer = new ResizeObserver((entries) => {
-            for (const entry of entries) {
-                setContainerWidth(entry.contentRect.width);
-            }
-        });
-        observer.observe(wrapperRef.current);
-        return () => observer.disconnect();
-    }, []);
+    const xNums = allPoints
+        .map((d) => Number(d.x))
+        .filter((n) => Number.isFinite(n));
+    const xExtent = extent(xNums) as [number, number];
+    if (xExtent[0] == null) return null;
 
-    // Cleanup tooltip on unmount
-    useEffect(() => {
-        return () => {
-            tooltipRef.current?.remove();
-            tooltipRef.current = null;
-        };
-    }, []);
+    const xScale = scaleLinear().domain(xExtent).range([0, 100]);
+    const yScale = scaleLinear()
+        .domain([0, max(allPoints.map((d) => d.y)) ?? 10])
+        .range([100, 0])
+        .nice();
 
-    useEffect(() => {
-        if (
-            !svgRef.current ||
-            !wrapperRef.current ||
-            datasets.length === 0 ||
-            containerWidth === 0
-        ) {
-            return;
-        }
+    const lineGen = d3Line<{ x: string | number; y: number }>()
+        .x((d) => xScale(Number(d.x)))
+        .y((d) => yScale(d.y));
 
-        const width = containerWidth;
-        const svg = d3.select(svgRef.current);
-        svg.selectAll("*").remove();
+    const formatTooltip: TooltipFormatter =
+        tooltipFormatter ?? ((d) => String(d.y));
+    const yTicks = yScale.ticks(8).filter((t) => Number.isInteger(t));
+    const xTicks = xScale.ticks().filter((t) => Number.isInteger(t));
+    const hasLegend = datasets.length > 1 || !!legendTitle;
 
-        if (!tooltipRef.current) {
-            tooltipRef.current = d3
-                .select(wrapperRef.current)
-                .append("div")
-                .attr("class", "d3-tooltip")
-                .style("position", "absolute")
-                .style("opacity", 0)
-                .style("background", "black")
-                .style("color", "white")
-                .style("padding", "0.5rem")
-                .style("border-radius", "0.375rem")
-                .style("font-size", "0.875rem")
-                .style("pointer-events", "none")
-                .style("transform", "translate(-50%, -125%)")
-                .style("z-index", "1000");
-        }
-
-        const tooltip = tooltipRef.current;
-        const formatTooltip: TooltipFormatter =
-            tooltipFormatter ?? ((d) => String(d.y));
-
-        const allPoints = datasets.flatMap((d) => d.data);
-        if (allPoints.length === 0) return;
-
-        const xValues = allPoints
-            .map((d) => {
-                const num = Number(d.x);
-                return Number.isFinite(num) ? num : null;
-            })
-            .filter((v): v is number => v !== null);
-
-        if (xValues.length === 0) {
-            toast.warning("LineGraph: No valid numeric x values found");
-            return;
-        }
-
-        const xExtent = d3.extent(xValues) as [number, number];
-        if (xExtent[0] == null || xExtent[1] == null) {
-            toast.warning("LineGraph: Invalid x extent");
-            return;
-        }
-
-        const x = d3
-            .scaleLinear()
-            .domain(xExtent)
-            .range([margin.left, width - margin.right]);
-
-        const y = d3
-            .scaleLinear()
-            .domain([0, d3.max(allPoints, (d) => d.y) || 10])
-            .range([height - margin.bottom, margin.top]);
-
-        const positionTooltip = (
-            event: MouseEvent | FocusEvent,
-            d: { x: string | number; y: number },
-            label: string,
-        ) => {
-            const wrapperRect = wrapperRef.current?.getBoundingClientRect();
-            if (!wrapperRect) return;
-
-            let clientX: number;
-            let clientY: number;
-
-            if (event.type === "focus") {
-                const circle = event.target as SVGCircleElement;
-                const circleRect = circle.getBoundingClientRect();
-                clientX = circleRect.left + circleRect.width / 2;
-                clientY = circleRect.top + circleRect.height / 2;
-            } else {
-                const mouseEvent = event as MouseEvent;
-                clientX = mouseEvent.clientX;
-                clientY = mouseEvent.clientY;
-            }
-
-            tooltip
-                .text(formatTooltip(d, label))
-                .transition()
-                .duration(100)
-                .style("opacity", 1)
-                .style("left", `${clientX - wrapperRect.left}px`)
-                .style("top", `${clientY - wrapperRect.top}px`);
-        };
-
-        // X-axis
-        const xTicks = x.ticks().filter((t) => Number.isInteger(t));
-        svg.append("g")
-            .attr("class", "x-axis")
-            .attr("transform", `translate(0,${height - margin.bottom})`)
-            .call(
-                d3.axisBottom(x).tickValues(xTicks).tickFormat(d3.format("d")),
-            )
-            .call((g) => g.selectAll(".tick line").remove())
-            .call((g) => g.select(".domain").remove());
-
-        svg.append("text")
-            .attr("text-anchor", "middle")
-            .attr("fill", "#555")
-            .attr("x", margin.left + (width - margin.left - margin.right) / 2)
-            .attr("y", height - margin.bottom + 40)
-            .text(xAxisLabel);
-
-        // Y-axis
-        const yTicks = y.ticks().filter((t) => Number.isInteger(t));
-        svg.append("g")
-            .attr("class", "y-axis")
-            .attr("transform", `translate(${margin.left},0)`)
-            .call(
-                d3
-                    .axisLeft(y)
-                    .tickValues(yTicks)
-                    .tickSize(-width + margin.left + margin.right),
-            )
-            .call((g) => g.selectAll(".tick line").attr("stroke", "#ccc"))
-            .call((g) => g.select(".domain").remove())
-            .call((g) => g.selectAll(".tick text").attr("fill", "#555"));
-
-        svg.append("text")
-            .attr("transform", "rotate(-90)")
-            .attr("text-anchor", "middle")
-            .attr("fill", "#555")
-            .attr("x", -margin.top - (height - margin.top - margin.bottom) / 2)
-            .attr("y", 15)
-            .text(yAxisLabel);
-
-        // Lines
-        const lineGen = d3
-            .line<{ x: string | number; y: number }>()
-            .x((d) => {
-                const num = Number(d.x);
-                return Number.isFinite(num) ? x(num) : 0;
-            })
-            .y((d) => y(d.y));
-
-        const linesGroup = svg.append("g").attr("class", "lines");
-        datasets.forEach((ds) => {
-            linesGroup
-                .append("path")
-                .attr("fill", "none")
-                .attr("stroke", colorScale(ds.label))
-                .attr("stroke-width", strokeWidth)
-                .attr("d", lineGen(ds.data));
-        });
-
-        // Dots
-        const dotsGroup = svg.append("g").attr("class", "dots");
-        datasets.forEach((ds) => {
-            dotsGroup
-                .selectAll(null)
-                .data(ds.data)
-                .enter()
-                .append("circle")
-                .attr("r", dotRadius)
-                .attr("fill", colorScale(ds.label))
-                .style("cursor", "pointer")
-                .attr("tabindex", 0)
-                .attr("cx", (d) => {
-                    const num = Number(d.x);
-                    return Number.isFinite(num) ? x(num) : 0;
-                })
-                .attr("cy", (d) => y(d.y))
-                .on("mouseover focus", function (event, d) {
-                    d3.select(this)
-                        .transition()
-                        .duration(100)
-                        .attr("r", dotRadius + 2);
-                    positionTooltip(event, d, ds.label);
-                })
-                .on("mouseout blur", function () {
-                    d3.select(this)
-                        .transition()
-                        .duration(100)
-                        .attr("r", dotRadius);
-                    tooltip.transition().duration(100).style("opacity", 0);
-                });
-        });
-
-        // Legend
-        const legendGroup = svg
-            .append("g")
-            .attr("class", "legend")
-            .attr(
-                "transform",
-                `translate(${margin.left}, ${height - margin.bottom + 80})`,
-            );
-
-        if (legendTitle) {
-            legendGroup
-                .append("text")
-                .attr("class", "legend-title")
-                .attr("x", 0)
-                .attr("y", -10)
-                .style("font-size", "14px")
-                .style("font-weight", "600")
-                .attr("fill", "currentColor")
-                .text(legendTitle);
-        }
-
-        const legendWidth = width - margin.left - margin.right;
-        const itemMargin = 10;
-        const rowHeight = 20;
-
-        const legendItems = legendGroup
-            .selectAll("g.legend-item")
-            .data(datasets)
-            .enter()
-            .append("g")
-            .attr("class", "legend-item");
-
-        legendItems
-            .append("rect")
-            .attr("width", 12)
-            .attr("height", 12)
-            .attr("fill", (d) => colorScale(d.label));
-
-        legendItems
-            .append("text")
-            .attr("x", 16)
-            .attr("y", 10)
-            .text((d) => d.label)
-            .style("font-size", "12px")
-            .attr("alignment-baseline", "middle");
-
-        requestAnimationFrame(() => {
-            let xOffset = 0;
-            let yOffset = 0;
-            legendItems.attr("transform", function () {
-                const bbox = (this as SVGGElement).getBBox();
-                const itemWidth = bbox.width + itemMargin;
-                if (xOffset + itemWidth > legendWidth && xOffset > 0) {
-                    xOffset = 0;
-                    yOffset += rowHeight;
-                }
-                const transform = `translate(${xOffset}, ${yOffset})`;
-                xOffset += itemWidth;
-                return transform;
-            });
-        });
-
-        if (svgRefCopy != null) {
-            svgRefCopy.current = svgRef.current;
-        }
-    }, [
-        datasets,
-        xAxisLabel,
-        yAxisLabel,
-        legendTitle,
-        containerWidth,
-        dotRadius,
-        strokeWidth,
-        colorScale,
-        tooltipFormatter,
-    ]);
+    // Derived pixel positions for explicit placement
+    const chartTop = mTop;
+    const chartBottom = height - mBottom;
+    const chartHeight = chartBottom - chartTop;
 
     return (
-        <div ref={wrapperRef} style={{ position: "relative", width: "100%" }}>
-            <svg
-                ref={svgRef}
-                width={containerWidth}
-                height={height}
-                style={{ overflow: "visible", display: "block" }}
-            />
+        <div className="relative w-full select-none" style={{ height }}>
+            {/* Tooltip */}
+            {tooltip && (
+                <div
+                    className="fixed z-50 bg-popover text-popover-foreground border border-border shadow-sm text-xs px-2 py-1 rounded-md pointer-events-none whitespace-nowrap"
+                    style={{
+                        left: tooltip.x,
+                        top: tooltip.y - 8,
+                        transform: "translate(-50%, -100%)",
+                    }}
+                >
+                    {tooltip.content}
+                </div>
+            )}
+
+            {/* Y-axis: rotated label strip + tick values */}
+            <div
+                className="absolute overflow-visible"
+                style={{
+                    top: chartTop,
+                    left: 0,
+                    width: mLeft,
+                    height: chartHeight,
+                }}
+            >
+                {/* Rotated axis title — occupies leftmost 16px */}
+                <div
+                    className="absolute inset-y-0 flex items-center justify-center"
+                    style={{ left: 0, width: 16 }}
+                >
+                    <span
+                        className="text-xs text-muted-foreground whitespace-nowrap pointer-events-none"
+                        style={{
+                            writingMode: "vertical-rl",
+                            transform: "rotate(180deg)",
+                        }}
+                    >
+                        {yAxisLabel}
+                    </span>
+                </div>
+
+                {/* Tick values — confined to right portion, away from label */}
+                {yTicks.map((value, i) => (
+                    <div
+                        key={i}
+                        style={{ top: `${yScale(value)}%`, left: 24, right: 0 }}
+                        className="absolute text-xs tabular-nums -translate-y-1/2 text-muted-foreground text-right pr-2"
+                    >
+                        {value.toLocaleString()}
+                    </div>
+                ))}
+            </div>
+
+            {/* Chart area (SVG only — no child divs) */}
+            <div
+                className="absolute"
+                style={{
+                    top: chartTop,
+                    left: mLeft,
+                    right: mRight,
+                    height: chartHeight,
+                }}
+            >
+                <svg
+                    ref={(el) => {
+                        if (svgRefCopy !== undefined) svgRefCopy.current = el;
+                    }}
+                    viewBox="0 0 100 100"
+                    className="w-full h-full overflow-visible"
+                    preserveAspectRatio="none"
+                >
+                    {/* Grid lines */}
+                    {yTicks.map((value, i) => (
+                        <g
+                            key={i}
+                            transform={`translate(0,${yScale(value)})`}
+                            className="text-border"
+                        >
+                            <line
+                                x1={0}
+                                x2={100}
+                                stroke="currentColor"
+                                strokeDasharray="6,5"
+                                strokeWidth={0.5}
+                                vectorEffect="non-scaling-stroke"
+                            />
+                        </g>
+                    ))}
+
+                    {/* Lines */}
+                    {datasets.map((ds, i) => {
+                        const d = lineGen(ds.data);
+                        if (!d) return null;
+                        return (
+                            <path
+                                key={ds.label}
+                                d={d}
+                                fill="none"
+                                stroke={CHART_COLORS[i % CHART_COLORS.length]}
+                                strokeWidth={strokeWidth}
+                                vectorEffect="non-scaling-stroke"
+                            />
+                        );
+                    })}
+
+                    {/* Dots: invisible hit target + visible dot */}
+                    {datasets.map((ds, si) =>
+                        ds.data.map((point, pi) => {
+                            const cx = xScale(Number(point.x));
+                            const cy = yScale(point.y);
+                            const color =
+                                CHART_COLORS[si % CHART_COLORS.length];
+                            const content = formatTooltip(point, ds.label);
+                            return (
+                                <g key={`${si}-${pi}`}>
+                                    <path
+                                        d={`M ${cx} ${cy} l 0.0001 0`}
+                                        vectorEffect="non-scaling-stroke"
+                                        strokeWidth={16}
+                                        strokeLinecap="round"
+                                        fill="none"
+                                        stroke="transparent"
+                                        style={{ cursor: "pointer" }}
+                                        onMouseEnter={(e) =>
+                                            setTooltip({
+                                                x: e.clientX,
+                                                y: e.clientY,
+                                                content,
+                                            })
+                                        }
+                                        onMouseMove={(e) =>
+                                            setTooltip({
+                                                x: e.clientX,
+                                                y: e.clientY,
+                                                content,
+                                            })
+                                        }
+                                        onMouseLeave={() => setTooltip(null)}
+                                    />
+                                    <path
+                                        d={`M ${cx} ${cy} l 0.0001 0`}
+                                        vectorEffect="non-scaling-stroke"
+                                        strokeWidth={dotRadius}
+                                        strokeLinecap="round"
+                                        fill="none"
+                                        stroke={color}
+                                        style={{ pointerEvents: "none" }}
+                                    />
+                                </g>
+                            );
+                        }),
+                    )}
+                </svg>
+            </div>
+
+            {/* X-axis tick labels — explicitly below chart area */}
+            <div
+                className="absolute overflow-visible"
+                style={{ top: chartBottom + 6, left: mLeft, right: mRight }}
+            >
+                {xTicks.map((year, i) => {
+                    const isFirst = i === 0;
+                    const isLast = i === xTicks.length - 1;
+                    return (
+                        <div
+                            key={i}
+                            className="absolute overflow-visible text-muted-foreground"
+                            style={{
+                                left: `${xScale(year)}%`,
+                                transform: `translateX(${isFirst ? "0%" : isLast ? "-100%" : "-50%"})`,
+                            }}
+                        >
+                            <span className="text-xs tabular-nums">{year}</span>
+                        </div>
+                    );
+                })}
+            </div>
+
+            {/* X-axis title */}
+            <div
+                className="absolute text-xs text-muted-foreground text-center"
+                style={{
+                    top: chartBottom + 28,
+                    left: mLeft,
+                    right: mRight,
+                }}
+            >
+                {xAxisLabel}
+            </div>
+
+            {/* Legend */}
+            {hasLegend && (
+                <div
+                    className="absolute flex flex-wrap items-center gap-x-4 gap-y-1"
+                    style={{
+                        top: chartBottom + 50,
+                        left: mLeft,
+                        right: mRight,
+                    }}
+                >
+                    {legendTitle && (
+                        <span className="text-xs font-semibold text-foreground w-full">
+                            {legendTitle}
+                        </span>
+                    )}
+                    {datasets.map((ds, i) => (
+                        <div key={i} className="flex items-center gap-1.5">
+                            <div
+                                className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                                style={{
+                                    backgroundColor:
+                                        CHART_COLORS[i % CHART_COLORS.length],
+                                }}
+                            />
+                            <span className="text-xs text-muted-foreground">
+                                {ds.label}
+                            </span>
+                        </div>
+                    ))}
+                </div>
+            )}
         </div>
     );
 }
