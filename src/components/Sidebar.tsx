@@ -119,13 +119,15 @@ export default function Sidebar() {
             <div className="flex-1 overflow-hidden">
                 <div className="px-6 py-5 flex items-center justify-center">
                     <h1>
-                        <Image
-                            src="/images/logo.png"
-                            alt="Logo"
-                            width={80}
-                            height={40}
-                            priority
-                        />
+                        <Link href="/">
+                            <Image
+                                src="/images/logo.png"
+                                alt="Logo"
+                                width={80}
+                                height={40}
+                                priority
+                            />
+                        </Link>
                     </h1>
                 </div>
 
