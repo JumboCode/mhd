@@ -1,57 +1,96 @@
 "use client";
 /***************************************************************
  *
- *                src/app/heat-map/page.tsx
+ * src/app/heat-map/page.tsx
  *
- *         Author: Anne, Chiara & Elki, Steven
- *         Last updated: 2/14/26
+ * Author: Anne, Chiara & Elki, Steven
+ * Last updated: 2/14/26
  *
- *        Summary: Heatmap + Clusters within MA region
+ * Summary: Heatmap + Clusters within MA region
  *
  **************************************************************/
 
 import { Map } from "@/components/ui/map";
-import { useEffect, useState, useRef } from "react";
+import { Suspense, useEffect, useState, useRef } from "react";
 import { toast } from "sonner";
+import { Loader2, Link, Share } from "lucide-react";
+
+// queryStates required for URL sharing with nuqs
+import { useQueryState, parseAsInteger, parseAsString } from "nuqs";
+
+const VALID_METRICS = ["Students", "Projects", "Teachers"];
 
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 
-import countiesData from "@/data/counties.json";
+import regionsData from "@/data/regions.json";
 import YearDropdown from "@/components/YearDropdown";
 import CountDropdown from "@/components/CountDropdown";
 import { Button } from "@/components/ui/button";
+import { exportMapToPDF } from "@/lib/heatmap-export";
 
-const counties = Object.values(countiesData).map((county) => ({
-    name: county.name,
-    coordinates: county.coordinates as [number, number][],
+const regions = Object.values(regionsData).map((region) => ({
+    name: region.name,
+    coordinates: region.coordinates as [number, number][],
     color: "#af272f", // MHD red
 }));
 
-export default function HeatMapPage() {
+function HeatMapPage() {
     const [schoolPoints, setSchoolPoints] =
         useState<GeoJSON.FeatureCollection | null>(null);
 
-    // Controlled by dropdowns
+    // Controlled by dropdowns, parameterized for link sharing
     // Year dropdown, set to range of our data
-    const [year, setYear] = useState<number | null>(2025);
+    const [year, setYear] = useQueryState(
+        "year",
+        parseAsInteger.withDefault(2025),
+    );
 
     // totalStudents | totalProjects |totalTeachers
-    const [metric, setMetric] = useState<string>("Projects");
+    const [metric, setMetric] = useQueryState(
+        "metric",
+        parseAsString.withDefault("Projects"),
+    );
+
+    // Reset invalid query params to defaults
+    useEffect(() => {
+        const currentYear = new Date().getFullYear();
+        if (year > currentYear || year < 1990) setYear(2025);
+    }, []);
+
+    useEffect(() => {
+        if (!VALID_METRICS.includes(metric)) setMetric("Projects");
+    }, []);
 
     // Reference to the map, needed for updating the heat layer
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const mapRef = useRef<any>(null);
+    const mapRef = useRef<import("maplibre-gl").Map | null>(null);
+
+    const popupRef = useRef<maplibregl.Popup | null>(null); // stores the popup instance
+    const pinnedRef = useRef(false); // tracks if tooltip is pinned
 
     // Boolean to hide/show schools
     const [showSchools, setShowSchools] = useState(true);
+
+    // Loading state
+    const [isLoaded, setIsLoaded] = useState(false);
 
     const handleClick = () => {
         setShowSchools(!showSchools);
     };
 
+    const copyURLtoClipboard = async () => {
+        try {
+            const url = window.location.href;
+            await navigator.clipboard.writeText(url);
+            toast.success("URL copied to clipboard!");
+        } catch (error) {
+            toast.error("Failed to copy URL to clipboard.");
+        }
+    };
+
     // Fetch school point data for heat layer
     useEffect(() => {
+        setIsLoaded(false);
         fetch(`/api/heat-layer?year=${year}`)
             .then((response) => {
                 if (!response.ok) {
@@ -61,11 +100,25 @@ export default function HeatMapPage() {
             })
             .then((data) => {
                 setSchoolPoints(data);
+                setIsLoaded(true);
             })
             .catch((error) => {
                 toast.error(error.message || "Failed to load school data");
+                setIsLoaded(true);
             });
     }, [year]);
+
+    useEffect(() => {
+        const handleEscape = (e: KeyboardEvent) => {
+            if (e.key === "Escape") {
+                popupRef.current?.remove();
+                pinnedRef.current = false;
+            }
+        };
+        document.addEventListener("keydown", handleEscape);
+
+        return () => document.removeEventListener("keydown", handleEscape);
+    }, []);
 
     useEffect(() => {
         // Get reference to map, from reference get actual map
@@ -119,7 +172,7 @@ export default function HeatMapPage() {
             const filteredData = {
                 ...schoolPoints,
                 features: filteredFeatures,
-            };
+            } as GeoJSON.FeatureCollection;
 
             // Calculate maximum for weight based on the max by metric
             const values = filteredFeatures.map(
@@ -129,7 +182,7 @@ export default function HeatMapPage() {
 
             // The minimum intensity expressed is 0, and the school with
             // the maximum for the given metric has maximum intensity
-            const weightExpression = [
+            const weightExpression: maplibregl.ExpressionSpecification = [
                 "interpolate",
                 ["linear"],
                 ["get", metric],
@@ -141,7 +194,9 @@ export default function HeatMapPage() {
 
             // Store each coordinate pair as a single point in schoolPoints
             if (map.getSource("schoolSource")) {
-                map.getSource("schoolSource").setData(filteredData);
+                (
+                    map.getSource("schoolSource") as maplibregl.GeoJSONSource
+                ).setData(filteredData);
             } else {
                 map.addSource("schoolSource", {
                     type: "geojson",
@@ -236,29 +291,33 @@ export default function HeatMapPage() {
                 img.src = "/images/school-heatmap-icon.svg";
             }
 
-            // Tooltips displaying information on hover
-            // Only when schools are shown, does not appear otherwise.
-            map.on(
-                "mouseenter",
-                "school-icons",
-                (e: maplibregl.MapLayerMouseEvent) => {
-                    map.getCanvas().style.cursor = "pointer";
+            // Fixed ordering for layers
+            if (map.getLayer("regions-layer")) map.moveLayer("regions-layer");
+            if (map.getLayer("schoolHeatLayer"))
+                map.moveLayer("schoolHeatLayer");
+            if (map.getLayer("school-icons")) map.moveLayer("school-icons");
 
-                    const feature = e.features?.[0];
-                    if (!feature) return;
-                    const coordinates = (
-                        feature.geometry as GeoJSON.Point
-                    ).coordinates.slice() as [number, number];
-                    const { name } = feature.properties;
-                    const value = feature.properties[metric] || 0;
+            // Renders the tooltip popup and handles hover/click logic for
+            // tooltips to persist/disappear
+            const renderPopup = (feature: GeoJSON.Feature) => {
+                const geometry = feature.geometry as GeoJSON.Point;
+                const coordinates = geometry.coordinates.slice() as [
+                    number,
+                    number,
+                ];
+                const { name } = feature.properties || {};
+                const value = feature.properties?.[metric] || 0;
+                const schoolSlug =
+                    name?.toLowerCase().replace(/\s+/g, "-") || "";
+                const profileUrl = `/schools/${schoolSlug}`;
 
-                    const html = `
+                const html = `
                     <div style="
-                        background: white; 
-                        padding: 16px; 
-                        min-width: 140px; 
-                        border-radius: 6px; 
-                        border: 1px solid white; 
+                        background: white;
+                        padding: 16px;
+                        min-width: 140px;
+                        border-radius: 6px;
+                        border: 1px solid white;
                         box-shadow: 0 4px 15px rgba(0,0,0,0.1);
                         font-family: 'Interstate', 'Interstate-Regular', sans-serif;
                         animation: fadeIn 0.2s ease-out forwards;
@@ -270,73 +329,147 @@ export default function HeatMapPage() {
                     </div>
                 `;
 
-                    // Place popup right above the point
-                    popup.setLngLat(coordinates).setHTML(html).addTo(map);
+                // Place popup right above the point
+                popupRef
+                    .current!.setLngLat(coordinates)
+                    .setHTML(html)
+                    .addTo(map);
 
-                    const popupElement = popup.getElement();
-                    if (popupElement) {
-                        const content = popupElement.querySelector(
-                            ".maplibregl-popup-content",
-                        ) as HTMLElement;
-                        const tip = popupElement.querySelector(
-                            ".maplibregl-popup-tip",
-                        ) as HTMLElement;
-                        if (content) {
-                            content.style.background = "transparent";
-                            content.style.boxShadow = "none";
-                            content.style.padding = "0";
-                        }
-                        if (tip) tip.style.display = "none";
+                const el = popupRef.current!.getElement();
+                if (el) {
+                    const content = el.querySelector(
+                        ".maplibregl-popup-content",
+                    ) as HTMLElement;
+                    const tip = el.querySelector(
+                        ".maplibregl-popup-tip",
+                    ) as HTMLElement;
+                    if (content) {
+                        content.style.background = "transparent";
+                        content.style.boxShadow = "none";
+                        content.style.padding = "0";
                     }
+                    if (tip) tip.style.display = "none";
+                }
+            };
+
+            // Tooltips displaying information on hover
+            // Only when schools are shown, does not appear otherwise
+            const onMouseEnter = (
+                e: maplibregl.MapMouseEvent & {
+                    features?: maplibregl.MapGeoJSONFeature[];
                 },
-            );
+            ) => {
+                map.getCanvas().style.cursor = "pointer";
+                if (!pinnedRef.current && e.features && e.features.length)
+                    renderPopup(e.features[0]);
+            };
 
             // On hover off, remove popup
-            map.on("mouseleave", "school-icons", () => {
+            const onMouseLeave = () => {
                 map.getCanvas().style.cursor = "";
-                popup.remove();
-            });
+                if (!pinnedRef.current) popupRef.current?.remove();
+            };
 
-            // Fixed ordering for layers
-            if (map.getLayer("counties-layer")) map.moveLayer("counties-layer");
-            if (map.getLayer("schoolHeatLayer"))
-                map.moveLayer("schoolHeatLayer");
-            if (map.getLayer("school-icons")) map.moveLayer("school-icons");
+            // Handle clicking on the map canvas
+            const onMapClick = (e: maplibregl.MapMouseEvent) => {
+                // Check if a school pin was clicked
+                const features = map.queryRenderedFeatures(e.point, {
+                    layers: ["school-icons"],
+                });
+                if (features.length) {
+                    // Click on the pin to pin the tooltip
+                    pinnedRef.current = true;
+                    renderPopup(features[0]);
+                } else {
+                    // Clicked somewhere else, close popup
+                    pinnedRef.current = false;
+                    popupRef.current?.remove();
+                }
+            };
+
+            // Popup logic only relevant if schools are shown
+            if (showSchools) {
+                map.on("mouseenter", "school-icons", onMouseEnter);
+                map.on("mouseleave", "school-icons", onMouseLeave);
+                map.on("click", onMapClick);
+            }
+
+            return () => {
+                map.off("mouseenter", "school-icons", onMouseEnter);
+                map.off("mouseleave", "school-icons", onMouseLeave);
+                map.off("click", onMapClick);
+            };
         };
 
         // Force update if map loads properly
-        if (map.isStyleLoaded()) {
-            updateHeatLayer();
-        } else {
-            map.once("load", updateHeatLayer);
-        }
+        if (map.isStyleLoaded()) updateHeatLayer();
+        else map.once("load", updateHeatLayer);
 
         // Gets rid of schools layer on button click
         if (!showSchools && map.getLayer("school-icons")) {
             map.removeLayer("school-icons");
+            popupRef.current?.remove();
+            pinnedRef.current = false;
         }
     }, [metric, schoolPoints, showSchools]);
 
     return (
         <div className="flex p-4 flex-col h-screen w-screen justify-center">
-            <h1 className="text-2xl py-4 font-semibold mb-4">Heatmap</h1>
-            <div className="flex flex-row justify-between items-center gap-4 shrink-0 pb-5">
+            <div className="flex justify-between items-center mb-4">
+                <h1 className="text-2xl py-4 font-semibold">Heatmap</h1>
+                <div className="flex gap-3">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex items-center gap-2"
+                        onClick={copyURLtoClipboard}
+                    >
+                        <Link className="w-4 h-4" />
+                        Share
+                    </Button>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex items-center gap-2"
+                        onClick={() => {
+                            const mapCurrent = mapRef.current;
+                            if (!mapCurrent) return;
+                            // Call the heatmap export function
+                            exportMapToPDF(mapCurrent);
+                        }}
+                    >
+                        <Share className="w-4 h-4" />
+                        Export
+                    </Button>
+                </div>
+            </div>
+            <div className="flex flex-row justify-between items-end gap-4 shrink-0 pb-5">
                 <div className="flex flex-row items-center gap-4">
-                    <CountDropdown
-                        selectedCount={metric}
-                        onCountChange={setMetric}
-                    />
-                    <YearDropdown
-                        showDataIndicator={true}
-                        selectedYear={year}
-                        onYearChange={setYear}
-                    />
+                    <div className="flex flex-col gap-1.5 w-48">
+                        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pl-1">
+                            Counts
+                        </label>
+                        <CountDropdown
+                            selectedCount={metric}
+                            onCountChange={setMetric}
+                        />
+                    </div>
+                    <div className="flex flex-col gap-1.5 w-48">
+                        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pl-1">
+                            Year
+                        </label>
+                        <YearDropdown
+                            showDataIndicator={true}
+                            selectedYear={year}
+                            onYearChange={setYear}
+                        />
+                    </div>
                 </div>
                 <Button onClick={handleClick} className="w-32 py-2">
                     {showSchools ? "Hide Schools" : "Show Schools"}
                 </Button>
             </div>
-            <div className="flex-1 rounded-2xl overflow-hidden border border-slate-200">
+            <div className="flex-1 rounded-2xl overflow-hidden border border-slate-200 relative">
                 <Map
                     center={[-71.7, 42.2]}
                     zoom={7}
@@ -353,7 +486,21 @@ export default function HeatMapPage() {
                     // Allows layers to be added
                     ref={mapRef}
                 />
+                {!isLoaded && (
+                    // Gray overlay + loading wheel
+                    <div className="absolute inset-0 z-50 flex items-center justify-center bg-slate-500/20 backdrop-blur-sm">
+                        <Loader2 className="h-12 w-12 animate-spin text-slate-800" />
+                    </div>
+                )}
             </div>
         </div>
+    );
+}
+
+export default function MapPage() {
+    return (
+        <Suspense>
+            <HeatMapPage />
+        </Suspense>
     );
 }

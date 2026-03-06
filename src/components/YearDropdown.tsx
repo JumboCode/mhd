@@ -13,7 +13,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { toast } from "sonner";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
     Select,
@@ -38,29 +37,24 @@ export default function YearDropdown({
     const [year, setYear] = useState<number | null>(null);
     const [yearsWithData, setYearsWithData] = useState<Set<number>>(new Set());
 
-    // Years from current year down to 10 years ago
     const currentYear = new Date().getFullYear();
     const years = Array.from({ length: 10 }, (_, i) => currentYear - i);
 
     useEffect(() => {
-        setYear(selectedYear ?? null);
-    }, [selectedYear]);
-
-    // Fetch years with data
-    useEffect(() => {
-        const fetchYearsWithData = async () => {
+        async function fetchYearsWithData() {
             try {
-                const response = await fetch("/api/years");
-                if (response.ok) {
-                    const data = await response.json();
-                    setYearsWithData(new Set(data.yearsWithData));
-                }
-            } catch (error) {
-                toast.error("Failed to load year data");
-            }
-        };
+                const res = await fetch("/api/years-with-data");
+                if (!res.ok) return;
+                const data = await res.json();
+                setYearsWithData(new Set(data.years));
+            } catch (err) {}
+        }
         fetchYearsWithData();
     }, []);
+
+    useEffect(() => {
+        setYear(selectedYear ?? null);
+    }, [selectedYear]);
 
     const handleValueChange = (value: string) => {
         const selected = value ? Number(value) : null;

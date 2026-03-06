@@ -17,7 +17,6 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { X, Minus, Plus, Locate, Maximize, Loader2 } from "lucide-react";
-
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -170,6 +169,9 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
             container: containerRef.current,
             style: initialStyle,
             renderWorldCopies: false,
+            canvasContextAttributes: {
+                preserveDrawingBuffer: true,
+            },
             attributionControl: {
                 compact: true,
             },

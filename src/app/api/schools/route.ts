@@ -24,14 +24,25 @@ export async function GET(req: NextRequest) {
 
         // Lightweight list mode: returns id, name, lat, lng for all schools
         if (searchParams.get("list") === "true") {
-            const allSchools = await db
+            const gatewayParam = searchParams.get("gateway");
+            const isGateway = gatewayParam === "true"; // boolean
+
+            const query = db
                 .select({
                     id: schools.id,
                     name: schools.name,
                     latitude: schools.latitude,
                     longitude: schools.longitude,
+                    gateway: schools.gateway,
                 })
                 .from(schools);
+
+            // Only filter if gateway=true is explicitly passed
+            if (isGateway) {
+                query.where(eq(schools.gateway, true));
+            }
+
+            const allSchools = await query;
             return NextResponse.json(allSchools);
         }
 
