@@ -15,7 +15,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import YearDropdown from "@/components/YearDropdown";
 import MultiLineGraph from "./LineGraph";
-import { GraphDataset } from "./LineGraph";
+import type { GraphDataset } from "./LineGraph";
 import { useRouter } from "next/navigation";
 
 type Stats = {
@@ -63,28 +63,32 @@ export default function Dashboard() {
     >([]);
 
     /*
-     * Fetches data for the chart with total # of projects
+     * Fetches data for both charts in parallel across all years.
+     * Uses Promise.all so all years load at once before updating state.
      */
     useEffect(() => {
         const fetchData = async () => {
-            setprojectsYearData([]);
-            for (let i = 5; i >= 0; i--) {
-                try {
-                    const res = await fetch(
-                        `/api/yearly-totals?year=${year - i}`,
-                    );
-                    const yearInfo = await res.json();
-
-                    const thisYear: { x: string | number; y: number } = {
-                        x: year - i,
-                        y: yearInfo.yearlyStats.totals.total_projects,
-                    };
-                    setprojectsYearData((prev) => [thisYear, ...prev]);
-                } catch {
-                    toast.error(
-                        "Failed to load dashboard data. Please try again.",
-                    );
-                }
+            const years = Array.from({ length: 6 }, (_, i) => year - (5 - i));
+            try {
+                const results = await Promise.all(
+                    years.map((y) =>
+                        fetch(`/api/yearly-totals?year=${y}`).then((r) =>
+                            r.json(),
+                        ),
+                    ),
+                );
+                const projectsPoints = results.map((yearInfo, i) => ({
+                    x: years[i],
+                    y: yearInfo.yearlyStats.totals.total_projects as number,
+                }));
+                const schoolsPoints = results.map((yearInfo, i) => ({
+                    x: years[i],
+                    y: yearInfo.yearlyStats.totals.total_schools as number,
+                }));
+                setprojectsYearData(projectsPoints);
+                setschoolYearData(schoolsPoints);
+            } catch {
+                toast.error("Failed to load dashboard data. Please try again.");
             }
         };
         fetchData();
@@ -99,34 +103,6 @@ export default function Dashboard() {
         label: "Schools by Year",
         data: schoolyearData,
     };
-
-    /*
-     * Fetches data for the chart with total # of schools
-     */
-    useEffect(() => {
-        const fetchData = async () => {
-            setschoolYearData([]);
-            for (let i = 5; i >= 0; i--) {
-                try {
-                    const res = await fetch(
-                        `/api/yearly-totals?year=${year - i}`,
-                    );
-                    const yearInfo = await res.json();
-
-                    const thisYear: { x: string | number; y: number } = {
-                        x: year - i,
-                        y: yearInfo.yearlyStats.totals.total_schools,
-                    };
-                    setschoolYearData((prev) => [thisYear, ...prev]);
-                } catch {
-                    toast.error(
-                        "Failed to load dashboard data. Please try again.",
-                    );
-                }
-            }
-        };
-        fetchData();
-    }, [year]);
 
     const router = useRouter();
 
@@ -201,9 +177,10 @@ export default function Dashboard() {
                         />
                         {/* TODO: Once we store type of school, make this correct */}
                     </div>
-                    <div className="flex flex-col my-5 items-center justify-center rounded-lg border py-6 border-border">
-                        Total # Projects
+                    <div className="flex flex-col my-5 rounded-lg border py-6 border-border">
+                        <p className="text-center">Total # Projects</p>
                         <button
+                            className="w-full block"
                             onClick={() => linkToGraph(projectChartFilters)}
                         >
                             <MultiLineGraph
@@ -212,8 +189,11 @@ export default function Dashboard() {
                                 xAxisLabel="Year"
                             />
                         </button>
-                        Total # Schools
-                        <button onClick={() => linkToGraph(schoolChartFilters)}>
+                        <p className="text-center">Total # Schools</p>
+                        <button
+                            className="w-full block"
+                            onClick={() => linkToGraph(schoolChartFilters)}
+                        >
                             <MultiLineGraph
                                 datasets={[schoolData]}
                                 yAxisLabel={"Total # Schools"}

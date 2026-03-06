@@ -109,31 +109,29 @@ export default function SchoolProfilePage() {
             });
     }, [schoolName, router, year]);
 
-    // Fetches student data for the last 5 years
+    // Fetches student data for the last 5 years in parallel
     useEffect(() => {
         const fetchData = async () => {
-            setstudentYearData([]);
-            for (let i = 5; i >= 0; i--) {
-                try {
-                    const res = await fetch(
-                        `/api/schools/${schoolName}?year=${year - i}`,
-                    );
-                    const yearInfo = await res.json();
-
-                    const thisYear: { x: string | number; y: number } = {
-                        x: year - i,
-                        y: yearInfo.studentCount,
-                    };
-                    setstudentYearData((prev) => [thisYear, ...prev]);
-                } catch {
-                    toast.error(
-                        "Failed to load dashboard data. Please try again.",
-                    );
-                }
+            const years = Array.from({ length: 6 }, (_, i) => year - (5 - i));
+            try {
+                const results = await Promise.all(
+                    years.map((y) =>
+                        fetch(`/api/schools/${schoolName}?year=${y}`).then(
+                            (r) => r.json(),
+                        ),
+                    ),
+                );
+                const points = results.map((yearInfo, i) => ({
+                    x: years[i],
+                    y: Number(yearInfo.studentCount),
+                }));
+                setstudentYearData(points);
+            } catch {
+                toast.error("Failed to load dashboard data. Please try again.");
             }
         };
         fetchData();
-    }, [year]);
+    }, [year, schoolName]);
 
     const studentData: GraphDataset = {
         label: "Students by Year",

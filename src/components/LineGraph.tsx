@@ -1,20 +1,36 @@
 "use client";
 
 import * as d3 from "d3";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import {
+    ChartDataset,
+    ChartConfig,
+    ChartMargin,
+    TooltipFormatter,
+} from "./chartTypes";
 
-export type GraphDataset = {
-    label: string;
-    data: { x: string | number; y: number }[];
+// Re-export for callers that use the old name
+export type { ChartDataset as GraphDataset };
+
+const DEFAULT_MARGIN: ChartMargin = {
+    top: 20,
+    right: 20,
+    bottom: 100,
+    left: 60,
 };
+const DEFAULT_HEIGHT = 400;
+const DEFAULT_DOT_RADIUS = 4;
+const DEFAULT_STROKE_WIDTH = 2;
 
-type MultiLineGraphProps = {
-    datasets: GraphDataset[];
+type LineGraphProps = {
+    datasets: ChartDataset[];
     yAxisLabel: string;
     xAxisLabel: string;
     legendTitle?: string;
     svgRefCopy?: React.RefObject<SVGSVGElement | null>;
+    config?: ChartConfig;
+    tooltipFormatter?: TooltipFormatter;
 };
 
 export default function MultiLineGraph({
@@ -23,7 +39,9 @@ export default function MultiLineGraph({
     xAxisLabel,
     legendTitle,
     svgRefCopy,
-}: MultiLineGraphProps) {
+    config,
+    tooltipFormatter,
+}: LineGraphProps) {
     const svgRef = useRef<SVGSVGElement | null>(null);
     const wrapperRef = useRef<HTMLDivElement | null>(null);
     const tooltipRef = useRef<d3.Selection<
@@ -32,30 +50,52 @@ export default function MultiLineGraph({
         null,
         undefined
     > | null>(null);
-    const isFirstRender = useRef(true);
-    const groupsRef = useRef<{
-        xAxis?: d3.Selection<SVGGElement, unknown, null, undefined>;
-        yAxis?: d3.Selection<SVGGElement, unknown, null, undefined>;
-        xAxisLabel?: d3.Selection<SVGTextElement, unknown, null, undefined>;
-        yAxisLabel?: d3.Selection<SVGTextElement, unknown, null, undefined>;
-        lines?: d3.Selection<SVGGElement, unknown, null, undefined>;
-        dots?: d3.Selection<SVGGElement, unknown, null, undefined>;
-        legend?: d3.Selection<SVGGElement, unknown, null, undefined>;
-    }>({});
+    const [containerWidth, setContainerWidth] = useState(0);
 
-    // Memoize color scale to prevent re-running useEffect unnecessarily
-    //const colorScale = useMemo(() => d3.scaleOrdinal(d3.schemeCategory10), []);
+    const margin: ChartMargin = { ...DEFAULT_MARGIN, ...config?.margin };
+    const height = config?.height ?? DEFAULT_HEIGHT;
+    const dotRadius = config?.dotRadius ?? DEFAULT_DOT_RADIUS;
+    const strokeWidth = config?.strokeWidth ?? DEFAULT_STROKE_WIDTH;
+
     const colorScale = useMemo(
         () => d3.scaleOrdinal(d3.schemeCategory10.map((c) => c.toString())),
         [],
     );
 
+    // Track container width responsively
     useEffect(() => {
-        const svg = d3.select(svgRef.current);
-        const svgNode = svg.node();
-        if (!svgNode || !wrapperRef.current) return;
+        if (!wrapperRef.current) return;
+        const observer = new ResizeObserver((entries) => {
+            for (const entry of entries) {
+                setContainerWidth(entry.contentRect.width);
+            }
+        });
+        observer.observe(wrapperRef.current);
+        return () => observer.disconnect();
+    }, []);
 
-        // Create tooltip once (outside drawChart to prevent memory leak)
+    // Cleanup tooltip on unmount
+    useEffect(() => {
+        return () => {
+            tooltipRef.current?.remove();
+            tooltipRef.current = null;
+        };
+    }, []);
+
+    useEffect(() => {
+        if (
+            !svgRef.current ||
+            !wrapperRef.current ||
+            datasets.length === 0 ||
+            containerWidth === 0
+        ) {
+            return;
+        }
+
+        const width = containerWidth;
+        const svg = d3.select(svgRef.current);
+        svg.selectAll("*").remove();
+
         if (!tooltipRef.current) {
             tooltipRef.current = d3
                 .select(wrapperRef.current)
@@ -74,18 +114,12 @@ export default function MultiLineGraph({
         }
 
         const tooltip = tooltipRef.current;
+        const formatTooltip: TooltipFormatter =
+            tooltipFormatter ?? ((d) => String(d.y));
 
-        if (datasets.length === 0) return;
-
-        const width = 900; // Match actual SVG width
-        const height = 400;
-        const margin = { top: 20, right: 20, bottom: 100, left: 60 };
-
-        // Flatten datasets for global min/max axis domains
         const allPoints = datasets.flatMap((d) => d.data);
         if (allPoints.length === 0) return;
 
-        // Convert x values to numbers for scaling, filtering out invalid values
         const xValues = allPoints
             .map((d) => {
                 const num = Number(d.x);
@@ -98,15 +132,15 @@ export default function MultiLineGraph({
             return;
         }
 
-        const xExtent = d3.extent(xValues);
-        if (!xExtent[0] || !xExtent[1]) {
+        const xExtent = d3.extent(xValues) as [number, number];
+        if (xExtent[0] == null || xExtent[1] == null) {
             toast.warning("LineGraph: Invalid x extent");
             return;
         }
 
         const x = d3
             .scaleLinear()
-            .domain(xExtent as [number, number])
+            .domain(xExtent)
             .range([margin.left, width - margin.right]);
 
         const y = d3
@@ -114,12 +148,11 @@ export default function MultiLineGraph({
             .domain([0, d3.max(allPoints, (d) => d.y) || 10])
             .range([height - margin.bottom, margin.top]);
 
-        // Helper to position tooltip correctly
         const positionTooltip = (
             event: MouseEvent | FocusEvent,
             d: { x: string | number; y: number },
+            label: string,
         ) => {
-            // Recalculate wrapper rect on each event to handle scrolling/resizing
             const wrapperRect = wrapperRef.current?.getBoundingClientRect();
             if (!wrapperRect) return;
 
@@ -127,113 +160,67 @@ export default function MultiLineGraph({
             let clientY: number;
 
             if (event.type === "focus") {
-                // For keyboard focus, use the circle's position
                 const circle = event.target as SVGCircleElement;
                 const circleRect = circle.getBoundingClientRect();
                 clientX = circleRect.left + circleRect.width / 2;
                 clientY = circleRect.top + circleRect.height / 2;
             } else {
-                // For mouse events, use the actual pointer position
                 const mouseEvent = event as MouseEvent;
                 clientX = mouseEvent.clientX;
                 clientY = mouseEvent.clientY;
             }
 
-            // Convert to wrapper-relative coordinates
-            const wrapperX = clientX - wrapperRect.left;
-            const wrapperY = clientY - wrapperRect.top;
-
             tooltip
-                .text(String(d.y))
+                .text(formatTooltip(d, label))
                 .transition()
                 .duration(100)
                 .style("opacity", 1)
-                .style("left", `${wrapperX}px`)
-                .style("top", `${wrapperY}px`);
+                .style("left", `${clientX - wrapperRect.left}px`)
+                .style("top", `${clientY - wrapperRect.top}px`);
         };
 
-        // Create stable groups if they don't exist
-        if (!groupsRef.current.xAxis) {
-            groupsRef.current.xAxis = svg
-                .append("g")
-                .attr("class", "x-axis")
-                .attr("transform", `translate(0,${height - margin.bottom})`);
-        }
-
-        if (!groupsRef.current.yAxis) {
-            groupsRef.current.yAxis = svg
-                .append("g")
-                .attr("class", "y-axis")
-                .attr("transform", `translate(${margin.left},0)`);
-        }
-
-        if (!groupsRef.current.xAxisLabel) {
-            groupsRef.current.xAxisLabel = svg
-                .append("text")
-                .attr("class", "x-axis-label")
-                .attr("text-anchor", "middle")
-                .attr("fill", "#555");
-        }
-
-        if (!groupsRef.current.yAxisLabel) {
-            groupsRef.current.yAxisLabel = svg
-                .append("text")
-                .attr("class", "y-axis-label")
-                .attr("transform", "rotate(-90)")
-                .attr("text-anchor", "middle")
-                .attr("fill", "#555");
-        }
-
-        if (!groupsRef.current.lines) {
-            groupsRef.current.lines = svg.append("g").attr("class", "lines");
-        }
-
-        if (!groupsRef.current.dots) {
-            groupsRef.current.dots = svg.append("g").attr("class", "dots");
-        }
-
-        if (!groupsRef.current.legend) {
-            groupsRef.current.legend = svg
-                .append("g")
-                .attr("class", "legend")
-                .attr(
-                    "transform",
-                    `translate(${margin.left}, ${height - margin.bottom + 80})`,
-                );
-        }
-
-        // Update X-axis
+        // X-axis
         const xTicks = x.ticks().filter((t) => Number.isInteger(t));
-        groupsRef.current.xAxis.call(
-            d3.axisBottom(x).tickValues(xTicks).tickFormat(d3.format("d")),
-        );
-        groupsRef.current.xAxis.selectAll(".tick line").remove();
-        groupsRef.current.xAxis.select(".domain").remove();
+        svg.append("g")
+            .attr("class", "x-axis")
+            .attr("transform", `translate(0,${height - margin.bottom})`)
+            .call(
+                d3.axisBottom(x).tickValues(xTicks).tickFormat(d3.format("d")),
+            )
+            .call((g) => g.selectAll(".tick line").remove())
+            .call((g) => g.select(".domain").remove());
 
-        // Update X-axis label
-        groupsRef.current.xAxisLabel
+        svg.append("text")
+            .attr("text-anchor", "middle")
+            .attr("fill", "#555")
             .attr("x", margin.left + (width - margin.left - margin.right) / 2)
             .attr("y", height - margin.bottom + 40)
             .text(xAxisLabel);
 
-        // Update Y-axis
+        // Y-axis
         const yTicks = y.ticks().filter((t) => Number.isInteger(t));
-        groupsRef.current.yAxis.call(
-            d3
-                .axisLeft(y)
-                .tickValues(yTicks)
-                .tickSize(-width + margin.left + margin.right),
-        );
-        groupsRef.current.yAxis.selectAll(".tick line").attr("stroke", "#ccc");
-        groupsRef.current.yAxis.select(".domain").remove();
-        groupsRef.current.yAxis.selectAll(".tick text").attr("fill", "#555");
+        svg.append("g")
+            .attr("class", "y-axis")
+            .attr("transform", `translate(${margin.left},0)`)
+            .call(
+                d3
+                    .axisLeft(y)
+                    .tickValues(yTicks)
+                    .tickSize(-width + margin.left + margin.right),
+            )
+            .call((g) => g.selectAll(".tick line").attr("stroke", "#ccc"))
+            .call((g) => g.select(".domain").remove())
+            .call((g) => g.selectAll(".tick text").attr("fill", "#555"));
 
-        // Update Y-axis label
-        groupsRef.current.yAxisLabel
+        svg.append("text")
+            .attr("transform", "rotate(-90)")
+            .attr("text-anchor", "middle")
+            .attr("fill", "#555")
             .attr("x", -margin.top - (height - margin.top - margin.bottom) / 2)
             .attr("y", 15)
             .text(yAxisLabel);
 
+        // Lines
         const lineGen = d3
             .line<{ x: string | number; y: number }>()
             .x((d) => {
@@ -242,168 +229,99 @@ export default function MultiLineGraph({
             })
             .y((d) => y(d.y));
 
-        // Update lines using join pattern
-        if (!groupsRef.current.lines) return;
-        const lines = groupsRef.current.lines
-            .selectAll<SVGPathElement, GraphDataset>("path.line")
-            .data(datasets, (d: GraphDataset) => d.label);
+        const linesGroup = svg.append("g").attr("class", "lines");
+        datasets.forEach((ds) => {
+            linesGroup
+                .append("path")
+                .attr("fill", "none")
+                .attr("stroke", colorScale(ds.label))
+                .attr("stroke-width", strokeWidth)
+                .attr("d", lineGen(ds.data));
+        });
 
-        lines.exit().remove();
-
-        const linesEnter = lines
-            .enter()
-            .append("path")
-            .attr("class", "line")
-            .attr("fill", "none")
-            .attr("stroke-width", 2);
-
-        const linesUpdate = linesEnter.merge(lines);
-
-        linesUpdate
-            .attr("stroke", (d) => colorScale(d.label))
-            .attr("d", (d) => lineGen(d.data));
-
-        // Animate line drawing only on first render
-        // if (isFirstRender.current) {
-        //     linesUpdate.each(function () {
-        //         const path = d3.select(this);
-        //         const length = path.node()?.getTotalLength() || 0;
-        //         path.attr("stroke-dasharray", `${length} ${length}`)
-        //             .attr("stroke-dashoffset", length)
-        //             .transition()
-        //             .duration(1500)
-        //             .attr("stroke-dashoffset", 0);
-        //     });
-        // }
-
-        // Update dots using join pattern
-        if (!groupsRef.current.dots) return;
-        const dotsGroups = groupsRef.current.dots
-            .selectAll<SVGGElement, GraphDataset>("g.dots-group")
-            .data(datasets, (d: GraphDataset) => d.label);
-
-        dotsGroups.exit().remove();
-
-        const dotsGroupsEnter = dotsGroups
-            .enter()
-            .append("g")
-            .attr("class", "dots-group");
-
-        const dotsGroupsUpdate = dotsGroupsEnter.merge(dotsGroups);
-
-        // Update circles within each group
-        dotsGroupsUpdate.each(function (dataset) {
-            const group = d3.select(this);
-            const circles = group
-                .selectAll<
-                    SVGCircleElement,
-                    { x: string | number; y: number }
-                >("circle")
-                .data(dataset.data, (d, i) => `${d.x}-${d.y}-${i}`);
-
-            circles.exit().remove();
-
-            const circlesEnter = circles
+        // Dots
+        const dotsGroup = svg.append("g").attr("class", "dots");
+        datasets.forEach((ds) => {
+            dotsGroup
+                .selectAll(null)
+                .data(ds.data)
                 .enter()
                 .append("circle")
-                .attr("r", 4)
-                .attr("fill", colorScale(dataset.label))
+                .attr("r", dotRadius)
+                .attr("fill", colorScale(ds.label))
                 .style("cursor", "pointer")
                 .attr("tabindex", 0)
-                .on("mouseover focus", function (event, d) {
-                    d3.select(this).transition().duration(100).attr("r", 6);
-                    positionTooltip(event, d);
-                })
-                .on("mouseout blur", function () {
-                    d3.select(this).transition().duration(100).attr("r", 4);
-                    tooltip.transition().duration(100).style("opacity", 0);
-                });
-
-            const circlesUpdate = circlesEnter.merge(circles);
-
-            circlesUpdate
                 .attr("cx", (d) => {
                     const num = Number(d.x);
                     return Number.isFinite(num) ? x(num) : 0;
                 })
-                .attr("cy", (d) => y(d.y));
-
-            // Animate points appearing only on first render
-            // if (isFirstRender.current) {
-            //     circlesUpdate
-            //         .attr("opacity", 0)
-            //         .transition()
-            //         .delay(500)
-            //         .duration(1000)
-            //         .attr("opacity", 1);
-            // } else {
-            circlesUpdate.attr("opacity", 1);
-            // }
+                .attr("cy", (d) => y(d.y))
+                .on("mouseover focus", function (event, d) {
+                    d3.select(this)
+                        .transition()
+                        .duration(100)
+                        .attr("r", dotRadius + 2);
+                    positionTooltip(event, d, ds.label);
+                })
+                .on("mouseout blur", function () {
+                    d3.select(this)
+                        .transition()
+                        .duration(100)
+                        .attr("r", dotRadius);
+                    tooltip.transition().duration(100).style("opacity", 0);
+                });
         });
 
-        // Mark that first render is complete
-        if (isFirstRender.current) {
-            isFirstRender.current = false;
+        // Legend
+        const legendGroup = svg
+            .append("g")
+            .attr("class", "legend")
+            .attr(
+                "transform",
+                `translate(${margin.left}, ${height - margin.bottom + 80})`,
+            );
+
+        if (legendTitle) {
+            legendGroup
+                .append("text")
+                .attr("class", "legend-title")
+                .attr("x", 0)
+                .attr("y", -10)
+                .style("font-size", "14px")
+                .style("font-weight", "600")
+                .attr("fill", "currentColor")
+                .text(legendTitle);
         }
 
-        // Update legend using join pattern
         const legendWidth = width - margin.left - margin.right;
         const itemMargin = 10;
         const rowHeight = 20;
 
-        // Add or update legend title
-        const legendTitleSelection = groupsRef.current.legend
-            .selectAll<SVGTextElement, string>("text.legend-title")
-            .data(legendTitle ? [legendTitle] : []);
-
-        legendTitleSelection.exit().remove();
-
-        legendTitleSelection
-            .enter()
-            .append("text")
-            .attr("class", "legend-title")
-            .attr("x", 0)
-            .attr("y", -10)
-            .style("font-size", "14px")
-            .style("font-weight", "600")
-            .attr("fill", "currentColor")
-            .merge(legendTitleSelection)
-            .text((d) => d);
-
-        const legendItems = groupsRef.current.legend
-            .selectAll<SVGGElement, GraphDataset>("g.legend-item")
-            .data(datasets, (d) => d.label);
-
-        legendItems.exit().remove();
-
-        const legendItemsEnter = legendItems
+        const legendItems = legendGroup
+            .selectAll("g.legend-item")
+            .data(datasets)
             .enter()
             .append("g")
             .attr("class", "legend-item");
 
-        legendItemsEnter.append("rect").attr("width", 12).attr("height", 12);
+        legendItems
+            .append("rect")
+            .attr("width", 12)
+            .attr("height", 12)
+            .attr("fill", (d) => colorScale(d.label));
 
-        legendItemsEnter
+        legendItems
             .append("text")
             .attr("x", 16)
             .attr("y", 10)
+            .text((d) => d.label)
             .style("font-size", "12px")
             .attr("alignment-baseline", "middle");
 
-        const legendItemsUpdate = legendItemsEnter.merge(legendItems);
-
-        legendItemsUpdate
-            .select("rect")
-            .attr("fill", (d) => colorScale(d.label));
-
-        legendItemsUpdate.select("text").text((d) => d.label);
-
-        // Position legend items, wrap to new line on overflow
-        // Use requestAnimationFrame to ensure layout is complete before measuring
         requestAnimationFrame(() => {
             let xOffset = 0;
             let yOffset = 0;
-            legendItemsUpdate.attr("transform", function () {
+            legendItems.attr("transform", function () {
                 const bbox = (this as SVGGElement).getBBox();
                 const itemWidth = bbox.width + itemMargin;
                 if (xOffset + itemWidth > legendWidth && xOffset > 0) {
@@ -419,16 +337,26 @@ export default function MultiLineGraph({
         if (svgRefCopy != null) {
             svgRefCopy.current = svgRef.current;
         }
-    }, [datasets, xAxisLabel, yAxisLabel, colorScale]);
+    }, [
+        datasets,
+        xAxisLabel,
+        yAxisLabel,
+        legendTitle,
+        containerWidth,
+        dotRadius,
+        strokeWidth,
+        colorScale,
+        tooltipFormatter,
+    ]);
 
     return (
-        <div ref={wrapperRef} style={{ position: "relative" }}>
+        <div ref={wrapperRef} style={{ position: "relative", width: "100%" }}>
             <svg
                 ref={svgRef}
-                width={900}
-                height={400}
-                style={{ overflow: "visible" }}
-            ></svg>
+                width={containerWidth}
+                height={height}
+                style={{ overflow: "visible", display: "block" }}
+            />
         </div>
     );
 }
