@@ -16,7 +16,7 @@ type BarGraphProps = {
     yAxisLabel: string;
     xAxisLabel: string;
     legendTitle?: string;
-    svgRef?: React.RefObject<SVGSVGElement | null>;
+    chartRef?: React.RefObject<HTMLDivElement | null>;
     config?: ChartConfig;
     tooltipFormatter?: TooltipFormatter;
 };
@@ -26,7 +26,7 @@ export default function BarGraph({
     yAxisLabel,
     xAxisLabel,
     legendTitle,
-    svgRef,
+    chartRef,
     config,
     tooltipFormatter,
 }: BarGraphProps) {
@@ -71,7 +71,11 @@ export default function BarGraph({
     const chartHeight = chartBottom - chartTop;
 
     return (
-        <div className="relative w-full select-none" style={{ height }}>
+        <div
+            ref={chartRef}
+            className="relative w-full select-none"
+            style={{ height }}
+        >
             {/* Tooltip */}
             {tooltip && (
                 <div
@@ -98,15 +102,12 @@ export default function BarGraph({
             >
                 {/* Rotated axis title — occupies leftmost 16px */}
                 <div
-                    className="absolute inset-y-0 flex items-center justify-center"
+                    className="absolute inset-y-0 flex items-center justify-center overflow-visible"
                     style={{ left: 0, width: 16 }}
                 >
                     <span
                         className="text-xs text-muted-foreground whitespace-nowrap pointer-events-none"
-                        style={{
-                            writingMode: "vertical-rl",
-                            transform: "rotate(180deg)",
-                        }}
+                        style={{ transform: "rotate(-90deg)" }}
                     >
                         {yAxisLabel}
                     </span>
@@ -123,7 +124,7 @@ export default function BarGraph({
                 ))}
             </div>
 
-            {/* Chart area */}
+            {/* Chart area — single SVG so bars are captured by svgRef for export */}
             <div
                 className="absolute overflow-visible"
                 style={{
@@ -133,15 +134,12 @@ export default function BarGraph({
                     height: chartHeight,
                 }}
             >
-                {/* Grid lines (SVG) */}
                 <svg
-                    ref={(el) => {
-                        if (svgRef !== undefined) svgRef.current = el;
-                    }}
                     viewBox="0 0 100 100"
-                    className="absolute inset-0 w-full h-full overflow-visible"
+                    className="w-full h-full overflow-visible"
                     preserveAspectRatio="none"
                 >
+                    {/* Grid lines */}
                     {yTicks.map((value, i) => (
                         <g
                             key={i}
@@ -158,50 +156,53 @@ export default function BarGraph({
                             />
                         </g>
                     ))}
-                </svg>
 
-                {/* Bars */}
-                {dataset.map((ds, si) =>
-                    ds.data.map((point, pi) => {
-                        const xKey = String(point.x);
-                        const left =
-                            (outerScale(xKey) ?? 0) +
-                            (innerScale(ds.label) ?? 0);
-                        const width = innerScale.bandwidth();
-                        const barH = Math.max(0, yScale(0) - yScale(point.y));
-                        const content = formatTooltip(point, ds.label);
-                        return (
-                            <div
-                                key={`${si}-${pi}`}
-                                className="absolute bottom-0"
-                                style={{
-                                    left: `${left}%`,
-                                    width: `${width}%`,
-                                    height: `${barH}%`,
-                                    backgroundColor:
-                                        CHART_COLORS[si % CHART_COLORS.length],
-                                    borderRadius: `${cornerRadius}px ${cornerRadius}px 0 0`,
-                                    cursor: "pointer",
-                                }}
-                                onMouseEnter={(e) =>
-                                    setTooltip({
-                                        x: e.clientX,
-                                        y: e.clientY,
-                                        content,
-                                    })
-                                }
-                                onMouseMove={(e) =>
-                                    setTooltip({
-                                        x: e.clientX,
-                                        y: e.clientY,
-                                        content,
-                                    })
-                                }
-                                onMouseLeave={() => setTooltip(null)}
-                            />
-                        );
-                    }),
-                )}
+                    {/* Bars */}
+                    {dataset.map((ds, si) =>
+                        ds.data.map((point, pi) => {
+                            const xKey = String(point.x);
+                            const x =
+                                (outerScale(xKey) ?? 0) +
+                                (innerScale(ds.label) ?? 0);
+                            const w = innerScale.bandwidth();
+                            const barH = Math.max(
+                                0,
+                                yScale(0) - yScale(point.y),
+                            );
+                            const y = yScale(point.y);
+                            const content = formatTooltip(point, ds.label);
+                            return (
+                                <rect
+                                    key={`${si}-${pi}`}
+                                    x={x}
+                                    y={y}
+                                    width={w}
+                                    height={barH}
+                                    rx={Math.min(cornerRadius * 0.15, w / 2)}
+                                    fill={
+                                        CHART_COLORS[si % CHART_COLORS.length]
+                                    }
+                                    style={{ cursor: "pointer" }}
+                                    onMouseEnter={(e) =>
+                                        setTooltip({
+                                            x: e.clientX,
+                                            y: e.clientY,
+                                            content,
+                                        })
+                                    }
+                                    onMouseMove={(e) =>
+                                        setTooltip({
+                                            x: e.clientX,
+                                            y: e.clientY,
+                                            content,
+                                        })
+                                    }
+                                    onMouseLeave={() => setTooltip(null)}
+                                />
+                            );
+                        }),
+                    )}
+                </svg>
             </div>
 
             {/* X-axis tick labels — explicitly below chart area */}

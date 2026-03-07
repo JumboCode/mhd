@@ -16,7 +16,7 @@ type LineGraphProps = {
     yAxisLabel: string;
     xAxisLabel: string;
     legendTitle?: string;
-    svgRef?: React.RefObject<SVGSVGElement | null>;
+    chartRef?: React.RefObject<HTMLDivElement | null>;
     config?: ChartConfig;
     tooltipFormatter?: TooltipFormatter;
 };
@@ -26,7 +26,7 @@ export default function MultiLineGraph({
     yAxisLabel,
     xAxisLabel,
     legendTitle,
-    svgRef,
+    chartRef,
     config,
     tooltipFormatter,
 }: LineGraphProps) {
@@ -80,7 +80,11 @@ export default function MultiLineGraph({
     const chartHeight = chartBottom - chartTop;
 
     return (
-        <div className="relative w-full select-none" style={{ height }}>
+        <div
+            ref={chartRef}
+            className="relative w-full select-none"
+            style={{ height }}
+        >
             {/* Tooltip */}
             {tooltip && (
                 <div
@@ -107,15 +111,12 @@ export default function MultiLineGraph({
             >
                 {/* Rotated axis title — occupies leftmost 16px */}
                 <div
-                    className="absolute inset-y-0 flex items-center justify-center"
+                    className="absolute inset-y-0 flex items-center justify-center overflow-visible"
                     style={{ left: 0, width: 16 }}
                 >
                     <span
                         className="text-xs text-muted-foreground whitespace-nowrap pointer-events-none"
-                        style={{
-                            writingMode: "vertical-rl",
-                            transform: "rotate(180deg)",
-                        }}
+                        style={{ transform: "rotate(-90deg)" }}
                     >
                         {yAxisLabel}
                     </span>
@@ -144,9 +145,6 @@ export default function MultiLineGraph({
                 }}
             >
                 <svg
-                    ref={(el) => {
-                        if (svgRef !== undefined) svgRef.current = el;
-                    }}
                     viewBox="0 0 100 100"
                     className="w-full h-full overflow-visible"
                     preserveAspectRatio="none"

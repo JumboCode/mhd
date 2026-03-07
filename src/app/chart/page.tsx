@@ -256,7 +256,7 @@ export default function GraphsPage() {
             measuredAs,
         ],
     );
-    const svgRef = useRef<SVGSVGElement | null>(null);
+    const chartRef = useRef<HTMLDivElement | null>(null);
 
     // Fetch all project data
     useEffect(() => {
@@ -674,7 +674,9 @@ export default function GraphsPage() {
                                     variant="outline"
                                     size="sm"
                                     className="flex items-center gap-2"
-                                    onClick={() => downloadSingleGraph(svgRef)}
+                                    onClick={() =>
+                                        downloadSingleGraph(chartRef)
+                                    }
                                 >
                                     <Share className="w-4 h-4" />
                                     Export
@@ -690,7 +692,7 @@ export default function GraphsPage() {
                                                 className="flex items-center gap-2"
                                                 onClick={() =>
                                                     addToCart(
-                                                        svgRef,
+                                                        chartRef,
                                                         cart,
                                                         setCart,
                                                         filterNames,
@@ -914,7 +916,7 @@ export default function GraphsPage() {
                                                 ? undefined
                                                 : groupByLabels[filters.groupBy]
                                         }
-                                        svgRef={svgRef}
+                                        chartRef={chartRef}
                                         tooltipFormatter={tooltipFormatter}
                                     />
                                 ) : (
@@ -929,7 +931,7 @@ export default function GraphsPage() {
                                                 ? undefined
                                                 : groupByLabels[filters.groupBy]
                                         }
-                                        svgRef={svgRef}
+                                        chartRef={chartRef}
                                         tooltipFormatter={tooltipFormatter}
                                     />
                                 )}

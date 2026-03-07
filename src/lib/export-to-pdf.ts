@@ -38,24 +38,25 @@ export function downloadGraphs(cart: string[], filterNames: string[]) {
             const imgWidth = pdf.internal.pageSize.getWidth();
             const imgHeight = (img.height / img.width) * imgWidth;
 
+            // TODO: Change to DM Sans
             pdf.setFont("interstate-bold", "normal");
 
             pdf.text(`${month}/${day}/${year}`, 170, 15);
             pdf.addImage(
                 logoImg.src,
                 "PNG",
-                20,
+                15,
                 10,
                 logoImg.width * 0.03,
                 logoImg.height * 0.03,
             );
 
-            pdf.text(filterNames[idx], 25, 50);
+            pdf.text(filterNames[idx], 15, 50);
 
             pdf.addImage(
                 canvas,
                 "JPEG",
-                10,
+                15,
                 55,
                 imgWidth * 0.9,
                 imgHeight * 0.9,
@@ -68,103 +69,36 @@ export function downloadGraphs(cart: string[], filterNames: string[]) {
     });
 }
 
-export function getClonedSvg(
-    svgRef: React.RefObject<SVGSVGElement | null>,
-): SVGSVGElement | null {
-    const original = svgRef.current;
-    if (!original) return null;
-
-    //Creates and returns a clone of the svg element passed in
-    const clone = original.cloneNode(true) as SVGSVGElement;
-
-    return clone;
-}
-
 export async function addToCart(
-    svgRef: React.RefObject<SVGSVGElement | null>,
+    chartRef: React.RefObject<HTMLDivElement | null>,
     cart: string[],
     setCart: Dispatch<SetStateAction<string[]>>,
     filterNames: string[],
     setFilterNames: Dispatch<SetStateAction<string[]>>,
     filterName: string,
 ): Promise<void> {
-    const newSVG = getClonedSvg(svgRef);
-    if (!newSVG) return;
+    const el = chartRef.current;
+    if (!el) return;
 
-    // Get SVG dimensions from viewBox or attributes with fallbacks
-    const viewBox = newSVG.getAttribute("viewBox");
-    let svgWidth = 1000;
-    let svgHeight = 400;
-
-    if (viewBox) {
-        const viewBoxValues = viewBox.split(" ");
-        svgWidth = parseFloat(viewBoxValues[2]) || 1000;
-        svgHeight = parseFloat(viewBoxValues[3]) || 400;
-    } else {
-        const width = newSVG.getAttribute("width");
-        const height = newSVG.getAttribute("height");
-        if (width) svgWidth = parseFloat(width) || 1000;
-        if (height) svgHeight = parseFloat(height) || 400;
-    }
-
-    // Adds the svg element to the page temporarily (offscreen)
-    const wrapper = document.createElement("div");
-    wrapper.style.position = "fixed";
-    wrapper.style.left = "-9999px";
-    wrapper.style.top = "-9999px";
-    wrapper.style.width = `${svgWidth}px`;
-    wrapper.style.height = `${svgHeight}px`;
-    wrapper.appendChild(newSVG);
-    document.body.append(wrapper);
-
-    const canvas = await html2canvas(wrapper, {
+    const canvas = await html2canvas(el, {
         backgroundColor: "#fff",
         scale: 2,
     });
 
-    // Updates cart and filter names
     setCart([...cart, canvas.toDataURL()]);
     setFilterNames([...filterNames, filterName]);
-
-    document.body.removeChild(wrapper);
 }
 
 export async function downloadSingleGraph(
-    svgRef: React.RefObject<SVGSVGElement | null>,
+    chartRef: React.RefObject<HTMLDivElement | null>,
 ) {
-    const newSVG = getClonedSvg(svgRef);
-    if (!newSVG) return;
+    const el = chartRef.current;
+    if (!el) return;
 
-    // Get SVG dimensions from viewBox or attributes with fallbacks
-    const viewBox = newSVG.getAttribute("viewBox");
-    let svgWidth = 1000;
-    let svgHeight = 400;
-    let aspectRatio = svgHeight / svgWidth;
+    const { width, height } = el.getBoundingClientRect();
+    const aspectRatio = height / width;
 
-    if (viewBox) {
-        const viewBoxValues = viewBox.split(" ");
-        svgWidth = parseFloat(viewBoxValues[2]) || 1000;
-        svgHeight = parseFloat(viewBoxValues[3]) || 400;
-    } else {
-        const width = newSVG.getAttribute("width");
-        const height = newSVG.getAttribute("height");
-        if (width) svgWidth = parseFloat(width) || 1000;
-        if (height) svgHeight = parseFloat(height) || 400;
-    }
-
-    aspectRatio = svgHeight / svgWidth;
-
-    // Adds the svg element to the page temporarily (offscreen)
-    const wrapper = document.createElement("div");
-    wrapper.style.position = "fixed";
-    wrapper.style.left = "-9999px";
-    wrapper.style.top = "-9999px";
-    wrapper.style.width = `${svgWidth}px`;
-    wrapper.style.height = `${svgHeight}px`;
-    wrapper.appendChild(newSVG);
-    document.body.append(wrapper);
-
-    const canvas = await html2canvas(wrapper, {
+    const canvas = await html2canvas(el, {
         backgroundColor: "#fff",
         scale: 2,
     });
@@ -173,11 +107,8 @@ export async function downloadSingleGraph(
     const pdfWidth = pdf.internal.pageSize.getWidth();
     const pdfHeight = pdfWidth * aspectRatio;
 
-    // Add image with proper dimensions that match PDF width while preserving aspect ratio
     pdf.addImage(canvas, "JPEG", 0, 0, pdfWidth, pdfHeight);
     pdf.save("chart.pdf");
-
-    document.body.removeChild(wrapper);
 }
 
 export function clearCart(
