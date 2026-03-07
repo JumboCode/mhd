@@ -139,7 +139,7 @@ export default function GatewaySchools() {
                 Select schools to include as gateway schools.
             </p>
 
-            <div className="w-72">
+            <div className="w-72 w-fit">
                 <Combobox
                     options={schoolOptions}
                     value={selectedSchoolId}

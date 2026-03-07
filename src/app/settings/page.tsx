@@ -393,7 +393,7 @@ function SchoolLocationEditor() {
             <p className="text-sm text-gray-600">
                 Search for a school to view and edit its location on the map.
             </p>
-            <div className="w-72">
+            <div className="min-w-72 w-fit">
                 <Combobox
                     options={schoolOptions}
                     value={selectedSchoolId}
