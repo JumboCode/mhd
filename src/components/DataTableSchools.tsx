@@ -11,7 +11,7 @@
 
 "use client";
 import React, { ReactNode } from "react";
-import { ArrowUp, ArrowDown, Minus } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 
 import {
     ColumnDef,
@@ -98,22 +98,22 @@ export function SchoolsDataTable<TData, TValue>({
         const formattedPercent = percentChange.toFixed(0);
         if (percentChange < 0.5) {
             return (
-                <div className="flex items-center justify-center space-x-1 text-[#808080]">
-                    <Minus />
+                <div className="flex items-center justify-center gap-1 text-[#808080]">
+                    <Minus size={14} />
                     {formattedPercent}%
                 </div>
             );
         } else if (diff > 0) {
             return (
-                <div className="flex items-center justify-center space-x-1 text-[#46A758]">
-                    <ArrowUp />
+                <div className="flex items-center justify-center gap-1 text-[#46A758]">
+                    <TrendingUp size={14} />
                     {formattedPercent}%
                 </div>
             );
         } else if (diff < 0) {
             return (
-                <div className="flex items-center justify-center space-x-1 text-[#E5484D]">
-                    <ArrowDown />
+                <div className="flex items-center justify-center gap-1 text-[#E5484D]">
+                    <TrendingDown size={14} />
                     {formattedPercent}%
                 </div>
             );
