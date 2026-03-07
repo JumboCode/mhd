@@ -16,6 +16,7 @@ import { useEffect, useState } from "react";
 import { Combobox } from "@/components/Combobox";
 import { Trash } from "lucide-react";
 import { toast } from "sonner";
+import { standardize } from "@/lib/school-name-standardize";
 
 /**
  * Represents a single school entry in the system.
@@ -81,11 +82,14 @@ export default function GatewaySchools() {
         setGatewaySchools((prev) => [...prev, school]);
 
         try {
-            const res = await fetch(`/api/schools/${school.name}/gateway`, {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ gateway: true }),
-            });
+            const res = await fetch(
+                `/api/schools/${standardize(school.name)}/gateway`,
+                {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ gateway: true }),
+                },
+            );
 
             if (!res.ok) throw new Error("Failed to update school");
             toast.success(`${school.name} set as gateway`);
@@ -110,11 +114,14 @@ export default function GatewaySchools() {
         setGatewaySchools((prev) => prev.filter((s) => s.id !== id));
 
         try {
-            const res = await fetch(`/api/schools/${school.name}/gateway`, {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ gateway: false }),
-            });
+            const res = await fetch(
+                `/api/schools/${standardize(school.name)}/gateway`,
+                {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ gateway: false }),
+                },
+            );
 
             if (!res.ok) throw new Error("Failed to update school");
             toast.success(`${school.name} removed as gateway`);

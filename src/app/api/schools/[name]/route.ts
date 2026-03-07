@@ -21,7 +21,6 @@ export async function PATCH(
 ) {
     try {
         const { name } = await params;
-        const searchName = name.replace(/-/g, " ");
 
         const body = await req.json();
         const { latitude, longitude } = body;
@@ -41,7 +40,7 @@ export async function PATCH(
         const schoolResult = await db
             .select({ id: schools.id })
             .from(schools)
-            .where(eq(sql`LOWER(${schools.name})`, searchName.toLowerCase()))
+            .where(eq(schools.standardizedName, name))
             .limit(1);
 
         if (!schoolResult || schoolResult.length === 0) {

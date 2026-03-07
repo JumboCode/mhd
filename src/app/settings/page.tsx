@@ -19,6 +19,7 @@ import YearsOfData from "@/components/YearsOfData";
 import { Map, MapMarker, MarkerContent, useMap } from "@/components/ui/map";
 import { toast } from "sonner";
 import GatewaySchools from "@/components/GatewaySchools";
+import { standardize } from "@/lib/school-name-standardize";
 
 interface PermittedUser {
     email: string;
@@ -333,10 +334,8 @@ function SchoolLocationEditor() {
 
         setSaving(true);
         try {
-            const encodedName = encodeURIComponent(
-                selectedSchool.name.replace(/ /g, "-"),
-            );
-            const response = await fetch(`/api/schools/${encodedName}`, {
+            const slugName = standardize(selectedSchool.name);
+            const response = await fetch(`/api/schools/${slugName}`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({

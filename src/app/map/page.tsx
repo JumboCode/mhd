@@ -28,6 +28,7 @@ import YearDropdown from "@/components/YearDropdown";
 import CountDropdown from "@/components/CountDropdown";
 import { Button } from "@/components/ui/button";
 import { exportMapToPDF } from "@/lib/heatmap-export";
+import { standardize } from "@/lib/school-name-standardize";
 
 const regions = Object.values(regionsData).map((region) => ({
     name: region.name,
@@ -306,8 +307,7 @@ function HeatMapPage() {
                 ];
                 const { name } = feature.properties || {};
                 const value = feature.properties?.[metric] || 0;
-                const schoolSlug =
-                    name?.toLowerCase().replace(/\s+/g, "-") || "";
+                const schoolSlug = standardize(name);
                 const profileUrl = `/schools/${schoolSlug}`;
 
                 const html = `
