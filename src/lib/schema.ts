@@ -14,6 +14,7 @@ import {
 export const schools = pgTable("schools", {
     id: serial("id").primaryKey(),
     name: text("name").notNull(),
+    standardizedName: text("standardized_name").notNull(),
     town: text("town"), // regional schools may not have a town
     schoolId: text("school_id").unique().notNull(),
     latitude: doublePrecision("latitude"),
