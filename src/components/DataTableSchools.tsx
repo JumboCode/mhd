@@ -19,10 +19,10 @@ import {
     useReactTable,
     SortingState,
     getSortedRowModel,
+    ColumnResizeMode,
 } from "@tanstack/react-table";
 
 import {
-    Table,
     TableBody,
     TableCell,
     TableHead,
@@ -46,16 +46,19 @@ export function SchoolsDataTable<TData, TValue>({
     setGlobalFilter,
 }: DataTableProps<TData, TValue>) {
     const [sorting, setSorting] = React.useState<SortingState>([]);
+    const [columnResizeMode] = React.useState<ColumnResizeMode>("onChange");
 
     const table = useReactTable({
         data,
         columns,
+        columnResizeMode,
         getSortedRowModel: getSortedRowModel(), //May not need this?
         onSortingChange: setSorting,
         onGlobalFilterChange: setGlobalFilter,
         getCoreRowModel: getCoreRowModel(),
         getFilteredRowModel: getFilteredRowModel(),
         globalFilterFn: "includesString",
+        enableColumnResizing: true,
         state: {
             sorting,
             globalFilter,
@@ -80,6 +83,10 @@ export function SchoolsDataTable<TData, TValue>({
                                                 ? "sticky top-0 left-0 z-40 text-center bg-muted border-r border-b min-w-[200px] w-[200px]"
                                                 : "sticky top-0 z-30 text-center border-r border-b bg-muted"
                                         }
+                                        style={{
+                                            width: header.getSize(),
+                                            maxWidth: header.getSize(),
+                                        }}
                                     >
                                         <div>
                                             {header.isPlaceholder
@@ -90,6 +97,15 @@ export function SchoolsDataTable<TData, TValue>({
                                                       header.getContext(),
                                                   )}
                                         </div>
+                                        <div
+                                            onMouseDown={header.getResizeHandler()}
+                                            onTouchStart={header.getResizeHandler()}
+                                            className={`absolute right-0 top-0 h-full w-1 cursor-col-resize select-none touch-none hover:bg-blue-500 ${
+                                                header.column.getIsResizing()
+                                                    ? "bg-blue-500"
+                                                    : ""
+                                            }`}
+                                        />
                                     </TableHead>
                                 );
                             })}
@@ -111,6 +127,10 @@ export function SchoolsDataTable<TData, TValue>({
                                                 ? "text-center sticky left-0 z-20 bg-muted border-r border-b min-w-[200px] w-[200px]"
                                                 : "text-center z-0 border-b"
                                         }
+                                        style={{
+                                            width: cell.column.getSize(),
+                                            maxWidth: cell.column.getSize(),
+                                        }}
                                     >
                                         {cell.column.getIndex() === 0 ? (
                                             <Link
@@ -145,7 +165,7 @@ export function SchoolsDataTable<TData, TValue>({
                         </TableRow>
                     )}
                 </TableBody>
-            </Table>
+            </table>
         </div>
     );
 }

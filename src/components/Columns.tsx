@@ -31,6 +31,9 @@ export type Schools = {
 export const columns: ColumnDef<Schools>[] = [
     {
         accessorKey: "name",
+        size: 200,
+        minSize: 100,
+        maxSize: 400,
         header: ({ column }) => {
             return (
                 <Button
@@ -59,6 +62,9 @@ export const columns: ColumnDef<Schools>[] = [
     },
     {
         accessorKey: "city",
+        size: 150,
+        minSize: 95,
+        maxSize: 300,
         header: ({ column }) => {
             return (
                 <Button
@@ -87,6 +93,9 @@ export const columns: ColumnDef<Schools>[] = [
     },
     {
         accessorKey: "region",
+        size: 150,
+        minSize: 115,
+        maxSize: 300,
         header: ({ column }) => {
             return (
                 <Button
@@ -115,6 +124,9 @@ export const columns: ColumnDef<Schools>[] = [
     },
     {
         accessorKey: "instructionModel",
+        size: 185,
+        minSize: 185,
+        maxSize: 350,
         header: ({ column }) => {
             return (
                 <Button
@@ -143,6 +155,9 @@ export const columns: ColumnDef<Schools>[] = [
     },
     {
         accessorKey: "implementationModel",
+        size: 210,
+        minSize: 210,
+        maxSize: 350,
         header: ({ column }) => {
             return (
                 <Button
@@ -171,6 +186,9 @@ export const columns: ColumnDef<Schools>[] = [
     },
     {
         accessorKey: "numStudents",
+        size: 135,
+        minSize: 135,
+        maxSize: 250,
         header: ({ column }) => {
             return (
                 <Button
@@ -199,6 +217,9 @@ export const columns: ColumnDef<Schools>[] = [
     },
     {
         accessorKey: "numTeachers",
+        size: 135,
+        minSize: 135,
+        maxSize: 250,
         header: ({ column }) => {
             return (
                 <Button
@@ -227,6 +248,9 @@ export const columns: ColumnDef<Schools>[] = [
     },
     {
         accessorKey: "numProjects",
+        size: 130,
+        minSize: 130,
+        maxSize: 250,
         header: ({ column }) => {
             return (
                 <Button
