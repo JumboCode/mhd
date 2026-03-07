@@ -143,17 +143,21 @@ export default function SchoolProfilePage() {
             <div className="w-full flex flex-col gap-6 py-8 max-w-5xl px-6">
                 <Breadcrumbs />
                 {/* Header with school name */}
-                <h1 className="text-2xl font-bold">{schoolData.name}</h1>
-                <YearDropdown
-                    showDataIndicator={true}
-                    selectedYear={year}
-                    onYearChange={(selectedYear) => {
-                        if (selectedYear !== null) {
-                            setYear(selectedYear);
-                        }
-                    }}
-                    school={schoolData.name}
-                />
+                <div className="flex flex-row items-center w-full">
+                    <h1 className="text-2xl font-bold">{schoolData.name}</h1>
+                    <div className="ml-auto">
+                        <YearDropdown
+                            showDataIndicator={true}
+                            selectedYear={year}
+                            onYearChange={(selectedYear) => {
+                                if (selectedYear !== null) {
+                                    setYear(selectedYear);
+                                }
+                            }}
+                            school={schoolData.name}
+                        />
+                    </div>
+                </div>
 
                 {/* Stats cards */}
                 <div className="grid grid-cols-3 gap-8">
