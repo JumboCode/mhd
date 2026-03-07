@@ -242,7 +242,15 @@ export default function AuthForm() {
             {/* Footer at bottom */}
             <div className="pb-8">
                 <p className="text-[#646464] text-sm">
-                    Created with ❤️ by JumboCode
+                    Created with ❤️ by {}
+                    <a
+                        href="https://jumbocode.org"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:underline"
+                    >
+                        JumboCode
+                    </a>
                 </p>
             </div>
         </div>
