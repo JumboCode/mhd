@@ -1,6 +1,6 @@
 /***************************************************************
  *
- *                school_name_standardize.ts
+ *                school-name-standardize.ts
  *
  *         Author: Will and Hansini
  *           Date: 12/6/2025
@@ -35,20 +35,13 @@ const words_to_remove: string[] = [
     ".",
 ];
 
-export function standardize(name: string) {
-    // Trim whitespace
-    let school_name = name.trim();
-
-    // Convert to lowercase
-    school_name = school_name.toLowerCase();
-
-    const words = school_name.split(" ");
-
-    // Filtering out extraneous words referring to the array above
-    // Remove the extraneous words
-    const filtered = words.filter((word) => {
-        return !words_to_remove.includes(word);
-    });
-
-    return filtered.join("");
+export function standardize(name: string): string {
+    const words = name.trim().toLowerCase().split(" ");
+    const filtered = words.filter((w) => !words_to_remove.includes(w));
+    return filtered
+        .join("-")
+        .replace(/\//g, "-") // convert slashes to hyphens first
+        .replace(/[^a-z0-9-]/g, "") // then strip remaining special chars
+        .replace(/-+/g, "-") // collapse multiple hyphens
+        .replace(/^-|-$/g, ""); // trim leading/trailing hyphens
 }

@@ -12,6 +12,7 @@
 "use client";
 import React, { ReactNode } from "react";
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { standardize } from "@/lib/school-name-standardize";
 
 import {
     ColumnDef,
@@ -195,7 +196,7 @@ export function SchoolsDataTable<TData, TValue>({
                                     >
                                         {cell.column.getIndex() === 0 ? (
                                             <Link
-                                                href={`/schools/${String(cell.getValue()).replaceAll(" ", "-").toLowerCase()}`}
+                                                href={`/schools/${standardize(String(cell.getValue()))}`}
                                                 className="hover:underline"
                                             >
                                                 {flexRender(
