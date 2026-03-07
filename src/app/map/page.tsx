@@ -412,7 +412,7 @@ function HeatMapPage() {
     }, [metric, schoolPoints, showSchools]);
 
     return (
-        <div className="flex p-4 flex-col h-screen w-screen justify-center">
+        <div className="flex p-4 flex-col h-full w-full justify-center">
             <div className="flex justify-between items-center mb-4">
                 <h1 className="text-2xl py-4 font-semibold">Heatmap</h1>
                 <div className="flex gap-3">
