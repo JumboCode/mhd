@@ -13,8 +13,8 @@
 "use client";
 
 import type { ColumnDef } from "@tanstack/react-table";
-import { ChevronDown, ChevronsUpDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ChevronsUpDownSort } from "@/components/icons/ChevronsUpDownSort";
 
 export type Schools = {
     name: string;
@@ -49,13 +49,10 @@ export const columns: ColumnDef<Schools>[] = [
                     }}
                 >
                     Name
-                    {column.getIsSorted() === "asc" ? (
-                        <ChevronUp className="ml-2 h-4 w-4" />
-                    ) : column.getIsSorted() === "desc" ? (
-                        <ChevronDown className="ml-2 h-4 w-4" />
-                    ) : (
-                        <ChevronsUpDown className="ml-2 h-4 w-4" />
-                    )}
+                    <ChevronsUpDownSort
+                        sortDirection={column.getIsSorted()}
+                        className="ml-2"
+                    />
                 </Button>
             );
         },
@@ -80,13 +77,10 @@ export const columns: ColumnDef<Schools>[] = [
                     }}
                 >
                     City
-                    {column.getIsSorted() === "asc" ? (
-                        <ChevronUp className="ml-2 h-4 w-4" />
-                    ) : column.getIsSorted() === "desc" ? (
-                        <ChevronDown className="ml-2 h-4 w-4" />
-                    ) : (
-                        <ChevronsUpDown className="ml-2 h-4 w-4" />
-                    )}
+                    <ChevronsUpDownSort
+                        sortDirection={column.getIsSorted()}
+                        className="ml-2"
+                    />
                 </Button>
             );
         },
@@ -111,13 +105,10 @@ export const columns: ColumnDef<Schools>[] = [
                     }}
                 >
                     Region
-                    {column.getIsSorted() === "asc" ? (
-                        <ChevronUp className="ml-2 h-4 w-4" />
-                    ) : column.getIsSorted() === "desc" ? (
-                        <ChevronDown className="ml-2 h-4 w-4" />
-                    ) : (
-                        <ChevronsUpDown className="ml-2 h-4 w-4 " />
-                    )}
+                    <ChevronsUpDownSort
+                        sortDirection={column.getIsSorted()}
+                        className="ml-2"
+                    />
                 </Button>
             );
         },
@@ -142,13 +133,10 @@ export const columns: ColumnDef<Schools>[] = [
                     }}
                 >
                     Instruction Model
-                    {column.getIsSorted() === "asc" ? (
-                        <ChevronUp className="ml-2 h-4 w-4" />
-                    ) : column.getIsSorted() === "desc" ? (
-                        <ChevronDown className="ml-2 h-4 w-4" />
-                    ) : (
-                        <ChevronsUpDown className="ml-2 h-4 w-4 " />
-                    )}
+                    <ChevronsUpDownSort
+                        sortDirection={column.getIsSorted()}
+                        className="ml-2"
+                    />
                 </Button>
             );
         },
@@ -173,13 +161,10 @@ export const columns: ColumnDef<Schools>[] = [
                     }}
                 >
                     Implementaion Model
-                    {column.getIsSorted() === "asc" ? (
-                        <ChevronUp className="ml-2 h-4 w-4" />
-                    ) : column.getIsSorted() === "desc" ? (
-                        <ChevronDown className="ml-2 h-4 w-4" />
-                    ) : (
-                        <ChevronsUpDown className="ml-2 h-4 w-4 " />
-                    )}
+                    <ChevronsUpDownSort
+                        sortDirection={column.getIsSorted()}
+                        className="ml-2"
+                    />
                 </Button>
             );
         },
@@ -204,13 +189,10 @@ export const columns: ColumnDef<Schools>[] = [
                     }}
                 >
                     # Students
-                    {column.getIsSorted() === "asc" ? (
-                        <ChevronUp className="ml-2 h-4 w-4" />
-                    ) : column.getIsSorted() === "desc" ? (
-                        <ChevronDown className="ml-2 h-4 w-4" />
-                    ) : (
-                        <ChevronsUpDown className="ml-2 h-4 w-4 " />
-                    )}
+                    <ChevronsUpDownSort
+                        sortDirection={column.getIsSorted()}
+                        className="ml-2"
+                    />
                 </Button>
             );
         },
@@ -235,13 +217,10 @@ export const columns: ColumnDef<Schools>[] = [
                     }}
                 >
                     # Teachers
-                    {column.getIsSorted() === "asc" ? (
-                        <ChevronUp className="ml-2 h-4 w-4" />
-                    ) : column.getIsSorted() === "desc" ? (
-                        <ChevronDown className="ml-2 h-4 w-4" />
-                    ) : (
-                        <ChevronsUpDown className="ml-2 h-4 w-4 " />
-                    )}
+                    <ChevronsUpDownSort
+                        sortDirection={column.getIsSorted()}
+                        className="ml-2"
+                    />
                 </Button>
             );
         },
@@ -266,13 +245,10 @@ export const columns: ColumnDef<Schools>[] = [
                     }}
                 >
                     # Projects
-                    {column.getIsSorted() === "asc" ? (
-                        <ChevronUp className="ml-2 h-4 w-4" />
-                    ) : column.getIsSorted() === "desc" ? (
-                        <ChevronDown className="ml-2 h-4 w-4" />
-                    ) : (
-                        <ChevronsUpDown className="ml-2 h-4 w-4" />
-                    )}
+                    <ChevronsUpDownSort
+                        sortDirection={column.getIsSorted()}
+                        className="ml-2"
+                    />
                 </Button>
             );
         },
