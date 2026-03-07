@@ -74,6 +74,8 @@ export async function GET(
     { params }: { params: Promise<{ name: string }> },
 ) {
     try {
+        const { searchParams } = new URL(req.url);
+        const year = Number(searchParams.get("year"));
         const { name } = await params;
         const searchName = name.replace(/-/g, " ");
 
@@ -93,17 +95,12 @@ export async function GET(
         }
 
         const school = schoolResult[0];
-        const currentYear = new Date().getFullYear();
-        const pastYear = currentYear - 1;
 
         const studentCount = await db
             .select({ total: sum(projects.numStudents) })
             .from(projects)
             .where(
-                and(
-                    eq(projects.schoolId, school.id),
-                    eq(projects.year, pastYear),
-                ),
+                and(eq(projects.schoolId, school.id), eq(projects.year, year)),
             );
 
         const teacherCount = await db
@@ -112,7 +109,7 @@ export async function GET(
             .where(
                 and(
                     eq(yearlyTeacherParticipation.schoolId, school.id),
-                    eq(yearlyTeacherParticipation.year, pastYear),
+                    eq(yearlyTeacherParticipation.year, year),
                 ),
             );
 
@@ -120,10 +117,19 @@ export async function GET(
             .select({ count: sql<number>`count(*)` })
             .from(projects)
             .where(
-                and(
-                    eq(projects.schoolId, school.id),
-                    eq(projects.year, pastYear),
-                ),
+                and(eq(projects.schoolId, school.id), eq(projects.year, year)),
+            );
+
+        const projectRows = await db
+            .select({
+                id: projects.id,
+                title: projects.title,
+                numStudents: projects.numStudents,
+                year: projects.year,
+            })
+            .from(projects)
+            .where(
+                and(eq(projects.schoolId, school.id), eq(projects.year, year)),
             );
 
         // First year would be minimum year found in a school's projects
@@ -143,6 +149,7 @@ export async function GET(
             teacherCount: teacherCount[0]?.count ?? 0,
             projectCount: projectCount[0]?.count ?? 0,
             firstYear: firstYearData[0]?.year ?? null,
+            projects: projectRows,
             // TO DO: Instructional model not in database yet
             instructionalModel: "normal",
         });

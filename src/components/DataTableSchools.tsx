@@ -10,7 +10,9 @@
  **************************************************************/
 
 "use client";
-import React from "react";
+import React, { ReactNode } from "react";
+import { TrendingUp, TrendingDown, Minus } from "lucide-react";
+
 import {
     ColumnDef,
     flexRender,
@@ -20,6 +22,8 @@ import {
     SortingState,
     getSortedRowModel,
     ColumnResizeMode,
+    Cell,
+    Row,
 } from "@tanstack/react-table";
 
 import {
@@ -36,6 +40,7 @@ import Link from "next/link";
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[];
     data: TData[];
+    prevData: TData[];
     globalFilter: string;
     setGlobalFilter: (value: string) => void;
 }
@@ -43,6 +48,7 @@ interface DataTableProps<TData, TValue> {
 export function SchoolsDataTable<TData, TValue>({
     columns,
     data,
+    prevData,
     globalFilter,
     setGlobalFilter,
 }: DataTableProps<TData, TValue>) {
@@ -65,6 +71,60 @@ export function SchoolsDataTable<TData, TValue>({
             globalFilter,
         },
     });
+
+    /**
+     * yoyChange
+     * Calculates the yoy change for applicable fields of the data table
+     * @param cell The cell of the table to calculate year over year change for
+     * returns: A lucide react icon, either up arrow, down arrow, or dash, and a
+     *          number corresponding to the percent change
+     */
+    function yoyChange(cell: Cell<TData, number>, row: Row<TData>): ReactNode {
+        // Check if it is in students/teachers/projects column
+        if (
+            cell.column.getIndex() !== 5 &&
+            cell.column.getIndex() !== 6 &&
+            cell.column.getIndex() !== 7
+        ) {
+            return <></>;
+        }
+        const rowIndex: number = row.index;
+        const prevRow = prevData[rowIndex] as Record<string, number>;
+
+        if (!prevRow) return <></>;
+        const prevYearValue: number = prevRow[cell.column.id] ?? 0;
+        const diff = cell.getValue() - prevYearValue;
+
+        const percentChange =
+            prevYearValue !== 0 ? Math.abs(diff / prevYearValue) * 100 : 0;
+
+        const formattedPercent = percentChange.toFixed(0);
+        if (percentChange < 0.5) {
+            return (
+                <div className="flex items-center justify-center gap-1 text-[#808080]">
+                    <Minus size={14} />
+                    {formattedPercent}%
+                </div>
+            );
+        } else if (diff > 0) {
+            return (
+                <div className="flex items-center justify-center gap-1 text-[#46A758]">
+                    <TrendingUp size={14} />
+                    {formattedPercent}%
+                </div>
+            );
+        } else if (diff < 0) {
+            return (
+                <div className="flex items-center justify-center gap-1 text-[#E5484D]">
+                    <TrendingDown size={14} />
+                    {formattedPercent}%
+                </div>
+            );
+        }
+
+        // If so, calc year over year change
+        // Render icon/number based on that
+    }
 
     return (
         <div className="text-center">
@@ -144,11 +204,12 @@ export function SchoolsDataTable<TData, TValue>({
                                                 )}
                                             </Link>
                                         ) : (
-                                            <div>
+                                            <div className="flex flex-row items-center justify-center space-x-1 gap-2 h-12">
                                                 {flexRender(
                                                     cell.column.columnDef.cell,
                                                     cell.getContext(),
                                                 )}
+                                                {yoyChange(cell, row)}
                                             </div>
                                         )}
                                     </TableCell>

@@ -19,10 +19,11 @@ import {
     PlusCircle,
     Share,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { toast } from "sonner";
-import BarGraph, { type BarDataset } from "@/components/BarGraph";
+import BarGraph from "@/components/BarGraph";
+import { type ChartDataset } from "@/components/chartTypes";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import GraphFilters, {
     type Filters,
@@ -280,7 +281,7 @@ export default function ChartPage() {
             onlyGatewaySchools,
         ],
     );
-    const svgRef = useRef<SVGSVGElement | null>(null);
+    const chartRef = useRef<HTMLDivElement | null>(null);
 
     // Fetch all project data
     useEffect(() => {
@@ -396,7 +397,7 @@ export default function ChartPage() {
     }, [timePeriod, allProjects]);
 
     // Memoize graph dataset calculation to run only when data or filters change
-    const graphDataset: BarDataset[] = useMemo(() => {
+    const graphDataset: ChartDataset[] = useMemo(() => {
         if (!allProjects.length) return [];
 
         // Pre-calculate teacher participation years if filter is active
@@ -617,10 +618,30 @@ export default function ChartPage() {
     const filteredProjectCount = useMemo(() => {
         return graphDataset.reduce((total, dataset) => {
             return (
-                total + dataset.data.reduce((sum, point) => sum + point.y, 0)
+                total +
+                dataset.data.reduce(
+                    (sum: number, point: { x: string | number; y: number }) =>
+                        sum + point.y,
+                    0,
+                )
             );
         }, 0);
     }, [graphDataset]);
+
+    const tooltipFormatter = useCallback(
+        (d: { x: string | number; y: number }, label: string) => {
+            const metric =
+                measuredAsLabels[filters.measuredAs] || filters.measuredAs;
+            const value =
+                filters.measuredAs === "school-return-rate"
+                    ? `${(d.y * 100).toFixed(1)}%`
+                    : Math.round(d.y).toLocaleString();
+            return filters.groupBy === "none"
+                ? `${d.x}: ${value} ${metric}`
+                : `${label} · ${d.x}: ${value}`;
+        },
+        [filters.measuredAs, filters.groupBy],
+    );
 
     // Data for filter dropdowns
     const schools = Array.from(
@@ -709,7 +730,9 @@ export default function ChartPage() {
                                     variant="outline"
                                     size="sm"
                                     className="flex items-center gap-2"
-                                    onClick={() => downloadSingleGraph(svgRef)}
+                                    onClick={() =>
+                                        downloadSingleGraph(chartRef)
+                                    }
                                 >
                                     <Share className="w-4 h-4" />
                                     Export
@@ -725,7 +748,7 @@ export default function ChartPage() {
                                                 className="flex items-center gap-2"
                                                 onClick={() =>
                                                     addToCart(
-                                                        svgRef,
+                                                        chartRef,
                                                         cart,
                                                         setCart,
                                                         filterNames,
@@ -973,7 +996,10 @@ export default function ChartPage() {
                                                               filters.groupBy
                                                           ]
                                                 }
-                                                svgRefCopy={svgRef}
+                                                chartRef={chartRef}
+                                                tooltipFormatter={
+                                                    tooltipFormatter
+                                                }
                                             />
                                         ) : (
                                             <LineGraph
@@ -991,7 +1017,10 @@ export default function ChartPage() {
                                                               filters.groupBy
                                                           ]
                                                 }
-                                                svgRefCopy={svgRef}
+                                                chartRef={chartRef}
+                                                tooltipFormatter={
+                                                    tooltipFormatter
+                                                }
                                             />
                                         )}
                                     </motion.div>

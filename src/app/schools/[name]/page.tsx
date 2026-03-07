@@ -12,6 +12,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
@@ -20,6 +21,10 @@ import { MapPlacer } from "@/components/ui/mapPlacer";
 import { SchoolInfoRow } from "@/components/SchoolInfoRow";
 import { StatCard } from "@/components/ui/stat-card";
 import { ENTITY_CONFIG } from "@/lib/entity-config";
+import YearDropdown from "@/components/YearDropdown";
+import MultiLineGraph, { GraphDataset } from "@/components/LineGraph";
+import { DataTable } from "@/components/DataTable";
+import { ColumnDef } from "@tanstack/react-table";
 
 // interface such that data can be blank if API is loading
 type SchoolData = {
@@ -29,6 +34,7 @@ type SchoolData = {
     teacherCount: string;
     projectCount: string;
     firstYear: string;
+    projects: ProjectRow[];
     instructionalModel: string;
 };
 
@@ -37,17 +43,45 @@ type MapCoordinates = {
     longitude: number | null;
 };
 
+type ProjectRow = {
+    id: string;
+    title: string;
+    numStudents: number;
+    year: number;
+};
+
 export default function SchoolProfilePage() {
     const params = useParams();
     const schoolName = params.name as string;
-
     const router = useRouter();
 
     const [schoolData, setSchoolData] = useState<SchoolData | null>(null);
     const [coordinates, setCoordinates] = useState<MapCoordinates | null>(null);
+    const [year, setYear] = useState<number>(2025);
+    const [projects, setProjects] = useState<ProjectRow[]>([]);
+    const [studentYearData, setstudentYearData] = useState<
+        { x: string | number; y: number }[]
+    >([]);
+
+    const projectColumns: ColumnDef<ProjectRow>[] = [
+        {
+            accessorKey: "title",
+            header: "Title",
+        },
+        {
+            accessorKey: "numStudents",
+            header: "Students",
+        },
+        {
+            accessorKey: "year",
+            header: "Year",
+        },
+    ];
 
     useEffect(() => {
-        fetch(`/api/schools/${schoolName}`)
+        if (!year) return;
+
+        fetch(`/api/schools/${schoolName}?year=${year}`)
             .then((response) => {
                 if (!response.ok) {
                     throw new Error(`Failed to fetch school data`);
@@ -56,6 +90,7 @@ export default function SchoolProfilePage() {
             })
             .then((data) => {
                 setSchoolData(data);
+                setProjects(data.projects);
             })
             .catch(() => {
                 toast.error(
@@ -66,7 +101,38 @@ export default function SchoolProfilePage() {
                     router.push("/schools");
                 }, 2000);
             });
-    }, [schoolName, router]);
+    }, [schoolName, router, year]);
+
+    // Fetches student data for the last 5 years in parallel
+    useEffect(() => {
+        const fetchData = async () => {
+            const years = Array.from({ length: 6 }, (_, i) => year - (5 - i));
+            try {
+                const results = await Promise.all(
+                    years.map((y) =>
+                        fetch(`/api/schools/${schoolName}?year=${y}`).then(
+                            (r) => r.json(),
+                        ),
+                    ),
+                );
+                const points = results.map((yearInfo, i) => ({
+                    x: years[i],
+                    y: Number(yearInfo.studentCount),
+                }));
+                setstudentYearData(points);
+            } catch {
+                toast.error("Failed to load dashboard data. Please try again.");
+            }
+        };
+        fetchData();
+    }, [year, schoolName]);
+
+    const studentData: GraphDataset = {
+        label: "Students by Year",
+        data: studentYearData,
+    };
+
+    const studentsHref = `/chart?type=line&startYear=${year - 5}&endYear=${year}&measuredAs=total-student-count&schools=${encodeURIComponent(schoolData?.name ?? "")}`;
 
     if (!schoolData) {
         return <SchoolProfileSkeleton />;
@@ -78,6 +144,16 @@ export default function SchoolProfilePage() {
                 <Breadcrumbs />
                 {/* Header with school name */}
                 <h1 className="text-2xl font-bold">{schoolData.name}</h1>
+                <YearDropdown
+                    showDataIndicator={true}
+                    selectedYear={year}
+                    onYearChange={(selectedYear) => {
+                        if (selectedYear !== null) {
+                            setYear(selectedYear);
+                        }
+                    }}
+                    school={schoolData.name}
+                />
 
                 {/* Stats cards */}
                 <div className="grid grid-cols-3 gap-8">
@@ -110,6 +186,19 @@ export default function SchoolProfilePage() {
                     instructionalModel={schoolData.instructionalModel}
                     firstYear={schoolData.firstYear}
                 />
+                <Link
+                    href={studentsHref}
+                    className="block rounded-lg border border-border px-6 pt-4 pb-2 hover:bg-muted/40 transition-colors"
+                >
+                    <p className="text-sm font-medium text-center mb-2">
+                        Total # Students
+                    </p>
+                    <MultiLineGraph
+                        datasets={[studentData]}
+                        yAxisLabel={"Total # Students"}
+                        xAxisLabel="Year"
+                    />
+                </Link>
 
                 {/* Placeholders for charts */}
                 <div className="grid grid-cols-3 gap-8">
@@ -161,13 +250,12 @@ export default function SchoolProfilePage() {
                 {/* Data table placeholder */}
                 <div className="border border-border rounded-lg p-6">
                     <h2 className="text-xl font-semibold mb-4 text-foreground">
-                        View and edit data
+                        Project Data
                     </h2>
-                    <div className="h-48 flex items-center justify-center bg-muted rounded">
-                        <p className="text-sm text-muted-foreground">
-                            Data table placeholder
-                        </p>
-                    </div>
+                    <DataTable
+                        columns={projectColumns}
+                        data={projects}
+                    ></DataTable>
                 </div>
             </div>
         </div>
