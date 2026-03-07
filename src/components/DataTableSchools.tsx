@@ -66,27 +66,22 @@ export function SchoolsDataTable<TData, TValue>({
     });
 
     return (
-        //Example code should be changed
-        //border for school name column disappears when scrolling right
-        <div className="h-full overflow-auto rounded-md border text-center">
-            <table
-                className="caption-bottom text-sm border-separate border-spacing-0"
-                style={{
-                    width: table.getCenterTotalSize(),
-                    tableLayout: "fixed",
-                }}
-            >
-                <TableHeader className="sticky top-0 z-10">
+        <div className="text-center">
+            <Table className="border-separate border-spacing-0 -mt-px">
+                <TableHeader className="bg-muted">
                     {table.getHeaderGroups().map((headerGroup) => (
-                        <TableRow key={headerGroup.id}>
+                        <TableRow
+                            key={headerGroup.id}
+                            className="bg-muted hover:bg-muted border-0"
+                        >
                             {headerGroup.headers.map((header) => {
                                 return (
                                     <TableHead
                                         key={header.id}
                                         className={
                                             header.index === 0
-                                                ? "sticky left-0 z-30 text-center bg-muted border-r border-b relative"
-                                                : "text-center border-r border-b z-0 bg-muted relative"
+                                                ? "sticky top-0 left-0 z-40 text-center bg-muted border-r border-b min-w-[200px] w-[200px]"
+                                                : "sticky top-0 z-30 text-center border-r border-b bg-muted"
                                         }
                                         style={{
                                             width: header.getSize(),
@@ -129,8 +124,8 @@ export function SchoolsDataTable<TData, TValue>({
                                         key={cell.id}
                                         className={
                                             cell.column.getIndex() === 0
-                                                ? " text-center sticky left-0 z-20 bg-muted border-r border-b"
-                                                : " text-center z-0 border-b"
+                                                ? "text-center sticky left-0 z-20 bg-muted border-r border-b min-w-[200px] w-[200px]"
+                                                : "text-center z-0 border-b"
                                         }
                                         style={{
                                             width: cell.column.getSize(),
@@ -170,7 +165,7 @@ export function SchoolsDataTable<TData, TValue>({
                         </TableRow>
                     )}
                 </TableBody>
-            </table>
+            </Table>
         </div>
     );
 }

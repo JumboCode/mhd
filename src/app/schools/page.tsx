@@ -45,8 +45,8 @@ export default function SchoolsPage() {
     }, [year]);
 
     return (
-        <div className="font-sans h-full w-full max-w-full flex flex-col overflow-hidden px-6 py-5">
-            <div className="flex items-center shrink-0 pb-5">
+        <div className="font-sans w-full max-w-full h-full min-h-0 flex flex-col overscroll-none">
+            <div className="shrink-0 z-40 flex items-center h-16 px-6 backdrop-blur-xl bg-background/70 border-b">
                 <Breadcrumbs />
                 <div className="flex-1 text-center">
                     <h1 className="text-xl font-bold sm: pr-6"> Schools </h1>
@@ -58,20 +58,18 @@ export default function SchoolsPage() {
                 </div>
             </div>
 
-            <div className="flex-1 flex flex-col overflow-hidden min-h-0">
+            <div className="flex-1 min-h-0 overflow-auto overscroll-none">
                 {error && (
-                    <div className="mb-4 p-4 bg-destructive/10 border border-destructive rounded-md text-destructive shrink-0">
+                    <div className="my-4 p-4 bg-destructive/10 border border-destructive rounded-md text-destructive">
                         {error}
                     </div>
                 )}
-                <div className="flex-1 overflow-hidden min-h-0">
-                    <SchoolsDataTable
-                        columns={columns}
-                        data={schoolInfo}
-                        globalFilter={search}
-                        setGlobalFilter={setSearch}
-                    />
-                </div>
+                <SchoolsDataTable
+                    columns={columns}
+                    data={schoolInfo}
+                    globalFilter={search}
+                    setGlobalFilter={setSearch}
+                />
             </div>
         </div>
     );
