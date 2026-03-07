@@ -2,10 +2,18 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { authClient } from "@/lib/auth-client";
+import { DEV_BYPASS, DEV_BYPASS_COOKIE } from "@/lib/dev-config"; // TO DO - REMOVE: dev auth bypass
+import { ArrowRightIcon } from "lucide-react";
+
+// TO DO - REMOVE: dev auth bypass
+function getDevBypassCookie(): boolean {
+    if (typeof document === "undefined") return false;
+    return document.cookie.includes(`${DEV_BYPASS_COOKIE}=1`);
+}
 
 export default function AuthForm() {
     const [step, setStep] = useState<"email" | "otp">("email");
@@ -15,6 +23,19 @@ export default function AuthForm() {
     const [error, setError] = useState("");
 
     const router = useRouter();
+
+    // TO DO - REMOVE: dev auth bypass - redirect if already signed in
+    useEffect(() => {
+        const checkAndRedirect = async () => {
+            const sessionResult = await authClient.getSession();
+            const session = sessionResult?.data ?? null;
+            const isDevBypass = DEV_BYPASS && getDevBypassCookie();
+            if (session || isDevBypass) {
+                router.replace("/");
+            }
+        };
+        checkAndRedirect();
+    }, [router]);
 
     async function handleSendCode(e: React.FormEvent) {
         e.preventDefault();
@@ -67,7 +88,9 @@ export default function AuthForm() {
     }
 
     // TO DO - REMOVE: dev auth bypass
-    async function handleDevBypass() {
+    function handleDevBypass() {
+        // Set cookie so Sidebar and redirect logic know we're in dev mode
+        document.cookie = `${DEV_BYPASS_COOKIE}=1; path=/; max-age=86400`;
         router.push("/");
         router.refresh();
     }
@@ -200,15 +223,19 @@ export default function AuthForm() {
                     </div>
 
                     {/* TO DO - REMOVE: dev auth bypass */}
-                    <div className="border border-dashed border-amber-400 rounded-lg p-4 bg-amber-50 flex flex-col gap-2">
-                        <Button
-                            type="button"
-                            onClick={handleDevBypass}
-                            className="w-full bg-amber-400 hover:bg-amber-500 text-black text-sm"
-                        >
-                            ENTER DEV MODE
-                        </Button>
-                    </div>
+                    {DEV_BYPASS && (
+                        <div className="border border-dashed border-amber-400 rounded-lg p-4 bg-amber-50 flex flex-col gap-2">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={handleDevBypass}
+                                className="border-amber-400 bg-amber-400 hover:bg-amber-500 text-black text-sm"
+                            >
+                                Enter DEV MODE{" "}
+                                <ArrowRightIcon className="w-4 h-4" />
+                            </Button>
+                        </div>
+                    )}
                 </div>
             </div>
 

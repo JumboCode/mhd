@@ -1,15 +1,12 @@
 // TO DO - REMOVE file: dev auth bypass
+import { NextRequest } from "next/server";
 import { auth } from "./auth";
 import { headers } from "next/headers";
-import { DEV_BYPASS } from "@/lib/dev-config";
+import { DEV_BYPASS, DEV_BYPASS_COOKIE } from "@/lib/dev-config";
+import { DEV_SESSION_USER } from "@/lib/dev-session";
 
 const DEV_SESSION = {
-    user: {
-        id: "dev",
-        email: "dev@masshist.org",
-        name: "Development",
-        emailVerified: true,
-    },
+    user: DEV_SESSION_USER,
     session: {
         id: "dev-session",
         userId: "dev-user",
@@ -17,9 +14,19 @@ const DEV_SESSION = {
     },
 };
 
-export async function getSession() {
-    // TO DO - REMOVE: dev auth bypass
-    if (process.env.NODE_ENV === "development" && DEV_BYPASS === true) {
+function hasDevBypassCookie(request: NextRequest): boolean {
+    const cookie = request.cookies.get(DEV_BYPASS_COOKIE);
+    return cookie?.value === "1";
+}
+
+export async function getSession(request?: NextRequest) {
+    // TO DO - REMOVE: dev auth bypass - only return dev session when cookie is set
+    if (
+        request &&
+        process.env.NODE_ENV === "development" &&
+        DEV_BYPASS === true &&
+        hasDevBypassCookie(request)
+    ) {
         return DEV_SESSION;
     }
     return auth.api.getSession({ headers: await headers() });

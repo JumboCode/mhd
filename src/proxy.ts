@@ -3,20 +3,28 @@ import { NextRequest, NextResponse } from "next/server";
 // import { auth } from "@/lib/auth";
 import { getSessionCookie } from "better-auth/cookies";
 import { getSession } from "@/lib/auth-session";
-import { DEV_BYPASS } from "@/lib/dev-config";
+import { DEV_BYPASS } from "@/lib/dev-config"; // TO DO - REMOVE: dev auth bypass
 
 export async function proxy(request: NextRequest) {
-    const session = await getSession();
+    const session = await getSession(request);
+
+    const pathname = request.nextUrl.pathname;
+
+    // TO DO - REMOVE: dev auth bypass - redirect to landing if already signed in
+    if (pathname === "/signin") {
+        if (session) return NextResponse.redirect(new URL("/", request.url));
+        return NextResponse.next(); // allow through to signin page
+    }
 
     if (!session) {
         return NextResponse.redirect(new URL("/signin", request.url));
     }
 
-    // TO DO - REMOVE: dev auth bypass
+    // TO DO - REMOVE: dev auth bypass - skip cookie check when in dev mode
     if (process.env.NODE_ENV !== "development" || !DEV_BYPASS) {
         const sessionCookie = getSessionCookie(request);
         if (!sessionCookie) {
-            return NextResponse.redirect(new URL("/", request.url));
+            return NextResponse.redirect(new URL("/signin", request.url));
         }
     }
 
@@ -28,12 +36,11 @@ export const config = {
     matcher: [
         /*
          * Match all request paths except:
-         * - /signin (sign-in page)
          * - /api/auth/* (auth API routes)
          * - /_next/* (Next.js internals)
-         * - /static/* (static files)
          * - /*.* (files with extensions like favicon.ico, images, etc.)
+         * Note: signin IS matched so we can redirect to / when already signed in
          */
-        "/((?!signin|api/auth|_next/static|_next/image|favicon.ico|.*\\.png$|.*\\.jpg$|.*\\.jpeg$|.*\\.svg$).*)",
+        "/((?!api/auth|_next/static|_next/image|favicon.ico|.*\\.png$|.*\\.jpg$|.*\\.jpeg$|.*\\.svg$).*)",
     ],
 };
