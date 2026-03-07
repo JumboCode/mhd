@@ -47,7 +47,7 @@ type PercentChanges = {
 };
 
 export default function Dashboard() {
-    const [year, setYear] = useState(() => new Date().getFullYear());
+    const [year, setYear] = useState<number | null>(null);
     const [stats, setStats] = useState<Stats | null>(null);
     const [allYearsStats, setAllYearsStats] = useState<YearStats[]>([]);
     const [percentChanges, setPercentChanges] = useState<PercentChanges | null>(
@@ -55,6 +55,7 @@ export default function Dashboard() {
     );
 
     useEffect(() => {
+        if (year === null) return;
         const fetchStats = async (selectedYear: number) => {
             try {
                 const res = await fetch(
@@ -84,6 +85,7 @@ export default function Dashboard() {
      * Uses Promise.all so all years load at once before updating state.
      */
     useEffect(() => {
+        if (year === null) return;
         const fetchData = async () => {
             const years = Array.from({ length: 6 }, (_, i) => year - (5 - i));
             try {
@@ -121,11 +123,20 @@ export default function Dashboard() {
         data: schoolyearData,
     };
 
-    const projectsHref = `/chart?type=line&startYear=${year - 5}&endYear=${year}&measuredAs=total-project-count`;
-    const schoolsHref = `/chart?type=line&startYear=${year - 5}&endYear=${year}`;
+    const projectsHref =
+        year !== null
+            ? `/chart?type=line&startYear=${year - 5}&endYear=${year}&measuredAs=total-project-count`
+            : "#";
+    const schoolsHref =
+        year !== null
+            ? `/chart?type=line&startYear=${year - 5}&endYear=${year}`
+            : "#";
 
     // Extract sparkline data arrays from allYearsStats (up to selected year)
-    const filteredStats = allYearsStats.filter((s) => s.year <= year);
+    const filteredStats =
+        year !== null
+            ? allYearsStats.filter((s) => s.year <= year)
+            : allYearsStats;
     const projectsSparkline = filteredStats.map((s) => s.total_projects);
     const teachersSparkline = filteredStats.map((s) => s.total_teachers);
     const studentsSparkline = filteredStats.map((s) => s.total_students);

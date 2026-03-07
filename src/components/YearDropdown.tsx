@@ -12,7 +12,7 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
     Select,
@@ -37,6 +37,7 @@ export default function YearDropdown({
 }: YearDropdownProps) {
     const [year, setYear] = useState<number | null>(null);
     const [yearsWithData, setYearsWithData] = useState<Set<number>>(new Set());
+    const hasSetDefaultRef = useRef(false);
     const currentYear = new Date().getFullYear();
     const years = Array.from({ length: 10 }, (_, i) => currentYear - i);
 
@@ -51,6 +52,19 @@ export default function YearDropdown({
         }
         fetchYearsWithData();
     }, []);
+
+    // Default to latest year with data when parent hasn't set a year
+    useEffect(() => {
+        if (
+            yearsWithData.size > 0 &&
+            (selectedYear === null || selectedYear === undefined) &&
+            !hasSetDefaultRef.current
+        ) {
+            const latestYearWithData = Math.max(...yearsWithData);
+            hasSetDefaultRef.current = true;
+            onYearChange?.(latestYearWithData);
+        }
+    }, [yearsWithData, selectedYear, onYearChange]);
 
     useEffect(() => {
         setYear(selectedYear ?? null);

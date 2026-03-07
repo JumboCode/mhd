@@ -41,10 +41,7 @@ function HeatMapPage() {
 
     // Controlled by dropdowns, parameterized for link sharing
     // Year dropdown, set to range of our data
-    const [year, setYear] = useQueryState(
-        "year",
-        parseAsInteger.withDefault(2025),
-    );
+    const [year, setYear] = useQueryState("year", parseAsInteger);
 
     // totalStudents | totalProjects |totalTeachers
     const [metric, setMetric] = useQueryState(
@@ -52,11 +49,11 @@ function HeatMapPage() {
         parseAsString.withDefault("Projects"),
     );
 
-    // Reset invalid query params to defaults
+    // Reset invalid query params - set to null so YearDropdown defaults to latest year with data
     useEffect(() => {
         const currentYear = new Date().getFullYear();
-        if (year > currentYear || year < 1990) setYear(2025);
-    }, []);
+        if (year !== null && (year > currentYear || year < 1990)) setYear(null);
+    }, [year]);
 
     useEffect(() => {
         if (!VALID_METRICS.includes(metric)) setMetric("Projects");
@@ -90,6 +87,7 @@ function HeatMapPage() {
 
     // Fetch school point data for heat layer
     useEffect(() => {
+        if (year === null) return;
         setIsLoaded(false);
         fetch(`/api/heat-layer?year=${year}`)
             .then((response) => {
