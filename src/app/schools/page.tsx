@@ -74,7 +74,12 @@ export default function SchoolsPage() {
                 </div>
 
                 <div className="flex items-center gap-4">
-                    <YearDropdown selectedYear={year} onYearChange={setYear} />
+                    <div className="relative z-50">
+                        <YearDropdown
+                            selectedYear={year}
+                            onYearChange={setYear}
+                        />
+                    </div>
                     <SchoolSearchBar search={search} setSearch={setSearch} />
                 </div>
             </div>
