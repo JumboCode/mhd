@@ -21,7 +21,7 @@ import YearDropdown from "@/components/YearDropdown";
 export default function SchoolsPage() {
     const [schoolInfo, setSchoolInfo] = useState([]);
     const [prevYearSchoolInfo, setPrevYearSchoolInfo] = useState([]);
-    const [year, setYear] = useState<number | null>(2025);
+    const [year, setYear] = useState<number | null>(null);
     const [search, setSearch] = useState("");
     const [error, setError] = useState<string | null>(null);
 
@@ -74,7 +74,12 @@ export default function SchoolsPage() {
                 </div>
 
                 <div className="flex items-center gap-4">
-                    <YearDropdown selectedYear={year} onYearChange={setYear} />
+                    <div className="relative z-50">
+                        <YearDropdown
+                            selectedYear={year}
+                            onYearChange={setYear}
+                        />
+                    </div>
                     <SchoolSearchBar search={search} setSearch={setSearch} />
                 </div>
             </div>

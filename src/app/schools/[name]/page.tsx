@@ -57,7 +57,7 @@ export default function SchoolProfilePage() {
 
     const [schoolData, setSchoolData] = useState<SchoolData | null>(null);
     const [coordinates, setCoordinates] = useState<MapCoordinates | null>(null);
-    const [year, setYear] = useState<number>(2025);
+    const [year, setYear] = useState<number | null>(null);
     const [projects, setProjects] = useState<ProjectRow[]>([]);
     const [studentYearData, setstudentYearData] = useState<
         { x: string | number; y: number }[]
@@ -105,6 +105,7 @@ export default function SchoolProfilePage() {
 
     // Fetches student data for the last 5 years in parallel
     useEffect(() => {
+        if (!year) return;
         const fetchData = async () => {
             const years = Array.from({ length: 6 }, (_, i) => year - (5 - i));
             try {
@@ -132,10 +133,37 @@ export default function SchoolProfilePage() {
         data: studentYearData,
     };
 
-    const studentsHref = `/chart?type=line&startYear=${year - 5}&endYear=${year}&measuredAs=total-student-count&schools=${encodeURIComponent(schoolData?.name ?? "")}`;
+    const studentsHref =
+        year !== null
+            ? `/chart?type=line&startYear=${year - 5}&endYear=${year}&measuredAs=total-student-count&schools=${encodeURIComponent(schoolData?.name ?? "")}`
+            : "#";
 
     if (!schoolData) {
-        return <SchoolProfileSkeleton />;
+        return (
+            <div className="h-screen w-full bg-background overflow-y-auto flex justify-center">
+                <div className="w-full flex flex-col gap-6 py-8 max-w-5xl px-6">
+                    <Breadcrumbs />
+                    <div className="flex flex-row items-center w-full">
+                        <h1 className="text-2xl font-bold">
+                            {decodeURIComponent(schoolName)}
+                        </h1>
+                        <div className="ml-auto">
+                            <YearDropdown
+                                showDataIndicator={true}
+                                selectedYear={year}
+                                onYearChange={(selectedYear) => {
+                                    if (selectedYear !== null) {
+                                        setYear(selectedYear);
+                                    }
+                                }}
+                                school={decodeURIComponent(schoolName)}
+                            />
+                        </div>
+                    </div>
+                    <SchoolProfileSkeleton skipHeader contentOnly />
+                </div>
+            </div>
+        );
     }
 
     return (
@@ -143,17 +171,21 @@ export default function SchoolProfilePage() {
             <div className="w-full flex flex-col gap-6 py-8 max-w-5xl px-6">
                 <Breadcrumbs />
                 {/* Header with school name */}
-                <h1 className="text-2xl font-bold">{schoolData.name}</h1>
-                <YearDropdown
-                    showDataIndicator={true}
-                    selectedYear={year}
-                    onYearChange={(selectedYear) => {
-                        if (selectedYear !== null) {
-                            setYear(selectedYear);
-                        }
-                    }}
-                    school={schoolData.name}
-                />
+                <div className="flex flex-row items-center w-full">
+                    <h1 className="text-2xl font-bold">{schoolData.name}</h1>
+                    <div className="ml-auto">
+                        <YearDropdown
+                            showDataIndicator={true}
+                            selectedYear={year}
+                            onYearChange={(selectedYear) => {
+                                if (selectedYear !== null) {
+                                    setYear(selectedYear);
+                                }
+                            }}
+                            school={schoolData.name}
+                        />
+                    </div>
+                </div>
 
                 {/* Stats cards */}
                 <div className="grid grid-cols-3 gap-8">
