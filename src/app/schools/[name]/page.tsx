@@ -19,6 +19,7 @@ import { SchoolProfileSkeleton } from "@/components/skeletons/SchoolProfileSkele
 import { MapPlacer } from "@/components/ui/mapPlacer";
 import { SchoolInfoRow } from "@/components/SchoolInfoRow";
 import { StatCard } from "@/components/ui/stat-card";
+import { ENTITY_CONFIG } from "@/lib/entity-config";
 
 // interface such that data can be blank if API is loading
 type SchoolData = {
@@ -81,18 +82,24 @@ export default function SchoolProfilePage() {
                 {/* Stats cards */}
                 <div className="grid grid-cols-3 gap-8">
                     <StatCard
-                        label="Total # Projects"
+                        label={ENTITY_CONFIG.projects.label}
                         value={schoolData.projectCount}
+                        icon={ENTITY_CONFIG.projects.icon}
+                        iconColor={ENTITY_CONFIG.projects.color}
                         variant="with-aspect"
                     />
                     <StatCard
-                        label="Total # Teachers"
+                        label={ENTITY_CONFIG.teachers.label}
                         value={schoolData.teacherCount}
+                        icon={ENTITY_CONFIG.teachers.icon}
+                        iconColor={ENTITY_CONFIG.teachers.color}
                         variant="with-aspect"
                     />
                     <StatCard
-                        label="Total # Students"
+                        label={ENTITY_CONFIG.students.label}
                         value={schoolData.studentCount}
+                        icon={ENTITY_CONFIG.students.icon}
+                        iconColor={ENTITY_CONFIG.students.color}
                         variant="with-aspect"
                     />
                 </div>
@@ -114,7 +121,7 @@ export default function SchoolProfilePage() {
                 </div>
 
                 {/* School location map */}
-                <div className="border border-border rounded-lg px-6 py-4 space-y-4">
+                <div className="rounded-lg space-y-4">
                     <h2 className="text-xl font-semibold mb-4 text-foreground">
                         School Location
                     </h2>

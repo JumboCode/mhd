@@ -99,9 +99,10 @@ export default function Dashboard() {
                             label={ENTITY_CONFIG.projects.label}
                             value={stats.totals.total_projects}
                             icon={ENTITY_CONFIG.projects.icon}
+                            iconColor={ENTITY_CONFIG.projects.color}
                             sparklineData={projectsSparkline}
                             sparklineStroke={ENTITY_CONFIG.projects.colorMid}
-                            sparklineFill={ENTITY_CONFIG.projects.colorLight}
+                            sparklineFill={ENTITY_CONFIG.projects.colorMuted}
                             percentChange={
                                 percentChanges?.projects ?? undefined
                             }
@@ -110,9 +111,10 @@ export default function Dashboard() {
                             label={ENTITY_CONFIG.teachers.label}
                             value={stats.totals.total_teachers}
                             icon={ENTITY_CONFIG.teachers.icon}
+                            iconColor={ENTITY_CONFIG.teachers.color}
                             sparklineData={teachersSparkline}
                             sparklineStroke={ENTITY_CONFIG.teachers.colorMid}
-                            sparklineFill={ENTITY_CONFIG.teachers.colorLight}
+                            sparklineFill={ENTITY_CONFIG.teachers.colorMuted}
                             percentChange={
                                 percentChanges?.teachers ?? undefined
                             }
@@ -121,9 +123,10 @@ export default function Dashboard() {
                             label={ENTITY_CONFIG.students.label}
                             value={stats.totals.total_students}
                             icon={ENTITY_CONFIG.students.icon}
+                            iconColor={ENTITY_CONFIG.students.color}
                             sparklineData={studentsSparkline}
                             sparklineStroke={ENTITY_CONFIG.students.colorMid}
-                            sparklineFill={ENTITY_CONFIG.students.colorLight}
+                            sparklineFill={ENTITY_CONFIG.students.colorMuted}
                             percentChange={
                                 percentChanges?.students ?? undefined
                             }
@@ -132,9 +135,10 @@ export default function Dashboard() {
                             label={ENTITY_CONFIG.schools.label}
                             value={stats.totals.total_schools}
                             icon={ENTITY_CONFIG.schools.icon}
+                            iconColor={ENTITY_CONFIG.schools.color}
                             sparklineData={schoolsSparkline}
                             sparklineStroke={ENTITY_CONFIG.schools.colorMid}
-                            sparklineFill={ENTITY_CONFIG.schools.colorLight}
+                            sparklineFill={ENTITY_CONFIG.schools.colorMuted}
                             percentChange={percentChanges?.schools ?? undefined}
                         />
                         {/* TODO: Once we store type of school, make this correct */}

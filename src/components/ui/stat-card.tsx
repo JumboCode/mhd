@@ -107,6 +107,8 @@ export interface StatCardProps {
     value: number | string;
     /** Icon to display next to the label */
     icon?: React.ElementType;
+    /** Icon color (CSS variable or color value) - adds subtle entity tint */
+    iconColor?: string;
     /** Historical data points for the sparkline (optional) */
     sparklineData?: number[];
     /** Sparkline stroke color */
@@ -135,6 +137,7 @@ export function StatCard({
     label,
     value,
     icon: Icon,
+    iconColor,
     sparklineData,
     sparklineStroke,
     sparklineFill,
@@ -176,7 +179,12 @@ export function StatCard({
                     variant === "default" ? "text-xs" : "text-sm",
                 )}
             >
-                {Icon && <Icon className="h-4 w-4" />}
+                {Icon && (
+                    <Icon
+                        className="h-4 w-4"
+                        style={iconColor ? { color: iconColor } : undefined}
+                    />
+                )}
                 {label}
             </span>
 

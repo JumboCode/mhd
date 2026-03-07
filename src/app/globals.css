@@ -23,6 +23,23 @@
     --color-mhd-black: #000000;
     --color-alt: #efeee9;
     --color-second-alt: #e0ded7;
+
+    /* Entity colors - used for Projects, Teachers, Students, Schools */
+    --color-entity-projects: rgb(59 130 246);
+    --color-entity-projects-muted: rgb(59 130 246 / 0.08);
+    --color-entity-projects-stroke: rgb(59 130 246 / 0.35);
+
+    --color-entity-teachers: rgb(34 197 94);
+    --color-entity-teachers-muted: rgb(34 197 94 / 0.08);
+    --color-entity-teachers-stroke: rgb(34 197 94 / 0.35);
+
+    --color-entity-students: rgb(236 72 153);
+    --color-entity-students-muted: rgb(236 72 153 / 0.08);
+    --color-entity-students-stroke: rgb(236 72 153 / 0.35);
+
+    --color-entity-schools: rgb(245 158 11);
+    --color-entity-schools-muted: rgb(245 158 11 / 0.08);
+    --color-entity-schools-stroke: rgb(245 158 11 / 0.35);
 }
 
 @theme inline {
