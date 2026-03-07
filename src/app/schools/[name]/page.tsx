@@ -17,6 +17,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { SchoolProfileSkeleton } from "@/components/skeletons/SchoolProfileSkeleton";
+import { Skeleton } from "@/components/ui/skeleton";
 import { MapPlacer } from "@/components/ui/mapPlacer";
 import { SchoolInfoRow } from "@/components/SchoolInfoRow";
 import { StatCard } from "@/components/ui/stat-card";
@@ -144,9 +145,7 @@ export default function SchoolProfilePage() {
                 <div className="w-full flex flex-col gap-6 py-8 max-w-5xl px-6">
                     <Breadcrumbs />
                     <div className="flex flex-row items-center w-full">
-                        <h1 className="text-2xl font-bold">
-                            {decodeURIComponent(schoolName)}
-                        </h1>
+                        <Skeleton className="h-8 w-64" />
                         <div className="ml-auto">
                             <YearDropdown
                                 showDataIndicator={true}
