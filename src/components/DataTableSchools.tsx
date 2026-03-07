@@ -88,7 +88,6 @@ export function SchoolsDataTable<TData, TValue>({
         const prevRow = prevData[rowIndex] as Record<string, number>;
 
         if (!prevRow) return <></>;
-        const colIndex: number = cell.column.getIndex();
         const prevYearValue: number = prevRow[cell.column.id] ?? 0;
         const diff = cell.getValue() - prevYearValue;
 

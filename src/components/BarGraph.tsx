@@ -16,7 +16,7 @@ type BarGraphProps = {
     yAxisLabel: string;
     xAxisLabel: string;
     legendTitle?: string;
-    svgRefCopy?: React.RefObject<SVGSVGElement | null>;
+    svgRef?: React.RefObject<SVGSVGElement | null>;
     config?: ChartConfig;
     tooltipFormatter?: TooltipFormatter;
 };
@@ -26,7 +26,7 @@ export default function BarGraph({
     yAxisLabel,
     xAxisLabel,
     legendTitle,
-    svgRefCopy,
+    svgRef,
     config,
     tooltipFormatter,
 }: BarGraphProps) {
@@ -136,7 +136,7 @@ export default function BarGraph({
                 {/* Grid lines (SVG) */}
                 <svg
                     ref={(el) => {
-                        if (svgRefCopy !== undefined) svgRefCopy.current = el;
+                        if (svgRef !== undefined) svgRef.current = el;
                     }}
                     viewBox="0 0 100 100"
                     className="absolute inset-0 w-full h-full overflow-visible"

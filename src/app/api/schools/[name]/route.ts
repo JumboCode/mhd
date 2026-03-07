@@ -95,8 +95,6 @@ export async function GET(
         }
 
         const school = schoolResult[0];
-        const currentYear = new Date().getFullYear();
-        const pastYear = currentYear - 1;
 
         const studentCount = await db
             .select({ total: sum(projects.numStudents) })

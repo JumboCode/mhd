@@ -16,7 +16,7 @@ type LineGraphProps = {
     yAxisLabel: string;
     xAxisLabel: string;
     legendTitle?: string;
-    svgRefCopy?: React.RefObject<SVGSVGElement | null>;
+    svgRef?: React.RefObject<SVGSVGElement | null>;
     config?: ChartConfig;
     tooltipFormatter?: TooltipFormatter;
 };
@@ -26,7 +26,7 @@ export default function MultiLineGraph({
     yAxisLabel,
     xAxisLabel,
     legendTitle,
-    svgRefCopy,
+    svgRef,
     config,
     tooltipFormatter,
 }: LineGraphProps) {
@@ -51,7 +51,7 @@ export default function MultiLineGraph({
         .map((d) => Number(d.x))
         .filter((n) => Number.isFinite(n));
     const xExtent = extent(xNums) as [number, number];
-    if (xExtent[0] == null) return null;
+    if (xExtent[0] === null) return null;
 
     const xScale = scaleLinear().domain(xExtent).range([0, 100]);
     const yScale = scaleLinear()
@@ -145,7 +145,7 @@ export default function MultiLineGraph({
             >
                 <svg
                     ref={(el) => {
-                        if (svgRefCopy !== undefined) svgRefCopy.current = el;
+                        if (svgRef !== undefined) svgRef.current = el;
                     }}
                     viewBox="0 0 100 100"
                     className="w-full h-full overflow-visible"

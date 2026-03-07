@@ -914,7 +914,7 @@ export default function GraphsPage() {
                                                 ? undefined
                                                 : groupByLabels[filters.groupBy]
                                         }
-                                        svgRefCopy={svgRef}
+                                        svgRef={svgRef}
                                         tooltipFormatter={tooltipFormatter}
                                     />
                                 ) : (
@@ -929,7 +929,7 @@ export default function GraphsPage() {
                                                 ? undefined
                                                 : groupByLabels[filters.groupBy]
                                         }
-                                        svgRefCopy={svgRef}
+                                        svgRef={svgRef}
                                         tooltipFormatter={tooltipFormatter}
                                     />
                                 )}

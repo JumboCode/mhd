@@ -51,7 +51,7 @@ export default function YearDropdown({
     useEffect(() => {
         // If a school is passed in, gets the years with data for that specific
         // school
-        if (school != null) {
+        if (school !== null) {
             for (let i = currentYear; i > 2016; i--) {
                 const fetchYearsWithData = async () => {
                     try {
