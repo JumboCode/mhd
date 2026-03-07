@@ -77,13 +77,12 @@ export async function GET(
         const { searchParams } = new URL(req.url);
         const year = Number(searchParams.get("year"));
         const { name } = await params;
-        const searchName = name.replace(/-/g, " ");
 
         // Match on lowercase formatted name
         const schoolResult = await db
             .select()
             .from(schools)
-            .where(eq(sql`LOWER(${schools.name})`, searchName.toLowerCase()))
+            .where(eq(schools.standardizedName, name))
             .limit(1);
 
         // Check if school exists
