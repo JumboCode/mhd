@@ -220,7 +220,6 @@ export const MapPlacer = ({
                 <Map
                     ref={mapRef}
                     key={mapKey}
-                    theme="light"
                     center={
                         coordinates?.longitude && coordinates?.latitude
                             ? [coordinates.longitude, coordinates.latitude]
@@ -281,7 +280,7 @@ export const MapPlacer = ({
                         </DialogDescription>
                     </DialogHeader>
                     <div className="flex-1 rounded-lg overflow-hidden border border-border">
-                        <Map center={editMapCenter} zoom={12} theme="light">
+                        <Map center={editMapCenter} zoom={12}>
                             {/* Current location marker (red) */}
                             {coordinates &&
                                 coordinates.latitude &&

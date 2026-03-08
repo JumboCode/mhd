@@ -156,8 +156,6 @@ function HeatMapPage() {
                 <Map
                     center={[-71.7, 42.2]}
                     zoom={7}
-                    theme="light"
-                    styles={{ light: "/maps/positron.json" }}
                     // Restrict zoom to stay on MA approximately
                     maxZoom={24}
                     minZoom={7}
