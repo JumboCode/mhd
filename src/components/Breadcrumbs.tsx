@@ -25,7 +25,11 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 
-export function Breadcrumbs() {
+export function Breadcrumbs({
+    labels = {},
+}: {
+    labels?: Record<string, string>;
+}) {
     const pathname = usePathname();
     const crumbTrail = pathname.split("/").filter((item) => item !== "");
     const backArrowHref = `/${crumbTrail.slice(0, crumbTrail.length - 1).join("/")}`;
@@ -85,7 +89,9 @@ export function Breadcrumbs() {
                                         }
                                     >
                                         <Link href={href}>
-                                            {link.toUpperCase()}
+                                            {(
+                                                labels[link] ?? link
+                                            ).toUpperCase()}
                                         </Link>
                                     </BreadcrumbLink>
                                 </BreadcrumbItem>

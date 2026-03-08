@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import maplibregl from "maplibre-gl";
 
 import regionsData from "@/data/regions.json";
+import { standardize } from "@/lib/school-name-standardize";
 
 const regions = Object.values(regionsData).map((region) => ({
     name: region.name,
@@ -215,8 +216,7 @@ export function useHeatmapLayers({
                 ];
                 const { name } = feature.properties || {};
                 const value = feature.properties?.[metric] || 0;
-                const schoolSlug =
-                    name?.toLowerCase().replace(/\s+/g, "-") || "";
+                const schoolSlug = standardize(name);
                 const profileUrl = `/schools/${schoolSlug}`;
 
                 const html = `
