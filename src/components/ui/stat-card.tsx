@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import NextLink from "next/link";
 import { ArrowUp, ArrowDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -121,6 +122,8 @@ export interface StatCardProps {
     showTrend?: boolean;
     /** Layout variant */
     variant?: "default" | "with-aspect";
+    /** Optional link URL – wraps the card in a Next.js Link */
+    href?: string;
     /** Additional CSS classes */
     className?: string;
 }
@@ -144,6 +147,7 @@ export function StatCard({
     percentChange,
     showTrend = percentChange !== undefined,
     variant = "default",
+    href,
     className,
 }: StatCardProps) {
     const formattedValue =
@@ -151,18 +155,29 @@ export function StatCard({
             ? new Intl.NumberFormat("en-US").format(value)
             : value;
 
+    const sharedClassName = cn(
+        "relative flex flex-col items-center justify-center",
+        "rounded-lg border border-border bg-card overflow-hidden",
+        {
+            "py-6 gap-5": variant === "default",
+            "p-6 aspect-[247/138] gap-5": variant === "with-aspect",
+        },
+        href && "transition-colors hover:bg-accent/50 cursor-pointer",
+        className,
+    );
+
+    const Wrapper = href
+        ? (props: { children: React.ReactNode }) => (
+              <NextLink href={href} className={sharedClassName}>
+                  {props.children}
+              </NextLink>
+          )
+        : (props: { children: React.ReactNode }) => (
+              <div className={sharedClassName}>{props.children}</div>
+          );
+
     return (
-        <div
-            className={cn(
-                "relative flex flex-col items-center justify-center",
-                "rounded-lg border border-border bg-card overflow-hidden",
-                {
-                    "py-6 gap-5": variant === "default",
-                    "p-6 aspect-[247/138] gap-5": variant === "with-aspect",
-                },
-                className,
-            )}
-        >
+        <Wrapper>
             {/* Sparkline background */}
             {sparklineData && sparklineData.length > 1 && (
                 <Sparkline
@@ -198,6 +213,6 @@ export function StatCard({
                     <TrendIndicator value={percentChange} />
                 )}
             </div>
-        </div>
+        </Wrapper>
     );
 }

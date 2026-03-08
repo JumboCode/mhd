@@ -173,6 +173,7 @@ export default function Dashboard() {
                             percentChange={
                                 percentChanges?.projects ?? undefined
                             }
+                            href="/chart?measuredAs=total-project-count"
                         />
                         <StatCard
                             label={ENTITY_CONFIG.teachers.label}
@@ -185,6 +186,7 @@ export default function Dashboard() {
                             percentChange={
                                 percentChanges?.teachers ?? undefined
                             }
+                            href="/chart?measuredAs=total-teacher-count"
                         />
                         <StatCard
                             label={ENTITY_CONFIG.students.label}
@@ -197,6 +199,7 @@ export default function Dashboard() {
                             percentChange={
                                 percentChanges?.students ?? undefined
                             }
+                            href="/chart?measuredAs=total-student-count"
                         />
                         <StatCard
                             label={ENTITY_CONFIG.schools.label}
@@ -207,6 +210,7 @@ export default function Dashboard() {
                             sparklineStroke={ENTITY_CONFIG.schools.colorMid}
                             sparklineFill={ENTITY_CONFIG.schools.colorMuted}
                             percentChange={percentChanges?.schools ?? undefined}
+                            href="/chart?measuredAs=total-school-count"
                         />
                         {/* TODO: Once we store type of school, make this correct */}
                     </div>
