@@ -90,7 +90,7 @@ export default function SchoolsPage() {
                         {error}
                     </div>
                 )}
-                <div className="flex-1 overflow-hidden min-h-0">
+                <div className="flex-1 overflow-hidden min-h-0 min-w-0">
                     <SchoolsDataTable
                         columns={columns}
                         data={schoolInfo}

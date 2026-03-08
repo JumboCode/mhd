@@ -128,8 +128,14 @@ export function SchoolsDataTable<TData, TValue>({
     }
 
     return (
-        <div className="text-center">
-            <Table className="border-separate border-spacing-0 -mt-px">
+        <div className="h-full w-full min-w-0 overflow-auto rounded-md border text-center">
+            <Table
+                className="caption-bottom text-sm border-separate border-spacing-0"
+                style={{
+                    width: table.getCenterTotalSize(),
+                    tableLayout: "fixed",
+                }}
+            >
                 <TableHeader className="bg-muted">
                     {table.getHeaderGroups().map((headerGroup) => (
                         <TableRow
@@ -142,12 +148,16 @@ export function SchoolsDataTable<TData, TValue>({
                                         key={header.id}
                                         className={
                                             header.index === 0
-                                                ? "sticky top-0 left-0 z-40 text-center bg-muted border-r border-b min-w-[200px] w-[200px]"
-                                                : "sticky top-0 z-30 text-center border-r border-b bg-muted"
+                                                ? "sticky top-0 left-0 z-40 text-center bg-muted border-r border-b relative"
+                                                : "sticky top-0 z-30 text-center border-r border-b bg-muted relative"
                                         }
                                         style={{
                                             width: header.getSize(),
                                             maxWidth: header.getSize(),
+                                            ...(header.index === 0 && {
+                                                position: "sticky",
+                                                left: 0,
+                                            }),
                                         }}
                                     >
                                         <div>
@@ -186,12 +196,17 @@ export function SchoolsDataTable<TData, TValue>({
                                         key={cell.id}
                                         className={
                                             cell.column.getIndex() === 0
-                                                ? "text-center sticky left-0 z-20 bg-muted border-r border-b min-w-[200px] w-[200px]"
+                                                ? "text-center sticky left-0 z-20 bg-muted border-r border-b"
                                                 : "text-center z-0 border-b"
                                         }
                                         style={{
                                             width: cell.column.getSize(),
                                             maxWidth: cell.column.getSize(),
+                                            ...(cell.column.getIndex() ===
+                                                0 && {
+                                                position: "sticky",
+                                                left: 0,
+                                            }),
                                         }}
                                     >
                                         {cell.column.getIndex() === 0 ? (
