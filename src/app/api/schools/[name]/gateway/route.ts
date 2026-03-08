@@ -13,7 +13,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { schools } from "@/lib/schema";
-import { eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
 /**
  * Fetch the gateway status of a school.
@@ -28,12 +28,11 @@ export async function GET(
 ) {
     try {
         const { name } = await params;
-        const searchName = name.replace(/-/g, " ");
 
         const schoolResult = await db
             .select({ id: schools.id, gateway: schools.gateway })
             .from(schools)
-            .where(eq(sql`LOWER(${schools.name})`, searchName.toLowerCase()))
+            .where(eq(schools.standardizedName, name))
             .limit(1);
 
         if (!schoolResult || schoolResult.length === 0) {
@@ -65,7 +64,6 @@ export async function PATCH(
 ) {
     try {
         const { name } = await params;
-        const searchName = name.replace(/-/g, " ");
 
         const body = await req.json();
         const { gateway } = body;
@@ -80,7 +78,7 @@ export async function PATCH(
         const schoolResult = await db
             .select({ id: schools.id })
             .from(schools)
-            .where(eq(sql`LOWER(${schools.name})`, searchName.toLowerCase()))
+            .where(eq(schools.standardizedName, name))
             .limit(1);
 
         if (!schoolResult || schoolResult.length === 0) {

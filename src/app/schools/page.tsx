@@ -20,14 +20,17 @@ import YearDropdown from "@/components/YearDropdown";
 
 export default function SchoolsPage() {
     const [schoolInfo, setSchoolInfo] = useState([]);
-    const [year, setYear] = useState<number | null>(2025);
+    const [prevYearSchoolInfo, setPrevYearSchoolInfo] = useState([]);
+    const [year, setYear] = useState<number | null>(null);
     const [search, setSearch] = useState("");
     const [error, setError] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
         if (!year) return;
 
         setError(null);
+        setIsLoading(true);
 
         fetch(`/api/schools?year=${year}`)
             .then((response) => {
@@ -38,6 +41,29 @@ export default function SchoolsPage() {
             })
             .then((data) => {
                 setSchoolInfo(data);
+            })
+            .catch((error) => {
+                setError(error.message || "Failed to load school data");
+            })
+            .finally(() => {
+                setIsLoading(false);
+            });
+    }, [year]);
+
+    useEffect(() => {
+        if (!year) return;
+
+        setError(null);
+
+        fetch(`/api/schools?year=${year - 1}`)
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch school data`);
+                }
+                return response.json();
+            })
+            .then((data) => {
+                setPrevYearSchoolInfo(data);
             })
             .catch((error) => {
                 setError(error.message || "Failed to load school data");
@@ -53,23 +79,32 @@ export default function SchoolsPage() {
                 </div>
 
                 <div className="flex items-center gap-4">
-                    <YearDropdown selectedYear={year} onYearChange={setYear} />
+                    <div className="relative z-50">
+                        <YearDropdown
+                            selectedYear={year}
+                            onYearChange={setYear}
+                        />
+                    </div>
                     <SchoolSearchBar search={search} setSearch={setSearch} />
                 </div>
             </div>
 
-            <div className="flex-1 min-h-0 overflow-auto overscroll-none">
+            <div className="flex-1 min-h-0 flex flex-col overflow-hidden overscroll-none">
                 {error && (
-                    <div className="my-4 p-4 bg-destructive/10 border border-destructive rounded-md text-destructive">
+                    <div className="shrink-0 my-4 p-4 bg-destructive/10 border border-destructive rounded-md text-destructive">
                         {error}
                     </div>
                 )}
-                <SchoolsDataTable
-                    columns={columns}
-                    data={schoolInfo}
-                    globalFilter={search}
-                    setGlobalFilter={setSearch}
-                />
+                <div className="flex-1 min-h-0 min-w-0 overflow-hidden">
+                    <SchoolsDataTable
+                        columns={columns}
+                        data={schoolInfo}
+                        prevData={prevYearSchoolInfo}
+                        globalFilter={search}
+                        setGlobalFilter={setSearch}
+                        isLoading={isLoading}
+                    />
+                </div>
             </div>
         </div>
     );

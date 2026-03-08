@@ -1,20 +1,24 @@
 "use client";
 
-import * as d3 from "d3";
-import { useEffect, useMemo, useRef } from "react";
-import { toast } from "sonner";
+import { useState } from "react";
+import { scaleLinear, max, extent, line as d3Line, area as d3Area } from "d3";
+import {
+    ChartDataset,
+    ChartConfig,
+    TooltipFormatter,
+    CHART_COLORS,
+} from "./chartTypes";
 
-export type GraphDataset = {
-    label: string;
-    data: { x: string | number; y: number }[];
-};
+export type { ChartDataset as GraphDataset };
 
-type MultiLineGraphProps = {
-    datasets: GraphDataset[];
+type LineGraphProps = {
+    datasets: ChartDataset[];
     yAxisLabel: string;
     xAxisLabel: string;
     legendTitle?: string;
-    svgRefCopy: React.RefObject<SVGSVGElement | null>;
+    chartRef?: React.RefObject<HTMLDivElement | null>;
+    config?: ChartConfig;
+    tooltipFormatter?: TooltipFormatter;
 };
 
 export default function MultiLineGraph({
@@ -22,411 +26,355 @@ export default function MultiLineGraph({
     yAxisLabel,
     xAxisLabel,
     legendTitle,
-    svgRefCopy,
-}: MultiLineGraphProps) {
-    const svgRef = useRef<SVGSVGElement | null>(null);
-    const wrapperRef = useRef<HTMLDivElement | null>(null);
-    const tooltipRef = useRef<d3.Selection<
-        HTMLDivElement,
-        unknown,
-        null,
-        undefined
-    > | null>(null);
-    const isFirstRender = useRef(true);
-    const groupsRef = useRef<{
-        xAxis?: d3.Selection<SVGGElement, unknown, null, undefined>;
-        yAxis?: d3.Selection<SVGGElement, unknown, null, undefined>;
-        xAxisLabel?: d3.Selection<SVGTextElement, unknown, null, undefined>;
-        yAxisLabel?: d3.Selection<SVGTextElement, unknown, null, undefined>;
-        lines?: d3.Selection<SVGGElement, unknown, null, undefined>;
-        dots?: d3.Selection<SVGGElement, unknown, null, undefined>;
-        legend?: d3.Selection<SVGGElement, unknown, null, undefined>;
-    }>({});
+    chartRef,
+    config,
+    tooltipFormatter,
+}: LineGraphProps) {
+    const [tooltip, setTooltip] = useState<{
+        x: number;
+        y: number;
+        content: string;
+    } | null>(null);
 
-    // Memoize color scale to prevent re-running useEffect unnecessarily
-    //const colorScale = useMemo(() => d3.scaleOrdinal(d3.schemeCategory10), []);
-    const colorScale = useMemo(
-        () => d3.scaleOrdinal(d3.schemeCategory10.map((c) => c.toString())),
-        [],
-    );
+    const height = config?.height ?? 400;
+    const mTop = config?.margin?.top ?? 6;
+    const mRight = config?.margin?.right ?? 8;
+    const mBottom = config?.margin?.bottom ?? 80;
+    const mLeft = config?.margin?.left ?? 54;
+    const strokeWidth = config?.strokeWidth ?? 2;
+    const dotRadius = config?.dotRadius ?? 6;
 
-    useEffect(() => {
-        const svg = d3.select(svgRef.current);
-        const svgNode = svg.node();
-        if (!svgNode || !wrapperRef.current) return;
+    const allPoints = datasets.flatMap((d) => d.data);
+    if (allPoints.length === 0) return null;
 
-        // Create tooltip once (outside drawChart to prevent memory leak)
-        if (!tooltipRef.current) {
-            tooltipRef.current = d3
-                .select(wrapperRef.current)
-                .append("div")
-                .attr("class", "d3-tooltip")
-                .style("position", "absolute")
-                .style("opacity", 0)
-                .style("background", "black")
-                .style("color", "white")
-                .style("padding", "0.5rem")
-                .style("border-radius", "0.375rem")
-                .style("font-size", "0.875rem")
-                .style("pointer-events", "none")
-                .style("transform", "translate(-50%, -125%)")
-                .style("z-index", "1000");
-        }
+    const xNums = allPoints
+        .map((d) => Number(d.x))
+        .filter((n) => Number.isFinite(n));
+    const xExtent = extent(xNums) as [number, number];
+    if (xExtent[0] === null) return null;
 
-        const tooltip = tooltipRef.current;
+    const xScale = scaleLinear().domain(xExtent).range([0, 100]);
+    const yScale = scaleLinear()
+        .domain([0, max(allPoints.map((d) => d.y)) ?? 10])
+        .range([100, 0])
+        .nice();
 
-        if (datasets.length === 0) return;
+    const lineGen = d3Line<{ x: string | number; y: number }>()
+        .x((d) => xScale(Number(d.x)))
+        .y((d) => yScale(d.y));
 
-        const width = 900; // Match actual SVG width
-        const height = 400;
-        const margin = { top: 20, right: 20, bottom: 100, left: 60 };
+    const areaGen = d3Area<{ x: string | number; y: number }>()
+        .x((d) => xScale(Number(d.x)))
+        .y0(100)
+        .y1((d) => yScale(d.y));
 
-        // Flatten datasets for global min/max axis domains
-        const allPoints = datasets.flatMap((d) => d.data);
-        if (allPoints.length === 0) return;
+    const formatTooltip: TooltipFormatter =
+        tooltipFormatter ?? ((d) => String(d.y));
+    const yTicks = yScale.ticks(8).filter((t) => Number.isInteger(t));
+    const xTicks = xScale.ticks().filter((t) => Number.isInteger(t));
+    const hasLegend = datasets.length > 1 || !!legendTitle;
 
-        // Convert x values to numbers for scaling, filtering out invalid values
-        const xValues = allPoints
-            .map((d) => {
-                const num = Number(d.x);
-                return Number.isFinite(num) ? num : null;
-            })
-            .filter((v): v is number => v !== null);
-
-        if (xValues.length === 0) {
-            toast.warning("LineGraph: No valid numeric x values found");
-            return;
-        }
-
-        const xExtent = d3.extent(xValues);
-        if (!xExtent[0] || !xExtent[1]) {
-            toast.warning("LineGraph: Invalid x extent");
-            return;
-        }
-
-        const x = d3
-            .scaleLinear()
-            .domain(xExtent as [number, number])
-            .range([margin.left, width - margin.right]);
-
-        const y = d3
-            .scaleLinear()
-            .domain([0, d3.max(allPoints, (d) => d.y) || 10])
-            .range([height - margin.bottom, margin.top]);
-
-        // Helper to position tooltip correctly
-        const positionTooltip = (
-            event: MouseEvent | FocusEvent,
-            d: { x: string | number; y: number },
-        ) => {
-            // Recalculate wrapper rect on each event to handle scrolling/resizing
-            const wrapperRect = wrapperRef.current?.getBoundingClientRect();
-            if (!wrapperRect) return;
-
-            let clientX: number;
-            let clientY: number;
-
-            if (event.type === "focus") {
-                // For keyboard focus, use the circle's position
-                const circle = event.target as SVGCircleElement;
-                const circleRect = circle.getBoundingClientRect();
-                clientX = circleRect.left + circleRect.width / 2;
-                clientY = circleRect.top + circleRect.height / 2;
-            } else {
-                // For mouse events, use the actual pointer position
-                const mouseEvent = event as MouseEvent;
-                clientX = mouseEvent.clientX;
-                clientY = mouseEvent.clientY;
-            }
-
-            // Convert to wrapper-relative coordinates
-            const wrapperX = clientX - wrapperRect.left;
-            const wrapperY = clientY - wrapperRect.top;
-
-            tooltip
-                .text(String(d.y))
-                .transition()
-                .duration(100)
-                .style("opacity", 1)
-                .style("left", `${wrapperX}px`)
-                .style("top", `${wrapperY}px`);
-        };
-
-        // Create stable groups if they don't exist
-        if (!groupsRef.current.xAxis) {
-            groupsRef.current.xAxis = svg
-                .append("g")
-                .attr("class", "x-axis")
-                .attr("transform", `translate(0,${height - margin.bottom})`);
-        }
-
-        if (!groupsRef.current.yAxis) {
-            groupsRef.current.yAxis = svg
-                .append("g")
-                .attr("class", "y-axis")
-                .attr("transform", `translate(${margin.left},0)`);
-        }
-
-        if (!groupsRef.current.xAxisLabel) {
-            groupsRef.current.xAxisLabel = svg
-                .append("text")
-                .attr("class", "x-axis-label")
-                .attr("text-anchor", "middle")
-                .attr("fill", "#555");
-        }
-
-        if (!groupsRef.current.yAxisLabel) {
-            groupsRef.current.yAxisLabel = svg
-                .append("text")
-                .attr("class", "y-axis-label")
-                .attr("transform", "rotate(-90)")
-                .attr("text-anchor", "middle")
-                .attr("fill", "#555");
-        }
-
-        if (!groupsRef.current.lines) {
-            groupsRef.current.lines = svg.append("g").attr("class", "lines");
-        }
-
-        if (!groupsRef.current.dots) {
-            groupsRef.current.dots = svg.append("g").attr("class", "dots");
-        }
-
-        if (!groupsRef.current.legend) {
-            groupsRef.current.legend = svg
-                .append("g")
-                .attr("class", "legend")
-                .attr(
-                    "transform",
-                    `translate(${margin.left}, ${height - margin.bottom + 80})`,
-                );
-        }
-
-        // Update X-axis
-        const xTicks = x.ticks().filter((t) => Number.isInteger(t));
-        groupsRef.current.xAxis.call(
-            d3.axisBottom(x).tickValues(xTicks).tickFormat(d3.format("d")),
-        );
-        groupsRef.current.xAxis.selectAll(".tick line").remove();
-        groupsRef.current.xAxis.select(".domain").remove();
-
-        // Update X-axis label
-        groupsRef.current.xAxisLabel
-            .attr("x", margin.left + (width - margin.left - margin.right) / 2)
-            .attr("y", height - margin.bottom + 40)
-            .text(xAxisLabel);
-
-        // Update Y-axis
-        const yTicks = y.ticks().filter((t) => Number.isInteger(t));
-        groupsRef.current.yAxis.call(
-            d3
-                .axisLeft(y)
-                .tickValues(yTicks)
-                .tickSize(-width + margin.left + margin.right),
-        );
-        groupsRef.current.yAxis.selectAll(".tick line").attr("stroke", "#ccc");
-        groupsRef.current.yAxis.select(".domain").remove();
-        groupsRef.current.yAxis.selectAll(".tick text").attr("fill", "#555");
-
-        // Update Y-axis label
-        groupsRef.current.yAxisLabel
-            .attr("x", -margin.top - (height - margin.top - margin.bottom) / 2)
-            .attr("y", 15)
-            .text(yAxisLabel);
-
-        const lineGen = d3
-            .line<{ x: string | number; y: number }>()
-            .x((d) => {
-                const num = Number(d.x);
-                return Number.isFinite(num) ? x(num) : 0;
-            })
-            .y((d) => y(d.y));
-
-        // Update lines using join pattern
-        if (!groupsRef.current.lines) return;
-        const lines = groupsRef.current.lines
-            .selectAll<SVGPathElement, GraphDataset>("path.line")
-            .data(datasets, (d: GraphDataset) => d.label);
-
-        lines.exit().remove();
-
-        const linesEnter = lines
-            .enter()
-            .append("path")
-            .attr("class", "line")
-            .attr("fill", "none")
-            .attr("stroke-width", 2);
-
-        const linesUpdate = linesEnter.merge(lines);
-
-        linesUpdate
-            .attr("stroke", (d) => colorScale(d.label))
-            .attr("d", (d) => lineGen(d.data));
-
-        // Animate line drawing only on first render
-        // if (isFirstRender.current) {
-        //     linesUpdate.each(function () {
-        //         const path = d3.select(this);
-        //         const length = path.node()?.getTotalLength() || 0;
-        //         path.attr("stroke-dasharray", `${length} ${length}`)
-        //             .attr("stroke-dashoffset", length)
-        //             .transition()
-        //             .duration(1500)
-        //             .attr("stroke-dashoffset", 0);
-        //     });
-        // }
-
-        // Update dots using join pattern
-        if (!groupsRef.current.dots) return;
-        const dotsGroups = groupsRef.current.dots
-            .selectAll<SVGGElement, GraphDataset>("g.dots-group")
-            .data(datasets, (d: GraphDataset) => d.label);
-
-        dotsGroups.exit().remove();
-
-        const dotsGroupsEnter = dotsGroups
-            .enter()
-            .append("g")
-            .attr("class", "dots-group");
-
-        const dotsGroupsUpdate = dotsGroupsEnter.merge(dotsGroups);
-
-        // Update circles within each group
-        dotsGroupsUpdate.each(function (dataset) {
-            const group = d3.select(this);
-            const circles = group
-                .selectAll<
-                    SVGCircleElement,
-                    { x: string | number; y: number }
-                >("circle")
-                .data(dataset.data, (d, i) => `${d.x}-${d.y}-${i}`);
-
-            circles.exit().remove();
-
-            const circlesEnter = circles
-                .enter()
-                .append("circle")
-                .attr("r", 4)
-                .attr("fill", colorScale(dataset.label))
-                .style("cursor", "pointer")
-                .attr("tabindex", 0)
-                .on("mouseover focus", function (event, d) {
-                    d3.select(this).transition().duration(100).attr("r", 6);
-                    positionTooltip(event, d);
-                })
-                .on("mouseout blur", function () {
-                    d3.select(this).transition().duration(100).attr("r", 4);
-                    tooltip.transition().duration(100).style("opacity", 0);
-                });
-
-            const circlesUpdate = circlesEnter.merge(circles);
-
-            circlesUpdate
-                .attr("cx", (d) => {
-                    const num = Number(d.x);
-                    return Number.isFinite(num) ? x(num) : 0;
-                })
-                .attr("cy", (d) => y(d.y));
-
-            // Animate points appearing only on first render
-            // if (isFirstRender.current) {
-            //     circlesUpdate
-            //         .attr("opacity", 0)
-            //         .transition()
-            //         .delay(500)
-            //         .duration(1000)
-            //         .attr("opacity", 1);
-            // } else {
-            circlesUpdate.attr("opacity", 1);
-            // }
-        });
-
-        // Mark that first render is complete
-        if (isFirstRender.current) {
-            isFirstRender.current = false;
-        }
-
-        // Update legend using join pattern
-        const legendWidth = width - margin.left - margin.right;
-        const itemMargin = 10;
-        const rowHeight = 20;
-
-        // Add or update legend title
-        const legendTitleSelection = groupsRef.current.legend
-            .selectAll<SVGTextElement, string>("text.legend-title")
-            .data(legendTitle ? [legendTitle] : []);
-
-        legendTitleSelection.exit().remove();
-
-        legendTitleSelection
-            .enter()
-            .append("text")
-            .attr("class", "legend-title")
-            .attr("x", 0)
-            .attr("y", -10)
-            .style("font-size", "14px")
-            .style("font-weight", "600")
-            .attr("fill", "currentColor")
-            .merge(legendTitleSelection)
-            .text((d) => d);
-
-        const legendItems = groupsRef.current.legend
-            .selectAll<SVGGElement, GraphDataset>("g.legend-item")
-            .data(datasets, (d) => d.label);
-
-        legendItems.exit().remove();
-
-        const legendItemsEnter = legendItems
-            .enter()
-            .append("g")
-            .attr("class", "legend-item");
-
-        legendItemsEnter.append("rect").attr("width", 12).attr("height", 12);
-
-        legendItemsEnter
-            .append("text")
-            .attr("x", 16)
-            .attr("y", 10)
-            .style("font-size", "12px")
-            .attr("alignment-baseline", "middle");
-
-        const legendItemsUpdate = legendItemsEnter.merge(legendItems);
-
-        legendItemsUpdate
-            .select("rect")
-            .attr("fill", (d) => colorScale(d.label));
-
-        legendItemsUpdate.select("text").text((d) => d.label);
-
-        // Position legend items, wrap to new line on overflow
-        // Use requestAnimationFrame to ensure layout is complete before measuring
-        requestAnimationFrame(() => {
-            let xOffset = 0;
-            let yOffset = 0;
-            legendItemsUpdate.attr("transform", function () {
-                const bbox = (this as SVGGElement).getBBox();
-                const itemWidth = bbox.width + itemMargin;
-                if (xOffset + itemWidth > legendWidth && xOffset > 0) {
-                    xOffset = 0;
-                    yOffset += rowHeight;
-                }
-                const transform = `translate(${xOffset}, ${yOffset})`;
-                xOffset += itemWidth;
-                return transform;
-            });
-        });
-
-        svgRefCopy.current = svgRef.current;
-    }, [datasets, xAxisLabel, yAxisLabel, colorScale]);
+    // Derived pixel positions for explicit placement
+    const chartTop = mTop;
+    const chartBottom = height - mBottom;
+    const chartHeight = chartBottom - chartTop;
 
     return (
-        <div ref={wrapperRef} style={{ position: "relative" }}>
-            <svg
-                ref={svgRef}
-                width={900}
-                height={400}
-                style={{ overflow: "visible" }}
-            ></svg>
+        <div
+            ref={chartRef}
+            className="relative w-full select-none"
+            style={{ height }}
+        >
+            {/* Tooltip */}
+            {tooltip && (
+                <div
+                    className="fixed z-50 bg-popover text-popover-foreground border border-border shadow-sm text-xs px-2 py-1 rounded-md pointer-events-none whitespace-nowrap"
+                    style={{
+                        left: tooltip.x,
+                        top: tooltip.y - 8,
+                        transform: "translate(-50%, -100%)",
+                    }}
+                >
+                    {tooltip.content}
+                </div>
+            )}
+
+            {/* Y-axis: rotated label strip + tick values */}
+            <div
+                className="absolute overflow-visible"
+                style={{
+                    top: chartTop,
+                    left: 0,
+                    width: mLeft,
+                    height: chartHeight,
+                }}
+            >
+                {/* Rotated axis title — occupies leftmost 16px */}
+                <div
+                    className="absolute inset-y-0 flex items-center justify-center overflow-visible"
+                    style={{ left: 0, width: 16 }}
+                >
+                    <span
+                        className="text-xs text-muted-foreground whitespace-nowrap pointer-events-none"
+                        style={{ transform: "rotate(-90deg)" }}
+                    >
+                        {yAxisLabel}
+                    </span>
+                </div>
+
+                {/* Tick values — confined to right portion, away from label */}
+                {yTicks.map((value, i) => (
+                    <div
+                        key={i}
+                        style={{ top: `${yScale(value)}%`, left: 24, right: 0 }}
+                        className="absolute text-xs tabular-nums -translate-y-1/2 text-muted-foreground text-right pr-4"
+                    >
+                        {value.toLocaleString()}
+                    </div>
+                ))}
+            </div>
+
+            {/* Chart area (SVG only — no child divs) */}
+            <div
+                className="absolute"
+                style={{
+                    top: chartTop,
+                    left: mLeft,
+                    right: mRight,
+                    height: chartHeight,
+                }}
+            >
+                <svg
+                    viewBox="0 0 100 100"
+                    className="w-full h-full overflow-visible"
+                    preserveAspectRatio="none"
+                >
+                    {/* X-axis line */}
+                    <line
+                        x1={0}
+                        y1={100}
+                        x2={100}
+                        y2={100}
+                        stroke="var(--foreground)"
+                        strokeWidth={1}
+                        vectorEffect="non-scaling-stroke"
+                    />
+                    {/* Y-axis line */}
+                    <line
+                        x1={0}
+                        y1={0}
+                        x2={0}
+                        y2={100}
+                        stroke="var(--foreground)"
+                        strokeWidth={1}
+                        vectorEffect="non-scaling-stroke"
+                    />
+                    {/* Grid lines */}
+                    {yTicks.map((value, i) => (
+                        <g
+                            key={i}
+                            transform={`translate(0,${yScale(value)})`}
+                            className="text-border"
+                        >
+                            <line
+                                x1={0}
+                                x2={100}
+                                stroke="currentColor"
+                                strokeDasharray="6,5"
+                                strokeWidth={0.5}
+                                vectorEffect="non-scaling-stroke"
+                            />
+                        </g>
+                    ))}
+
+                    {/* Gradient defs */}
+                    <defs>
+                        {datasets.map((ds, i) => (
+                            <linearGradient
+                                key={ds.label}
+                                id={`area-gradient-${i}`}
+                                x1="0"
+                                y1="0"
+                                x2="0"
+                                y2="1"
+                            >
+                                <stop
+                                    offset="0%"
+                                    stopColor={
+                                        CHART_COLORS[i % CHART_COLORS.length]
+                                    }
+                                    stopOpacity={0.2}
+                                />
+                                <stop
+                                    offset="100%"
+                                    stopColor={
+                                        CHART_COLORS[i % CHART_COLORS.length]
+                                    }
+                                    stopOpacity={0}
+                                />
+                            </linearGradient>
+                        ))}
+                    </defs>
+
+                    {/* Area fills */}
+                    {datasets.map((ds, i) => {
+                        const a = areaGen(ds.data);
+                        if (!a) return null;
+                        return (
+                            <path
+                                key={ds.label}
+                                d={a}
+                                fill={`url(#area-gradient-${i})`}
+                                stroke="none"
+                            />
+                        );
+                    })}
+
+                    {/* Lines */}
+                    {datasets.map((ds, i) => {
+                        const d = lineGen(ds.data);
+                        if (!d) return null;
+                        return (
+                            <path
+                                key={ds.label}
+                                d={d}
+                                fill="none"
+                                stroke={CHART_COLORS[i % CHART_COLORS.length]}
+                                strokeWidth={strokeWidth}
+                                vectorEffect="non-scaling-stroke"
+                            />
+                        );
+                    })}
+
+                    {/* Dots + hit targets sorted by cy desc so highest data value renders on top */}
+                    {(() => {
+                        const dots = datasets
+                            .flatMap((ds, si) =>
+                                ds.data.map((point) => ({
+                                    cx: xScale(Number(point.x)),
+                                    cy: yScale(point.y),
+                                    color: CHART_COLORS[
+                                        si % CHART_COLORS.length
+                                    ],
+                                    content: formatTooltip(point, ds.label),
+                                    key: `${si}-${String(point.x)}`,
+                                })),
+                            )
+                            .sort((a, b) => b.cy - a.cy); // high cy (low value) first, low cy (high value) last = on top
+
+                        return (
+                            <>
+                                {dots.map((dot) => (
+                                    <path
+                                        key={`dot-${dot.key}`}
+                                        d={`M ${dot.cx} ${dot.cy} l 0.0001 0`}
+                                        vectorEffect="non-scaling-stroke"
+                                        strokeWidth={dotRadius}
+                                        strokeLinecap="round"
+                                        fill="none"
+                                        stroke={dot.color}
+                                        style={{ pointerEvents: "none" }}
+                                    />
+                                ))}
+                                {dots.map((dot) => (
+                                    <path
+                                        key={`hit-${dot.key}`}
+                                        d={`M ${dot.cx} ${dot.cy} l 0.0001 0`}
+                                        vectorEffect="non-scaling-stroke"
+                                        strokeWidth={16}
+                                        strokeLinecap="round"
+                                        fill="none"
+                                        stroke="transparent"
+                                        style={{ cursor: "pointer" }}
+                                        onMouseEnter={(e) =>
+                                            setTooltip({
+                                                x: e.clientX,
+                                                y: e.clientY,
+                                                content: dot.content,
+                                            })
+                                        }
+                                        onMouseMove={(e) =>
+                                            setTooltip({
+                                                x: e.clientX,
+                                                y: e.clientY,
+                                                content: dot.content,
+                                            })
+                                        }
+                                        onMouseLeave={() => setTooltip(null)}
+                                    />
+                                ))}
+                            </>
+                        );
+                    })()}
+                </svg>
+            </div>
+
+            {/* X-axis tick labels — explicitly below chart area */}
+            <div
+                className="absolute overflow-visible"
+                style={{ top: chartBottom + 6, left: mLeft, right: mRight }}
+            >
+                {xTicks.map((year, i) => {
+                    const isFirst = i === 0;
+                    const isLast = i === xTicks.length - 1;
+                    return (
+                        <div
+                            key={i}
+                            className="absolute overflow-visible text-muted-foreground"
+                            style={{
+                                left: `${xScale(year)}%`,
+                                transform: `translateX(${isFirst ? "0%" : isLast ? "-100%" : "-50%"})`,
+                            }}
+                        >
+                            <span className="text-xs tabular-nums">{year}</span>
+                        </div>
+                    );
+                })}
+            </div>
+
+            {/* X-axis title */}
+            <div
+                className="absolute text-xs text-muted-foreground text-center"
+                style={{
+                    top: chartBottom + 28,
+                    left: mLeft,
+                    right: mRight,
+                }}
+            >
+                {xAxisLabel}
+            </div>
+
+            {/* Legend */}
+            {hasLegend && (
+                <div
+                    className="absolute flex flex-wrap items-center gap-x-4 gap-y-1"
+                    style={{
+                        top: chartBottom + 50,
+                        left: mLeft,
+                        right: mRight,
+                    }}
+                >
+                    {legendTitle && (
+                        <span className="text-xs font-semibold text-foreground w-full">
+                            {legendTitle}
+                        </span>
+                    )}
+                    {datasets.map((ds, i) => (
+                        <div key={i} className="flex items-center gap-1.5">
+                            <div
+                                className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                                style={{
+                                    backgroundColor:
+                                        CHART_COLORS[i % CHART_COLORS.length],
+                                }}
+                            />
+                            <span className="text-xs text-muted-foreground">
+                                {ds.label}
+                            </span>
+                        </div>
+                    ))}
+                </div>
+            )}
         </div>
     );
 }

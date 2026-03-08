@@ -19,13 +19,18 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover";
-import { DEV_BYPASS } from "@/lib/dev-config"; // TO DO - REMOVE: dev auth bypass
+import { DEV_BYPASS, DEV_BYPASS_COOKIE } from "@/lib/dev-config"; // TO DO - REMOVE: dev auth bypass
+import { DEV_SESSION_USER } from "@/lib/dev-session"; // TO DO - REMOVE: dev auth bypass
 
 export default function Sidebar() {
     const pathname = usePathname();
     const router = useRouter();
     const [isPopoverOpen, setIsPopoverOpen] = useState(false);
-    const { data: session } = authClient.useSession();
+    const { data: authSession, isPending } = authClient.useSession();
+    // TO DO - REMOVE: dev auth bypass - show dev user when in dev mode with no real session
+    const session =
+        authSession ??
+        (!isPending && DEV_BYPASS ? { user: DEV_SESSION_USER } : null);
 
     // Magnetic hover effect state
     const navContainerRef = useRef<HTMLDivElement>(null);
@@ -56,8 +61,9 @@ export default function Sidebar() {
     }, []);
 
     const handleSignOut = async () => {
-        // TO DO - REMOVE: this is for dev auth bypass
-        if (DEV_BYPASS === true) {
+        // TO DO - REMOVE: dev auth bypass - clear cookie and redirect when in dev mode
+        if (DEV_BYPASS && !authSession) {
+            document.cookie = `${DEV_BYPASS_COOKIE}=; path=/; max-age=0`;
             router.push("/signin");
             return;
         }
