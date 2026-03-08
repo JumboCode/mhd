@@ -143,11 +143,7 @@ export default function SchoolProfilePage() {
         return (
             <div className="h-screen w-full bg-background overflow-y-auto flex justify-center">
                 <div className="w-full flex flex-col gap-6 py-8 max-w-5xl px-6">
-                    <Breadcrumbs
-                        labels={{
-                            [schoolName]: decodeURIComponent(schoolName),
-                        }}
-                    />
+                    <Breadcrumbs labels={{ [schoolName]: undefined }} />
                     <div className="flex flex-row items-center w-full">
                         <Skeleton className="h-8 w-64" />
                         <div className="ml-auto">

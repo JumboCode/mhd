@@ -24,11 +24,12 @@ import {
     BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function Breadcrumbs({
     labels = {},
 }: {
-    labels?: Record<string, string>;
+    labels?: Record<string, string | undefined>;
 }) {
     const pathname = usePathname();
     const crumbTrail = pathname.split("/").filter((item) => item !== "");
@@ -89,9 +90,15 @@ export function Breadcrumbs({
                                         }
                                     >
                                         <Link href={href}>
-                                            {(
-                                                labels[link] ?? link
-                                            ).toUpperCase()}
+                                            {link in labels ? (
+                                                labels[link] !== undefined ? (
+                                                    labels[link].toUpperCase()
+                                                ) : (
+                                                    <Skeleton className="h-4 w-32 inline-block" />
+                                                )
+                                            ) : (
+                                                link.toUpperCase()
+                                            )}
                                         </Link>
                                     </BreadcrumbLink>
                                 </BreadcrumbItem>
