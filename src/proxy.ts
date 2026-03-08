@@ -20,8 +20,8 @@ export async function proxy(request: NextRequest) {
         return NextResponse.redirect(new URL("/signin", request.url));
     }
 
-    // TO DO - REMOVE: dev auth bypass - skip cookie check when in dev mode
-    if (process.env.NODE_ENV !== "development" || !DEV_BYPASS) {
+    // TO DO - REMOVE: dev auth bypass - skip cookie check when bypass enabled
+    if (!DEV_BYPASS) {
         const sessionCookie = getSessionCookie(request);
         if (!sessionCookie) {
             return NextResponse.redirect(new URL("/signin", request.url));

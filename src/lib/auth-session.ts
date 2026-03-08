@@ -21,12 +21,7 @@ function hasDevBypassCookie(request: NextRequest): boolean {
 
 export async function getSession(request?: NextRequest) {
     // TO DO - REMOVE: dev auth bypass - only return dev session when cookie is set
-    if (
-        request &&
-        process.env.NODE_ENV === "development" &&
-        DEV_BYPASS === true &&
-        hasDevBypassCookie(request)
-    ) {
+    if (request && DEV_BYPASS === true && hasDevBypassCookie(request)) {
         return DEV_SESSION;
     }
     return auth.api.getSession({ headers: await headers() });
