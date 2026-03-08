@@ -84,13 +84,13 @@ export default function SchoolsPage() {
                 </div>
             </div>
 
-            <div className="flex-1 min-h-0 overflow-auto overscroll-none">
+            <div className="flex-1 min-h-0 flex flex-col overflow-hidden overscroll-none">
                 {error && (
-                    <div className="my-4 p-4 bg-destructive/10 border border-destructive rounded-md text-destructive">
+                    <div className="shrink-0 my-4 p-4 bg-destructive/10 border border-destructive rounded-md text-destructive">
                         {error}
                     </div>
                 )}
-                <div className="flex-1 overflow-hidden min-h-0 min-w-0">
+                <div className="flex-1 min-h-0 min-w-0 overflow-hidden">
                     <SchoolsDataTable
                         columns={columns}
                         data={schoolInfo}

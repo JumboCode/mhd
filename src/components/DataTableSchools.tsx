@@ -154,8 +154,9 @@ export function SchoolsDataTable<TData, TValue>({
                                         style={{
                                             width: header.getSize(),
                                             maxWidth: header.getSize(),
+                                            position: "sticky",
+                                            top: 0,
                                             ...(header.index === 0 && {
-                                                position: "sticky",
                                                 left: 0,
                                             }),
                                         }}
