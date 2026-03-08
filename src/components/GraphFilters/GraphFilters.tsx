@@ -343,7 +343,8 @@ export default function GraphFilters({
                                 <Info className="h-4 w-4 text-muted-foreground" />
                             </TooltipTrigger>
                             <TooltipContent>
-                                Filters of the same type are additive
+                                Click a filter type to add it, then set
+                                constraints in the popup menu.
                             </TooltipContent>
                         </Tooltip>
                     </div>
