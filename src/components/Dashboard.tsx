@@ -210,10 +210,10 @@ export default function Dashboard() {
                         />
                         {/* TODO: Once we store type of school, make this correct */}
                     </div>
-                    <div className="flex flex-col my-5 rounded-lg border border-border divide-y divide-border">
+                    <div className="grid grid-cols-2 gap-5 my-5">
                         <Link
                             href={projectsHref}
-                            className="block px-6 pt-4 pb-2 hover:bg-muted/40 transition-colors"
+                            className="block px-6 pt-4 pb-2 rounded-lg border border-border hover:bg-muted/40 transition-colors"
                         >
                             <p className="text-sm font-medium text-center mb-2">
                                 Total # Projects
@@ -226,7 +226,7 @@ export default function Dashboard() {
                         </Link>
                         <Link
                             href={schoolsHref}
-                            className="block px-6 pt-4 pb-2 hover:bg-muted/40 transition-colors"
+                            className="block px-6 pt-4 pb-2 rounded-lg border border-border hover:bg-muted/40 transition-colors"
                         >
                             <p className="text-sm font-medium text-center mb-2">
                                 Total # Schools

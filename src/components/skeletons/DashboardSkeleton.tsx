@@ -20,17 +20,17 @@ export function DashboardSkeleton() {
                 <StatCardSkeleton />
             </div>
 
-            {/* Charts section - matches Dashboard's bordered container */}
-            <div className="flex flex-col my-5 rounded-lg border border-border divide-y divide-border">
+            {/* Charts section - matches Dashboard's side-by-side layout */}
+            <div className="grid grid-cols-2 gap-5 my-5">
                 {/* Projects chart skeleton */}
-                <div className="px-6 pt-4 pb-2">
+                <div className="px-6 pt-4 pb-2 rounded-lg border border-border">
                     <div className="text-center mb-2">
                         <Skeleton className="h-4 w-32 inline-block" />
                     </div>
                     <Skeleton className="h-[400px] w-full rounded-md" />
                 </div>
                 {/* Schools chart skeleton */}
-                <div className="px-6 pt-4 pb-2">
+                <div className="px-6 pt-4 pb-2 rounded-lg border border-border">
                     <div className="text-center mb-2">
                         <Skeleton className="h-4 w-32 inline-block" />
                     </div>
