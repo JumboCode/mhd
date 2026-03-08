@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/table";
 
 import Link from "next/link";
+import { SchoolsTableSkeleton } from "@/components/skeletons/SchoolsTableSkeleton";
 
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[];
@@ -44,6 +45,7 @@ interface DataTableProps<TData, TValue> {
     prevData: TData[];
     globalFilter: string;
     setGlobalFilter: (value: string) => void;
+    isLoading?: boolean;
 }
 
 export function SchoolsDataTable<TData, TValue>({
@@ -52,6 +54,7 @@ export function SchoolsDataTable<TData, TValue>({
     prevData,
     globalFilter,
     setGlobalFilter,
+    isLoading = false,
 }: DataTableProps<TData, TValue>) {
     const [sorting, setSorting] = React.useState<SortingState>([]);
     const [columnResizeMode] = React.useState<ColumnResizeMode>("onChange");
@@ -125,6 +128,10 @@ export function SchoolsDataTable<TData, TValue>({
 
         // If so, calc year over year change
         // Render icon/number based on that
+    }
+
+    if (isLoading) {
+        return <SchoolsTableSkeleton />;
     }
 
     return (
@@ -234,14 +241,7 @@ export function SchoolsDataTable<TData, TValue>({
                             </TableRow>
                         ))
                     ) : (
-                        <TableRow>
-                            <TableCell
-                                colSpan={columns.length}
-                                className="h-24 text-center text-muted-foreground"
-                            >
-                                No schools found
-                            </TableCell>
-                        </TableRow>
+                        <TableRow></TableRow>
                     )}
                 </TableBody>
             </Table>

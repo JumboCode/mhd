@@ -24,11 +24,13 @@ export default function SchoolsPage() {
     const [year, setYear] = useState<number | null>(null);
     const [search, setSearch] = useState("");
     const [error, setError] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
         if (!year) return;
 
         setError(null);
+        setIsLoading(true);
 
         fetch(`/api/schools?year=${year}`)
             .then((response) => {
@@ -42,6 +44,9 @@ export default function SchoolsPage() {
             })
             .catch((error) => {
                 setError(error.message || "Failed to load school data");
+            })
+            .finally(() => {
+                setIsLoading(false);
             });
     }, [year]);
 
@@ -97,6 +102,7 @@ export default function SchoolsPage() {
                         prevData={prevYearSchoolInfo}
                         globalFilter={search}
                         setGlobalFilter={setSearch}
+                        isLoading={isLoading}
                     />
                 </div>
             </div>
