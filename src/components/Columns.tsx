@@ -38,6 +38,7 @@ export const columns: ColumnDef<Schools>[] = [
             return (
                 <Button
                     variant="ghost"
+                    className="hover:bg-transparent"
                     onClick={() => {
                         if (column.getIsSorted() === "desc") {
                             column.clearSorting();
@@ -69,6 +70,7 @@ export const columns: ColumnDef<Schools>[] = [
             return (
                 <Button
                     variant="ghost"
+                    className="hover:bg-transparent"
                     onClick={() => {
                         if (column.getIsSorted() === "desc") {
                             column.clearSorting();
@@ -100,6 +102,7 @@ export const columns: ColumnDef<Schools>[] = [
             return (
                 <Button
                     variant="ghost"
+                    className="hover:bg-transparent"
                     onClick={() => {
                         if (column.getIsSorted() === "desc") {
                             column.clearSorting();
@@ -131,6 +134,7 @@ export const columns: ColumnDef<Schools>[] = [
             return (
                 <Button
                     variant="ghost"
+                    className="hover:bg-transparent"
                     onClick={() => {
                         if (column.getIsSorted() === "desc") {
                             column.clearSorting();
@@ -162,6 +166,7 @@ export const columns: ColumnDef<Schools>[] = [
             return (
                 <Button
                     variant="ghost"
+                    className="hover:bg-transparent"
                     onClick={() => {
                         if (column.getIsSorted() === "desc") {
                             column.clearSorting();
@@ -193,6 +198,7 @@ export const columns: ColumnDef<Schools>[] = [
             return (
                 <Button
                     variant="ghost"
+                    className="hover:bg-transparent"
                     onClick={() => {
                         if (column.getIsSorted() === "desc") {
                             column.clearSorting();
@@ -224,6 +230,7 @@ export const columns: ColumnDef<Schools>[] = [
             return (
                 <Button
                     variant="ghost"
+                    className="hover:bg-transparent"
                     onClick={() => {
                         if (column.getIsSorted() === "desc") {
                             column.clearSorting();
@@ -255,6 +262,7 @@ export const columns: ColumnDef<Schools>[] = [
             return (
                 <Button
                     variant="ghost"
+                    className="hover:bg-transparent"
                     onClick={() => {
                         if (column.getIsSorted() === "desc") {
                             column.clearSorting();
