@@ -189,31 +189,36 @@ export default function MultiLineGraph({
 
                     {/* Gradient defs */}
                     <defs>
-                        {datasets.map((ds, i) => (
-                            <linearGradient
-                                key={ds.label}
-                                id={`area-gradient-${i}`}
-                                x1="0"
-                                y1="0"
-                                x2="0"
-                                y2="1"
-                            >
-                                <stop
-                                    offset="0%"
-                                    stopColor={
-                                        CHART_COLORS[i % CHART_COLORS.length]
-                                    }
-                                    stopOpacity={0.2}
-                                />
-                                <stop
-                                    offset="100%"
-                                    stopColor={
-                                        CHART_COLORS[i % CHART_COLORS.length]
-                                    }
-                                    stopOpacity={0}
-                                />
-                            </linearGradient>
-                        ))}
+                        {datasets.length === 1 &&
+                            datasets.map((ds, i) => (
+                                <linearGradient
+                                    key={ds.label}
+                                    id={`area-gradient-${i}`}
+                                    x1="0"
+                                    y1="0"
+                                    x2="0"
+                                    y2="1"
+                                >
+                                    <stop
+                                        offset="0%"
+                                        stopColor={
+                                            CHART_COLORS[
+                                                i % CHART_COLORS.length
+                                            ]
+                                        }
+                                        stopOpacity={0.2}
+                                    />
+                                    <stop
+                                        offset="100%"
+                                        stopColor={
+                                            CHART_COLORS[
+                                                i % CHART_COLORS.length
+                                            ]
+                                        }
+                                        stopOpacity={0}
+                                    />
+                                </linearGradient>
+                            ))}
                     </defs>
 
                     {/* Area fills */}
