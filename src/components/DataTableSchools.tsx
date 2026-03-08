@@ -128,7 +128,7 @@ export function SchoolsDataTable<TData, TValue>({
     }
 
     return (
-        <div className="h-full w-full min-w-0 overflow-auto rounded-md border text-center">
+        <div className="h-full w-full min-w-0 overflow-auto border text-center">
             <Table
                 className="caption-bottom text-sm border-separate border-spacing-0"
                 style={{
