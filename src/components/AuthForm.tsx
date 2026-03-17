@@ -15,7 +15,7 @@ function getDevBypassCookie(): boolean {
     return document.cookie.includes(`${DEV_BYPASS_COOKIE}=1`);
 }
 
-export default function AuthForm() {
+export default function AuthForm({ redirectTo }: { redirectTo?: string }) {
     const [step, setStep] = useState<"email" | "otp">("email");
     const [email, setEmail] = useState("");
     const [otp, setOtp] = useState("");
@@ -23,6 +23,10 @@ export default function AuthForm() {
     const [error, setError] = useState("");
 
     const router = useRouter();
+    const destination =
+        redirectTo && redirectTo.startsWith("/") && !redirectTo.startsWith("//")
+            ? redirectTo
+            : "/";
 
     // TO DO - REMOVE: dev auth bypass - redirect if already signed in
     useEffect(() => {
@@ -31,11 +35,11 @@ export default function AuthForm() {
             const session = sessionResult?.data ?? null;
             const isDevBypass = DEV_BYPASS && getDevBypassCookie();
             if (session || isDevBypass) {
-                router.replace("/");
+                router.replace(destination);
             }
         };
         checkAndRedirect();
-    }, [router]);
+    }, [router, destination]);
 
     async function handleSendCode(e: React.FormEvent) {
         e.preventDefault();
@@ -63,9 +67,7 @@ export default function AuthForm() {
                 email,
                 otp,
             });
-            router.push("/");
-        } catch (error) {
-            setError("Invalid or expired code. Please try again.");
+            router.push(destination);
         } finally {
             setIsLoading(false);
         }
@@ -91,7 +93,7 @@ export default function AuthForm() {
     function handleDevBypass() {
         // Set cookie so Sidebar and redirect logic know we're in dev mode
         document.cookie = `${DEV_BYPASS_COOKIE}=1; path=/; max-age=86400`;
-        router.push("/");
+        router.push(destination);
         router.refresh();
     }
 

@@ -1,11 +1,16 @@
 import AuthForm from "@/components/AuthForm";
 import WarpShader from "@/components/WarpShader";
 
-export default function SignInPage() {
+export default async function SignInPage({
+    searchParams,
+}: {
+    searchParams: Promise<{ redirect?: string }>;
+}) {
+    const { redirect } = await searchParams;
     return (
         <div className="flex h-screen flex-col items-center justify-center">
             <div className="w-full h-full flex flex-row">
-                <AuthForm />
+                <AuthForm redirectTo={redirect} />
                 <div className="w-1/2 h-full hidden md:block">
                     <WarpShader
                         colorFront={{ r: 0.784, g: 0.192, b: 0.22, a: 1 }}
