@@ -13,6 +13,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { projects, schools, yearlyTeacherParticipation } from "@/lib/schema";
 import { count, eq, sum } from "drizzle-orm";
+import { findRegionOf } from "@/lib/region-finder";
 
 function percentageChange(curr: number, past: number) {
     return past !== 0 ? Math.round(((curr - past) / past) * 100) : undefined;
@@ -163,7 +164,7 @@ export async function GET(req: NextRequest) {
             return {
                 name: school.name,
                 city: school.city,
-                region: school.city, // Using city as region since schema only has 'town'
+                region: school.city,
                 instructionModel: "N/A", // Not in schema
                 implementationModel: "N/A", // Not in schema
                 numStudents: currStudents,

@@ -22,6 +22,7 @@ import {
 } from "@/lib/schema";
 import { requiredColumns } from "@/lib/required-spreadsheet-columns";
 import { standardize } from "@/lib/school-name-standardize";
+import { findRegionOf } from "@/lib/region-finder";
 
 type RowData = Array<string | number | boolean | null>;
 
@@ -124,6 +125,7 @@ export async function POST(req: NextRequest) {
             if (!school) {
                 // Get coordinates from frontend matching
                 const coords = coordsMap.get(schoolIdValue);
+                const region = findRegionOf(coords?.lat, coords?.long);
 
                 const [inserted] = await db
                     .insert(schools)
@@ -134,6 +136,7 @@ export async function POST(req: NextRequest) {
                         town: schoolTown,
                         latitude: coords?.lat ?? null,
                         longitude: coords?.long ?? null,
+                        region: region,
                     })
                     .returning();
                 school = inserted;

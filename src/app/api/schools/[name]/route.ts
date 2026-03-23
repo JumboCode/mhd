@@ -14,6 +14,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { schools, projects, yearlyTeacherParticipation } from "@/lib/schema";
 import { eq, sql, and, sum } from "drizzle-orm";
+import { findRegionOf } from "@/lib/region-finder";
 
 export async function PATCH(
     req: NextRequest,
@@ -50,9 +51,15 @@ export async function PATCH(
             );
         }
 
+        let region: String = findRegionOf(latitude, longitude);
+
         await db
             .update(schools)
-            .set({ latitude, longitude })
+            .set({
+                latitude: latitude,
+                longitude: longitude,
+                region: region as string,
+            })
             .where(eq(schools.id, schoolResult[0].id));
 
         return NextResponse.json({
