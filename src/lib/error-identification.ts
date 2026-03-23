@@ -5,6 +5,8 @@
  *         Author: Zander and Chiara
  *           Date: 2/16/2026
  *
+ *          Modified by Steven on 3/23/26
+ *
  *        Summary: Validates spreadsheet upload and reports errors
  *
  **************************************************************/
@@ -26,10 +28,18 @@ export enum ErrorType {
 /**
  * Represents a single spreadsheet error.
  */
-export type SpreadsheetErrorTuple = {
-    type: ErrorType;
-    args: string[];
+export type CellTypeError = {
+    coord: string;
+    value: string;
+    expected: ColumnType;
 };
+
+/**
+ * Creates a discriminated union to hold more data for type errors.
+ */
+export type SpreadsheetErrorTuple =
+    | { type: Exclude<ErrorType, ErrorType.INVALID_CELL_TYPE>; args: string[] }
+    | { type: ErrorType.INVALID_CELL_TYPE; args: CellTypeError[] };
 
 /**
  * Report containing all detected errors and additional metadata.
@@ -72,8 +82,12 @@ export const requiredColumnsDict: Record<string, ColumnType> = {
  * @param type - The type of error.
  * @param args - The arguments or coordinates associated with the error.
  */
-function pushError(report: ErrorReport, type: ErrorType, args: string[]) {
-    report.errors.push({ type, args });
+function pushError(
+    report: ErrorReport,
+    type: ErrorType,
+    args: string[] | CellTypeError[],
+) {
+    report.errors.push({ type, args } as SpreadsheetErrorTuple);
 }
 
 /**
@@ -251,7 +265,7 @@ export function checkRequiredColumnTypes(
     );
 
     const emptyCellCoords: string[] = [];
-    const typeErrorCoords: string[] = [];
+    const typeErrorCoords: CellTypeError[] = [];
 
     for (let row = 1; row < jsonData.length; row++) {
         const currentRow = jsonData[row];
@@ -296,12 +310,16 @@ export function checkRequiredColumnTypes(
             }
 
             if (!isValid) {
-                typeErrorCoords.push(coords);
+                typeErrorCoords.push({
+                    coord: coords,
+                    value: String(cell),
+                    expected: expectedType,
+                });
             }
         }
     }
 
-    const errorsToPush = [];
+    const errorsToPush: SpreadsheetErrorTuple[] = [];
 
     // Empty cells take precedence
     if (emptyCellCoords.length > 0) {

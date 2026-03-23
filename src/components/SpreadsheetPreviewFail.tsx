@@ -1,8 +1,20 @@
+/***************************************************************
+ *
+ *                SpreadsheetPreviewFails.tsx
+ *
+ *         Author: Zander and Chiara
+ *           Date: 2/16/2026
+ *
+ *          Modified by Steven on 3/23/26
+ *
+ *        Summary: Shows the errors in the spreadsheet
+ *
+ **************************************************************/
 "use client";
 
 import React from "react";
 import { CircleX, FileChartColumn } from "lucide-react";
-import { ErrorReport } from "@/lib/error-identification";
+import { ErrorReport, ErrorType } from "@/lib/error-identification";
 
 type PreviewProps = {
     fileName: string;
@@ -50,26 +62,52 @@ export default function SpreadsheetPreviewFail({
                 <h2 className="font-bold text-xl">Errors</h2>
 
                 <div className="mx-5 border border-gray-300 rounded-xl bg-white p-2 flex flex-col gap-2">
-                    {errorReport.errors.length === 0 ? (
-                        <div className="text-center py-2 text-[#646464]">
-                            No errors found
-                        </div>
-                    ) : (
-                        errorReport.errors.map((err, idx) => (
-                            <div
-                                key={idx}
-                                className="flex items-start gap-3 border-b last:border-b-0 py-2"
-                            >
-                                <CircleX className="ml-3 mt-1 w-5 h-5 text-destructive shrink-0" />
-                                <span className="text-base text-[#202020]">
-                                    {err.type}
-                                    {err.args && err.args.length > 0 && (
+                    {errorReport.errors.map((err, idx) => (
+                        <div
+                            key={idx}
+                            className="flex items-start gap-3 border-b last:border-b-0 py-2"
+                        >
+                            <CircleX className="ml-3 mt-1 w-5 h-5 text-destructive shrink-0" />
+                            <span className="text-base text-[#202020]">
+                                {err.type}
+                                {err.type === ErrorType.INVALID_CELL_TYPE ? (
+                                    <>
+                                        :{" "}
+                                        {err.args.map((cellErr, i) => (
+                                            <span key={i}>
+                                                {i > 0 && ", "}
+                                                <span className="relative group inline-block cursor-default">
+                                                    <span className="underline decoration-red-500 decoration-wavy underline-offset-4">
+                                                        {cellErr.coord}
+                                                    </span>
+                                                    {/* Populates the tooltip */}
+                                                    <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col items-start bg-white text-black text-xs rounded-lg px-3 py-2 shadow-lg border border-gray-200 w-48 z-10 pointer-events-none">
+                                                        <span>
+                                                            <span className="font-semibold">
+                                                                Value:{" "}
+                                                            </span>
+                                                            {cellErr.value}
+                                                        </span>
+                                                        <span>
+                                                            <span className="font-semibold">
+                                                                Expected:{" "}
+                                                            </span>
+                                                            {cellErr.expected}
+                                                        </span>
+                                                    </span>
+                                                </span>
+                                            </span>
+                                        ))}
+                                    </>
+                                ) : (
+                                    err.args &&
+                                    err.args.length > 0 && (
                                         <>: {err.args.join(", ")}</>
-                                    )}
-                                </span>
-                            </div>
-                        ))
-                    )}
+                                    )
+                                )}
+                            </span>
+                        </div>
+                    ))}
                 </div>
             </div>
 
