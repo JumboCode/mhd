@@ -115,6 +115,9 @@ export default function GraphFilters({
     const [teacherYearsValue, setTeacherYearsValue] = useState("");
     const [teacherYearsValue2, setTeacherYearsValue2] = useState<string>("");
     const [selectedFilters, setSelectedFilters] = useState<Filter[]>([]);
+    const [openFilterPopover, setOpenFilterPopover] = useState<string | null>(
+        null,
+    );
 
     useEffect(() => {
         if (!filters) return;
@@ -190,6 +193,15 @@ export default function GraphFilters({
 
     const handleFilterSelect = (value: Filter) => {
         setSelectedFilters((prev) => [...prev, value]);
+        // Auto-open the filter options for school, city, and project-type filters
+        if (
+            value.value === "school" ||
+            value.value === "city" ||
+            value.value === "project-type"
+        ) {
+            // Delay to let AddFilterPopover's dismiss events finish
+            setTimeout(() => setOpenFilterPopover(value.value), 100);
+        }
         // Initialize teacher participation filter with default values
         if (value.value === "teacher-participation" && !teacherYearsValue) {
             setTeacherYearsValue("1");
@@ -419,6 +431,12 @@ export default function GraphFilters({
                                             )
                                         }
                                         trigger={chipContent}
+                                        autoOpen={
+                                            openFilterPopover === filter.value
+                                        }
+                                        onAutoOpenComplete={() =>
+                                            setOpenFilterPopover(null)
+                                        }
                                     />
                                 );
                             }

@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
     Popover,
     PopoverContent,
@@ -26,6 +26,8 @@ interface FilterValuePopoverProps {
     gatewayCities?: string[]; // List of gateway city names (only for city filter)
     onFinish: (selectedValues: string[]) => void;
     trigger: React.ReactNode;
+    autoOpen?: boolean; // When this becomes true, the popover opens automatically
+    onAutoOpenComplete?: () => void; // Called after auto-open so parent can reset
 }
 
 export function FilterValuePopover({
@@ -35,10 +37,46 @@ export function FilterValuePopover({
     gatewayCities = [],
     onFinish,
     trigger,
+    autoOpen = false,
+    onAutoOpenComplete,
 }: FilterValuePopoverProps) {
     const [open, setOpen] = useState(false);
     const [tempSelected, setTempSelected] = useState<string[]>(selectedValues);
     const [searchQuery, setSearchQuery] = useState("");
+
+    // Block Radix "interact outside" dismiss events briefly after auto-open
+    const dismissLockedRef = useRef(false);
+
+    // Stable ref for the callback
+    const onAutoOpenCompleteRef = useRef(onAutoOpenComplete);
+    onAutoOpenCompleteRef.current = onAutoOpenComplete;
+
+    // Auto-open when parent signals
+    useEffect(() => {
+        if (autoOpen) {
+            dismissLockedRef.current = true;
+            setOpen(true);
+            onAutoOpenCompleteRef.current?.();
+        }
+    }, [autoOpen]);
+
+    // Separate effect to unlock dismiss — not tied to autoOpen changing,
+    // so it won't get cleaned up when autoOpen resets to false
+    useEffect(() => {
+        if (dismissLockedRef.current) {
+            const timer = setTimeout(() => {
+                dismissLockedRef.current = false;
+            }, 300);
+            return () => clearTimeout(timer);
+        }
+    }, [open]);
+
+    // Prevent Radix from closing this popover via outside interactions while locked
+    const handleDismissEvent = useCallback((e: Event) => {
+        if (dismissLockedRef.current) {
+            e.preventDefault();
+        }
+    }, []);
 
     // Reset temp selection when popover opens
     useEffect(() => {
@@ -103,6 +141,8 @@ export function FilterValuePopover({
                 side="right"
                 align="start"
                 sideOffset={8}
+                onInteractOutside={handleDismissEvent}
+                onFocusOutside={handleDismissEvent}
             >
                 <Command shouldFilter={false}>
                     <CommandInput
