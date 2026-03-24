@@ -9,6 +9,28 @@ const regions = Object.values(regionsData).map((region) => ({
     coordinates: region.coordinates as [number, number][],
 }));
 
+/**
+ * Check if a point is inside a triangle defined by three vertices.
+ * Uses the sign-of-cross-product (barycentric) method.
+ */
+function pointInTriangle(
+    px: number,
+    py: number,
+    ax: number,
+    ay: number,
+    bx: number,
+    by: number,
+    cx: number,
+    cy: number,
+): boolean {
+    const d1 = (px - bx) * (ay - by) - (ax - bx) * (py - by);
+    const d2 = (px - cx) * (by - cy) - (bx - cx) * (py - cy);
+    const d3 = (px - ax) * (cy - ay) - (cx - ax) * (py - ay);
+    const hasNeg = d1 < 0 || d2 < 0 || d3 < 0;
+    const hasPos = d1 > 0 || d2 > 0 || d3 > 0;
+    return !(hasNeg && hasPos);
+}
+
 interface UseHeatmapLayersOptions {
     mapRef: React.RefObject<maplibregl.Map | null>;
     schoolPoints: GeoJSON.FeatureCollection | null;
@@ -207,7 +229,15 @@ export function useHeatmapLayers({
                 map.moveLayer("schoolHeatLayer");
             if (map.getLayer("school-icons")) map.moveLayer("school-icons");
 
-            // Tooltip popup
+            // Tooltip popup with prediction cone
+            //
+            // The tooltip stays open when:
+            //   1. The mouse is over the school icon
+            //   2. The mouse is over the tooltip itself
+            //   3. The mouse is inside a "prediction cone" — a triangle from the
+            //      icon center to the left and right edges of the tooltip
+            //   4. The tooltip was click-pinned (dismissed by Escape or clicking elsewhere)
+
             const renderPopup = (feature: GeoJSON.Feature) => {
                 const geometry = feature.geometry as GeoJSON.Point;
                 const coordinates = geometry.coordinates.slice() as [
@@ -244,19 +274,152 @@ export function useHeatmapLayers({
                     .addTo(map);
             };
 
+            // State for hover + prediction cone logic
+            let hoverIconLngLat: [number, number] | null = null;
+            let isOverTooltip = false;
+            let isOverIcon = false;
+            let dismissTimeout: ReturnType<typeof setTimeout> | null = null;
+
+            const clearDismissTimeout = () => {
+                if (dismissTimeout) {
+                    clearTimeout(dismissTimeout);
+                    dismissTimeout = null;
+                }
+            };
+
+            const dismissIfNeeded = () => {
+                if (pinnedRef.current || isOverTooltip || isOverIcon) return;
+                // Small delay to allow mouse to reach the tooltip or cone check to run
+                dismissTimeout = setTimeout(() => {
+                    if (!pinnedRef.current && !isOverTooltip && !isOverIcon) {
+                        popupRef.current?.remove();
+                        hoverIconLngLat = null;
+                    }
+                }, 50);
+            };
+
+            // Listeners on the popup DOM element itself
+            const onPopupMouseEnter = () => {
+                isOverTooltip = true;
+                clearDismissTimeout();
+            };
+            const onPopupMouseLeave = () => {
+                isOverTooltip = false;
+                dismissIfNeeded();
+            };
+
+            const attachPopupListeners = () => {
+                const popupEl = popupRef.current?.getElement();
+                if (popupEl) {
+                    popupEl.addEventListener("mouseenter", onPopupMouseEnter);
+                    popupEl.addEventListener("mouseleave", onPopupMouseLeave);
+                    // Make sure pointer events work on the popup
+                    popupEl.style.pointerEvents = "auto";
+                }
+            };
+            const detachPopupListeners = () => {
+                const popupEl = popupRef.current?.getElement();
+                if (popupEl) {
+                    popupEl.removeEventListener(
+                        "mouseenter",
+                        onPopupMouseEnter,
+                    );
+                    popupEl.removeEventListener(
+                        "mouseleave",
+                        onPopupMouseLeave,
+                    );
+                }
+            };
+
+            // Convert map-canvas-relative point to viewport coordinates
+            const toViewport = (point: { x: number; y: number }) => {
+                const canvasRect = map.getCanvas().getBoundingClientRect();
+                return {
+                    x: point.x + canvasRect.left,
+                    y: point.y + canvasRect.top,
+                };
+            };
+
+            // Get current viewport position of the hovered icon from its geo coords
+            const getIconViewportPos = (): { x: number; y: number } | null => {
+                if (!hoverIconLngLat) return null;
+                const projected = map.project(
+                    hoverIconLngLat as maplibregl.LngLatLike,
+                );
+                const vp = toViewport(projected);
+                vp.y += 5;
+                return vp;
+            };
+
+            // Check if cursor is inside the prediction cone between icon and tooltip
+            const isInPredictionCone = (mapPoint: {
+                x: number;
+                y: number;
+            }): boolean => {
+                const iconPos = getIconViewportPos();
+                if (!iconPos) return false;
+                const popupEl = popupRef.current?.getElement();
+                if (!popupEl) return false;
+
+                const cursor = toViewport(mapPoint);
+                const rect = popupEl.getBoundingClientRect();
+
+                // Expand the cone slightly for a generous hit area
+                const padding = 4;
+                const yOffset = 9; // pull tooltip vertices up ~0.25cm
+
+                // Triangle: icon center → tooltip bottom-left → tooltip bottom-right
+                return pointInTriangle(
+                    cursor.x,
+                    cursor.y,
+                    iconPos.x,
+                    iconPos.y,
+                    rect.left - padding,
+                    rect.bottom + padding - yOffset,
+                    rect.right + padding,
+                    rect.bottom + padding - yOffset,
+                );
+            };
+
+            // On mousemove over the map, check if cursor is in prediction cone
+            const onMapMouseMove = (e: maplibregl.MapMouseEvent) => {
+                if (pinnedRef.current || isOverIcon || isOverTooltip) return;
+                if (!popupRef.current?.isOpen()) return;
+
+                if (isInPredictionCone(e.point)) {
+                    clearDismissTimeout();
+                } else {
+                    dismissIfNeeded();
+                }
+            };
+
             const onMouseEnter = (
                 e: maplibregl.MapMouseEvent & {
                     features?: maplibregl.MapGeoJSONFeature[];
                 },
             ) => {
                 map.getCanvas().style.cursor = "pointer";
-                if (!pinnedRef.current && e.features && e.features.length)
+                isOverIcon = true;
+                clearDismissTimeout();
+
+                if (!pinnedRef.current && e.features && e.features.length) {
                     renderPopup(e.features[0]);
+                    // Store the geo coordinates for prediction cone (reprojected dynamically)
+                    const geom = e.features[0].geometry as GeoJSON.Point;
+                    hoverIconLngLat = geom.coordinates.slice() as [
+                        number,
+                        number,
+                    ];
+                    attachPopupListeners();
+                }
             };
 
             const onMouseLeave = () => {
                 map.getCanvas().style.cursor = "";
-                if (!pinnedRef.current) popupRef.current?.remove();
+                isOverIcon = false;
+                if (!pinnedRef.current) {
+                    dismissIfNeeded();
+                }
             };
 
             const onMapClick = (e: maplibregl.MapMouseEvent) => {
@@ -266,15 +429,25 @@ export function useHeatmapLayers({
                 if (features.length) {
                     pinnedRef.current = true;
                     renderPopup(features[0]);
+                    const geom = features[0].geometry as GeoJSON.Point;
+                    hoverIconLngLat = geom.coordinates.slice() as [
+                        number,
+                        number,
+                    ];
+                    attachPopupListeners();
                 } else {
                     pinnedRef.current = false;
+                    isOverTooltip = false;
                     popupRef.current?.remove();
+                    detachPopupListeners();
+                    hoverIconLngLat = null;
                 }
             };
 
             if (showSchools) {
                 map.on("mouseenter", "school-icons", onMouseEnter);
                 map.on("mouseleave", "school-icons", onMouseLeave);
+                map.on("mousemove", onMapMouseMove);
                 map.on("click", onMapClick);
             } else if (map.getLayer("school-icons")) {
                 map.removeLayer("school-icons");
@@ -283,8 +456,11 @@ export function useHeatmapLayers({
             }
 
             return () => {
+                clearDismissTimeout();
+                detachPopupListeners();
                 map.off("mouseenter", "school-icons", onMouseEnter);
                 map.off("mouseleave", "school-icons", onMouseLeave);
+                map.off("mousemove", onMapMouseMove);
                 map.off("click", onMapClick);
             };
         };
