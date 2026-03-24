@@ -23,13 +23,13 @@ import {
 type CountDropdownProps = {
     selectedCount?: string;
     onCountChange?: (year: string) => void;
+    options: string[];
 };
-
-const options = ["Students", "Projects", "Teachers"];
 
 export default function CountDropdown({
     selectedCount,
     onCountChange,
+    options,
 }: CountDropdownProps) {
     const [toCount, setToCount] = useState(selectedCount);
 

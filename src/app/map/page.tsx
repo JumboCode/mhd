@@ -3,7 +3,7 @@
  *
  * src/app/heat-map/page.tsx
  *
- * Author: Anne, Chiara & Elki, Steven
+ * Author: Anne, Chiara & Elki, Steven, Will
  * Last updated: 2/14/26
  *
  * Summary: Heatmap + Clusters within MA region
@@ -11,12 +11,17 @@
  **************************************************************/
 
 import { Map } from "@/components/ui/map";
-import { Suspense, useEffect, useState, useRef } from "react";
+import { Suspense, useEffect, useState, useRef, useMemo } from "react";
 import { toast } from "sonner";
 import { Loader2, Link, Share } from "lucide-react";
 
 // queryStates required for URL sharing with nuqs
-import { useQueryState, parseAsInteger, parseAsString } from "nuqs";
+import {
+    useQueryState,
+    parseAsInteger,
+    parseAsString,
+    parseAsBoolean,
+} from "nuqs";
 
 const VALID_METRICS = ["Students", "Projects", "Teachers"];
 
@@ -36,6 +41,71 @@ import {
 import { addToCart } from "@/lib/export-to-pdf";
 import { PlusCircle } from "lucide-react";
 
+type Region = {
+    center: [number, number];
+    zoom: number;
+    // Restrict zoom to stay on MA approximately
+    maxZoom: number;
+    minZoom: number;
+};
+
+const regions: Record<string, Region> = {
+    Default: {
+        center: [-71.7, 42.2],
+        zoom: 7,
+        maxZoom: 24,
+        minZoom: 7,
+    },
+    Western: {
+        center: [-73.2, 42.3],
+        zoom: 8,
+        maxZoom: 24,
+        minZoom: 7,
+    },
+
+    Central: {
+        center: [-72.0, 42.3],
+        zoom: 8,
+        maxZoom: 24,
+        minZoom: 7,
+    },
+
+    Boston: {
+        center: [-71.1, 42.35],
+        zoom: 9,
+        maxZoom: 24,
+        minZoom: 8,
+    },
+
+    Northeast: {
+        center: [-70.9, 42.6],
+        zoom: 9,
+        maxZoom: 24,
+        minZoom: 8,
+    },
+
+    Southeast1: {
+        center: [-70.9, 42.0],
+        zoom: 9,
+        maxZoom: 24,
+        minZoom: 8,
+    },
+
+    Southeast2: {
+        center: [-70.2, 41.75],
+        zoom: 9,
+        maxZoom: 24,
+        minZoom: 8,
+    },
+
+    Southeast3: {
+        center: [-71.0, 41.7],
+        zoom: 9,
+        maxZoom: 24,
+        minZoom: 8,
+    },
+};
+
 function HeatMapPage() {
     const [schoolPoints, setSchoolPoints] =
         useState<GeoJSON.FeatureCollection | null>(null);
@@ -52,6 +122,14 @@ function HeatMapPage() {
         "metric",
         parseAsString.withDefault("Projects"),
     );
+
+    // gateway school toggle variable
+    const [onlyGatewaySchools, setOnlyGatewaySchools] = useQueryState(
+        "onlyGatewaySchools",
+        parseAsBoolean.withDefault(false),
+    );
+
+    const [regionName, setRegionName] = useState<string>("Default");
 
     // Validate query params during render
     const currentYear = new Date().getFullYear();
@@ -76,6 +154,22 @@ function HeatMapPage() {
         }
     };
 
+    const [gatewaySchools, setGatewaySchools] = useState<string[]>([]);
+
+    // Fetch gateway schools
+    useEffect(() => {
+        fetch("/api/schools?gateway=true&list=true")
+            .then((res) => res.json())
+            .then((data) => {
+                const schoolNames: string[] = data.map(
+                    (school: { name: string }) => school.name,
+                );
+
+                setGatewaySchools(schoolNames);
+            })
+            .catch(() => toast.error("Failed to load gateway schools"));
+    }, []);
+
     // Fetch school point data for heat layer
     useEffect(() => {
         const controller = new AbortController();
@@ -99,7 +193,20 @@ function HeatMapPage() {
         return () => controller.abort();
     }, [year]);
 
-    useHeatmapLayers({ mapRef, schoolPoints, metric, showSchools });
+    // Filter school points based on the gateway toggle
+    const filteredSchoolPoints = useMemo(() => {
+        if (!schoolPoints) return null;
+        if (!onlyGatewaySchools) return schoolPoints;
+
+        return {
+            ...schoolPoints,
+            features: schoolPoints.features.filter((feature) =>
+                gatewaySchools.includes(feature.properties?.name),
+            ),
+        };
+    }, [schoolPoints, onlyGatewaySchools]);
+
+    useHeatmapLayers({ mapRef, filteredSchoolPoints, metric, showSchools });
 
     const [cart, setCart] = useState<string[]>([]);
 
@@ -136,6 +243,8 @@ function HeatMapPage() {
             );
         }
     }, [filterNames]);
+
+    const filterName = `Heatmap - ${metric} (${year})${onlyGatewaySchools ? " - Gateway Only" : ""}`;
 
     return (
         <div className="flex p-4 flex-col h-screen w-full justify-center">
@@ -213,6 +322,7 @@ function HeatMapPage() {
                         <CountDropdown
                             selectedCount={metric}
                             onCountChange={setMetric}
+                            options={["Students", "Projects", "Teachers"]}
                         />
                     </div>
                     <div className="flex flex-col gap-1.5 w-48">
@@ -225,7 +335,40 @@ function HeatMapPage() {
                             onYearChange={setYear}
                         />
                     </div>
+                    <div className="flex flex-col gap-1.5 w-48">
+                        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pl-1">
+                            Counts
+                        </label>
+                        <CountDropdown
+                            selectedCount={regionName}
+                            onCountChange={setRegionName}
+                            options={Object.keys(regions)}
+                        />
+                    </div>
+                    <div className="flex flex-col gap-1.5 w-48">
+                        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pl-1">
+                            Filters
+                        </label>
+                        <div className="flex items-center h-10 px-2">
+                            <input
+                                id="gateway-toggle"
+                                type="checkbox"
+                                className="w-4 h-4 cursor-pointer rounded border-slate-300"
+                                checked={onlyGatewaySchools}
+                                onChange={(e) =>
+                                    setOnlyGatewaySchools(e.target.checked)
+                                }
+                            />
+                            <label
+                                htmlFor="gateway-toggle"
+                                className="ml-2 text-sm cursor-pointer select-none"
+                            >
+                                Gateway Schools Only
+                            </label>
+                        </div>
+                    </div>
                 </div>
+
                 <Button
                     onClick={() => setShowSchools(!showSchools)}
                     className="w-32 py-2"
@@ -235,11 +378,11 @@ function HeatMapPage() {
             </div>
             <div className="flex-1 rounded-2xl overflow-hidden border border-slate-200 relative">
                 <Map
-                    center={[-71.7, 42.2]}
-                    zoom={7}
+                    center={regions[regionName].center}
+                    zoom={regions[regionName].zoom}
                     // Restrict zoom to stay on MA approximately
-                    maxZoom={24}
-                    minZoom={7}
+                    maxZoom={regions[regionName].maxZoom}
+                    minZoom={regions[regionName].minZoom}
                     // Restrict canvas to stay on MA approximately
                     maxBounds={[
                         [-74.5, 40.2],
