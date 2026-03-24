@@ -27,6 +27,14 @@ import CountDropdown from "@/components/CountDropdown";
 import { Button } from "@/components/ui/button";
 import { exportMapToPDF } from "@/lib/heatmap-export";
 import { useHeatmapLayers } from "@/hooks/useHeatmapLayers";
+import { Cart } from "@/components/Cart";
+import {
+    HoverCard,
+    HoverCardContent,
+    HoverCardTrigger,
+} from "@/components/ui/hover-card";
+import { addToCart } from "@/lib/export-to-pdf";
+import { PlusCircle } from "lucide-react";
 
 function HeatMapPage() {
     const [schoolPoints, setSchoolPoints] =
@@ -93,20 +101,47 @@ function HeatMapPage() {
 
     useHeatmapLayers({ mapRef, schoolPoints, metric, showSchools });
 
+    const [cart, setCart] = useState<string[]>([]);
+
+    const [filterNames, setFilterNames] = useState<string[]>([]);
+
+    const htmlMapRef = useRef<HTMLDivElement | null>(null);
+
+    useEffect(() => {
+        const cartStorage = sessionStorage.getItem("cartStorage");
+        const cartNameStorage = sessionStorage.getItem("cartNameStorage");
+
+        if (cartStorage) {
+            setCart(JSON.parse(cartStorage));
+        }
+
+        if (cartNameStorage) {
+            setFilterNames(JSON.parse(cartNameStorage));
+        }
+    }, []);
+
+    // Update cart in session storage when user changes cart
+    useEffect(() => {
+        if (cart.length != 0) {
+            sessionStorage.setItem("cartStorage", JSON.stringify(cart));
+        }
+    }, [cart]);
+
+    // Update cart names when use changes the filters
+    useEffect(() => {
+        if (filterNames.length != 0) {
+            sessionStorage.setItem(
+                "cartNameStorage",
+                JSON.stringify(filterNames),
+            );
+        }
+    }, [filterNames]);
+
     return (
         <div className="flex p-4 flex-col h-screen w-full justify-center">
             <div className="flex justify-between items-center mb-4">
                 <h1 className="text-2xl py-4 font-semibold">Heatmap</h1>
                 <div className="flex gap-3">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex items-center gap-2"
-                        onClick={copyURLtoClipboard}
-                    >
-                        <Link className="w-4 h-4" />
-                        Share
-                    </Button>
                     <Button
                         variant="outline"
                         size="sm"
@@ -120,6 +155,52 @@ function HeatMapPage() {
                     >
                         <Share className="w-4 h-4" />
                         Export
+                    </Button>
+                    <HoverCard>
+                        <HoverCardTrigger
+                            delay={10}
+                            closeDelay={100}
+                            render={
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="flex items-center gap-2"
+                                    onClick={() =>
+                                        addToCart(
+                                            htmlMapRef,
+                                            cart,
+                                            setCart,
+                                            filterNames,
+                                            setFilterNames,
+                                            filterName,
+                                        )
+                                    }
+                                >
+                                    <PlusCircle className="w-4 h-4" />
+                                    Add to
+                                </Button>
+                            }
+                        />
+                        <HoverCardContent
+                            className="flex flex-col gap-0.5 mt-2"
+                            align="end"
+                        >
+                            <Cart
+                                filterNames={filterNames}
+                                cart={cart}
+                                setCart={setCart}
+                                setFilterNames={setFilterNames}
+                            />
+                        </HoverCardContent>
+                    </HoverCard>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex items-center gap-2"
+                        onClick={copyURLtoClipboard}
+                    >
+                        <Link className="w-4 h-4" />
+                        Share
                     </Button>
                 </div>
             </div>
