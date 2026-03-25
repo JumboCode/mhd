@@ -12,7 +12,7 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useImperativeHandle, forwardRef } from "react";
 import { Combobox } from "@/components/Combobox";
 import { Trash } from "lucide-react";
 import { toast } from "sonner";
@@ -30,20 +30,29 @@ interface SchoolEntry {
 }
 
 /**
+ * Represents the imperative handle for GatewaySchools component.
+ */
+export interface GatewaySchoolsHandle {
+    save: () => Promise<void>;
+    discard: () => void;
+}
+
+/**
  * React component for managing gateway schools.
  *
  * - Loads all schools for selection
  * - Displays current gateway schools in a table
  * - Allows adding/removing schools from gateway status
  */
-export default function GatewaySchools({
-    onUnsavedChange,
-}: {
-    onUnsavedChange?: () => void;
-}) {
+const GatewaySchools = forwardRef<
+    GatewaySchoolsHandle,
+    { onUnsavedChange?: () => void }
+>(function GatewaySchools({ onUnsavedChange }, ref) {
     const [schools, setSchools] = useState<SchoolEntry[]>([]);
     const [gatewaySchools, setGatewaySchools] = useState<SchoolEntry[]>([]);
     const [selectedSchoolId, setSelectedSchoolId] = useState("");
+    const [pendingAdditions, setPendingAdditions] = useState<SchoolEntry[]>([]);
+    const [pendingRemovals, setPendingRemovals] = useState<SchoolEntry[]>([]);
 
     // Load all schools for dropdown
     useEffect(() => {
@@ -68,76 +77,82 @@ export default function GatewaySchools({
 
     /**
      * Adds a school as a gateway school.
-     * Uses optimistic UI updates.
+     * Updates UI and stages the change without making an API call.
      *
      * @param value ID of the school to add
      */
-    const handleAddSchool = async (value: string) => {
+    const handleAddSchool = (value: string) => {
         setSelectedSchoolId(value);
-
         const school = schools.find((s) => String(s.id) === value);
         if (!school) return;
-
         if (gatewaySchools.some((s) => s.id === school.id)) {
             toast("School already added");
             return;
         }
-
         setGatewaySchools((prev) => [...prev, school]);
+        setPendingAdditions((prev) => [...prev, school]);
+        setPendingRemovals((prev) => prev.filter((s) => s.id !== school.id));
         onUnsavedChange?.();
-
-        try {
-            const res = await fetch(
-                `/api/schools/${standardize(school.name)}/gateway`,
-                {
-                    method: "PATCH",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ gateway: true }),
-                },
-            );
-
-            if (!res.ok) throw new Error("Failed to update school");
-            toast.success(`${school.name} set as gateway`);
-        } catch (err) {
-            setGatewaySchools((prev) => prev.filter((s) => s.id !== school.id));
-            toast.error(
-                err instanceof Error ? err.message : "Failed to add school",
-            );
-        }
     };
 
     /**
      * Removes a school from the gateway list.
-     * Uses optimistic UI updates.
+     * Updates UI and stages the change without making an API call.
      *
      * @param id ID of the school to remove
      */
-    const handleRemoveSchool = async (id: number) => {
+    const handleRemoveSchool = (id: number) => {
         const school = gatewaySchools.find((s) => s.id === id);
         if (!school) return;
-
         setGatewaySchools((prev) => prev.filter((s) => s.id !== id));
+        setPendingRemovals((prev) => [...prev, school]);
+        setPendingAdditions((prev) => prev.filter((s) => s.id !== id));
         onUnsavedChange?.();
-
-        try {
-            const res = await fetch(
-                `/api/schools/${standardize(school.name)}/gateway`,
-                {
-                    method: "PATCH",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ gateway: false }),
-                },
-            );
-
-            if (!res.ok) throw new Error("Failed to update school");
-            toast.success(`${school.name} removed as gateway`);
-        } catch (err) {
-            setGatewaySchools((prev) => [...prev, school]);
-            toast.error(
-                err instanceof Error ? err.message : "Failed to remove school",
-            );
-        }
     };
+
+    useImperativeHandle(ref, () => ({
+        save: async () => {
+            try {
+                await Promise.all([
+                    ...pendingAdditions.map((school) =>
+                        fetch(
+                            `/api/schools/${standardize(school.name)}/gateway`,
+                            {
+                                method: "PATCH",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ gateway: true }),
+                            },
+                        ),
+                    ),
+                    ...pendingRemovals.map((school) =>
+                        fetch(
+                            `/api/schools/${standardize(school.name)}/gateway`,
+                            {
+                                method: "PATCH",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ gateway: false }),
+                            },
+                        ),
+                    ),
+                ]);
+                setPendingAdditions([]);
+                setPendingRemovals([]);
+                toast.success("Gateway schools saved");
+            } catch {
+                toast.error("Failed to save gateway schools");
+            }
+        },
+        discard: () => {
+            setGatewaySchools((prev) => {
+                const withoutAdditions = prev.filter(
+                    (s) => !pendingAdditions.some((a) => a.id === s.id),
+                );
+                return [...withoutAdditions, ...pendingRemovals];
+            });
+            setPendingAdditions([]);
+            setPendingRemovals([]);
+        },
+    }));
 
     return (
         <div className="space-y-3">
@@ -200,4 +215,6 @@ export default function GatewaySchools({
             </div>
         </div>
     );
-}
+});
+
+export default GatewaySchools;

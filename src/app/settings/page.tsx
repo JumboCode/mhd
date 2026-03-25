@@ -11,20 +11,38 @@
 
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Trash, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/Combobox";
 import YearsOfData from "@/components/YearsOfData";
 import { Map, MapMarker, MarkerContent, useMap } from "@/components/ui/map";
 import { toast } from "sonner";
-import GatewaySchools from "@/components/GatewaySchools";
+import GatewaySchools, {
+    GatewaySchoolsHandle,
+} from "@/components/GatewaySchools";
 import { standardize } from "@/lib/school-name-standardize";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import PermittedUsers from "@/components/ui/PermittedUsers";
+import { useRouter } from "next/navigation";
+import { useUnsavedChanges } from "@/components/UnsavedChangesContext";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogFooter,
+} from "@/components/ui/dialog";
 
 export default function Settings() {
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+    const router = useRouter();
+    const { setOnNavigationAttempt } = useUnsavedChanges();
+    const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
+    const [pendingNavigation, setPendingNavigation] = useState<string | null>(
+        null,
+    );
 
     const handleSave = () => {
         setHasUnsavedChanges(false);
@@ -34,18 +52,48 @@ export default function Settings() {
         setHasUnsavedChanges(false);
     };
 
+    const handleNavigationAttempt = useCallback(
+        (href: string) => {
+            if (hasUnsavedChanges) {
+                setPendingNavigation(href);
+                setShowUnsavedDialog(true);
+            } else {
+                router.push(href);
+            }
+        },
+        [hasUnsavedChanges, router],
+    );
+
+    useEffect(() => {
+        setOnNavigationAttempt(() => handleNavigationAttempt);
+    }, [handleNavigationAttempt, setOnNavigationAttempt]);
+
+    const handleDialogDiscard = () => {
+        setHasUnsavedChanges(false);
+        setShowUnsavedDialog(false);
+        if (pendingNavigation) router.push(pendingNavigation);
+        setPendingNavigation(null);
+    };
+
+    const handleDialogSave = () => {
+        handleSave();
+        setShowUnsavedDialog(false);
+        if (pendingNavigation) router.push(pendingNavigation);
+        setPendingNavigation(null);
+    };
+
+    const handleDialogCancel = () => {
+        setShowUnsavedDialog(false);
+        setPendingNavigation(null);
+    };
+
+    const gatewaySchoolsRef = useRef<GatewaySchoolsHandle>(null);
+
     return (
         <div className="flex flex-col gap-12 p-6 max-w-4xl pb-24">
             <div>
                 <h1 className="text-3xl font-bold">Settings</h1>
             </div>
-
-            {/*Where does this go? */}
-            <h2 className="text-xl font-semibold">Preferences</h2>
-            <p className="text-gray-600">
-                How would you like to view charts...
-            </p>
-
             <Tabs defaultValue="data-management">
                 <TabsList>
                     <TabsTrigger value="data-management">
@@ -53,8 +101,14 @@ export default function Settings() {
                     </TabsTrigger>
                     <TabsTrigger value="team-access">Team & Access</TabsTrigger>
                 </TabsList>
-
+                {/* Data management tab */}
                 <TabsContent value="data-management" className="mt-6 space-y-6">
+                    <div>
+                        <h2 className="text-xl font-semibold">Preferences</h2>
+                        <p className="text-gray-600">
+                            How would you like to view charts...
+                        </p>
+                    </div>
                     <div>
                         <h2 className="text-xl font-semibold">Configuration</h2>
                         <p className="text-gray-600">
@@ -66,6 +120,7 @@ export default function Settings() {
                         <div className="space-y-3">
                             <h3 className="font-bold">Gateway Cities</h3>
                             <GatewaySchools
+                                ref={gatewaySchoolsRef}
                                 onUnsavedChange={() =>
                                     setHasUnsavedChanges(true)
                                 }
@@ -83,6 +138,7 @@ export default function Settings() {
                     </div>
                 </TabsContent>
 
+                {/* Team and access tab */}
                 <TabsContent value="team-access" className="mt-6 space-y-5">
                     <PermittedUsers
                         onUnsavedChange={() => setHasUnsavedChanges(true)}
@@ -111,6 +167,37 @@ export default function Settings() {
                     </div>
                 </div>
             )}
+            {/* If user tries to leave page with unsaved changes */}
+            <Dialog open={showUnsavedDialog} onOpenChange={handleDialogCancel}>
+                <DialogContent onInteractOutside={(e) => e.preventDefault()}>
+                    <DialogHeader>
+                        <DialogTitle>Unsaved Changes</DialogTitle>
+                        <DialogDescription>
+                            You have unsaved changes. What would you like to do?
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <button
+                            onClick={handleDialogCancel}
+                            className="px-4 py-2 text-sm text-gray-700 rounded-lg border border-gray-300 hover:bg-gray-50"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={handleDialogDiscard}
+                            className="px-4 py-2 text-sm text-gray-700 rounded-lg border border-gray-300 hover:bg-gray-50"
+                        >
+                            Discard Changes
+                        </button>
+                        <button
+                            onClick={handleDialogSave}
+                            className="px-6 py-2 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-lg"
+                        >
+                            Save
+                        </button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
