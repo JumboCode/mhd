@@ -344,12 +344,19 @@ export default function ChartPage() {
 
     // Update cart in session storage when user changes cart
     useEffect(() => {
-        sessionStorage.setItem("cartStorage", JSON.stringify(cart));
+        if (cart.length != 0) {
+            sessionStorage.setItem("cartStorage", JSON.stringify(cart));
+        }
     }, [cart]);
 
     // Update cart names when use changes the filters
     useEffect(() => {
-        sessionStorage.setItem("cartNameStorage", JSON.stringify(filterNames));
+        if (filterNames.length != 0) {
+            sessionStorage.setItem(
+                "cartNameStorage",
+                JSON.stringify(filterNames),
+            );
+        }
     }, [filterNames]);
 
     // Sync tempYearRange with yearRange only when popover opens in custom mode

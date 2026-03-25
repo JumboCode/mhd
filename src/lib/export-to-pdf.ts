@@ -39,9 +39,9 @@ export function downloadGraphs(cart: string[], filterNames: string[]) {
             const imgHeight = (img.height / img.width) * imgWidth;
 
             // TODO: Change to DM Sans
-            pdf.setFont("interstate-bold", "normal");
+            pdf.setFont("DM Sans", "normal");
 
-            pdf.text(`${month}/${day}/${year}`, 170, 15);
+            pdf.text(`${month + 1}/${day}/${year}`, 170, 15);
             pdf.addImage(
                 logoImg.src,
                 "PNG",

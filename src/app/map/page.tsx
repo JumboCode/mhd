@@ -84,23 +84,9 @@ const regions: Record<string, Region> = {
         minZoom: 8,
     },
 
-    Southeast1: {
+    Southeast: {
         center: [-70.9, 42.0],
-        zoom: 9,
-        maxZoom: 24,
-        minZoom: 8,
-    },
-
-    Southeast2: {
-        center: [-70.2, 41.75],
-        zoom: 9,
-        maxZoom: 24,
-        minZoom: 8,
-    },
-
-    Southeast3: {
-        center: [-71.0, 41.7],
-        zoom: 9,
+        zoom: 8,
         maxZoom: 24,
         minZoom: 8,
     },
@@ -129,7 +115,10 @@ function HeatMapPage() {
         parseAsBoolean.withDefault(false),
     );
 
-    const [regionName, setRegionName] = useState<string>("Default");
+    const [regionView, setregionView] = useQueryState(
+        "regionView",
+        parseAsString.withDefault("Default"),
+    );
 
     // Validate query params during render
     const currentYear = new Date().getFullYear();
@@ -208,11 +197,21 @@ function HeatMapPage() {
 
     useHeatmapLayers({ mapRef, filteredSchoolPoints, metric, showSchools });
 
+    useEffect(() => {
+        if (!mapRef.current) {
+            return;
+        }
+        const map = mapRef.current;
+        map?.flyTo({
+            center: regions[regionView].center,
+            zoom: regions[regionView].zoom,
+            essential: true,
+        });
+    }, [regionView]);
+
     const [cart, setCart] = useState<string[]>([]);
 
     const [filterNames, setFilterNames] = useState<string[]>([]);
-
-    const htmlMapRef = useRef<HTMLDivElement | null>(null);
 
     useEffect(() => {
         const cartStorage = sessionStorage.getItem("cartStorage");
@@ -244,12 +243,12 @@ function HeatMapPage() {
         }
     }, [filterNames]);
 
-    const filterName = `Heatmap - ${metric} (${year})${onlyGatewaySchools ? " - Gateway Only" : ""}`;
+    const filterName = `Heatmap - ${metric} ${onlyGatewaySchools ? " at Gateway Schools" : ""} in ${regionView == "Default" ? "MA" : regionView + ` Region `} (${year})`;
 
     return (
         <div className="flex p-4 flex-col h-screen w-full justify-center">
             <div className="flex justify-between items-center mb-4">
-                <h1 className="text-2xl py-4 font-semibold">Heatmap</h1>
+                <h1 className="text-2xl py-4 font-semibold">{filterName}</h1>
                 <div className="flex gap-3">
                     <Button
                         variant="outline"
@@ -259,7 +258,7 @@ function HeatMapPage() {
                             const mapCurrent = mapRef.current;
                             if (!mapCurrent) return;
                             // Call the heatmap export function
-                            exportMapToPDF(mapCurrent);
+                            exportMapToPDF(mapCurrent, filterName);
                         }}
                     >
                         <Share className="w-4 h-4" />
@@ -274,16 +273,18 @@ function HeatMapPage() {
                                     variant="outline"
                                     size="sm"
                                     className="flex items-center gap-2"
-                                    onClick={() =>
-                                        addToCart(
-                                            htmlMapRef,
-                                            cart,
-                                            setCart,
-                                            filterNames,
-                                            setFilterNames,
+                                    onClick={() => {
+                                        const map = mapRef.current;
+                                        if (!map) return;
+                                        const mapImageData = map
+                                            .getCanvas()
+                                            .toDataURL("image/jpeg", 0.5);
+                                        setCart([...cart, mapImageData]);
+                                        setFilterNames([
+                                            ...filterNames,
                                             filterName,
-                                        )
-                                    }
+                                        ]);
+                                    }}
                                 >
                                     <PlusCircle className="w-4 h-4" />
                                     Add to
@@ -337,11 +338,11 @@ function HeatMapPage() {
                     </div>
                     <div className="flex flex-col gap-1.5 w-48">
                         <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pl-1">
-                            Counts
+                            Region View
                         </label>
                         <CountDropdown
-                            selectedCount={regionName}
-                            onCountChange={setRegionName}
+                            selectedCount={regionView}
+                            onCountChange={setregionView}
                             options={Object.keys(regions)}
                         />
                     </div>
@@ -378,11 +379,11 @@ function HeatMapPage() {
             </div>
             <div className="flex-1 rounded-2xl overflow-hidden border border-slate-200 relative">
                 <Map
-                    center={regions[regionName].center}
-                    zoom={regions[regionName].zoom}
+                    center={regions[regionView].center}
+                    zoom={regions[regionView].zoom}
                     // Restrict zoom to stay on MA approximately
-                    maxZoom={regions[regionName].maxZoom}
-                    minZoom={regions[regionName].minZoom}
+                    maxZoom={regions[regionView].maxZoom}
+                    minZoom={regions[regionView].minZoom}
                     // Restrict canvas to stay on MA approximately
                     maxBounds={[
                         [-74.5, 40.2],

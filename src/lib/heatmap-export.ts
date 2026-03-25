@@ -15,10 +15,7 @@ import { toast } from "sonner";
 import { Map } from "maplibre-gl";
 import "../app/fonts/interstate-bold-normal";
 
-export async function exportMapToPDF(
-    map: Map | null,
-    title: string = "Heatmap",
-) {
+export async function exportMapToPDF(map: Map | null, title: string | null) {
     if (!map) {
         toast.error("Map instance not found");
         return;
