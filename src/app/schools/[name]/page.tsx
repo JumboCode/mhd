@@ -24,8 +24,10 @@ import { StatCard } from "@/components/ui/stat-card";
 import { ENTITY_CONFIG } from "@/lib/entity-config";
 import YearDropdown from "@/components/YearDropdown";
 import MultiLineGraph, { GraphDataset } from "@/components/LineGraph";
-import { DataTable } from "@/components/DataTable";
-import { ColumnDef } from "@tanstack/react-table";
+import {
+    EditableProjectsTable,
+    ProjectRow as EditableProjectRow,
+} from "@/components/EditableProjectsTable";
 
 // interface such that data can be blank if API is loading
 type SchoolData = {
@@ -44,12 +46,7 @@ type MapCoordinates = {
     longitude: number | null;
 };
 
-type ProjectRow = {
-    id: string;
-    title: string;
-    numStudents: number;
-    year: number;
-};
+type ProjectRow = EditableProjectRow;
 
 export default function SchoolProfilePage() {
     const params = useParams();
@@ -63,21 +60,6 @@ export default function SchoolProfilePage() {
     const [studentYearData, setstudentYearData] = useState<
         { x: string | number; y: number }[]
     >([]);
-
-    const projectColumns: ColumnDef<ProjectRow>[] = [
-        {
-            accessorKey: "title",
-            header: "Title",
-        },
-        {
-            accessorKey: "numStudents",
-            header: "Students",
-        },
-        {
-            accessorKey: "year",
-            header: "Year",
-        },
-    ];
 
     useEffect(() => {
         if (!year) return;
@@ -278,15 +260,15 @@ export default function SchoolProfilePage() {
                     </div>
                 </div>
 
-                {/* Data table placeholder */}
+                {/* Editable project data table */}
                 <div className="border border-border rounded-lg p-6">
                     <h2 className="text-xl font-semibold mb-4 text-foreground">
-                        Project Data
+                        View and Edit Data
                     </h2>
-                    <DataTable
-                        columns={projectColumns}
-                        data={projects}
-                    ></DataTable>
+                    <EditableProjectsTable
+                        key={`${schoolName}-${year}`}
+                        initialData={projects}
+                    />
                 </div>
             </div>
         </div>

@@ -12,7 +12,12 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { schools, projects, yearlyTeacherParticipation } from "@/lib/schema";
+import {
+    schools,
+    projects,
+    teachers,
+    yearlyTeacherParticipation,
+} from "@/lib/schema";
 import { eq, sql, and, sum } from "drizzle-orm";
 
 export async function PATCH(
@@ -122,10 +127,18 @@ export async function GET(
             .select({
                 id: projects.id,
                 title: projects.title,
+                category: projects.category,
+                categoryId: projects.categoryId,
+                division: projects.division,
+                teamProject: projects.teamProject,
                 numStudents: projects.numStudents,
                 year: projects.year,
+                teacherId: teachers.id,
+                teacherName: teachers.name,
+                teacherEmail: teachers.email,
             })
             .from(projects)
+            .innerJoin(teachers, eq(teachers.id, projects.teacherId))
             .where(
                 and(eq(projects.schoolId, school.id), eq(projects.year, year)),
             );
