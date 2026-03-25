@@ -5,6 +5,8 @@
  *         Author: Will and Justin
  *         Date: 2/1/2025
  *
+ *         Modified by Steven on 3/24/26
+ *
  *        Summary: Displays cart of images to export when
  *                 hovering over cart button
  **************************************************************/
@@ -13,6 +15,19 @@ import { Trash2 } from "lucide-react";
 import { Button } from "./ui/button";
 import { clearCart, deleteFromCart, downloadGraphs } from "@/lib/export-to-pdf";
 import { Dispatch, SetStateAction } from "react";
+import { toast } from "sonner";
+
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 type CartProps = {
     filterNames: string[];
@@ -60,9 +75,41 @@ export function Cart({
                 >
                     Clear All
                 </button>
-                <Button onClick={() => downloadGraphs(cart, filterNames)}>
-                    Export To PDF
-                </Button>
+                {cart.length === 0 ? (
+                    <Button onClick={() => toast.error("Cart is empty")}>
+                        Export To PDF
+                    </Button>
+                ) : (
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button>Export To PDF</Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>
+                                    Export {cart.length} graph
+                                    {cart.length !== 1 ? "s" : ""} to PDF?
+                                </AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    This will download a PDF containing{" "}
+                                    {cart.length} graph
+                                    {cart.length !== 1 ? "s" : ""} to your
+                                    computer.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                    onClick={() =>
+                                        downloadGraphs(cart, filterNames)
+                                    }
+                                >
+                                    Download
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                )}
             </div>
         </div>
     );

@@ -5,6 +5,8 @@
  *         Author: Will and Justin
  *         Date: 2/1/2026
  *
+ *         Modified by Steven on 3/24/26
+ *
  *        Summary: Export an svg graph as a pdf
  **************************************************************/
 
@@ -38,7 +40,6 @@ export function downloadGraphs(cart: string[], filterNames: string[]) {
             const imgWidth = pdf.internal.pageSize.getWidth();
             const imgHeight = (img.height / img.width) * imgWidth;
 
-            // TODO: Change to DM Sans
             pdf.setFont("interstate-bold", "normal");
 
             pdf.text(`${month}/${day}/${year}`, 170, 15);

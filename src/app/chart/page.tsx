@@ -4,6 +4,7 @@
  *
  *         Author: Jack, Anne, Elki, Zander, Chiara, and Steven
  *           Date: 1/30/2026
+ *         Modified 3/24/26
  *
  *         Summary: display bar/line chart of project data with toggle
  *
@@ -45,6 +46,17 @@ import {
     parseAsArrayOf,
     parseAsBoolean,
 } from "nuqs";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { addToCart, downloadSingleGraph } from "@/lib/export-to-pdf";
 import {
     HoverCard,
@@ -726,17 +738,43 @@ export default function ChartPage() {
                                 </AnimatePresence>
                             </div>
                             <div className="flex gap-3">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="flex items-center gap-2"
-                                    onClick={() =>
-                                        downloadSingleGraph(chartRef)
-                                    }
-                                >
-                                    <Share className="w-4 h-4" />
-                                    Export
-                                </Button>
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="flex items-center gap-2"
+                                        >
+                                            <Share className="w-4 h-4" />
+                                            Export
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>
+                                                Export graph to PDF?
+                                            </AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                This will download a PDF of the
+                                                current graph to your computer.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>
+                                                Cancel
+                                            </AlertDialogCancel>
+                                            <AlertDialogAction
+                                                onClick={() =>
+                                                    downloadSingleGraph(
+                                                        chartRef,
+                                                    )
+                                                }
+                                            >
+                                                Download
+                                            </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
                                 <HoverCard>
                                     <HoverCardTrigger
                                         delay={10}
