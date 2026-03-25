@@ -214,7 +214,7 @@ export default function SchoolProfilePage() {
 
                 {/* Info Row */}
                 <SchoolInfoRow
-                    town={schoolData.region + ": " + schoolData.town}
+                    town={schoolData.town}
                     instructionalModel={schoolData.instructionalModel}
                     firstYear={schoolData.firstYear}
                 />

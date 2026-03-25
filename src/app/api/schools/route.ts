@@ -13,7 +13,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { projects, schools, yearlyTeacherParticipation } from "@/lib/schema";
 import { count, eq, sum } from "drizzle-orm";
-import { findRegionOf } from "@/lib/region-finder";
 
 function percentageChange(curr: number, past: number) {
     return past !== 0 ? Math.round(((curr - past) / past) * 100) : undefined;

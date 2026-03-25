@@ -51,7 +51,7 @@ export async function PATCH(
             );
         }
 
-        let region: String = findRegionOf(latitude, longitude);
+        const region: string = findRegionOf(latitude, longitude);
 
         await db
             .update(schools)
@@ -160,7 +160,6 @@ export async function GET(
             instructionalModel: "normal",
         });
     } catch (error) {
-        console.error("TEST:", error);
         return NextResponse.json(
             { error: "Internal server error: " + (error as Error).message },
             { status: 500 },
