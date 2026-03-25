@@ -23,7 +23,11 @@ import { Trash } from "lucide-react";
  * - Visually indicates which years contain data
  * - Allows deletion of an entire year's data
  */
-export default function YearsOfData() {
+export default function YearsOfData({
+    onUnsavedChange,
+}: {
+    onUnsavedChange?: () => void;
+}) {
     const [years, setYears] = useState<number[]>([]);
     const [yearsWithData, setYearsWithData] = useState<Set<number>>(new Set());
 
@@ -80,6 +84,7 @@ export default function YearsOfData() {
                         newSet.delete(year);
                         return newSet;
                     });
+                    onUnsavedChange?.();
                     toast.success(`Deleted data for ${year}.`);
                 }
             })

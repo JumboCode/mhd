@@ -36,7 +36,11 @@ interface SchoolEntry {
  * - Displays current gateway schools in a table
  * - Allows adding/removing schools from gateway status
  */
-export default function GatewaySchools() {
+export default function GatewaySchools({
+    onUnsavedChange,
+}: {
+    onUnsavedChange?: () => void;
+}) {
     const [schools, setSchools] = useState<SchoolEntry[]>([]);
     const [gatewaySchools, setGatewaySchools] = useState<SchoolEntry[]>([]);
     const [selectedSchoolId, setSelectedSchoolId] = useState("");
@@ -80,6 +84,7 @@ export default function GatewaySchools() {
         }
 
         setGatewaySchools((prev) => [...prev, school]);
+        onUnsavedChange?.();
 
         try {
             const res = await fetch(
@@ -112,6 +117,7 @@ export default function GatewaySchools() {
         if (!school) return;
 
         setGatewaySchools((prev) => prev.filter((s) => s.id !== id));
+        onUnsavedChange?.();
 
         try {
             const res = await fetch(
@@ -135,10 +141,6 @@ export default function GatewaySchools() {
 
     return (
         <div className="space-y-3">
-            <p className="text-sm text-gray-600">
-                Select schools to include as gateway schools.
-            </p>
-
             <div className="w-72 w-fit">
                 <Combobox
                     options={schoolOptions}
