@@ -37,8 +37,6 @@ export function findRegionOf(
         }
     }
 
-    console.log(region_in);
-
     return region_in;
 }
 
@@ -62,7 +60,8 @@ function checkForCollision(coord: Coordinate, region: Region): Boolean {
 
     for (
         let i = 0, j = region.polygon.length - 1;
-        i < region.polygon.length, (j = i++);
+        i < region.polygon.length;
+        j = i++
     ) {
         // Check one edge at a time
         const lat_i: number = region.polygon[i].lat;

@@ -37,6 +37,7 @@ type SchoolData = {
     firstYear: string;
     projects: ProjectRow[];
     instructionalModel: string;
+    region: string;
 };
 
 type MapCoordinates = {
@@ -213,7 +214,7 @@ export default function SchoolProfilePage() {
 
                 {/* Info Row */}
                 <SchoolInfoRow
-                    town={schoolData.town}
+                    town={schoolData.region + ": " + schoolData.town}
                     instructionalModel={schoolData.instructionalModel}
                     firstYear={schoolData.firstYear}
                 />

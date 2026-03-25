@@ -146,6 +146,7 @@ export async function GET(
         return NextResponse.json({
             name: school.name,
             town: school.town,
+            region: school.region,
             latitude: school.latitude,
             longitude: school.longitude,
             studentCount: studentCount[0]?.total
@@ -159,6 +160,7 @@ export async function GET(
             instructionalModel: "normal",
         });
     } catch (error) {
+        console.error("TEST:", error);
         return NextResponse.json(
             { error: "Internal server error: " + (error as Error).message },
             { status: 500 },
