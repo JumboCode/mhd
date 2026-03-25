@@ -21,52 +21,58 @@ export function downloadGraphs(cart: string[], filterNames: string[]) {
     // Displays toast when there are no images to export
     if (cart.length === 0) {
         toast.error("Cart is empty");
+        return Promise.resolve();
     }
 
-    const pdf = new jsPDF();
+    return new Promise((resolve) => {
+        const pdf = new jsPDF();
 
-    // Does process for each graph in the cart
-    cart.forEach((canvas: string, idx: number) => {
-        const img = new Image();
-        img.src = canvas;
+        // Does process for each graph in the cart
+        cart.forEach((canvas: string, idx: number) => {
+            const img = new Image();
+            img.src = canvas;
 
-        // Date data for image
-        const time = new Date();
-        const year = String(time.getFullYear());
-        const month = String(time.getMonth());
-        const day = String(time.getDate());
+            // Date data for image
+            const time = new Date();
+            const year = String(time.getFullYear());
+            const month = String(time.getMonth());
+            const day = String(time.getDate());
 
-        img.onload = () => {
-            const imgWidth = pdf.internal.pageSize.getWidth();
-            const imgHeight = (img.height / img.width) * imgWidth;
+            img.onload = () => {
+                const imgWidth = pdf.internal.pageSize.getWidth();
+                const imgHeight = (img.height / img.width) * imgWidth;
 
-            pdf.setFont("interstate-bold", "normal");
+                pdf.setFont("interstate-bold", "normal");
 
-            pdf.text(`${month}/${day}/${year}`, 170, 15);
-            pdf.addImage(
-                logoImg.src,
-                "PNG",
-                15,
-                10,
-                logoImg.width * 0.03,
-                logoImg.height * 0.03,
-            );
+                pdf.text(`${month}/${day}/${year}`, 170, 15);
+                pdf.addImage(
+                    logoImg.src,
+                    "PNG",
+                    15,
+                    10,
+                    logoImg.width * 0.03,
+                    logoImg.height * 0.03,
+                );
 
-            pdf.text(filterNames[idx], 15, 50);
+                pdf.text(filterNames[idx], 15, 50);
 
-            pdf.addImage(
-                canvas,
-                "JPEG",
-                15,
-                55,
-                imgWidth * 0.9,
-                imgHeight * 0.9,
-            );
+                pdf.addImage(
+                    canvas,
+                    "JPEG",
+                    15,
+                    55,
+                    imgWidth * 0.9,
+                    imgHeight * 0.9,
+                );
 
-            if (idx < cart.length - 1) pdf.addPage();
+                if (idx < cart.length - 1) pdf.addPage();
 
-            if (idx === cart.length - 1) pdf.save("chart.pdf");
-        };
+                if (idx === cart.length - 1) {
+                    pdf.save("chart.pdf");
+                    setTimeout(resolve, 1000);
+                }
+            };
+        });
     });
 }
 
@@ -110,6 +116,8 @@ export async function downloadSingleGraph(
 
     pdf.addImage(canvas, "JPEG", 0, 0, pdfWidth, pdfHeight);
     pdf.save("chart.pdf");
+
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 }
 
 export function clearCart(

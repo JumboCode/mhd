@@ -176,6 +176,8 @@ const generateChartTitle = (
 export default function ChartPage() {
     const [allProjects, setAllProjects] = useState<Project[]>([]);
     const [gatewaySchools, setGatewaySchools] = useState<string[]>([]);
+    const [isExporting, setIsExporting] = useState(false);
+    const [exportDialogOpen, setExportDialogOpen] = useState(false);
 
     // Setting hooks
     const [timePeriod, setTimePeriod] = useQueryState(
@@ -738,15 +740,44 @@ export default function ChartPage() {
                                 </AnimatePresence>
                             </div>
                             <div className="flex gap-3">
-                                <AlertDialog>
+                                <AlertDialog
+                                    open={exportDialogOpen}
+                                    onOpenChange={setExportDialogOpen}
+                                >
                                     <AlertDialogTrigger asChild>
                                         <Button
                                             variant="outline"
                                             size="sm"
                                             className="flex items-center gap-2"
+                                            disabled={isExporting}
                                         >
-                                            <Share className="w-4 h-4" />
-                                            Export
+                                            {isExporting ? (
+                                                <svg
+                                                    className="animate-spin h-4 w-4"
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    fill="none"
+                                                    viewBox="0 0 24 24"
+                                                >
+                                                    <circle
+                                                        className="opacity-25"
+                                                        cx="12"
+                                                        cy="12"
+                                                        r="10"
+                                                        stroke="currentColor"
+                                                        strokeWidth="4"
+                                                    />
+                                                    <path
+                                                        className="opacity-75"
+                                                        fill="currentColor"
+                                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                                                    />
+                                                </svg>
+                                            ) : (
+                                                <>
+                                                    <Share className="w-4 h-4" />
+                                                    Export
+                                                </>
+                                            )}
                                         </Button>
                                     </AlertDialogTrigger>
                                     <AlertDialogContent>
@@ -764,11 +795,17 @@ export default function ChartPage() {
                                                 Cancel
                                             </AlertDialogCancel>
                                             <AlertDialogAction
-                                                onClick={() =>
-                                                    downloadSingleGraph(
+                                                onClick={async () => {
+                                                    setExportDialogOpen(false);
+                                                    setIsExporting(true);
+                                                    await downloadSingleGraph(
                                                         chartRef,
-                                                    )
-                                                }
+                                                    );
+                                                    setIsExporting(false);
+                                                    toast.success(
+                                                        "Graph exported successfully!",
+                                                    );
+                                                }}
                                             >
                                                 Download
                                             </AlertDialogAction>
