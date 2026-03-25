@@ -15,7 +15,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Trash, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/Combobox";
-import YearsOfData from "@/components/YearsOfData";
+import YearsOfData, { YearsOfDataHandle } from "@/components/YearsOfData";
 import { Map, MapMarker, MarkerContent, useMap } from "@/components/ui/map";
 import { toast } from "sonner";
 import GatewaySchools, {
@@ -44,11 +44,17 @@ export default function Settings() {
         null,
     );
 
-    const handleSave = () => {
+    const handleSave = async () => {
+        await Promise.all([
+            gatewaySchoolsRef.current?.save(),
+            yearsOfDataRef.current?.save(),
+        ]);
         setHasUnsavedChanges(false);
     };
 
     const handleDiscard = () => {
+        gatewaySchoolsRef.current?.discard();
+        yearsOfDataRef.current?.discard();
         setHasUnsavedChanges(false);
     };
 
@@ -68,15 +74,28 @@ export default function Settings() {
         setOnNavigationAttempt(() => handleNavigationAttempt);
     }, [handleNavigationAttempt, setOnNavigationAttempt]);
 
+    useEffect(() => {
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            if (hasUnsavedChanges) {
+                e.preventDefault();
+            }
+        };
+        window.addEventListener("beforeunload", handleBeforeUnload);
+        return () =>
+            window.removeEventListener("beforeunload", handleBeforeUnload);
+    }, [hasUnsavedChanges]);
+
     const handleDialogDiscard = () => {
+        gatewaySchoolsRef.current?.discard();
+        yearsOfDataRef.current?.discard();
         setHasUnsavedChanges(false);
         setShowUnsavedDialog(false);
         if (pendingNavigation) router.push(pendingNavigation);
         setPendingNavigation(null);
     };
 
-    const handleDialogSave = () => {
-        handleSave();
+    const handleDialogSave = async () => {
+        await handleSave();
         setShowUnsavedDialog(false);
         if (pendingNavigation) router.push(pendingNavigation);
         setPendingNavigation(null);
@@ -88,6 +107,7 @@ export default function Settings() {
     };
 
     const gatewaySchoolsRef = useRef<GatewaySchoolsHandle>(null);
+    const yearsOfDataRef = useRef<YearsOfDataHandle>(null);
 
     return (
         <div className="flex flex-col gap-12 p-6 max-w-4xl pb-24">
@@ -130,6 +150,7 @@ export default function Settings() {
                         <div className="space-y-3">
                             <h3 className="font-bold">Available Data</h3>
                             <YearsOfData
+                                ref={yearsOfDataRef}
                                 onUnsavedChange={() =>
                                     setHasUnsavedChanges(true)
                                 }

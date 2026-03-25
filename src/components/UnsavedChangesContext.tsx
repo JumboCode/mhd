@@ -13,6 +13,7 @@
 "use client";
 
 import { createContext, useContext, useState } from "react";
+import { useRouter } from "next/navigation";
 
 interface UnsavedChangesContextType {
     hasUnsavedChanges: boolean;
@@ -31,9 +32,10 @@ export function UnsavedChangesProvider({
     children: React.ReactNode;
 }) {
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+    const router = useRouter();
     const [onNavigationAttempt, setOnNavigationAttempt] = useState<
         (href: string) => void
-    >(() => () => {});
+    >(() => (href: string) => router.push(href));
 
     return (
         <UnsavedChangesContext.Provider
