@@ -31,7 +31,7 @@ export function downloadGraphs(cart: string[], filterNames: string[]) {
         // Date data for image
         const time = new Date();
         const year = String(time.getFullYear());
-        const month = String(time.getMonth());
+        const month = String(time.getMonth() + 1);
         const day = String(time.getDate());
 
         img.onload = () => {
@@ -41,7 +41,7 @@ export function downloadGraphs(cart: string[], filterNames: string[]) {
             // TODO: Change to DM Sans
             pdf.setFont("DM Sans", "normal");
 
-            pdf.text(`${month + 1}/${day}/${year}`, 170, 15);
+            pdf.text(`${month}/${day}/${year}`, 170, 15);
             pdf.addImage(
                 logoImg.src,
                 "PNG",

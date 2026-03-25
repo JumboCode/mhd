@@ -344,14 +344,14 @@ export default function ChartPage() {
 
     // Update cart in session storage when user changes cart
     useEffect(() => {
-        if (cart.length != 0) {
+        if (cart.length !== 0) {
             sessionStorage.setItem("cartStorage", JSON.stringify(cart));
         }
     }, [cart]);
 
     // Update cart names when use changes the filters
     useEffect(() => {
-        if (filterNames.length != 0) {
+        if (filterNames.length !== 0) {
             sessionStorage.setItem(
                 "cartNameStorage",
                 JSON.stringify(filterNames),

@@ -38,7 +38,6 @@ import {
     HoverCardContent,
     HoverCardTrigger,
 } from "@/components/ui/hover-card";
-import { addToCart } from "@/lib/export-to-pdf";
 import { PlusCircle } from "lucide-react";
 
 type Region = {
@@ -228,14 +227,14 @@ function HeatMapPage() {
 
     // Update cart in session storage when user changes cart
     useEffect(() => {
-        if (cart.length != 0) {
+        if (cart.length !== 0) {
             sessionStorage.setItem("cartStorage", JSON.stringify(cart));
         }
     }, [cart]);
 
     // Update cart names when use changes the filters
     useEffect(() => {
-        if (filterNames.length != 0) {
+        if (filterNames.length !== 0) {
             sessionStorage.setItem(
                 "cartNameStorage",
                 JSON.stringify(filterNames),
@@ -243,7 +242,7 @@ function HeatMapPage() {
         }
     }, [filterNames]);
 
-    const filterName = `Heatmap - ${metric} ${onlyGatewaySchools ? " at Gateway Schools" : ""} in ${regionView == "Default" ? "MA" : regionView + ` Region `} (${year})`;
+    const filterName = `Heatmap - ${metric} ${onlyGatewaySchools ? " at Gateway Schools" : ""} in ${regionView === "Default" ? "MA" : regionView + ` Region `} (${year})`;
 
     return (
         <div className="flex p-4 flex-col h-screen w-full justify-center">
