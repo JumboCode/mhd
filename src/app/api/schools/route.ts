@@ -33,6 +33,7 @@ export async function GET(req: NextRequest) {
                     name: schools.name,
                     latitude: schools.latitude,
                     longitude: schools.longitude,
+                    region: schools.region,
                     gateway: schools.gateway,
                 })
                 .from(schools);
@@ -62,6 +63,7 @@ export async function GET(req: NextRequest) {
                 id: schools.id,
                 name: schools.name,
                 city: schools.town,
+                region: schools.region,
             })
             .from(schools);
 
@@ -163,7 +165,7 @@ export async function GET(req: NextRequest) {
             return {
                 name: school.name,
                 city: school.city,
-                region: school.city, // Using city as region since schema only has 'town'
+                region: school.region,
                 instructionModel: "N/A", // Not in schema
                 implementationModel: "N/A", // Not in schema
                 numStudents: currStudents,

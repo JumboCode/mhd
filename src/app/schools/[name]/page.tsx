@@ -37,6 +37,7 @@ type SchoolData = {
     firstYear: string;
     projects: ProjectRow[];
     instructionalModel: string;
+    region: string;
 };
 
 type MapCoordinates = {

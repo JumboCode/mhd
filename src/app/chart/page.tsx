@@ -66,6 +66,7 @@ type Project = {
     schoolId: number;
     schoolName: string;
     schoolTown: string;
+    schoolRegion: string;
     teacherId: number;
     teacherName: string;
     teacherEmail: string;
@@ -499,7 +500,7 @@ export default function ChartPage() {
                 groupKey = "category";
                 break;
             case "region":
-                groupKey = "schoolTown"; // temp
+                groupKey = "schoolRegion"; // temp
                 break;
             case "school-type":
                 groupKey = "category"; // temp
