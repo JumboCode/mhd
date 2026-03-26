@@ -215,41 +215,6 @@ export function checkRequiredColumns(
 }
 
 /**
- * Checks for empty cells in required columns.
- * @param jsonData - The spreadsheet data.
- * @param report - The report to push errors into.
- */
-export function checkRequiredColumnCells(
-    jsonData: SpreadsheetData,
-    report: ErrorReport,
-) {
-    const headers = jsonData[0] as string[];
-    const formattedHeaders = headers.map((header) =>
-        header?.toString().toLowerCase().trim(),
-    );
-    const requiredColIndexes: number[] = requiredColumns
-        .map((col) => formattedHeaders.indexOf(col.toLowerCase()))
-        .filter((idx) => idx !== -1);
-
-    const emptyCoords: string[] = [];
-
-    for (let row = 1; row < jsonData.length; row++) {
-        const currentRow = jsonData[row];
-
-        requiredColIndexes.forEach((colIdx) => {
-            const cell = currentRow[colIdx];
-            if (cell === null || cell === undefined || cell === "") {
-                emptyCoords.push(xytoCoords(row, colIdx));
-            }
-        });
-    }
-
-    if (emptyCoords.length > 0) {
-        pushError(report, ErrorType.EMPTY_REQUIRED_CELL, emptyCoords);
-    }
-}
-
-/**
  * Checks for empty cells and type mismatches in required columns.
  * Prioritizes empty cells and pushes at most two errors.
  * @param jsonData - The spreadsheet data.
