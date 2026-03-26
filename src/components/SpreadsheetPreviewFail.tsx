@@ -12,7 +12,6 @@
  **************************************************************/
 "use client";
 
-import React from "react";
 import { CircleX, FileChartColumn } from "lucide-react";
 import { ErrorReport, ErrorType } from "@/lib/error-identification";
 
@@ -65,9 +64,9 @@ export default function SpreadsheetPreviewFail({
                     {errorReport.errors.map((err, idx) => (
                         <div
                             key={idx}
-                            className="flex items-start gap-3 border-b last:border-b-0 py-2"
+                            className="flex items-center gap-3 border-b last:border-b-0 py-2"
                         >
-                            <CircleX className="ml-3 mt-1 w-5 h-5 text-destructive shrink-0" />
+                            <CircleX className="ml-3 w-5 h-5 text-destructive shrink-0" />
                             <span className="text-base text-[#202020]">
                                 {err.type}
                                 {err.type === ErrorType.INVALID_CELL_TYPE ? (
