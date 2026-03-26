@@ -119,6 +119,11 @@ function HeatMapPage() {
         parseAsString.withDefault("Default"),
     );
 
+    const [showSchools, setShowSchools] = useQueryState(
+        "showSchools",
+        parseAsBoolean.withDefault(true),
+    );
+
     // Validate query params during render
     const currentYear = new Date().getFullYear();
     const year = rawYear > currentYear || rawYear < 1990 ? 2025 : rawYear;
@@ -126,9 +131,6 @@ function HeatMapPage() {
 
     // Reference to the map, needed for updating the heat layer
     const mapRef = useRef<import("maplibre-gl").Map | null>(null);
-
-    // Boolean to hide/show schools
-    const [showSchools, setShowSchools] = useState(true);
 
     // Loading state
     const [isLoaded, setIsLoaded] = useState(false);

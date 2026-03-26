@@ -174,6 +174,7 @@ export function useHeatmapLayers({
 
             // School icon points
             const addSchoolIcons = () => {
+                if (!showSchools) return;
                 if (!map.getLayer("school-icons")) {
                     map.addLayer({
                         id: "school-icons",
