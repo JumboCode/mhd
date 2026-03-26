@@ -13,7 +13,7 @@ import jsPDF from "jspdf";
 import logoImg from "../../public/images/logo.png";
 import { toast } from "sonner";
 import { Map } from "maplibre-gl";
-import "../app/fonts/interstate-bold-normal";
+import "../app/fonts/DMSans-VariableFont_opsz,wght-normal";
 
 export async function exportMapToPDF(map: Map | null, title: string | null) {
     if (!map) {
@@ -36,7 +36,7 @@ export async function exportMapToPDF(map: Map | null, title: string | null) {
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const aspectRatio = canvas.height / canvas.width;
 
-        pdf.setFont("interstate-bold", "normal");
+        pdf.setFont("DMSans-VariableFont_opsz,wght", "normal");
 
         pdf.text(`${month}/${day}/${year}`, 155, 15);
         pdf.addImage(
