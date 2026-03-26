@@ -27,6 +27,7 @@ export async function GET() {
                 schoolId: projects.schoolId,
                 schoolName: schools.name,
                 schoolTown: schools.town,
+                schoolRegion: schools.region,
                 teacherId: projects.teacherId,
                 teacherName: teachers.name,
                 teacherEmail: teachers.email,
