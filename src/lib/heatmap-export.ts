@@ -48,15 +48,23 @@ export async function exportMapToPDF(map: Map | null, title: string | null) {
             logoImg.height * 0.03,
         );
 
-        pdf.text(title, 20, 50);
+        const margin = 20;
+        const wrappedTitle = pdf.splitTextToSize(title!, pdfWidth - margin * 2);
+        pdf.text(wrappedTitle, margin, 50);
 
         // Calculate dimensions to maintain aspect ratio
-        // 10px margin
-        const margin = 20;
+        const titleHeight = wrappedTitle.length * 7;
         const imgWidth = pdfWidth - margin * 2;
         const imgHeight = imgWidth * aspectRatio;
 
-        pdf.addImage(dataURL, "JPEG", margin, 55, imgWidth, imgHeight);
+        pdf.addImage(
+            dataURL,
+            "JPEG",
+            margin,
+            50 + titleHeight,
+            imgWidth,
+            imgHeight,
+        );
 
         pdf.save("heatmap.pdf");
         toast.success("Heatmap exported successfully!");
