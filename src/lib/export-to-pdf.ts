@@ -13,7 +13,7 @@ import html2canvas from "html2canvas-pro";
 import jsPDF from "jspdf";
 import logoImg from "../../public/images/logo.png";
 import { toast } from "sonner";
-import "../app/fonts/interstate-bold-normal";
+import "../app/fonts/DMSans-VariableFont_opsz,wght-normal";
 
 export function downloadGraphs(cart: string[], filterNames: string[]) {
     // Displays toast when there are no images to export
@@ -38,8 +38,7 @@ export function downloadGraphs(cart: string[], filterNames: string[]) {
             const imgWidth = pdf.internal.pageSize.getWidth();
             const imgHeight = (img.height / img.width) * imgWidth;
 
-            // TODO: Change to DM Sans
-            pdf.setFont("DM Sans", "normal");
+            pdf.setFont("DMSans-VariableFont_opsz,wght", "normal");
 
             pdf.text(`${month}/${day}/${year}`, 170, 15);
             pdf.addImage(
