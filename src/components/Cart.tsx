@@ -5,14 +5,29 @@
  *         Author: Will and Justin
  *         Date: 2/1/2025
  *
+ *         Modified by Steven on 3/24/26
+ *
  *        Summary: Displays cart of images to export when
  *                 hovering over cart button
  **************************************************************/
 
-import { Trash2 } from "lucide-react";
+import { Loader2, Trash2 } from "lucide-react";
 import { Button } from "./ui/button";
 import { clearCart, deleteFromCart, downloadGraphs } from "@/lib/export-to-pdf";
-import { Dispatch, SetStateAction } from "react";
+import { Dispatch, SetStateAction, useState } from "react";
+import { toast } from "sonner";
+
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 type CartProps = {
     filterNames: string[];
@@ -27,6 +42,7 @@ export function Cart({
     setCart,
     setFilterNames,
 }: CartProps) {
+    const [isExporting, setIsExporting] = useState(false);
     return (
         <div className="flex flex-col gap-2 p-2 w-full max-w-5xl">
             {filterNames.map((filterName, index) => (
@@ -60,9 +76,52 @@ export function Cart({
                 >
                     Clear All
                 </button>
-                <Button onClick={() => downloadGraphs(cart, filterNames)}>
-                    Export To PDF
-                </Button>
+                {cart.length === 0 ? (
+                    <Button onClick={() => toast.error("Cart is empty")}>
+                        Export To PDF
+                    </Button>
+                ) : (
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button disabled={isExporting} className="min-w-32">
+                                {isExporting ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                    "Export To PDF"
+                                )}
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>
+                                    Export {cart.length} graph
+                                    {cart.length !== 1 ? "s" : ""} to PDF?
+                                </AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    This will download a PDF containing{" "}
+                                    {cart.length} graph
+                                    {cart.length !== 1 ? "s" : ""} to your
+                                    computer.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                    onClick={async () => {
+                                        setIsExporting(true);
+                                        await downloadGraphs(cart, filterNames);
+                                        setIsExporting(false);
+                                        toast.success(
+                                            "Graphs exported successfully!",
+                                        );
+                                    }}
+                                >
+                                    Download
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                )}
             </div>
         </div>
     );
