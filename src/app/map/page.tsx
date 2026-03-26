@@ -77,14 +77,14 @@ const regions: Record<string, Region> = {
     },
 
     Northeast: {
-        center: [-70.9, 42.6],
-        zoom: 9,
+        center: [-71.2053, 42.4973],
+        zoom: 8.5,
         maxZoom: 24,
         minZoom: 8,
     },
 
     Southeast: {
-        center: [-70.9, 42.0],
+        center: [-70.7313, 41.7842],
         zoom: 8,
         maxZoom: 24,
         minZoom: 8,
