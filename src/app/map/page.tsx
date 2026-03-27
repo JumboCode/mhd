@@ -39,6 +39,17 @@ import {
     HoverCardTrigger,
 } from "@/components/ui/hover-card";
 import { PlusCircle } from "lucide-react";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 type Region = {
     center: [number, number];
@@ -251,20 +262,41 @@ function HeatMapPage() {
             <div className="flex justify-between items-center mb-4">
                 <h1 className="text-2xl py-4 font-semibold">{filterName}</h1>
                 <div className="flex gap-3">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex items-center gap-2"
-                        onClick={() => {
-                            const mapCurrent = mapRef.current;
-                            if (!mapCurrent) return;
-                            // Call the heatmap export function
-                            exportMapToPDF(mapCurrent, filterName);
-                        }}
-                    >
-                        <Share className="w-4 h-4" />
-                        Export
-                    </Button>
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="flex items-center gap-2"
+                            >
+                                <Share className="w-4 h-4" />
+                                Export
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>
+                                    Export map to PDF?
+                                </AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    This will download a PDF of the current
+                                    heatmap to your computer.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                    onClick={() => {
+                                        const mapCurrent = mapRef.current;
+                                        if (!mapCurrent) return;
+                                        exportMapToPDF(mapCurrent, filterName);
+                                    }}
+                                >
+                                    Download
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
                     <HoverCard>
                         <HoverCardTrigger
                             delay={10}
