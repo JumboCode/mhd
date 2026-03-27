@@ -96,24 +96,17 @@ export async function addToCart(
 
 export async function downloadSingleGraph(
     chartRef: React.RefObject<HTMLDivElement | null>,
+    filterName: string,
 ) {
     const el = chartRef.current;
     if (!el) return;
-
-    const { width, height } = el.getBoundingClientRect();
-    const aspectRatio = height / width;
 
     const canvas = await html2canvas(el, {
         backgroundColor: "#fff",
         scale: 2,
     });
 
-    const pdf = new jsPDF();
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = pdfWidth * aspectRatio;
-
-    pdf.addImage(canvas, "JPEG", 0, 0, pdfWidth, pdfHeight);
-    pdf.save("chart.pdf");
+    downloadGraphs([canvas.toDataURL()], [filterName]);
 }
 
 export function clearCart(
