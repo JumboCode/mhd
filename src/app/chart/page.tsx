@@ -326,7 +326,19 @@ export default function ChartPage() {
 
     /* Fetch and set cart to and from session storage to persist between refreshes */
 
-    const filterName = `Projects by ${groupByLabels[filters.groupBy]}`;
+    const filterName = generateChartTitle(
+        chartType,
+        measuredAs,
+        groupBy,
+        yearRange.start,
+        yearRange.end,
+        {
+            schools: selectedSchools.length,
+            cities: selectedCities.length,
+            projectTypes: selectedProjectTypes.length,
+            hasTeacherYearsFilter: teacherYearsValue !== "",
+        },
+    );
 
     // Fetch all graphs from session storage on load
     useEffect(() => {

@@ -50,13 +50,19 @@ export function downloadGraphs(cart: string[], filterNames: string[]) {
                 logoImg.height * 0.03,
             );
 
-            pdf.text(filterNames[idx], 15, 50);
+            const margin = 15;
+            const wrappedTitle = pdf.splitTextToSize(
+                filterNames[idx],
+                pdf.internal.pageSize.getWidth() - margin * 2,
+            );
+            pdf.text(wrappedTitle, margin, 50);
 
+            const titleHeight = wrappedTitle.length * 7;
             pdf.addImage(
                 canvas,
                 "JPEG",
                 15,
-                55,
+                50 + titleHeight,
                 imgWidth * 0.9,
                 imgHeight * 0.9,
             );
