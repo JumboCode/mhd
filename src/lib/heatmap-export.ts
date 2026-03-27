@@ -13,12 +13,9 @@ import jsPDF from "jspdf";
 import logoImg from "../../public/images/logo.png";
 import { toast } from "sonner";
 import { Map } from "maplibre-gl";
-import "../app/fonts/interstate-bold-normal";
+import "../app/fonts/DMSans-VariableFont_opsz,wght-normal";
 
-export async function exportMapToPDF(
-    map: Map | null,
-    title: string = "Heatmap",
-) {
+export async function exportMapToPDF(map: Map | null, title: string | null) {
     if (!map) {
         toast.error("Map instance not found");
         return;
@@ -39,7 +36,7 @@ export async function exportMapToPDF(
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const aspectRatio = canvas.height / canvas.width;
 
-        pdf.setFont("interstate-bold", "normal");
+        pdf.setFont("DMSans-VariableFont_opsz,wght", "normal");
 
         pdf.text(`${month}/${day}/${year}`, 155, 15);
         pdf.addImage(
@@ -51,15 +48,23 @@ export async function exportMapToPDF(
             logoImg.height * 0.03,
         );
 
-        pdf.text(title, 20, 50);
+        const margin = 20;
+        const wrappedTitle = pdf.splitTextToSize(title!, pdfWidth - margin * 2);
+        pdf.text(wrappedTitle, margin, 50);
 
         // Calculate dimensions to maintain aspect ratio
-        // 10px margin
-        const margin = 20;
+        const titleHeight = wrappedTitle.length * 7;
         const imgWidth = pdfWidth - margin * 2;
         const imgHeight = imgWidth * aspectRatio;
 
-        pdf.addImage(dataURL, "JPEG", margin, 55, imgWidth, imgHeight);
+        pdf.addImage(
+            dataURL,
+            "JPEG",
+            margin,
+            50 + titleHeight,
+            imgWidth,
+            imgHeight,
+        );
 
         pdf.save("heatmap.pdf");
         toast.success("Heatmap exported successfully!");

@@ -33,14 +33,14 @@ function pointInTriangle(
 
 interface UseHeatmapLayersOptions {
     mapRef: React.RefObject<maplibregl.Map | null>;
-    schoolPoints: GeoJSON.FeatureCollection | null;
+    filteredSchoolPoints: GeoJSON.FeatureCollection | null;
     metric: string;
     showSchools: boolean;
 }
 
 export function useHeatmapLayers({
     mapRef,
-    schoolPoints,
+    filteredSchoolPoints,
     metric,
     showSchools,
 }: UseHeatmapLayersOptions) {
@@ -103,12 +103,12 @@ export function useHeatmapLayers({
             }
 
             // Filter to only include schools with data for the selected metric
-            const allFeatures = schoolPoints?.features || [];
+            const allFeatures = filteredSchoolPoints?.features || [];
             const filteredFeatures = allFeatures.filter(
                 (f: GeoJSON.Feature) => (f.properties?.[metric] || 0) > 0,
             );
             const filteredData = {
-                ...schoolPoints,
+                ...filteredSchoolPoints,
                 features: filteredFeatures,
             } as GeoJSON.FeatureCollection;
 
@@ -196,6 +196,7 @@ export function useHeatmapLayers({
 
             // School icon points
             const addSchoolIcons = () => {
+                if (!showSchools) return;
                 if (!map.getLayer("school-icons")) {
                     map.addLayer({
                         id: "school-icons",
@@ -481,5 +482,5 @@ export function useHeatmapLayers({
             cleanup?.();
             map.off("load", onLoad);
         };
-    }, [metric, schoolPoints, showSchools]);
+    }, [metric, filteredSchoolPoints, showSchools]);
 }

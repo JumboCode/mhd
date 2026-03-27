@@ -36,14 +36,3 @@ export const millerText = localFont({
     variable: "--font-miller-text",
     display: "swap",
 });
-
-export const interstate = localFont({
-    src: [
-        { path: "./interstate-light.otf", weight: "300", style: "normal" },
-        { path: "./interstate-regular.otf", weight: "400", style: "normal" },
-        { path: "./interstate-bold.otf", weight: "700", style: "normal" },
-        { path: "./interstate-black.otf", weight: "900", style: "normal" },
-    ],
-    variable: "--font-interstate",
-    display: "swap",
-});

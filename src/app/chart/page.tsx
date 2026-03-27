@@ -342,7 +342,19 @@ export default function ChartPage() {
 
     /* Fetch and set cart to and from session storage to persist between refreshes */
 
-    const filterName = `Projects by ${groupByLabels[filters.groupBy]}`;
+    const filterName = generateChartTitle(
+        chartType,
+        measuredAs,
+        groupBy,
+        yearRange.start,
+        yearRange.end,
+        {
+            schools: selectedSchools.length,
+            cities: selectedCities.length,
+            projectTypes: selectedProjectTypes.length,
+            hasTeacherYearsFilter: teacherYearsValue !== "",
+        },
+    );
 
     // Fetch all graphs from session storage on load
     useEffect(() => {
@@ -360,12 +372,19 @@ export default function ChartPage() {
 
     // Update cart in session storage when user changes cart
     useEffect(() => {
-        sessionStorage.setItem("cartStorage", JSON.stringify(cart));
+        if (cart.length !== 0) {
+            sessionStorage.setItem("cartStorage", JSON.stringify(cart));
+        }
     }, [cart]);
 
     // Update cart names when use changes the filters
     useEffect(() => {
-        sessionStorage.setItem("cartNameStorage", JSON.stringify(filterNames));
+        if (filterNames.length !== 0) {
+            sessionStorage.setItem(
+                "cartNameStorage",
+                JSON.stringify(filterNames),
+            );
+        }
     }, [filterNames]);
 
     // Sync tempYearRange with yearRange only when popover opens in custom mode
@@ -714,7 +733,7 @@ export default function ChartPage() {
                                 >
                                     <motion.h1
                                         key={chartType}
-                                        className="text-xl font-semibold text-foreground whitespace-nowrap"
+                                        className="text-xl font-semibold text-foreground"
                                         initial={{ opacity: 0, x: -20 }}
                                         animate={{ opacity: 1, x: 0 }}
                                         exit={{ opacity: 0, x: 20 }}
@@ -783,6 +802,7 @@ export default function ChartPage() {
                                                     setIsExporting(true);
                                                     await downloadSingleGraph(
                                                         chartRef,
+                                                        filterName,
                                                     );
                                                     setIsExporting(false);
                                                     toast.success(

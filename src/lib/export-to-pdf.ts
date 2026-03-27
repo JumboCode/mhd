@@ -15,7 +15,7 @@ import html2canvas from "html2canvas-pro";
 import jsPDF from "jspdf";
 import logoImg from "../../public/images/logo.png";
 import { toast } from "sonner";
-import "../app/fonts/interstate-bold-normal";
+import "../app/fonts/DMSans-VariableFont_opsz,wght-normal";
 
 export function downloadGraphs(cart: string[], filterNames: string[]) {
     // Displays toast when there are no images to export
@@ -35,14 +35,14 @@ export function downloadGraphs(cart: string[], filterNames: string[]) {
             // Date data for image
             const time = new Date();
             const year = String(time.getFullYear());
-            const month = String(time.getMonth());
+            const month = String(time.getMonth() + 1);
             const day = String(time.getDate());
 
             img.onload = () => {
                 const imgWidth = pdf.internal.pageSize.getWidth();
                 const imgHeight = (img.height / img.width) * imgWidth;
 
-                pdf.setFont("interstate-bold", "normal");
+                pdf.setFont("DMSans-VariableFont_opsz,wght", "normal");
 
                 pdf.text(`${month}/${day}/${year}`, 170, 15);
                 pdf.addImage(
@@ -54,13 +54,19 @@ export function downloadGraphs(cart: string[], filterNames: string[]) {
                     logoImg.height * 0.03,
                 );
 
-                pdf.text(filterNames[idx], 15, 50);
+                const margin = 15;
+                const wrappedTitle = pdf.splitTextToSize(
+                    filterNames[idx],
+                    pdf.internal.pageSize.getWidth() - margin * 2,
+                );
+                pdf.text(wrappedTitle, margin, 50);
 
+                const titleHeight = wrappedTitle.length * 7;
                 pdf.addImage(
                     canvas,
                     "JPEG",
                     15,
-                    55,
+                    50 + titleHeight,
                     imgWidth * 0.9,
                     imgHeight * 0.9,
                 );
@@ -98,26 +104,17 @@ export async function addToCart(
 
 export async function downloadSingleGraph(
     chartRef: React.RefObject<HTMLDivElement | null>,
+    filterName: string,
 ) {
     const el = chartRef.current;
     if (!el) return;
-
-    const { width, height } = el.getBoundingClientRect();
-    const aspectRatio = height / width;
 
     const canvas = await html2canvas(el, {
         backgroundColor: "#fff",
         scale: 2,
     });
 
-    const pdf = new jsPDF();
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = pdfWidth * aspectRatio;
-
-    pdf.addImage(canvas, "JPEG", 0, 0, pdfWidth, pdfHeight);
-    pdf.save("chart.pdf");
-
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    downloadGraphs([canvas.toDataURL()], [filterName]);
 }
 
 export function clearCart(
