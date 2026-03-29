@@ -1,6 +1,6 @@
 ---
 name: Bug report
-about: Flag an issue with our site
+about: Flag an issue to fix
 title: 'Bug: '
 labels: bug
 assignees: ''
@@ -8,24 +8,25 @@ type: Bug
 
 ---
 
-**Describe the bug**
-# A clear and concise description of what the bug is.
+## **Describe the bug**
+<!-- A clear and concise description of what the bug is. -->
 
-**How To Reproduce Bug:**
+## **Where Is Bug/How to Recreate**
 Steps to reproduce the behavior:
-1. Go to '...'
+<!-- 1. Go to [page]
 2. Click on '....'
 3. Scroll down to '....'
-4. See error
+4. See error -->
 
-**Expected behavior**
-A clear and concise description of what you expected to happen.
+## **Expected behavior**
+<!-- A clear and concise description of what should happen. -->
 
-**Screenshots**
-# If applicable, add screenshots to help explain your problem.
-
-**Suggested fix(es):**
+## **Suggested fix(es):**
+<!-- List possible solutions -->
 - 
 
-**Additional context**
-Add any other context about the problem here.
+## **Screenshots**
+<!-- If applicable, add screenshots to help explain problem. -->
+
+## **Other comments**
+<!-- Add any other context about the problem here. -->
