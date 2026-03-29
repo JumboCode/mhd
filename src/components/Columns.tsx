@@ -15,6 +15,10 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { ChevronsUpDownSort } from "@/components/icons/ChevronsUpDownSort";
+import { StringSelectCell } from "@/components/EditableCells";
+
+// Placeholder options — replace with real values once DB columns exist
+const MODEL_OPTIONS = ["Dummy 1", "Dummy 2", "Dummy 3"];
 
 export type Schools = {
     name: string;
@@ -144,6 +148,15 @@ export const columns: ColumnDef<Schools>[] = [
                 </Button>
             );
         },
+        cell: ({ getValue, row, column }) => (
+            <StringSelectCell
+                value={getValue() as string}
+                options={MODEL_OPTIONS}
+                rowId={String(row.index)}
+                columnId={column.id}
+                onCommit={() => {}} // TODO: wire up once DB column exists
+            />
+        ),
     },
     {
         accessorKey: "implementationModel",
@@ -165,7 +178,7 @@ export const columns: ColumnDef<Schools>[] = [
                         }
                     }}
                 >
-                    Implementaion Model
+                    Implementation Model
                     <ChevronsUpDownSort
                         sortDirection={column.getIsSorted()}
                         className="ml-2"
@@ -173,6 +186,15 @@ export const columns: ColumnDef<Schools>[] = [
                 </Button>
             );
         },
+        cell: ({ getValue, row, column }) => (
+            <StringSelectCell
+                value={getValue() as string}
+                options={MODEL_OPTIONS}
+                rowId={String(row.index)}
+                columnId={column.id}
+                onCommit={() => {}} // TODO: wire up once DB column exists
+            />
+        ),
     },
     {
         accessorKey: "numStudents",

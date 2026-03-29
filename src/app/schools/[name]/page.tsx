@@ -13,7 +13,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { SchoolProfileSkeleton } from "@/components/skeletons/SchoolProfileSkeleton";
@@ -39,6 +39,7 @@ type SchoolData = {
     firstYear: string;
     projects: ProjectRow[];
     instructionalModel: string;
+    implementationModel: string;
 };
 
 type MapCoordinates = {
@@ -57,6 +58,10 @@ export default function SchoolProfilePage() {
     const [coordinates, setCoordinates] = useState<MapCoordinates | null>(null);
     const [year, setYear] = useState<number | null>(null);
     const [projects, setProjects] = useState<ProjectRow[]>([]);
+    const [editingName, setEditingName] = useState(false);
+    const [nameDraft, setNameDraft] = useState("");
+    const nameInputRef = useRef<HTMLInputElement>(null);
+    const [instructionalModel, setInstructionalModel] = useState("Dummy 1");
     const [studentYearData, setstudentYearData] = useState<
         { x: string | number; y: number }[]
     >([]);
@@ -74,6 +79,7 @@ export default function SchoolProfilePage() {
             .then((data) => {
                 setSchoolData(data);
                 setProjects(data.projects);
+                setInstructionalModel(data.instructionalModel ?? "Dummy 1");
             })
             .catch(() => {
                 toast.error(
@@ -110,6 +116,30 @@ export default function SchoolProfilePage() {
         };
         fetchData();
     }, [year, schoolName]);
+
+    const handleNameDoubleClick = () => {
+        setNameDraft(schoolData?.name ?? "");
+        setEditingName(true);
+        setTimeout(() => nameInputRef.current?.select(), 0);
+    };
+
+    const handleNameCommit = async () => {
+        setEditingName(false);
+        if (!schoolData || nameDraft.trim() === schoolData.name) return;
+        const res = await fetch(`/api/schools/${schoolName}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name: nameDraft.trim() }),
+        });
+        if (res.ok) {
+            setSchoolData((prev) =>
+                prev ? { ...prev, name: nameDraft.trim() } : prev,
+            );
+            toast.success("School name updated.");
+        } else {
+            toast.error("Failed to update school name.");
+        }
+    };
 
     const studentData: GraphDataset = {
         label: "Students by Year",
@@ -151,9 +181,33 @@ export default function SchoolProfilePage() {
         <div className="h-screen w-full bg-background overflow-y-auto flex justify-center">
             <div className="w-full flex flex-col gap-6 py-8 max-w-5xl px-6">
                 <Breadcrumbs labels={{ [schoolName]: schoolData.name }} />
-                {/* Header with school name */}
+                {/* Header with school name — double-click to edit */}
                 <div className="flex flex-row items-center w-full">
-                    <h1 className="text-2xl font-bold">{schoolData.name}</h1>
+                    {editingName ? (
+                        <input
+                            ref={nameInputRef}
+                            className="text-2xl font-bold border-b border-blue-400 outline-none bg-transparent"
+                            value={nameDraft}
+                            onChange={(e) => setNameDraft(e.target.value)}
+                            onBlur={handleNameCommit}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter") handleNameCommit();
+                                if (e.key === "Escape") {
+                                    setEditingName(false);
+                                    setNameDraft(schoolData.name);
+                                }
+                            }}
+                            autoFocus
+                        />
+                    ) : (
+                        <h1
+                            className="text-2xl font-bold cursor-text"
+                            onDoubleClick={handleNameDoubleClick}
+                            title="Double-click to edit"
+                        >
+                            {schoolData.name}
+                        </h1>
+                    )}
                     <div className="ml-auto">
                         <YearDropdown
                             showDataIndicator={true}
@@ -196,7 +250,7 @@ export default function SchoolProfilePage() {
                 {/* Info Row */}
                 <SchoolInfoRow
                     town={schoolData.town}
-                    instructionalModel={schoolData.instructionalModel}
+                    instructionalModel={instructionalModel}
                     firstYear={schoolData.firstYear}
                 />
                 <Link
@@ -261,7 +315,7 @@ export default function SchoolProfilePage() {
                 </div>
 
                 {/* Editable project data table */}
-                <div className="border border-border rounded-lg p-6">
+                <div>
                     <h2 className="text-xl font-semibold mb-4 text-foreground">
                         View and Edit Data
                     </h2>
