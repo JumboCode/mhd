@@ -185,7 +185,7 @@ export function EditableProjectsTable({
         {
             accessorKey: "category",
             header: "Category",
-            size: 160,
+            size: 200,
             cell: ({ getValue, row, column }) => (
                 <StringSelectCell
                     value={getValue() as string}
