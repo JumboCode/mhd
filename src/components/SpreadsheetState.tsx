@@ -36,7 +36,7 @@ import {
 export default function SpreadsheetState() {
     const [file, setFile] = useState<File | undefined>();
     const [spreadsheetData, setSpreadsheetData] = useState<SpreadsheetData>([]);
-    const [year, setYear] = useState<number | null>(null);
+    const [year, setYear] = useState<number | null>(new Date().getFullYear());
     const [tab, setTab] = useState<ReactElement>(
         <SpreadsheetUpload
             file={file}
