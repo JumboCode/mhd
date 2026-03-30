@@ -84,10 +84,11 @@ const YearsOfData = forwardRef<
                         }),
                     ),
                 );
+                const hadChanges = pendingRemovals.length > 0;
                 setPendingRemovals([]);
                 setOriginalYears(years);
                 setOriginalYearsWithData(new Set(yearsWithData));
-                toast.success("Years saved");
+                if (hadChanges) toast.success("Years saved");
             } catch {
                 toast.error("Failed to save years");
             }

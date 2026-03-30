@@ -135,9 +135,11 @@ const GatewaySchools = forwardRef<
                         ),
                     ),
                 ]);
+                const hadChanges =
+                    pendingAdditions.length > 0 || pendingRemovals.length > 0;
                 setPendingAdditions([]);
                 setPendingRemovals([]);
-                toast.success("Gateway schools saved");
+                if (hadChanges) toast.success("Gateway schools saved");
             } catch {
                 toast.error("Failed to save gateway schools");
             }
