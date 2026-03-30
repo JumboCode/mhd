@@ -21,12 +21,14 @@ import {
 } from "@/components/ui/popover";
 import { DEV_BYPASS, DEV_BYPASS_COOKIE } from "@/lib/dev-config"; // TO DO - REMOVE: dev auth bypass
 import { DEV_SESSION_USER } from "@/lib/dev-session"; // TO DO - REMOVE: dev auth bypass
+import { useUnsavedChanges } from "@/components/UnsavedChangesContext";
 
 export default function Sidebar() {
     const pathname = usePathname();
     const router = useRouter();
     const [isPopoverOpen, setIsPopoverOpen] = useState(false);
     const { data: authSession, isPending } = authClient.useSession();
+    const { onNavigationAttempt } = useUnsavedChanges();
     // TO DO - REMOVE: dev auth bypass - show dev user when in dev mode with no real session
     const session =
         authSession ??
@@ -169,6 +171,10 @@ export default function Sidebar() {
                                             key={item.href}
                                             href={item.href}
                                             onMouseEnter={handleItemMouseEnter}
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                onNavigationAttempt(item.href);
+                                            }}
                                             className={`
                                                 flex items-center gap-3 px-3 py-2 rounded-lg transition-colors relative z-10
                                                 ${
@@ -196,7 +202,10 @@ export default function Sidebar() {
             <div className="px-4 py-5 self-center flex items-center gap-3">
                 <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
                     <PopoverTrigger asChild>
-                        <button className="text-sm font-medium text-foreground overflow-hidden whitespace-nowrap hover:text-accent-foreground cursor-pointer">
+                        <button
+                            suppressHydrationWarning
+                            className="text-sm font-medium text-foreground overflow-hidden whitespace-nowrap hover:text-accent-foreground cursor-pointer"
+                        >
                             {session?.user?.email || "Loading..."}
                         </button>
                     </PopoverTrigger>

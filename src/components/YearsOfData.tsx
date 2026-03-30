@@ -12,25 +12,27 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useImperativeHandle, forwardRef } from "react";
 import { toast } from "sonner";
 import { Trash } from "lucide-react";
 
-/**
- * React component for managing yearly dataset entries.
- *
- * - Loads all years that exist in the system
- * - Visually indicates which years contain data
- * - Allows deletion of an entire year's data
- */
-export default function YearsOfData() {
+export interface YearsOfDataHandle {
+    save: () => Promise<void>;
+    discard: () => void;
+}
+
+const YearsOfData = forwardRef<
+    YearsOfDataHandle,
+    { onUnsavedChange?: () => void }
+>(function YearsOfData({ onUnsavedChange }, ref) {
     const [years, setYears] = useState<number[]>([]);
     const [yearsWithData, setYearsWithData] = useState<Set<number>>(new Set());
+    const [pendingRemovals, setPendingRemovals] = useState<number[]>([]);
+    const [originalYears, setOriginalYears] = useState<number[]>([]);
+    const [originalYearsWithData, setOriginalYearsWithData] = useState<
+        Set<number>
+    >(new Set());
 
-    /**
-     * Loads all years from the API and determines which contain data.
-     * Generates a continuous descending range between min and max year.
-     */
     useEffect(() => {
         async function fetchYears() {
             try {
@@ -41,7 +43,6 @@ export default function YearsOfData() {
                 if (!data.years || data.years.length === 0) return;
 
                 const existingYears: number[] = data.years;
-
                 const minYear = Math.min(...existingYears);
                 const maxYear = Math.max(...existingYears);
 
@@ -52,7 +53,9 @@ export default function YearsOfData() {
 
                 setYears(allYears);
                 setYearsWithData(new Set(existingYears));
-            } catch (err) {
+                setOriginalYears(allYears);
+                setOriginalYearsWithData(new Set(existingYears));
+            } catch {
                 toast.error("Failed to load years");
             }
         }
@@ -60,33 +63,42 @@ export default function YearsOfData() {
         fetchYears();
     }, []);
 
-    /**
-     * Deletes all data associated with a given year.
-     * Uses optimistic UI updates on success.
-     *
-     * @param year Year to delete
-     */
-    function handleRemoveYear(year: number) {
-        fetch(`/api/delete-year?year=${year}`, {
-            method: "DELETE",
-        })
-            .then((response) => {
-                if (!response.ok) {
-                    toast(`Failed to delete data for ${year}.`);
-                } else {
-                    setYears((prev) => prev.filter((y) => y !== year));
-                    setYearsWithData((prev) => {
-                        const newSet = new Set(prev);
-                        newSet.delete(year);
-                        return newSet;
-                    });
-                    toast.success(`Deleted data for ${year}.`);
-                }
-            })
-            .catch(() => {
-                toast(`Failed to delete data for ${year}.`);
-            });
-    }
+    const handleRemoveYear = (year: number) => {
+        setYears((prev) => prev.filter((y) => y !== year));
+        setYearsWithData((prev) => {
+            const newSet = new Set(prev);
+            newSet.delete(year);
+            return newSet;
+        });
+        setPendingRemovals((prev) => [...prev, year]);
+        onUnsavedChange?.();
+    };
+
+    useImperativeHandle(ref, () => ({
+        save: async () => {
+            try {
+                await Promise.all(
+                    pendingRemovals.map((year: number) =>
+                        fetch(`/api/delete-year?year=${year}`, {
+                            method: "DELETE",
+                        }),
+                    ),
+                );
+                const hadChanges = pendingRemovals.length > 0;
+                setPendingRemovals([]);
+                setOriginalYears(years);
+                setOriginalYearsWithData(new Set(yearsWithData));
+                if (hadChanges) toast.success("Years saved");
+            } catch {
+                toast.error("Failed to save years");
+            }
+        },
+        discard: () => {
+            setYears(originalYears);
+            setYearsWithData(originalYearsWithData);
+            setPendingRemovals([]);
+        },
+    }));
 
     return (
         <div className="border-2 border-gray-200 rounded-lg overflow-hidden w-full">
@@ -152,4 +164,6 @@ export default function YearsOfData() {
             </table>
         </div>
     );
-}
+});
+
+export default YearsOfData;

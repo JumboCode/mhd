@@ -2,7 +2,7 @@
  *
  *                page.tsx
  *
- *         Author: Will and Hansini
+ *         Author: Will, Hansini, and Justin
  *           Date: 12/6/2025
  *
  *        Summary: Basic outline of settings page
@@ -11,245 +11,192 @@
 
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { Trash, Plus, Pencil } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/Combobox";
-import YearsOfData from "@/components/YearsOfData";
+import YearsOfData, { YearsOfDataHandle } from "@/components/YearsOfData";
 import { Map, MapMarker, MarkerContent, useMap } from "@/components/ui/map";
 import { toast } from "sonner";
-import GatewaySchools from "@/components/GatewaySchools";
+import GatewaySchools, {
+    GatewaySchoolsHandle,
+} from "@/components/GatewaySchools";
 import { standardize } from "@/lib/school-name-standardize";
-
-interface PermittedUser {
-    email: string;
-    lastSignIn: string;
-}
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import PermittedUsers from "@/components/PermittedUsers";
+import { useRouter } from "next/navigation";
+import { useUnsavedChanges } from "@/components/UnsavedChangesContext";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogFooter,
+} from "@/components/ui/dialog";
 
 export default function Settings() {
-    const [emailInput, setEmailInput] = useState("");
-    const [permittedUsers, setPermittedUsers] = useState<PermittedUser[]>([
-        {
-            email: "something@mhd.com",
-            lastSignIn: "3 days ago",
-        },
-        {
-            email: "something@mhd.com",
-            lastSignIn: "3 days ago",
-        },
-        {
-            email: "something@mhd.com",
-            lastSignIn: "3 days ago",
-        },
-    ]);
-
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+    const router = useRouter();
+    const gatewaySchoolsRef = useRef<GatewaySchoolsHandle>(null);
+    const yearsOfDataRef = useRef<YearsOfDataHandle>(null);
+    const { setOnNavigationAttempt } = useUnsavedChanges();
+    const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
+    const [pendingNavigation, setPendingNavigation] = useState<string | null>(
+        null,
+    );
 
-    const handleSave = () => {
+    const handleSave = async () => {
+        await Promise.all([
+            gatewaySchoolsRef.current?.save(),
+            yearsOfDataRef.current?.save(),
+        ]);
         setHasUnsavedChanges(false);
     };
 
-    // Email validation function
-    const isValidEmail = (email: string): boolean => {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return emailRegex.test(email);
+    const handleDiscard = () => {
+        gatewaySchoolsRef.current?.discard();
+        yearsOfDataRef.current?.discard();
+        setHasUnsavedChanges(false);
     };
 
-    // Add permitted user
-    const handleAddUser = () => {
-        const trimmedEmail = emailInput.trim();
+    const handleNavigationAttempt = useCallback(
+        (href: string) => {
+            if (hasUnsavedChanges) {
+                setPendingNavigation(href);
+                setShowUnsavedDialog(true);
+            } else {
+                router.push(href);
+            }
+        },
+        [hasUnsavedChanges, router],
+    );
 
-        // Validate email format
-        if (!isValidEmail(trimmedEmail)) {
-            alert("Please enter a valid email address");
-            return;
-        }
+    useEffect(() => {
+        setOnNavigationAttempt(() => handleNavigationAttempt);
+    }, [handleNavigationAttempt, setOnNavigationAttempt]);
 
-        // Check for duplicates
-        if (
-            permittedUsers.some(
-                (user) =>
-                    user.email.toLowerCase() === trimmedEmail.toLowerCase(),
-            )
-        ) {
-            alert("This email is already in the permitted users list");
-            return;
-        }
+    useEffect(() => {
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            if (hasUnsavedChanges) {
+                e.preventDefault();
+            }
+        };
+        window.addEventListener("beforeunload", handleBeforeUnload);
+        return () =>
+            window.removeEventListener("beforeunload", handleBeforeUnload);
+    }, [hasUnsavedChanges]);
 
-        // Add new user
-        setPermittedUsers([
-            ...permittedUsers,
-            {
-                email: trimmedEmail,
-                lastSignIn: "3 days ago", // Mock data as requested
-            },
-        ]);
-
-        // Clear input
-        setEmailInput("");
-        setHasUnsavedChanges(true);
+    const handleDialogDiscard = () => {
+        handleDiscard();
+        setShowUnsavedDialog(false);
+        if (pendingNavigation) router.push(pendingNavigation);
+        setPendingNavigation(null);
     };
 
-    // Remove permitted user
-    const handleRemoveUser = (email: string) => {
-        setPermittedUsers(
-            permittedUsers.filter((user) => user.email !== email),
-        );
-        setHasUnsavedChanges(true);
+    const handleDialogSave = async () => {
+        await handleSave();
+        setShowUnsavedDialog(false);
+        if (pendingNavigation) router.push(pendingNavigation);
+        setPendingNavigation(null);
     };
 
-    // Handle Enter key press
-    const handleEmailKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === "Enter") {
-            handleAddUser();
-        }
+    const handleDialogCancel = () => {
+        setShowUnsavedDialog(false);
+        setPendingNavigation(null);
     };
 
     return (
-        <div className="flex flex-col gap-12 p-6 max-w-4xl">
+        <div className="flex flex-col gap-12 p-6 max-w-4xl pb-24">
             <div>
                 <h1 className="text-3xl font-bold">Settings</h1>
             </div>
-
-            <section className="space-y-6">
-                <h2 className="text-xl font-semibold">Preferences</h2>
-                <p className="text-gray-600">
-                    How would you like to view charts...
-                </p>
-            </section>
-
-            <section className="space-y-6">
-                <div>
-                    <h2 className="text-xl font-semibold">Configuration</h2>
-                    <p className="text-gray-600">
-                        These settings configure how data is calculated. Only
-                        edit these settings if you really mean to.
-                    </p>
-                </div>
-
-                <div className="mt-6 space-y-6">
-                    <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                            <h3 className="font-bold">Gateway Schools</h3>
-                        </div>
-                        <GatewaySchools />
-                    </div>
-                    {/* School Locations Section */}
-                    <SchoolLocationEditor />
-
-                    {/* Permitted Users Section */}
-                    <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                            <h3 className="font-bold">Permitted Users</h3>
-                        </div>
-
-                        <p className="text-sm text-gray-600">
-                            These emails are permitted to sign into the
-                            platform. Here you can also revoke access
+            <Tabs defaultValue="data-management">
+                <TabsList>
+                    <TabsTrigger value="data-management">
+                        Data Management
+                    </TabsTrigger>
+                    <TabsTrigger value="team-access">Team & Access</TabsTrigger>
+                </TabsList>
+                {/* Data management tab */}
+                <TabsContent value="data-management" className="mt-6 space-y-6">
+                    <div>
+                        <h2 className="text-xl font-semibold">Preferences</h2>
+                        <p className="text-gray-600">
+                            How would you like to view charts...
                         </p>
-                        <div className="flex rounded-lg border border-gray-300 shadow-sm overflow-hidden w-72">
-                            <input
-                                type="email"
-                                placeholder="Email"
-                                aria-label="Email"
-                                value={emailInput}
-                                onChange={(e) => setEmailInput(e.target.value)}
-                                onKeyDown={handleEmailKeyDown}
-                                className="flex-1 px-4 py-1 text-base text-gray-700 placeholder-gray-500 outline-none"
-                            />
-                            <button
-                                type="button"
-                                onClick={handleAddUser}
-                                aria-label="Add Email"
-                                className="bg-gray-200 hover:bg-gray-300 text-gray-600 transition-colors w-8 flex items-center justify-center border-l border-gray-300"
-                            >
-                                <Plus className="w-6 h-6" />
-                            </button>
-                        </div>
-
-                        <div className="border border-gray-200 rounded-lg overflow-hidden">
-                            <table className="w-full">
-                                <thead className="bg-gray-50">
-                                    <tr>
-                                        <th className="text-left px-4 py-3 text-sm font-medium text-gray-700">
-                                            Email
-                                        </th>
-                                        <th className="text-left px-4 py-3 text-sm font-medium text-gray-700">
-                                            Last Signed In
-                                        </th>
-                                        <th className="text-left px-4 py-3 text-sm font-medium text-gray-700">
-                                            Actions
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-200 bg-white">
-                                    {permittedUsers.map((user, i) => (
-                                        <tr
-                                            key={i}
-                                            className="hover:bg-gray-50"
-                                        >
-                                            <td className="px-4 py-3 text-sm">
-                                                {user.email}
-                                            </td>
-                                            <td className="px-4 py-3 text-sm text-gray-600">
-                                                {user.lastSignIn}
-                                            </td>
-                                            <td className="p-4">
-                                                <button
-                                                    onClick={() =>
-                                                        handleRemoveUser(
-                                                            user.email,
-                                                        )
-                                                    }
-                                                    className="text-gray-400 hover:text-red-500 transition-colors"
-                                                    aria-label={`Remove ${user.email}`}
-                                                >
-                                                    <Trash className="w-4 h-4" />
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
                     </div>
-
-                    <div className="mt-6 space-y-6">
+                    <div>
+                        <h2 className="text-xl font-semibold">Configuration</h2>
+                        <p className="text-gray-600">
+                            These settings configure how data is calculated.
+                            Only edit these settings if you really mean to.
+                        </p>
+                    </div>
+                    <div className="space-y-6">
                         <div className="space-y-3">
-                            <div className="space-y-6 w-full">
-                                <h3 className="font-bold">Available Data</h3>
-                                <YearsOfData />
-                            </div>
+                            <h3 className="font-bold">Gateway Cities</h3>
+                            <GatewaySchools
+                                ref={gatewaySchoolsRef}
+                                onUnsavedChange={() =>
+                                    setHasUnsavedChanges(true)
+                                }
+                            />
+                        </div>
+                        <SchoolLocationEditor />
+                        <div className="space-y-3">
+                            <h3 className="font-bold">Available Data</h3>
+                            <YearsOfData
+                                ref={yearsOfDataRef}
+                                onUnsavedChange={() =>
+                                    setHasUnsavedChanges(true)
+                                }
+                            />
                         </div>
                     </div>
-                </div>
+                </TabsContent>
 
-                {/* Save Section */}
-                <div className="flex items-center justify-between py-6">
-                    <label className="flex items-center gap-2 text-sm text-gray-600">
-                        <span>You have unsaved changes - save?</span>
-                    </label>
-                    <div className="flex gap-2">
-                        <button
-                            className="pl-2 pr-6 py-2 text-base text-gray-700 placeholder-gray-500
-                            rounded-lg border border-gray-300 shadow-sm w-6"
-                        >
-                            <Trash className="h-4 w-4" />
-                        </button>
-                        <button
-                            onClick={handleSave}
-                            disabled={!hasUnsavedChanges}
-                            className={`px-6 py-2 rounded-lg ${
-                                hasUnsavedChanges
-                                    ? "bg-blue-600 text-white hover:bg-blue-700"
-                                    : "bg-gray-200 text-gray-400 cursor-not-allowed"
-                            }`}
-                        >
-                            Save
-                        </button>
-                    </div>
+                {/* Team and access tab */}
+                <TabsContent value="team-access" className="mt-6 space-y-5">
+                    <PermittedUsers
+                        onUnsavedChange={() => setHasUnsavedChanges(true)}
+                    />
+                </TabsContent>
+            </Tabs>
+
+            <div
+                className={`fixed bottom-0 left-56 right-0 z-50 flex items-center justify-between px-8 py-4 bg-white/20 backdrop-blur-md shadow-lg transition-transform duration-200 ease-in-out ${hasUnsavedChanges ? "translate-y-0" : "translate-y-full"}`}
+            >
+                <span className="text-sm font-bold">
+                    You have unsaved changes - save?
+                </span>
+                <div className="flex gap-2">
+                    <Button variant="outline" onClick={handleDiscard}>
+                        Discard Changes
+                    </Button>
+                    <Button onClick={handleSave}>Save</Button>
                 </div>
-            </section>
+            </div>
+            {/* If user tries to leave page with unsaved changes */}
+            <Dialog open={showUnsavedDialog} onOpenChange={handleDialogCancel}>
+                <DialogContent onInteractOutside={(e) => e.preventDefault()}>
+                    <DialogHeader>
+                        <DialogTitle>Unsaved Changes</DialogTitle>
+                        <DialogDescription>
+                            You have unsaved changes. What would you like to do?
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={handleDialogCancel}>
+                            Cancel
+                        </Button>
+                        <Button variant="outline" onClick={handleDialogDiscard}>
+                            Discard Changes
+                        </Button>
+                        <Button onClick={handleDialogSave}>Save</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
@@ -390,9 +337,6 @@ function SchoolLocationEditor() {
             <div className="flex items-center justify-between">
                 <h3 className="font-bold">School Locations</h3>
             </div>
-            <p className="text-sm text-gray-600">
-                Search for a school to view and edit its location on the map.
-            </p>
             <div className="min-w-72 w-fit">
                 <Combobox
                     options={schoolOptions}
