@@ -164,23 +164,19 @@ export default function Settings() {
                 </TabsContent>
             </Tabs>
 
-            {hasUnsavedChanges && (
-                <div className="fixed bottom-0 left-56 right-0 z-50 flex items-center justify-between px-8 py-4 bg-white border-t border-gray-200 shadow-lg">
-                    <span className="text-sm text-gray-600">
-                        You have unsaved changes
-                    </span>
-                    <div className="flex gap-2">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={handleDiscard}
-                        >
-                            <Trash className="h-4 w-4" />
-                        </Button>
-                        <Button onClick={handleSave}>Save</Button>
-                    </div>
+            <div
+                className={`fixed bottom-0 left-56 right-0 z-50 flex items-center justify-between px-8 py-4 bg-white/20 backdrop-blur-md shadow-lg transition-transform duration-200 ease-in-out ${hasUnsavedChanges ? "translate-y-0" : "translate-y-full"}`}
+            >
+                <span className="text-sm font-bold">
+                    You have unsaved changes - save?
+                </span>
+                <div className="flex gap-2">
+                    <Button variant="outline" onClick={handleDiscard}>
+                        Discard Changes
+                    </Button>
+                    <Button onClick={handleSave}>Save</Button>
                 </div>
-            )}
+            </div>
             {/* If user tries to leave page with unsaved changes */}
             <Dialog open={showUnsavedDialog} onOpenChange={handleDialogCancel}>
                 <DialogContent onInteractOutside={(e) => e.preventDefault()}>
