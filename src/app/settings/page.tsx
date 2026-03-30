@@ -38,6 +38,8 @@ import {
 export default function Settings() {
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
     const router = useRouter();
+    const gatewaySchoolsRef = useRef<GatewaySchoolsHandle>(null);
+    const yearsOfDataRef = useRef<YearsOfDataHandle>(null);
     const { setOnNavigationAttempt } = useUnsavedChanges();
     const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
     const [pendingNavigation, setPendingNavigation] = useState<string | null>(
@@ -104,9 +106,6 @@ export default function Settings() {
         setPendingNavigation(null);
     };
 
-    const gatewaySchoolsRef = useRef<GatewaySchoolsHandle>(null);
-    const yearsOfDataRef = useRef<YearsOfDataHandle>(null);
-
     return (
         <div className="flex flex-col gap-12 p-6 max-w-4xl pb-24">
             <div>
@@ -171,18 +170,14 @@ export default function Settings() {
                         You have unsaved changes
                     </span>
                     <div className="flex gap-2">
-                        <button
+                        <Button
+                            variant="outline"
+                            size="sm"
                             onClick={handleDiscard}
-                            className="pl-2 pr-2 py-2 text-base text-gray-700 rounded-lg border border-gray-300 shadow-sm flex items-center gap-2 hover:bg-gray-100"
                         >
                             <Trash className="h-4 w-4" />
-                        </button>
-                        <button
-                            onClick={handleSave}
-                            className="px-6 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
-                        >
-                            Save
-                        </button>
+                        </Button>
+                        <Button onClick={handleSave}>Save</Button>
                     </div>
                 </div>
             )}
@@ -196,24 +191,13 @@ export default function Settings() {
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
-                        <button
-                            onClick={handleDialogCancel}
-                            className="px-4 py-2 text-sm text-gray-700 rounded-lg border border-gray-300 hover:bg-gray-50"
-                        >
+                        <Button variant="outline" onClick={handleDialogCancel}>
                             Cancel
-                        </button>
-                        <button
-                            onClick={handleDialogDiscard}
-                            className="px-4 py-2 text-sm text-gray-700 rounded-lg border border-gray-300 hover:bg-gray-50"
-                        >
+                        </Button>
+                        <Button variant="outline" onClick={handleDialogDiscard}>
                             Discard Changes
-                        </button>
-                        <button
-                            onClick={handleDialogSave}
-                            className="px-6 py-2 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-lg"
-                        >
-                            Save
-                        </button>
+                        </Button>
+                        <Button onClick={handleDialogSave}>Save</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

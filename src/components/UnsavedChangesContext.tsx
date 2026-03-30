@@ -16,8 +16,6 @@ import { createContext, useContext, useState } from "react";
 import { useRouter } from "next/navigation";
 
 interface UnsavedChangesContextType {
-    hasUnsavedChanges: boolean;
-    setHasUnsavedChanges: (value: boolean) => void;
     onNavigationAttempt: (href: string) => void;
     setOnNavigationAttempt: (fn: (href: string) => void) => void;
 }
@@ -31,7 +29,6 @@ export function UnsavedChangesProvider({
 }: {
     children: React.ReactNode;
 }) {
-    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
     const router = useRouter();
     const [onNavigationAttempt, setOnNavigationAttempt] = useState<
         (href: string) => void
@@ -40,8 +37,6 @@ export function UnsavedChangesProvider({
     return (
         <UnsavedChangesContext.Provider
             value={{
-                hasUnsavedChanges,
-                setHasUnsavedChanges,
                 onNavigationAttempt,
                 setOnNavigationAttempt,
             }}
