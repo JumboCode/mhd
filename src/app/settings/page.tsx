@@ -86,9 +86,7 @@ export default function Settings() {
     }, [hasUnsavedChanges]);
 
     const handleDialogDiscard = () => {
-        gatewaySchoolsRef.current?.discard();
-        yearsOfDataRef.current?.discard();
-        setHasUnsavedChanges(false);
+        handleDiscard();
         setShowUnsavedDialog(false);
         if (pendingNavigation) router.push(pendingNavigation);
         setPendingNavigation(null);
