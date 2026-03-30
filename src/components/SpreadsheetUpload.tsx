@@ -14,7 +14,6 @@
 
 import type React from "react";
 import FileUpload from "@/components/FileUpload";
-import YearDropdown from "@/components/YearDropdown";
 import { Button } from "./ui/button";
 import { ChevronLeft } from "lucide-react";
 import { ChevronRight } from "lucide-react";
