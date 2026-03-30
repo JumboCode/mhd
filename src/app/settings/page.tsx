@@ -23,7 +23,7 @@ import GatewaySchools, {
 } from "@/components/GatewaySchools";
 import { standardize } from "@/lib/school-name-standardize";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import PermittedUsers from "@/components/ui/PermittedUsers";
+import PermittedUsers from "@/components/PermittedUsers";
 import { useRouter } from "next/navigation";
 import { useUnsavedChanges } from "@/components/UnsavedChangesContext";
 import {

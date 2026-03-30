@@ -12,13 +12,7 @@
 
 "use client";
 
-import {
-    useState,
-    useEffect,
-    useImperativeHandle,
-    forwardRef,
-    useRef,
-} from "react";
+import { useState, useEffect, useImperativeHandle, forwardRef } from "react";
 import { toast } from "sonner";
 import { Trash } from "lucide-react";
 
@@ -34,9 +28,10 @@ const YearsOfData = forwardRef<
     const [years, setYears] = useState<number[]>([]);
     const [yearsWithData, setYearsWithData] = useState<Set<number>>(new Set());
     const [pendingRemovals, setPendingRemovals] = useState<number[]>([]);
-    const pendingRemovalsRef = useRef<number[]>([]);
-    const originalYearsRef = useRef<number[]>([]);
-    const originalYearsWithDataRef = useRef<Set<number>>(new Set());
+    const [originalYears, setOriginalYears] = useState<number[]>([]);
+    const [originalYearsWithData, setOriginalYearsWithData] = useState<
+        Set<number>
+    >(new Set());
 
     useEffect(() => {
         async function fetchYears() {
@@ -58,8 +53,8 @@ const YearsOfData = forwardRef<
 
                 setYears(allYears);
                 setYearsWithData(new Set(existingYears));
-                originalYearsRef.current = allYears;
-                originalYearsWithDataRef.current = new Set(existingYears);
+                setOriginalYears(allYears);
+                setOriginalYearsWithData(new Set(existingYears));
             } catch {
                 toast.error("Failed to load years");
             }
@@ -75,11 +70,7 @@ const YearsOfData = forwardRef<
             newSet.delete(year);
             return newSet;
         });
-        setPendingRemovals((prev) => {
-            const updated = [...prev, year];
-            pendingRemovalsRef.current = updated;
-            return updated;
-        });
+        setPendingRemovals((prev) => [...prev, year]);
         onUnsavedChange?.();
     };
 
@@ -87,26 +78,24 @@ const YearsOfData = forwardRef<
         save: async () => {
             try {
                 await Promise.all(
-                    pendingRemovalsRef.current.map((year) =>
+                    pendingRemovals.map((year: number) =>
                         fetch(`/api/delete-year?year=${year}`, {
                             method: "DELETE",
                         }),
                     ),
                 );
                 setPendingRemovals([]);
-                pendingRemovalsRef.current = [];
-                originalYearsRef.current = years;
-                originalYearsWithDataRef.current = new Set(yearsWithData);
+                setOriginalYears(years);
+                setOriginalYearsWithData(new Set(yearsWithData));
                 toast.success("Years saved");
             } catch {
                 toast.error("Failed to save years");
             }
         },
         discard: () => {
-            setYears(originalYearsRef.current);
-            setYearsWithData(originalYearsWithDataRef.current);
+            setYears(originalYears);
+            setYearsWithData(originalYearsWithData);
             setPendingRemovals([]);
-            pendingRemovalsRef.current = [];
         },
     }));
 
