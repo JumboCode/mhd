@@ -12,7 +12,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Trash, Pencil } from "lucide-react";
+import { Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/Combobox";
 import YearsOfData, { YearsOfDataHandle } from "@/components/YearsOfData";
