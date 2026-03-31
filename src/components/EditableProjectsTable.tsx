@@ -236,7 +236,7 @@ export function EditableProjectsTable({
         {
             accessorKey: "numStudents",
             header: "# Students",
-            size: 100,
+            size: 120,
             cell: ({ getValue, row, column }) => (
                 <NumberInputCell
                     value={getValue() as number}
@@ -263,7 +263,7 @@ export function EditableProjectsTable({
         {
             accessorKey: "teacherEmail",
             header: "Teacher Email",
-            size: 200,
+            size: 220,
             cell: ({ getValue, row, column }) => (
                 <EditableCell
                     value={getValue() as string}

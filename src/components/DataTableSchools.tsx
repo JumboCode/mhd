@@ -63,7 +63,7 @@ export function SchoolsDataTable<TData, TValue>({
         data,
         columns,
         columnResizeMode,
-        getSortedRowModel: getSortedRowModel(), //May not need this?
+        getSortedRowModel: getSortedRowModel(), // May not need this?
         onSortingChange: setSorting,
         onGlobalFilterChange: setGlobalFilter,
         getCoreRowModel: getCoreRowModel(),
@@ -125,9 +125,6 @@ export function SchoolsDataTable<TData, TValue>({
                 </div>
             );
         }
-
-        // If so, calc year over year change
-        // Render icon/number based on that
     }
 
     if (isLoading) {
