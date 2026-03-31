@@ -211,8 +211,9 @@ export function EditableProjectsTable({
             header: "Division",
             size: 120,
             cell: ({ getValue, row, column }) => (
-                <EditableCell
+                <StringSelectCell
                     value={getValue() as string}
+                    options={["General", "Junior", "Senior"]}
                     columnId={column.id}
                     rowId={String(row.index)}
                     onCommit={handleCommit}
