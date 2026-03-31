@@ -31,6 +31,13 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 
 // ---------------------------------------------------------------------------
 // EditableCell
@@ -123,17 +130,21 @@ export function StringSelectCell({
     onCommit,
 }: StringSelectCellProps) {
     return (
-        <select
-            className="px-1 py-0.5 rounded text-sm bg-transparent hover:bg-muted cursor-pointer border-0 outline-none focus:ring-1 focus:ring-neutral-400 transition-colors"
+        <Select
             value={value}
-            onChange={(e) => onCommit(rowId, columnId, e.target.value)}
+            onValueChange={(val) => onCommit(rowId, columnId, val)}
         >
-            {options.map((opt) => (
-                <option key={opt} value={opt}>
-                    {opt}
-                </option>
-            ))}
-        </select>
+            <SelectTrigger className="h-auto px-1 py-0.5 text-sm border-0 shadow-none bg-transparent hover:bg-muted focus:ring-1 focus:ring-neutral-400">
+                <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+                {options.map((opt) => (
+                    <SelectItem key={opt} value={opt}>
+                        {opt}
+                    </SelectItem>
+                ))}
+            </SelectContent>
+        </Select>
     );
 }
 
@@ -155,16 +166,18 @@ export function BooleanSelectCell({
     onCommit,
 }: BooleanSelectCellProps) {
     return (
-        <select
-            className="w-full px-1 py-0.5 rounded text-sm bg-transparent hover:bg-blue-50 cursor-pointer border-0 outline-none focus:ring-1 focus:ring-blue-400 transition-colors"
+        <Select
             value={value ? "true" : "false"}
-            onChange={(e) =>
-                onCommit(rowId, columnId, e.target.value === "true")
-            }
+            onValueChange={(val) => onCommit(rowId, columnId, val === "true")}
         >
-            <option value="true">Yes</option>
-            <option value="false">No</option>
-        </select>
+            <SelectTrigger className="h-auto px-1 py-0.5 text-sm border-0 shadow-none bg-transparent hover:bg-muted focus:ring-1 focus:ring-neutral-400">
+                <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+                <SelectItem value="true">Yes</SelectItem>
+                <SelectItem value="false">No</SelectItem>
+            </SelectContent>
+        </Select>
     );
 }
 
