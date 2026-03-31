@@ -15,7 +15,7 @@
  *
  **************************************************************/
 
-import React, { useCallback, useState } from "react";
+import { useCallback, useState } from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { toast } from "sonner";
 import {
@@ -288,7 +288,6 @@ export function EditableProjectsTable({
                 teacherChanges.has(row.original.teacherId)
             }
             emptyMessage="No projects found for this year."
-            hint="Double-click any cell to edit. Teacher changes apply globally across all projects."
         />
     );
 }

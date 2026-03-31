@@ -24,6 +24,12 @@ import { StatCard } from "@/components/ui/stat-card";
 import { ENTITY_CONFIG } from "@/lib/entity-config";
 import YearDropdown from "@/components/YearDropdown";
 import MultiLineGraph, { GraphDataset } from "@/components/LineGraph";
+import { Info } from "lucide-react";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
     EditableProjectsTable,
     ProjectRow as EditableProjectRow,
@@ -316,9 +322,20 @@ export default function SchoolProfilePage() {
 
                 {/* Editable project data table */}
                 <div>
-                    <h2 className="text-xl font-semibold mb-4 text-foreground">
-                        View and Edit Data
-                    </h2>
+                    <div className="flex items-center gap-2 mb-4">
+                        <h2 className="text-xl font-semibold text-foreground">
+                            View and Edit Data
+                        </h2>
+                        <Tooltip>
+                            <TooltipTrigger>
+                                <Info className="h-4 w-4 text-muted-foreground" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                Double-click any cell to edit. Teacher changes
+                                apply globally across all projects.
+                            </TooltipContent>
+                        </Tooltip>
+                    </div>
                     <EditableProjectsTable
                         key={`${schoolName}-${year}`}
                         initialData={projects}
