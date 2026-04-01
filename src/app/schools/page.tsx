@@ -14,15 +14,15 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
-import { createColumns } from "@/components/Columns";
+import { createColumns, Schools } from "@/components/Columns";
 import { SchoolsDataTable } from "@/components/DataTableSchools";
 import SchoolSearchBar from "@/components/SchoolSearchbar";
 import YearDropdown from "@/components/YearDropdown";
 import { standardize } from "@/lib/school-name-standardize";
 
 export default function SchoolsPage() {
-    const [schoolInfo, setSchoolInfo] = useState([]);
-    const [prevYearSchoolInfo, setPrevYearSchoolInfo] = useState([]);
+    const [schoolInfo, setSchoolInfo] = useState<Schools[]>([]);
+    const [prevYearSchoolInfo, setPrevYearSchoolInfo] = useState<Schools[]>([]);
     const [year, setYear] = useState<number | null>(null);
     const [search, setSearch] = useState("");
     const [error, setError] = useState<string | null>(null);
@@ -40,6 +40,13 @@ export default function SchoolsPage() {
                 body: JSON.stringify({ [columnId]: value }),
             });
             if (res.ok) {
+                setSchoolInfo((prev) =>
+                    prev.map((row) =>
+                        row.name === rowName
+                            ? { ...row, [columnId]: value }
+                            : row,
+                    ),
+                );
                 toast.success("City updated.");
             } else {
                 toast.error("Failed to update city.");
