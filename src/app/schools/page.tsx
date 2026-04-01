@@ -26,7 +26,6 @@ export default function SchoolsPage() {
     const [prevYearSchoolInfo, setPrevYearSchoolInfo] = useState<Schools[]>([]);
     const [year, setYear] = useState<number | null>(null);
     const [search, setSearch] = useState("");
-    const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [originalSchoolInfo, setOriginalSchoolInfo] = useState<Schools[]>([]);
     const [pendingChanges, setPendingChanges] = useState<
@@ -98,7 +97,6 @@ export default function SchoolsPage() {
     useEffect(() => {
         if (!year) return;
 
-        setError(null);
         setIsLoading(true);
 
         fetch(`/api/schools?year=${year}`)
@@ -113,8 +111,8 @@ export default function SchoolsPage() {
                 setOriginalSchoolInfo(data);
                 setPendingChanges(new Map());
             })
-            .catch((error) => {
-                setError(error.message || "Failed to load school data");
+            .catch(() => {
+                toast.error("Failed to load school data.");
             })
             .finally(() => {
                 setIsLoading(false);
@@ -123,8 +121,6 @@ export default function SchoolsPage() {
 
     useEffect(() => {
         if (!year) return;
-
-        setError(null);
 
         fetch(`/api/schools?year=${year - 1}`)
             .then((response) => {
@@ -136,8 +132,8 @@ export default function SchoolsPage() {
             .then((data) => {
                 setPrevYearSchoolInfo(data);
             })
-            .catch((error) => {
-                setError(error.message || "Failed to load school data");
+            .catch(() => {
+                toast.error("Failed to load previous year data.");
             });
     }, [year]);
 
@@ -161,11 +157,6 @@ export default function SchoolsPage() {
             </div>
 
             <div className="flex-1 min-h-0 flex flex-col overflow-hidden overscroll-none">
-                {error && (
-                    <div className="shrink-0 my-4 p-4 bg-destructive/10 border border-destructive rounded-md text-destructive">
-                        {error}
-                    </div>
-                )}
                 <div className="flex-1 min-h-0 min-w-0 overflow-hidden">
                     <SchoolsDataTable
                         columns={columns}
