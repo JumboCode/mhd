@@ -37,10 +37,17 @@ export default function YearInput({ year, setYear }: YearInputProps) {
     const hasData = !!currYear && !!yearsWithData?.has(currYear);
 
     const handleYearInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (year) {
-            const value = e.target.value;
-            setYear(Number(value));
-            setYearStr(value);
+        const value = e.target.value;
+        if (value.length > 4) return;
+        setYearStr(value);
+        if (value.length === 4) setYear(Number(value));
+    };
+
+    const handleYearBlur = () => {
+        if (yearStr.length > 0 && yearStr.length < 4) {
+            const padded = yearStr.padStart(4, "0");
+            setYearStr(padded);
+            setYear(Number(padded));
         }
     };
 
@@ -82,6 +89,7 @@ export default function YearInput({ year, setYear }: YearInputProps) {
                     name="Year"
                     value={yearStr}
                     onChange={handleYearInput}
+                    onBlur={handleYearBlur}
                     className="h-9 w-[100px] text-center rounded-none border-y border-x-0 shadow-none focus-visible:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 />
             </div>
