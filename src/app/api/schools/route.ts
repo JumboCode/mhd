@@ -165,7 +165,7 @@ export async function GET(req: NextRequest) {
             return {
                 name: school.name,
                 city: school.city,
-                region: school.city, // Using city as region since schema only has 'town'
+                region: school.region,
                 instructionModel: "Dummy 1", // TODO: Not in schema yet
                 implementationModel: "Dummy 1", // TODO: Not in schema yet
                 numStudents: currStudents,
