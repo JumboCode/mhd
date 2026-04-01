@@ -369,7 +369,7 @@ export function EditableTable<TData>({
                                     {row.getVisibleCells().map((cell) => (
                                         <TableCell
                                             key={cell.id}
-                                            className="px-3 py-1 border-b border-r last:border-r-0"
+                                            className="px-3 py-2 border-b border-r last:border-r-0"
                                             style={{
                                                 width: cell.column.getSize(),
                                             }}

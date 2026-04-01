@@ -225,7 +225,7 @@ export function SchoolsDataTable<TData, TValue>({
                                                 )}
                                             </Link>
                                         ) : (
-                                            <div className="flex flex-row items-center justify-center space-x-1 gap-2 h-12">
+                                            <div className="flex flex-row items-center justify-center space-x-1 gap-2 h-12 px-1 py-2">
                                                 {flexRender(
                                                     cell.column.columnDef.cell,
                                                     cell.getContext(),
