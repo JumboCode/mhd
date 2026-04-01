@@ -452,10 +452,10 @@ export default function SpreadsheetState() {
                     />
                 </div>
                 <div className="flex flex-row justify-between w-full font-semibold text-sm">
-                    <p className="text-left flex-1">Upload</p>
-                    <p className="text-center flex-1">Preview</p>
-                    <p className="text-center flex-1">Schools</p>
-                    <p className="text-right flex-1">Confirm</p>
+                    <p className="-translate-x-6">Upload</p>
+                    <p className="">Preview</p>
+                    <p className="">Schools</p>
+                    <p className="translate-x-6">Confirm</p>
                 </div>
             </div>
 
