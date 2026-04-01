@@ -148,7 +148,7 @@ export default function SpreadsheetState() {
 
     const checkForUploadNext = () => {
         if (tabIndex === 0) {
-            setCanNext(year !== null && file !== null);
+            setCanNext(year !== null && !!file);
         }
     };
 
