@@ -180,6 +180,7 @@ export async function POST(req: NextRequest) {
                 where: and(
                     eq(projects.projectId, projectIdValue),
                     eq(projects.year, year),
+                    eq(projects.schoolId, school.id),
                 ),
             });
 
@@ -191,7 +192,7 @@ export async function POST(req: NextRequest) {
                         teacherId: teacher.id,
                         projectId: projectIdValue,
                         title: row[COLUMN_INDICES.title] as string,
-                        division: "General", // TO DO: Update if division column is added
+                        division: "General", // TODO: Update if division column is added
                         categoryId: String(row[COLUMN_INDICES.categoryId]),
                         category: row[COLUMN_INDICES.categoryName] as string,
                         year: year,
