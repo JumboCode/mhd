@@ -15,7 +15,7 @@
  *
  **************************************************************/
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { toast } from "sonner";
 import {
@@ -77,6 +77,12 @@ export function EditableProjectsTable({
         Map<number, TeacherChanges>
     >(new Map());
     const [saving, setSaving] = useState(false);
+
+    useEffect(() => {
+        setData(initialData);
+        setProjectChanges(new Map());
+        setTeacherChanges(new Map());
+    }, [initialData]);
 
     const hasChanges = projectChanges.size > 0 || teacherChanges.size > 0;
 
