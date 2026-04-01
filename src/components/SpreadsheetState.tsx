@@ -36,7 +36,7 @@ import {
 export default function SpreadsheetState() {
     const [file, setFile] = useState<File | undefined>();
     const [spreadsheetData, setSpreadsheetData] = useState<SpreadsheetData>([]);
-    const [year, setYear] = useState<number | null>(null);
+    const [year, setYear] = useState<number | null>(new Date().getFullYear());
     const [tab, setTab] = useState<ReactElement>(
         <SpreadsheetUpload
             file={file}
@@ -121,6 +121,17 @@ export default function SpreadsheetState() {
 
         fetchKnownSchools();
     }, []);
+
+    // Set default year to most recent year without data once yearsWithData loads
+    useEffect(() => {
+        if (yearsWithData.size === 0) return;
+        const currentYear = new Date().getFullYear();
+        let defaultYear = currentYear;
+        while (defaultYear > 2000 && yearsWithData.has(defaultYear)) {
+            defaultYear--;
+        }
+        setYear(defaultYear);
+    }, [yearsWithData]);
 
     // Check if selected year has data whenever year changes
     useEffect(() => {

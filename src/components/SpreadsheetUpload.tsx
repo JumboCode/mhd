@@ -14,7 +14,7 @@
 
 import type React from "react";
 import FileUpload from "@/components/FileUpload";
-import YearDropdown from "@/components/YearDropdown";
+import YearInput from "@/components/YearInput";
 
 type UploadProps = {
     file?: File;
@@ -37,14 +37,11 @@ export default function SpreadsheetUpload({
                     It&apos;s a new year! Time to upload the data required. You
                     can download the expected file format here.
                 </h2>
-                <div className="flex flex-col gap-2">
-                    <h2 className="text-base mt-4">Year</h2>
-                    <YearDropdown
-                        showDataIndicator={true}
-                        selectedYear={year}
-                        onYearChange={setYear}
-                    />
-                </div>
+
+                <h2 className="text-base mt-4">Year</h2>
+
+                <YearInput year={year} setYear={setYear} />
+
                 <div className="m-5" />
                 <FileUpload fileInfo={file} setFileInfo={setFile} />
             </div>
