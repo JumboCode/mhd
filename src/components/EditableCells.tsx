@@ -238,23 +238,23 @@ export function NumberInputCell({
 // Can be used standalone outside of EditableTable.
 // ---------------------------------------------------------------------------
 export interface SaveDiscardBarProps {
+    hasChanges: boolean;
     saving: boolean;
     onSave: () => void;
     onDiscard: () => void;
-    className?: string;
 }
 
 export function SaveDiscardBar({
+    hasChanges,
     saving,
     onSave,
     onDiscard,
-    className,
 }: SaveDiscardBarProps) {
     return (
         <div
             className={cn(
-                "flex items-center justify-between px-4 py-2.5 bg-background border border-border rounded-lg shadow-sm",
-                className,
+                "fixed bottom-0 left-56 right-0 z-50 flex items-center justify-between px-8 py-4 bg-white/20 backdrop-blur-md shadow-lg transition-transform duration-200 ease-in-out",
+                hasChanges ? "translate-y-0" : "translate-y-full",
             )}
         >
             <span className="text-sm text-muted-foreground flex items-center gap-1.5">
@@ -396,14 +396,12 @@ export function EditableTable<TData>({
                 </Table>
             </div>
 
-            {hasChanges && (
-                <SaveDiscardBar
-                    saving={saving}
-                    onSave={onSave}
-                    onDiscard={onDiscard}
-                    className="rounded-t-none border-t-0"
-                />
-            )}
+            <SaveDiscardBar
+                hasChanges={hasChanges}
+                saving={saving}
+                onSave={onSave}
+                onDiscard={onDiscard}
+            />
         </div>
     );
 }

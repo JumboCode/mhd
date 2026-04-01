@@ -167,14 +167,17 @@ export default function Settings() {
             <div
                 className={`fixed bottom-0 left-56 right-0 z-50 flex items-center justify-between px-8 py-4 bg-white/20 backdrop-blur-md shadow-lg transition-transform duration-200 ease-in-out ${hasUnsavedChanges ? "translate-y-0" : "translate-y-full"}`}
             >
-                <span className="text-sm font-bold">
-                    You have unsaved changes - save?
+                <span className="text-sm text-muted-foreground flex items-center gap-1.5">
+                    <span className="inline-block w-2 h-2 rounded-full bg-amber-400" />
+                    You have unsaved changes — save?
                 </span>
                 <div className="flex gap-2">
-                    <Button variant="outline" onClick={handleDiscard}>
+                    <Button variant="outline" size="sm" onClick={handleDiscard}>
                         Discard Changes
                     </Button>
-                    <Button onClick={handleSave}>Save</Button>
+                    <Button size="sm" onClick={handleSave}>
+                        Save
+                    </Button>
                 </div>
             </div>
             {/* If user tries to leave page with unsaved changes */}

@@ -176,15 +176,12 @@ export default function SchoolsPage() {
                         isLoading={isLoading}
                     />
                 </div>
-                {hasChanges && (
-                    <div className="shrink-0 px-4 py-3 border-t">
-                        <SaveDiscardBar
-                            saving={saving}
-                            onSave={handleSave}
-                            onDiscard={handleDiscard}
-                        />
-                    </div>
-                )}
+                <SaveDiscardBar
+                    hasChanges={hasChanges}
+                    saving={saving}
+                    onSave={handleSave}
+                    onDiscard={handleDiscard}
+                />
             </div>
         </div>
     );
