@@ -15,6 +15,7 @@
 import type React from "react";
 import FileUpload from "@/components/FileUpload";
 import { Button } from "./ui/button";
+import { Input } from "./ui/input";
 import { ChevronLeft } from "lucide-react";
 import { ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -86,13 +87,13 @@ export default function SpreadsheetUpload({
                     </Button>
 
                     {/* Year Input */}
-                    <input
+                    <Input
                         type="number"
                         id="year"
                         name="Year"
                         value={yearStr}
                         onChange={handleYearInput}
-                        className="h-9 w-[100px] text-center border-y border-input focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        className="h-9 w-[100px] text-center rounded-none border-y border-x-0 shadow-none focus-visible:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
 
                     {/* Right Arrow Button */}
