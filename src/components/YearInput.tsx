@@ -18,6 +18,9 @@ export default function YearInput({ year, setYear }: YearInputProps) {
     );
     const currYear = Number(yearStr);
 
+    const MIN_YEAR = 1900;
+    const MAX_YEAR = 2100;
+
     useEffect(() => {
         async function fetchYearsWithData() {
             try {
@@ -52,7 +55,7 @@ export default function YearInput({ year, setYear }: YearInputProps) {
     };
 
     const incrementYear = () => {
-        if (year && currYear < 2100) {
+        if (year && currYear < MAX_YEAR) {
             const newYear = currYear + 1;
             setYear(newYear);
             setYearStr(String(newYear));
@@ -60,7 +63,7 @@ export default function YearInput({ year, setYear }: YearInputProps) {
     };
 
     const decrementYear = () => {
-        if (year && currYear > 2000) {
+        if (year && currYear > MIN_YEAR) {
             const newYear = currYear - 1;
             setYear(newYear);
             setYearStr(String(newYear));
