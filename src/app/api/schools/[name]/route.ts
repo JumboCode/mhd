@@ -28,7 +28,7 @@ export async function PATCH(
         const { name } = await params;
 
         const body = await req.json();
-        const { latitude, longitude, name: newName } = body;
+        const { latitude, longitude, name: newName, city } = body;
 
         const schoolResult = await db
             .select({ id: schools.id })
@@ -44,6 +44,21 @@ export async function PATCH(
         }
 
         const schoolId = schoolResult[0].id;
+
+        // Handle city update
+        if (city !== undefined) {
+            if (typeof city !== "string" || city.trim() === "") {
+                return NextResponse.json(
+                    { error: "city must be a non-empty string" },
+                    { status: 400 },
+                );
+            }
+            await db
+                .update(schools)
+                .set({ town: city.trim() })
+                .where(eq(schools.id, schoolId));
+            return NextResponse.json({ message: "City updated successfully" });
+        }
 
         // Handle school name update
         if (newName !== undefined) {

@@ -269,7 +269,7 @@ export function EditableProjectsTable({
         {
             accessorKey: "teacherEmail",
             header: "Teacher Email",
-            size: 220,
+            size: 200,
             cell: ({ getValue, row, column }) => (
                 <EditableCell
                     value={getValue() as string}

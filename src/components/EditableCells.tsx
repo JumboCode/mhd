@@ -101,7 +101,7 @@ export function EditableCell({
 
     return (
         <div
-            className="px-1 py-0.5 rounded cursor-text hover:bg-blue-50 text-sm min-h-[1.5rem] transition-colors"
+            className="px-1 py-0.5 rounded cursor-text hover:bg-blue-50 text-sm min-h-[1.5rem] transition-colors break-words"
             onDoubleClick={handleDoubleClick}
             title="Double-click to edit"
         >
