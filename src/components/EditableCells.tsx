@@ -171,7 +171,7 @@ export function BooleanSelectCell({
             value={value ? "true" : "false"}
             onValueChange={(val) => onCommit(rowId, columnId, val === "true")}
         >
-            <SelectTrigger className="h-auto px-1 py-0.5 text-sm border-0 shadow-none bg-transparent hover:bg-muted focus:ring-1 focus:ring-neutral-400">
+            <SelectTrigger className="h-full px-1 py-0.5 text-sm border-0 shadow-none bg-transparent hover:bg-muted focus:ring-1 focus:ring-neutral-400">
                 <SelectValue />
             </SelectTrigger>
             <SelectContent>
