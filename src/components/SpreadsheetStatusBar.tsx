@@ -24,13 +24,11 @@ export default function StatusBar({
 }: StatusBarProps) {
     // Match status bar exactly to labels
     const fillPercentage =
-        tabIndex == 1
+        tabIndex === 1
             ? (tabIndex / maxTabs) * 100 + 1
-            : tabIndex == 2
+            : tabIndex === 2
               ? (tabIndex / maxTabs) * 100 - 2
               : (tabIndex / maxTabs) * 100;
-
-    (tabIndex / maxTabs) * 100;
     const barColor = hasError ? "bg-destructive" : "bg-primary";
 
     return (
