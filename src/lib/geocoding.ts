@@ -89,11 +89,6 @@ export async function updateLocation(schoolID: SchoolID) {
     }
 
     if (schoolLocation === null) {
-        // TO DO: Replace with building a list of unmatched schools and then send to frontend for map popup
-        // eslint-disable-next-line no-console
-        console.error(
-            `School location could not be found in ${csvPath} for ${schoolID.name} in ${schoolID.city}.`,
-        );
         return;
     }
 

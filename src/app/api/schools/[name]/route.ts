@@ -12,7 +12,12 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { schools, projects, yearlyTeacherParticipation } from "@/lib/schema";
+import {
+    schools,
+    projects,
+    teachers,
+    yearlyTeacherParticipation,
+} from "@/lib/schema";
 import { eq, sql, and, sum } from "drizzle-orm";
 import { findRegionOf } from "@/lib/region-finder";
 
@@ -24,19 +29,7 @@ export async function PATCH(
         const { name } = await params;
 
         const body = await req.json();
-        const { latitude, longitude } = body;
-
-        if (
-            typeof latitude !== "number" ||
-            typeof longitude !== "number" ||
-            isNaN(latitude) ||
-            isNaN(longitude)
-        ) {
-            return NextResponse.json(
-                { error: "Invalid latitude or longitude" },
-                { status: 400 },
-            );
-        }
+        const { latitude, longitude, name: newName, city } = body;
 
         const schoolResult = await db
             .select({ id: schools.id })
@@ -51,16 +44,59 @@ export async function PATCH(
             );
         }
 
+        const schoolId = schoolResult[0].id;
+
+        // Handle city update
+        if (city !== undefined) {
+            if (typeof city !== "string" || city.trim() === "") {
+                return NextResponse.json(
+                    { error: "city must be a non-empty string" },
+                    { status: 400 },
+                );
+            }
+            await db
+                .update(schools)
+                .set({ town: city.trim() })
+                .where(eq(schools.id, schoolId));
+            return NextResponse.json({ message: "City updated successfully" });
+        }
+
+        // Handle school name update
+        if (newName !== undefined) {
+            if (typeof newName !== "string" || newName.trim() === "") {
+                return NextResponse.json(
+                    { error: "name must be a non-empty string" },
+                    { status: 400 },
+                );
+            }
+            await db
+                .update(schools)
+                .set({ name: newName.trim() })
+                .where(eq(schools.id, schoolId));
+            return NextResponse.json({
+                message: "School name updated successfully",
+            });
+        }
+
+        // Handle location update
+        if (
+            typeof latitude !== "number" ||
+            typeof longitude !== "number" ||
+            isNaN(latitude) ||
+            isNaN(longitude)
+        ) {
+            return NextResponse.json(
+                { error: "Invalid latitude or longitude" },
+                { status: 400 },
+            );
+        }
+
         const region: string = findRegionOf(latitude, longitude);
 
         await db
             .update(schools)
-            .set({
-                latitude: latitude,
-                longitude: longitude,
-                region: region as string,
-            })
-            .where(eq(schools.id, schoolResult[0].id));
+            .set({ latitude, longitude, region })
+            .where(eq(schools.id, schoolId));
 
         return NextResponse.json({
             message: "School location updated successfully",
@@ -129,10 +165,18 @@ export async function GET(
             .select({
                 id: projects.id,
                 title: projects.title,
+                category: projects.category,
+                categoryId: projects.categoryId,
+                division: projects.division,
+                teamProject: projects.teamProject,
                 numStudents: projects.numStudents,
                 year: projects.year,
+                teacherId: teachers.id,
+                teacherName: teachers.name,
+                teacherEmail: teachers.email,
             })
             .from(projects)
+            .innerJoin(teachers, eq(teachers.id, projects.teacherId))
             .where(
                 and(eq(projects.schoolId, school.id), eq(projects.year, year)),
             );
@@ -156,8 +200,9 @@ export async function GET(
             projectCount: projectCount[0]?.count ?? 0,
             firstYear: firstYearData[0]?.year ?? null,
             projects: projectRows,
-            // TO DO: Instructional model not in database yet
-            instructionalModel: "normal",
+            // TO DO: Not in database yet — replace with real values once DB columns exist
+            instructionalModel: "Dummy 1",
+            implementationModel: "Dummy 1",
         });
     } catch (error) {
         return NextResponse.json(

@@ -11,20 +11,51 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
-import { columns } from "@/components/Columns";
+import { createColumns, Schools } from "@/components/Columns";
 import { SchoolsDataTable } from "@/components/DataTableSchools";
 import SchoolSearchBar from "@/components/SchoolSearchbar";
 import YearDropdown from "@/components/YearDropdown";
+import { standardize } from "@/lib/school-name-standardize";
 
 export default function SchoolsPage() {
-    const [schoolInfo, setSchoolInfo] = useState([]);
-    const [prevYearSchoolInfo, setPrevYearSchoolInfo] = useState([]);
+    const [schoolInfo, setSchoolInfo] = useState<Schools[]>([]);
+    const [prevYearSchoolInfo, setPrevYearSchoolInfo] = useState<Schools[]>([]);
     const [year, setYear] = useState<number | null>(null);
     const [search, setSearch] = useState("");
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+
+    const onCommit = useCallback(
+        async (
+            rowName: string,
+            columnId: string,
+            value: string | number | boolean,
+        ) => {
+            const res = await fetch(`/api/schools/${standardize(rowName)}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ [columnId]: value }),
+            });
+            if (res.ok) {
+                setSchoolInfo((prev) =>
+                    prev.map((row) =>
+                        row.name === rowName
+                            ? { ...row, [columnId]: value }
+                            : row,
+                    ),
+                );
+                toast.success("City updated.");
+            } else {
+                toast.error("Failed to update city.");
+            }
+        },
+        [],
+    );
+
+    const columns = useMemo(() => createColumns(onCommit), [onCommit]);
 
     useEffect(() => {
         if (!year) return;
