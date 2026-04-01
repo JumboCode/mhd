@@ -15,6 +15,7 @@
  **************************************************************/
 
 import React, { useCallback, useRef, useState } from "react";
+import { cn } from "@/lib/utils";
 import {
     ColumnDef,
     flexRender,
@@ -232,6 +233,52 @@ export function NumberInputCell({
 }
 
 // ---------------------------------------------------------------------------
+// SaveDiscardBar
+// Floating save/discard bar shown when there are unsaved changes.
+// Can be used standalone outside of EditableTable.
+// ---------------------------------------------------------------------------
+export interface SaveDiscardBarProps {
+    saving: boolean;
+    onSave: () => void;
+    onDiscard: () => void;
+    className?: string;
+}
+
+export function SaveDiscardBar({
+    saving,
+    onSave,
+    onDiscard,
+    className,
+}: SaveDiscardBarProps) {
+    return (
+        <div
+            className={cn(
+                "flex items-center justify-between px-4 py-2.5 bg-background border border-border rounded-lg shadow-sm",
+                className,
+            )}
+        >
+            <span className="text-sm text-muted-foreground flex items-center gap-1.5">
+                <span className="inline-block w-2 h-2 rounded-full bg-amber-400" />
+                You have unsaved changes — save?
+            </span>
+            <div className="flex gap-2">
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={onDiscard}
+                    disabled={saving}
+                >
+                    Discard Changes
+                </Button>
+                <Button size="sm" onClick={onSave} disabled={saving}>
+                    {saving ? "Saving..." : "Save"}
+                </Button>
+            </div>
+        </div>
+    );
+}
+
+// ---------------------------------------------------------------------------
 // EditableTable
 // Generic table shell: renders a TanStack table with a fixed-layout header/body
 // and an optional save/discard bar at the bottom.
@@ -350,25 +397,12 @@ export function EditableTable<TData>({
             </div>
 
             {hasChanges && (
-                <div className="flex items-center justify-between px-4 py-2.5 bg-background border border-border rounded-b-lg border-t-0 shadow-sm">
-                    <span className="text-sm text-muted-foreground flex items-center gap-1.5">
-                        <span className="inline-block w-2 h-2 rounded-full bg-amber-400" />
-                        You have unsaved changes — save?
-                    </span>
-                    <div className="flex gap-2">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={onDiscard}
-                            disabled={saving}
-                        >
-                            Discard Changes
-                        </Button>
-                        <Button size="sm" onClick={onSave} disabled={saving}>
-                            {saving ? "Saving..." : "Save"}
-                        </Button>
-                    </div>
-                </div>
+                <SaveDiscardBar
+                    saving={saving}
+                    onSave={onSave}
+                    onDiscard={onDiscard}
+                    className="rounded-t-none border-t-0"
+                />
             )}
         </div>
     );
