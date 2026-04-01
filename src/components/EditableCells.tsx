@@ -245,7 +245,6 @@ export function NumberInputCell({
 //   onDiscard      — called when the user clicks Discard Changes
 //   isRowChanged   — optional; returns true for rows that should be highlighted
 //   emptyMessage   — text shown when data is empty (default: "No results.")
-//   hint           — small helper text shown below the table (default: double-click hint)
 // ---------------------------------------------------------------------------
 export interface EditableTableProps<TData> {
     data: TData[];
@@ -256,7 +255,6 @@ export interface EditableTableProps<TData> {
     onDiscard: () => void;
     isRowChanged?: (row: Row<TData>) => boolean;
     emptyMessage?: string;
-    hint?: string;
 }
 
 export function EditableTable<TData>({
@@ -268,7 +266,6 @@ export function EditableTable<TData>({
     onDiscard,
     isRowChanged,
     emptyMessage = "No results.",
-    hint = "Double-click any cell to edit.",
 }: EditableTableProps<TData>) {
     const table = useReactTable({
         data,
@@ -372,10 +369,6 @@ export function EditableTable<TData>({
                         </Button>
                     </div>
                 </div>
-            )}
-
-            {data.length > 0 && (
-                <p className="text-xs text-muted-foreground pt-2">{hint}</p>
             )}
         </div>
     );
