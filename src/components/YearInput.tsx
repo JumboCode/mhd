@@ -13,11 +13,28 @@ type YearInputProps = {
 
 export default function YearInput({ year, setYear }: YearInputProps) {
     const [yearStr, setYearStr] = useState("");
+    const [yearsWithData, setYearsWithData] = useState<Set<number> | null>(
+        null,
+    );
     const currYear = Number(yearStr);
+
+    useEffect(() => {
+        async function fetchYearsWithData() {
+            try {
+                const res = await fetch("/api/years");
+                if (!res.ok) return;
+                const data = await res.json();
+                setYearsWithData(new Set(data.yearsWithData));
+            } catch {}
+        }
+        fetchYearsWithData();
+    }, []);
 
     useEffect(() => {
         setYearStr(String(year));
     }, [year]);
+
+    const hasData = !!currYear && !!yearsWithData?.has(currYear);
 
     const handleYearInput = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (year) {
@@ -53,14 +70,21 @@ export default function YearInput({ year, setYear }: YearInputProps) {
                 <ChevronLeft className="h-4 w-4" />
             </Button>
 
-            <Input
-                type="number"
-                id="year"
-                name="Year"
-                value={yearStr}
-                onChange={handleYearInput}
-                className="h-9 w-[100px] text-center rounded-none border-y border-x-0 shadow-none focus-visible:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-            />
+            <div className="relative">
+                {yearsWithData && yearStr && (
+                    <div
+                        className={`absolute left-2 top-1/2 -translate-y-1/2 h-2 w-2 rounded-full shrink-0 ${hasData ? "bg-green-500" : "bg-red-500"}`}
+                    />
+                )}
+                <Input
+                    type="number"
+                    id="year"
+                    name="Year"
+                    value={yearStr}
+                    onChange={handleYearInput}
+                    className="h-9 w-[100px] text-center rounded-none border-y border-x-0 shadow-none focus-visible:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+            </div>
 
             <Button
                 variant="outline"
