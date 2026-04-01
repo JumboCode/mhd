@@ -451,11 +451,11 @@ export default function SpreadsheetState() {
                         hasError={hasError}
                     />
                 </div>
-                <div className="flex flex-row justify-between w-full font-semibold text-sm">
-                    <p className="text-left flex-1">Upload</p>
+                <div className="flex flex-row justify-evenly w-full font-semibold text-sm">
+                    <p className="text-center flex-1">Upload</p>
                     <p className="text-center flex-1">Preview</p>
                     <p className="text-center flex-1">Schools</p>
-                    <p className="text-right flex-1">Confirm</p>
+                    <p className="text-center flex-1">Confirm</p>
                 </div>
             </div>
 
