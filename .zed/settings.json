@@ -1,0 +1,18 @@
+{
+    "languages": {
+        "TypeScript": {
+            "formatter": {
+                "language_server": {
+                    "name": "eslint"
+                }
+            }
+        },
+        "TSX": {
+            "formatter": {
+                "language_server": {
+                    "name": "eslint"
+                }
+            }
+        }
+    }
+}
