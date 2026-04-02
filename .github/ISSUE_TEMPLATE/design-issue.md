@@ -21,9 +21,7 @@ Steps to reproduce the behavior:
 
 ## **Suggested fix(es):**
 
-<!-- List possible solutions or adjustments -->
-
--
+## <!-- List possible solutions or adjustments -->
 
 ## **Screenshots**
 

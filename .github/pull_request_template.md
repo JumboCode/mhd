@@ -1,14 +1,14 @@
 <!-- Edit this file! -->
 
-## Sprint
+## Issue
 
 <!-- Title and link the issue number here starting with an "#" -->
 
-## Who worked on this sprint?
+## Who worked on this sprint/bug?
 
 <!-- List partner names -->
 
-## Who did what on this sprint?
+## Who did what on this sprint/bug?
 
 <!-- Which features were implemented by whom? Did you all work together? -->
 
@@ -24,6 +24,7 @@
 ## Existing files modified
 
 <!-- List, including path -->
+<!-- Scroll below to see modified files -->
 
 ## Acceptance Criteria
 
