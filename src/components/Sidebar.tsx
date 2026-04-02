@@ -165,7 +165,7 @@ export default function Sidebar() {
                     <h1>
                         <Link href="/">
                             <Image
-                                src="/images/logo.png"
+                                src="/images/mhd-logo.png"
                                 alt="MHD Logo"
                                 width={125}
                                 height={125}
