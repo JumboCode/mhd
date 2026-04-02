@@ -166,9 +166,9 @@ export default function Sidebar() {
                         <Link href="/">
                             <Image
                                 src="/images/logo.png"
-                                alt="Logo"
-                                width={80}
-                                height={40}
+                                alt="MHD Logo"
+                                width={125}
+                                height={125}
                                 priority
                             />
                         </Link>

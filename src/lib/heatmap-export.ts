@@ -10,7 +10,7 @@
 
 import { useState } from "react";
 import jsPDF from "jspdf";
-import logoImg from "../../public/images/logo.png";
+import logoImg from "../../public/images/mhd-logo-full.png";
 import { toast } from "sonner";
 import { Map } from "maplibre-gl";
 import "../app/fonts/DMSans-VariableFont_opsz,wght-normal";
