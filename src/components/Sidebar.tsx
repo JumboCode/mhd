@@ -112,21 +112,6 @@ export default function Sidebar() {
 
     const sections = [
         {
-            title: "OVERVIEW",
-            items: [
-                {
-                    href: "/",
-                    label: "Dashboard",
-                    icon: <LayoutDashboard size={20} />,
-                },
-                {
-                    href: "/schools",
-                    label: "Schools",
-                    icon: <School size={20} />,
-                },
-            ],
-        },
-        {
             title: "ANALYSIS",
             items: [
                 {
@@ -138,6 +123,21 @@ export default function Sidebar() {
                     href: "/chart",
                     label: "Chart",
                     icon: <BarChart3 size={20} />,
+                },
+            ],
+        },
+        {
+            title: "OVERVIEW",
+            items: [
+                {
+                    href: "/",
+                    label: "Dashboard",
+                    icon: <LayoutDashboard size={20} />,
+                },
+                {
+                    href: "/schools",
+                    label: "Schools",
+                    icon: <School size={20} />,
                 },
             ],
         },
