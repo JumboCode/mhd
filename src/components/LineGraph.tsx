@@ -149,43 +149,34 @@ export default function MultiLineGraph({
                     className="w-full h-full overflow-visible"
                     preserveAspectRatio="none"
                 >
-                    {/* X-axis line */}
-                    <line
-                        x1={0}
-                        y1={100}
-                        x2={100}
-                        y2={100}
+                    {/* Axes — single path to avoid corner gap */}
+                    <path
+                        d="M 0 0 L 0 100 L 100 100"
+                        fill="none"
                         stroke="var(--foreground)"
                         strokeWidth={1}
                         vectorEffect="non-scaling-stroke"
-                    />
-                    {/* Y-axis line */}
-                    <line
-                        x1={0}
-                        y1={0}
-                        x2={0}
-                        y2={100}
-                        stroke="var(--foreground)"
-                        strokeWidth={1}
-                        vectorEffect="non-scaling-stroke"
+                        strokeLinejoin="miter"
                     />
                     {/* Grid lines */}
-                    {yTicks.map((value, i) => (
-                        <g
-                            key={i}
-                            transform={`translate(0,${yScale(value)})`}
-                            className="text-border"
-                        >
-                            <line
-                                x1={0}
-                                x2={100}
-                                stroke="currentColor"
-                                strokeDasharray="6,5"
-                                strokeWidth={0.5}
-                                vectorEffect="non-scaling-stroke"
-                            />
-                        </g>
-                    ))}
+                    {yTicks
+                        .filter((_, i) => i !== 0)
+                        .map((value, i) => (
+                            <g
+                                key={i}
+                                transform={`translate(0,${yScale(value)})`}
+                                className="text-border"
+                            >
+                                <line
+                                    x1={0}
+                                    x2={100}
+                                    stroke="currentColor"
+                                    strokeDasharray="6,5"
+                                    strokeWidth={0.5}
+                                    vectorEffect="non-scaling-stroke"
+                                />
+                            </g>
+                        ))}
 
                     {/* Gradient defs */}
                     <defs>

@@ -139,44 +139,25 @@ export default function BarGraph({
                     className="w-full h-full overflow-visible"
                     preserveAspectRatio="none"
                 >
-                    {/* X-axis line */}
-                    <line
-                        x1={0}
-                        y1={100}
-                        x2={100}
-                        y2={100}
-                        stroke="var(--foreground)"
-                        strokeWidth={1}
-                        vectorEffect="non-scaling-stroke"
-                    />
-                    {/* Y-axis line */}
-                    <line
-                        x1={0}
-                        y1={0}
-                        x2={0}
-                        y2={100}
-                        stroke="var(--foreground)"
-                        strokeWidth={1}
-                        vectorEffect="non-scaling-stroke"
-                    />
                     {/* Grid lines */}
-                    {yTicks.map((value, i) => (
-                        <g
-                            key={i}
-                            transform={`translate(0,${yScale(value)})`}
-                            className="text-border"
-                        >
-                            <line
-                                x1={0}
-                                x2={100}
-                                stroke="currentColor"
-                                strokeDasharray="6,5"
-                                strokeWidth={0.5}
-                                vectorEffect="non-scaling-stroke"
-                            />
-                        </g>
-                    ))}
-
+                    {yTicks
+                        .filter((_, i) => i !== 0)
+                        .map((value, i) => (
+                            <g
+                                key={i}
+                                transform={`translate(0,${yScale(value)})`}
+                                className="text-border"
+                            >
+                                <line
+                                    x1={0}
+                                    x2={100}
+                                    stroke="currentColor"
+                                    strokeDasharray="6,5"
+                                    strokeWidth={0.5}
+                                    vectorEffect="non-scaling-stroke"
+                                />
+                            </g>
+                        ))}
                     {/* Bars */}
                     {dataset.map((ds, si) =>
                         ds.data.map((point, pi) => {
@@ -191,14 +172,19 @@ export default function BarGraph({
                             );
                             const y = yScale(point.y);
                             const content = formatTooltip(point, ds.label);
+                            const r = Math.min(
+                                cornerRadius * 0.15,
+                                w / 2,
+                                barH,
+                            );
+                            const d =
+                                barH === 0
+                                    ? ""
+                                    : `M ${x},${y + barH} L ${x + w},${y + barH} L ${x + w},${y + r} Q ${x + w},${y} ${x + w - r},${y} L ${x + r},${y} Q ${x},${y} ${x},${y + r} Z`;
                             return (
-                                <rect
+                                <path
                                     key={`${si}-${pi}`}
-                                    x={x}
-                                    y={y}
-                                    width={w}
-                                    height={barH}
-                                    rx={Math.min(cornerRadius * 0.15, w / 2)}
+                                    d={d}
                                     fill={
                                         CHART_COLORS[si % CHART_COLORS.length]
                                     }
@@ -222,6 +208,15 @@ export default function BarGraph({
                             );
                         }),
                     )}
+                    {/* Axes — single path to avoid corner gap */}
+                    <path
+                        d="M 0 0 L 0 100 L 100 100"
+                        fill="none"
+                        stroke="var(--foreground)"
+                        strokeWidth={1}
+                        vectorEffect="non-scaling-stroke"
+                        strokeLinejoin="miter"
+                    />
                 </svg>
             </div>
 
