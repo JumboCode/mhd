@@ -102,7 +102,7 @@ export default function AuthForm({ redirectTo }: { redirectTo?: string }) {
             {/* Logo at top */}
             <div className="pt-8 pb-4">
                 <Image
-                    src="/images/mhs-logo.png"
+                    src="/images/mhs-logo-full.png"
                     alt="MHS Logo Image"
                     width={200}
                     height={100}
