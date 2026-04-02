@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -36,11 +36,46 @@ export default function Sidebar() {
 
     // Magnetic hover effect state
     const navContainerRef = useRef<HTMLDivElement>(null);
-    const [hoverStyle, setHoverStyle] = useState({
+    const [selectorStyle, setSelectorStyle] = useState({
         top: 0,
+        left: 0,
         height: 0,
+        width: 0,
         opacity: 0,
     });
+
+    const styleFromRect = useCallback(
+        (targetRect: DOMRect, containerRect: DOMRect) => ({
+            top: targetRect.top - containerRect.top,
+            left: targetRect.left - containerRect.left,
+            height: targetRect.height,
+            width: targetRect.width,
+            opacity: 1 as number,
+        }),
+        [],
+    );
+
+    const positionAtActive = useCallback(() => {
+        const container = navContainerRef.current;
+        if (!container) return;
+        const activeLink = container.querySelector<HTMLElement>(
+            '[data-active="true"]',
+        );
+        if (!activeLink) {
+            setSelectorStyle((prev) => ({ ...prev, opacity: 0 }));
+            return;
+        }
+        setSelectorStyle(
+            styleFromRect(
+                activeLink.getBoundingClientRect(),
+                container.getBoundingClientRect(),
+            ),
+        );
+    }, [styleFromRect]);
+
+    useEffect(() => {
+        positionAtActive();
+    }, [pathname, positionAtActive]);
 
     const handleItemMouseEnter = useCallback(
         (e: React.MouseEvent<HTMLElement>) => {
@@ -49,18 +84,14 @@ export default function Sidebar() {
             if (!container) return;
             const containerRect = container.getBoundingClientRect();
             const targetRect = target.getBoundingClientRect();
-            setHoverStyle({
-                top: targetRect.top - containerRect.top,
-                height: targetRect.height,
-                opacity: 1,
-            });
+            setSelectorStyle(styleFromRect(targetRect, containerRect));
         },
-        [],
+        [styleFromRect],
     );
 
     const handleNavMouseLeave = useCallback(() => {
-        setHoverStyle((prev) => ({ ...prev, opacity: 0 }));
-    }, []);
+        positionAtActive();
+    }, [positionAtActive]);
 
     const handleSignOut = async () => {
         // TO DO - REMOVE: dev auth bypass - clear cookie and redirect when in dev mode
@@ -81,6 +112,21 @@ export default function Sidebar() {
 
     const sections = [
         {
+            title: "OVERVIEW",
+            items: [
+                {
+                    href: "/",
+                    label: "Dashboard",
+                    icon: <LayoutDashboard size={20} />,
+                },
+                {
+                    href: "/schools",
+                    label: "Schools",
+                    icon: <School size={20} />,
+                },
+            ],
+        },
+        {
             title: "ANALYSIS",
             items: [
                 {
@@ -98,16 +144,6 @@ export default function Sidebar() {
         {
             title: "DATA",
             items: [
-                {
-                    href: "/",
-                    label: "Dashboard",
-                    icon: <LayoutDashboard size={20} />,
-                },
-                {
-                    href: "/schools",
-                    label: "Schools",
-                    icon: <School size={20} />,
-                },
                 {
                     href: "/upload",
                     label: "Upload Data",
@@ -144,15 +180,17 @@ export default function Sidebar() {
                     ref={navContainerRef}
                     onMouseLeave={handleNavMouseLeave}
                 >
-                    {/* Magnetic hover highlight */}
+                    {/* Sliding selector */}
                     <div
-                        className="absolute left-2 right-2 bg-accent rounded-lg pointer-events-none z-0"
+                        className="absolute bg-accent rounded-lg pointer-events-none z-0"
                         style={{
-                            top: hoverStyle.top,
-                            height: hoverStyle.height,
-                            opacity: hoverStyle.opacity,
+                            top: selectorStyle.top,
+                            left: selectorStyle.left,
+                            height: selectorStyle.height,
+                            width: selectorStyle.width,
+                            opacity: selectorStyle.opacity,
                             transition:
-                                "top 150ms ease-out, height 150ms ease-out, opacity 150ms ease-out",
+                                "top 150ms cubic-bezier(0.4, 0, 0.2, 1), left 350ms cubic-bezier(0.4, 0, 0.2, 1), height 350ms cubic-bezier(0.4, 0, 0.2, 1), width 350ms cubic-bezier(0.4, 0, 0.2, 1), opacity 350ms cubic-bezier(0.4, 0, 0.2, 1)",
                         }}
                     />
 
@@ -175,14 +213,13 @@ export default function Sidebar() {
                                                 e.preventDefault();
                                                 onNavigationAttempt(item.href);
                                             }}
+                                            data-active={
+                                                isActive ? "true" : undefined
+                                            }
                                             className={`
-                                                flex items-center gap-3 px-3 py-2 rounded-lg transition-colors relative z-10
-                                                ${
-                                                    isActive
-                                                        ? "font-semibold bg-accent"
-                                                        : ""
-                                                }
-                                            `}
+                                                    flex items-center gap-3 px-3 py-2 rounded-lg transition-colors relative z-10
+                                                    ${isActive ? "font-semibold" : ""}
+                                                `}
                                         >
                                             <div className="flex items-center justify-center w-6">
                                                 {item.icon}
