@@ -22,6 +22,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 type YearDropdownProps = {
     selectedYear?: number | null;
@@ -39,7 +40,9 @@ export default function YearDropdown({
     const [yearsWithData, setYearsWithData] = useState<Set<number>>(new Set());
     const hasSetDefaultRef = useRef(false);
     const currentYear = new Date().getFullYear();
-    const years = Array.from({ length: 10 }, (_, i) => currentYear - i);
+    const [years, setYears] = useState<number[]>(
+        Array.from({ length: 10 }, (_, i) => currentYear - i),
+    );
 
     useEffect(() => {
         async function fetchYearsWithData() {
@@ -47,7 +50,25 @@ export default function YearDropdown({
                 const res = await fetch("/api/years-with-data");
                 if (!res.ok) return;
                 const data = await res.json();
-                setYearsWithData(new Set(data.years));
+                const dataSet = new Set<number>(data.years);
+                setYearsWithData(dataSet);
+
+                const firstYear = Math.min(...dataSet);
+                const lastYear = Math.max(...dataSet);
+
+                const trimmed = Array.from(
+                    { length: lastYear - firstYear + 1 },
+                    (_, i) => firstYear + i,
+                );
+
+                setYears(trimmed);
+
+                // Ensure the selection has a value
+                if (trimmed.length > 0) {
+                    setYear(Math.max(...trimmed));
+                } else {
+                    toast.error("No available years to view.");
+                }
             } catch (err) {}
         }
         fetchYearsWithData();
