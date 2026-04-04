@@ -38,8 +38,8 @@ export default function SpreadsheetUpload({
                     green dot indicates data already exists for that year
                     (continuing this process will overwrite said data), while a
                     red dot indicates no data exists yet. Next, choose your
-                    spreadsheet file in the box below. You'll be able to preview
-                    and confirm this file on the following pages before
+                    spreadsheet file in the box below. You&apos;ll be able to
+                    preview and confirm this file on the following pages before
                     finalizing.
                 </h2>
 
