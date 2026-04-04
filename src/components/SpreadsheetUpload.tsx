@@ -35,11 +35,12 @@ export default function SpreadsheetUpload({
                 <h1 className="text-2xl font-bold">Spreadsheet Upload</h1>
                 <h2 className="text-md">
                     Upload data for a given year. Select the year below — a
-                    green dot indicates data already exists for that year (which
-                    can be overwritten), while a red dot indicates that no data
-                    exists yet. Next, choose your spreadsheet file in the box
-                    below. You'll be able to preview and confirm everything on
-                    the following pages before finalizing.
+                    green dot indicates data already exists for that year
+                    (continuing this process will overwrite said data), while a
+                    red dot indicates no data exists yet. Next, choose your
+                    spreadsheet file in the box below. You'll be able to preview
+                    and confirm this file on the following pages before
+                    finalizing.
                 </h2>
 
                 <h2 className="text-base mt-4">Year</h2>
