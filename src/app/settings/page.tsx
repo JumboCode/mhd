@@ -135,7 +135,13 @@ export default function Settings() {
                     </div>
                     <div className="space-y-6">
                         <div className="space-y-3">
-                            <h3 className="font-bold">Gateway Cities</h3>
+                            <h3 className="font-bold">
+                                Schools in Gateway Cities
+                            </h3>
+                            <h4>
+                                Select schools that represent students from
+                                gateway cities.
+                            </h4>
                             <GatewaySchools
                                 ref={gatewaySchoolsRef}
                                 onUnsavedChange={() =>
