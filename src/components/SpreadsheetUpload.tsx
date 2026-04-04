@@ -32,10 +32,14 @@ export default function SpreadsheetUpload({
     return (
         <div>
             <div className="flex flex-col gap-4">
-                <h1 className="text-2xl font-bold">Upload Spreadsheet</h1>
+                <h1 className="text-2xl font-bold">Spreadsheet Upload</h1>
                 <h2 className="text-md">
-                    It&apos;s a new year! Time to upload the data required. You
-                    can download the expected file format here.
+                    Upload data for a given year. Select the year below — a
+                    green dot indicates data already exists for that year (which
+                    can be overwritten), while a red dot indicates that no data
+                    exists yet. Next, choose your spreadsheet file in the box
+                    below. You'll be able to preview and confirm everything on
+                    the following pages before finalizing.
                 </h2>
 
                 <h2 className="text-base mt-4">Year</h2>
