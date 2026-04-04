@@ -11,6 +11,7 @@ import {
     FileUp,
     Settings as SettingsIcon,
     LogOut,
+    ChevronsUpDown,
 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import Image from "next/image";
@@ -236,14 +237,20 @@ export default function Sidebar() {
                 </div>
             </div>
 
-            <div className="px-4 py-5 self-center flex items-center gap-3">
+            <div className="border-t border-border/40 px-4 py-5 self-center flex items-center gap-3">
                 <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
                     <PopoverTrigger asChild>
                         <button
                             suppressHydrationWarning
-                            className="text-sm font-medium text-foreground overflow-hidden whitespace-nowrap hover:text-accent-foreground cursor-pointer"
+                            className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-foreground overflow-hidden whitespace-nowrap hover:bg-accent cursor-pointer w-full"
                         >
-                            {session?.user?.email || "Loading..."}
+                            <span className="flex-1 overflow-hidden whitespace-nowrap text-left">
+                                {session?.user?.email || "Loading..."}
+                            </span>
+                            <ChevronsUpDown
+                                size={14}
+                                className="shrink-0 text-muted-foreground"
+                            />
                         </button>
                     </PopoverTrigger>
                     <PopoverContent align="center" className="w-48 p-0">
