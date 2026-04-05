@@ -23,7 +23,11 @@ import SpreadsheetPreview from "./SpreadsheetPreview";
 import SpreadsheetPreviewFail from "./SpreadsheetPreviewFail";
 import SpreadsheetUpload from "./SpreadsheetUpload";
 import SpreadsheetEdits from "./SpreadsheetEdits";
-import { ErrorReport, identifyErrors } from "@/lib/error-identification";
+import {
+    ErrorReport,
+    ErrorType,
+    identifyErrors,
+} from "@/lib/error-identification";
 import {
     type KnownSchool,
     type SchoolWithCoordinates,
@@ -203,19 +207,23 @@ export default function SpreadsheetState() {
                 return;
             }
 
-            const workbook = XLSX.read(event.target.result, {
-                type: "binary",
-            });
-            const sheetName = workbook.SheetNames[0];
-            const worksheet = workbook.Sheets[sheetName];
-            const jsonData: SpreadsheetData = XLSX.utils.sheet_to_json(
-                worksheet,
-                {
-                    header: 1,
-                },
-            );
+            try {
+                const workbook = XLSX.read(event.target.result, {
+                    type: "binary",
+                });
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+                const jsonData: SpreadsheetData = XLSX.utils.sheet_to_json(
+                    worksheet,
+                    {
+                        header: 1,
+                    },
+                );
 
-            callback(jsonData);
+                callback(jsonData);
+            } catch {
+                callback(null);
+            }
         };
 
         reader.readAsBinaryString(file);
@@ -345,6 +353,26 @@ export default function SpreadsheetState() {
 
             // Parse spreadsheet and check format
             checkFormat((jsonData) => {
+                if (jsonData === null) {
+                    setTab(
+                        <SpreadsheetPreviewFail
+                            fileName={file?.name ?? "None"}
+                            numRows={0}
+                            errorReport={{
+                                errors: [
+                                    {
+                                        type: ErrorType.INVALID_TYPE,
+                                        args: [],
+                                    },
+                                ],
+                                calculatedNumRows: 0,
+                            }}
+                        />,
+                    );
+                    setCanNext(false);
+                    setHasError(true);
+                    return;
+                }
                 const report: ErrorReport = identifyErrors(jsonData);
                 if (report.errors.length !== 0) {
                     setTab(
@@ -358,8 +386,7 @@ export default function SpreadsheetState() {
                     setHasError(true);
                     return;
                 }
-                if (!jsonData || jsonData.length === 0) {
-                    // Placeholder
+                if (jsonData.length === 0) {
                     return;
                 }
 
