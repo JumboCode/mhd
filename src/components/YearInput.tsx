@@ -70,6 +70,12 @@ export default function YearInput({ year, setYear }: YearInputProps) {
         }
     };
 
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (["-", "+", "e", "E"].includes(e.key)) {
+            e.preventDefault();
+        }
+    };
+
     return (
         <div className="flex flex-col gap-2">
             <div className="flex items-center rounded-md border border-border overflow-hidden w-fit">
@@ -94,6 +100,7 @@ export default function YearInput({ year, setYear }: YearInputProps) {
                         value={yearStr}
                         onChange={handleYearInput}
                         onBlur={handleYearBlur}
+                        onKeyDown={handleKeyDown}
                         className="h-9 w-[52px] p-0 text-center rounded-none border-0 shadow-none focus-visible:ring-0 bg-background [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                 </div>
