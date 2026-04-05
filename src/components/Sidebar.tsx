@@ -257,7 +257,7 @@ export default function Sidebar() {
                         <div className="flex flex-col space-y-2">
                             <button
                                 onClick={handleSignOut}
-                                className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-accent text-sm font-medium w-full text-left"
+                                className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-accent text-sm font-medium w-full text-left hover:text-destructive hover:cursor-pointer"
                             >
                                 <LogOut size={16} />
                                 Sign Out
