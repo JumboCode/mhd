@@ -50,7 +50,17 @@ export default function SpreadsheetUpload({
             </div>
 
             <div className="flex flex-col gap-2">
-                <h2 className="text-base font-medium">File</h2>
+                <div className="flex items-end justify-between">
+                    <h2 className="text-base font-medium">File</h2>
+                    <a
+                        href="/student_template.xlsx"
+                        download
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-sm text-primary underline float-right mb-1"
+                    >
+                        Download template
+                    </a>
+                </div>
                 <FileUpload fileInfo={file} setFileInfo={setFile} />
             </div>
         </div>
