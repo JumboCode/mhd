@@ -490,11 +490,11 @@ export default function SpreadsheetState() {
                 <button
                     className={
                         canNext
-                            ? "ml-auto py-1 w-40 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 hover:cursor-pointer transition duration-300 disabled:bg-muted disabled:cursor-not-allowed"
-                            : "ml-auto py-1 w-40 rounded-lg bg-gray-400 text-primary-foreground hover:bg-gray-400/90 hover:cursor-pointer transition duration-300 disabled:bg-muted disabled:cursor-not-allowed"
+                            ? "ml-auto py-1 w-40 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer transition duration-300 disabled:bg-muted disabled:cursor-not-allowed"
+                            : "ml-auto py-1 w-40 rounded-lg bg-gray-400 text-primary-foreground transition duration-300 cursor-not-allowed"
                     }
                     onClick={next}
-                    disabled={isSubmitting}
+                    disabled={!canNext || isSubmitting}
                 >
                     {isSubmitting ? "Uploading..." : nextText}
                 </button>
