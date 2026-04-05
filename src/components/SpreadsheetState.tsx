@@ -350,6 +350,7 @@ export default function SpreadsheetState() {
             setNextText("Next");
         } else if (tabIndex === 1) {
             setTabIndex(1);
+            setCanNext(false); // Disable until async parse completes
 
             // Parse spreadsheet and check format
             checkFormat((jsonData) => {
