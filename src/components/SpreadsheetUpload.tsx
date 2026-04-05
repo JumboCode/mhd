@@ -30,10 +30,10 @@ export default function SpreadsheetUpload({
     setYear,
 }: UploadProps) {
     return (
-        <div>
-            <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-2">
                 <h1 className="text-2xl font-bold">Spreadsheet Upload</h1>
-                <h2 className="text-md">
+                <p className="text-sm text-muted-foreground">
                     Upload data for a given year. Select the year below — a
                     green dot indicates data already exists for that year
                     (continuing this process will overwrite said data), while a
@@ -41,13 +41,16 @@ export default function SpreadsheetUpload({
                     spreadsheet file in the box below. You&apos;ll be able to
                     preview and confirm this file on the following pages before
                     finalizing.
-                </h2>
+                </p>
+            </div>
 
-                <h2 className="text-base mt-4">Year</h2>
-
+            <div className="flex flex-col gap-2">
+                <h2 className="text-base font-medium">Year</h2>
                 <YearInput year={year} setYear={setYear} />
+            </div>
 
-                <div className="m-5" />
+            <div className="flex flex-col gap-2">
+                <h2 className="text-base font-medium">File</h2>
                 <FileUpload fileInfo={file} setFileInfo={setFile} />
             </div>
         </div>
