@@ -72,19 +72,19 @@ export default function YearInput({ year, setYear }: YearInputProps) {
 
     return (
         <div className="flex flex-col gap-2">
-            <div className="flex items-center w-[180px] rounded-md overflow-hidden shadow-sm">
+            <div className="flex items-center rounded-md border border-border overflow-hidden w-fit">
                 <Button
-                    variant="outline"
+                    variant="ghost"
                     onClick={decrementYear}
-                    className="h-9 w-10 flex items-center justify-center rounded-none border-r-0 shadow-none"
+                    className="h-9 w-10 flex items-center justify-center rounded-none border-r border-border shadow-none"
                 >
                     <ChevronLeft className="h-4 w-4" />
                 </Button>
 
-                <div className="relative">
+                <div className="flex items-center justify-center gap-1.5 px-2 w-[100px]">
                     {yearsWithData && yearStr && (
                         <div
-                            className={`absolute left-2 top-1/2 -translate-y-1/2 h-2 w-2 rounded-full shrink-0 ${hasData ? "bg-green-500" : "bg-red-500"}`}
+                            className={`h-2 w-2 rounded-full shrink-0 ${hasData ? "bg-green-500" : "bg-red-500"}`}
                         />
                     )}
                     <Input
@@ -94,14 +94,14 @@ export default function YearInput({ year, setYear }: YearInputProps) {
                         value={yearStr}
                         onChange={handleYearInput}
                         onBlur={handleYearBlur}
-                        className="h-9 w-[100px] text-center rounded-none border-y border-x-0 shadow-none focus-visible:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        className="h-9 w-[52px] p-0 text-center rounded-none border-0 shadow-none focus-visible:ring-0 bg-background [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                 </div>
 
                 <Button
-                    variant="outline"
+                    variant="ghost"
                     onClick={incrementYear}
-                    className="h-9 w-10 flex items-center justify-center rounded-none border-l-0 shadow-none"
+                    className="h-9 w-10 flex items-center justify-center rounded-none border-l border-border shadow-none"
                 >
                     <ChevronRight className="h-4 w-4" />
                 </Button>
