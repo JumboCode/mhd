@@ -275,8 +275,30 @@ function SchoolLocationEditor() {
         setNewPin(null);
     };
 
-    const handleMapClick = useCallback((lng: number, lat: number) => {
-        setNewPin({ latitude: lat, longitude: lng });
+    const handleMapClick = useCallback(async (long: number, lat: number) => {
+        let validLocation: boolean = false;
+
+        try {
+            const res = await fetch(
+                `/api/coordinate-to-region/?lat=${lat}&long=${long}`,
+            );
+            const data = await res.json();
+
+            // Location is only in MA if it has a region
+            if (res.ok && data.region) {
+                validLocation = true;
+            } else {
+                toast.error(
+                    "A school's location must fall within Massachusetts.",
+                );
+            }
+        } catch {
+            toast.error("Error validating school location");
+        }
+
+        if (validLocation) {
+            setNewPin({ latitude: lat, longitude: long });
+        }
     }, []);
 
     const handleSave = async () => {

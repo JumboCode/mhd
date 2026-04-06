@@ -20,6 +20,7 @@ import type {
     UploadedSchool,
     SchoolWithCoordinates,
 } from "@/lib/school-matching";
+import { toast } from "sonner";
 
 interface SpreadsheetEditsProps {
     matchedSchools: SchoolWithCoordinates[];
@@ -83,9 +84,29 @@ export default function SpreadsheetEdits({
     const remainingCount = totalUnmatched - currentSchoolIndex;
 
     const handleMapClick = useCallback(
-        (lng: number, lat: number) => {
-            if (currentSchool) {
-                onSchoolLocationAssigned(currentSchool.schoolId, lat, lng);
+        async (long: number, lat: number) => {
+            let validLocation: boolean = false;
+
+            try {
+                const res = await fetch(
+                    `/api/coordinate-to-region/?lat=${lat}&long=${long}`,
+                );
+                const data = await res.json();
+
+                // Location is only in MA if it has a region
+                if (res.ok && data.region) {
+                    validLocation = true;
+                } else {
+                    toast.error(
+                        "A school's location must fall within Massachusetts.",
+                    );
+                }
+            } catch {
+                toast.error("Error validating school location");
+            }
+
+            if (validLocation && currentSchool) {
+                onSchoolLocationAssigned(currentSchool.schoolId, lat, long);
             }
         },
         [currentSchool, onSchoolLocationAssigned],
