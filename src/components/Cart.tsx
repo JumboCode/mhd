@@ -77,8 +77,11 @@ export function Cart({
                     Clear All
                 </button>
                 {cart.length === 0 ? (
-                    <Button onClick={() => toast.error("Cart is empty")}>
-                        Export To PDF
+                    <Button
+                        className="min-w-32"
+                        onClick={() => toast.error("Cart is empty")}
+                    >
+                        Export All
                     </Button>
                 ) : (
                     <AlertDialog>
@@ -87,7 +90,7 @@ export function Cart({
                                 {isExporting ? (
                                     <Loader2 className="h-4 w-4 animate-spin" />
                                 ) : (
-                                    "Export To PDF"
+                                    "Export All"
                                 )}
                             </Button>
                         </AlertDialogTrigger>

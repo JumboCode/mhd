@@ -40,7 +40,7 @@ export default function YearInput({ year, setYear }: YearInputProps) {
     const hasData = !!currYear && !!yearsWithData?.has(currYear);
 
     const handleYearInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value;
+        const value = e.target.value.replace(/\D/g, "");
         if (value.length > 4) return;
         setYearStr(value);
         if (value.length === 4) setYear(Number(value));
@@ -88,7 +88,8 @@ export default function YearInput({ year, setYear }: YearInputProps) {
                         />
                     )}
                     <Input
-                        type="number"
+                        type="text"
+                        inputMode="numeric"
                         id="year"
                         name="Year"
                         value={yearStr}
