@@ -67,29 +67,29 @@ const regions: Record<string, Region> = {
         minZoom: 7,
     },
     Western: {
-        center: [-73.2, 42.3],
-        zoom: 8,
+        center: [-72.75, 42.35],
+        zoom: 8.3,
         maxZoom: 24,
         minZoom: 7,
     },
 
     Central: {
-        center: [-72.0, 42.3],
-        zoom: 8,
+        center: [-71.8, 42.35],
+        zoom: 8.5,
         maxZoom: 24,
         minZoom: 7,
     },
 
     Boston: {
-        center: [-71.1, 42.35],
-        zoom: 9,
+        center: [-71.06, 42.33],
+        zoom: 10,
         maxZoom: 24,
         minZoom: 8,
     },
 
     Northeast: {
         center: [-71.2053, 42.4973],
-        zoom: 8.5,
+        zoom: 8.6,
         maxZoom: 24,
         minZoom: 8,
     },
