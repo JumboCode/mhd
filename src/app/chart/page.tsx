@@ -104,7 +104,7 @@ const groupByLabels: Record<string, string> = {
     "division": "Division",
     "implementation-type": "Implementation Type",
     "project-type": "Project Type",
-    "gateway-school": "Gateway School",
+    "gateway-school": "Schools Representing Gateway Cities",
 };
 
 // Helper function for generating dynamic titles
@@ -119,6 +119,7 @@ const generateChartTitle = (
         cities: number;
         projectTypes: number;
         hasTeacherYearsFilter: boolean;
+        onlyGatewaySchools: boolean;
     },
 ): string => {
     // Chart type
@@ -134,8 +135,16 @@ const generateChartTitle = (
     const dateRange =
         yearStart === yearEnd ? `${yearStart}` : `${yearStart}-${yearEnd}`;
 
+    let gateway = "";
+
+    if (measuredAs === "total-school-count") {
+        gateway = " Representing Gateway Cities";
+    } else {
+        gateway = "for Schools Representing Gateway Cities";
+    }
+
     // Build main title
-    let mainTitle = `${chartTypeLabel} - ${measuredAsLabel}`;
+    let mainTitle = `${chartTypeLabel} - ${measuredAsLabel} ${activeFilters.onlyGatewaySchools ? gateway : ""}`;
 
     // Add group by if not "None"
     if (groupBy !== "none") {
@@ -353,6 +362,7 @@ export default function ChartPage() {
             cities: selectedCities.length,
             projectTypes: selectedProjectTypes.length,
             hasTeacherYearsFilter: teacherYearsValue !== "",
+            onlyGatewaySchools: onlyGatewaySchools,
         },
     );
 
@@ -755,6 +765,8 @@ export default function ChartPage() {
                                                     selectedProjectTypes.length,
                                                 hasTeacherYearsFilter:
                                                     teacherYearsValue !== "",
+                                                onlyGatewaySchools:
+                                                    onlyGatewaySchools,
                                             },
                                         )}
                                     </motion.h1>
