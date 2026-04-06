@@ -140,7 +140,7 @@ export default function YearDropdown({
                 <SelectTrigger className="w-[100px] rounded-none h-9 text-center shadow-none z-[10]">
                     <SelectValue placeholder="Select a year" />
                 </SelectTrigger>
-                <SelectContent className="z-[100]">
+                <SelectContent className="z-[100] max-h-120 overflow-y-auto">
                     {years.map((y) => (
                         <SelectItem
                             key={y}
