@@ -58,7 +58,7 @@ export default function YearDropdown({
 
                 const trimmed = Array.from(
                     { length: lastYear - firstYear + 1 },
-                    (_, i) => firstYear + i,
+                    (_, i) => lastYear - i,
                 );
 
                 setYears(trimmed);
@@ -101,8 +101,8 @@ export default function YearDropdown({
 
     const handlePreviousYear = () => {
         const currentIndex = years.findIndex((y) => y === year);
-        if (currentIndex < years.length - 1) {
-            const newYear = years[currentIndex + 1];
+        if (currentIndex > 0) {
+            const newYear = years[currentIndex - 1];
             setYear(newYear);
             onYearChange?.(newYear);
         }
@@ -110,8 +110,8 @@ export default function YearDropdown({
 
     const handleNextYear = () => {
         const currentIndex = years.findIndex((y) => y === year);
-        if (currentIndex > 0) {
-            const newYear = years[currentIndex - 1];
+        if (currentIndex < years.length - 1) {
+            const newYear = years[currentIndex + 1];
             setYear(newYear);
             onYearChange?.(newYear);
         }
@@ -126,7 +126,7 @@ export default function YearDropdown({
             <Button
                 variant="outline"
                 onClick={handlePreviousYear}
-                disabled={!year || isAtOldestYear}
+                disabled={!year || isAtNewestYear}
                 className="h-9 w-10 rounded-r-none border-r-0 shadow-none z-[1]"
             >
                 <ChevronLeft className="h-4 w-4" />
@@ -167,7 +167,7 @@ export default function YearDropdown({
             <Button
                 variant="outline"
                 onClick={handleNextYear}
-                disabled={!year || isAtNewestYear}
+                disabled={!year || isAtOldestYear}
                 className="h-9 w-10 rounded-l-none border-l-0 shadow-none z-[1]"
             >
                 <ChevronRight className="h-4 w-4" />
