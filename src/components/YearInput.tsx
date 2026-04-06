@@ -71,7 +71,7 @@ export default function YearInput({ year, setYear }: YearInputProps) {
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (["-", "+", "e", "E"].includes(e.key)) {
+        if (["-", "+", "e", "E", "."].includes(e.key)) {
             e.preventDefault();
         }
     };
