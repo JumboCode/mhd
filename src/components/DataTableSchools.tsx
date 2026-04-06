@@ -56,7 +56,12 @@ export function SchoolsDataTable<TData, TValue>({
     setGlobalFilter,
     isLoading = false,
 }: DataTableProps<TData, TValue>) {
-    const [sorting, setSorting] = React.useState<SortingState>([]);
+    const [sorting, setSorting] = React.useState<SortingState>([
+        {
+            id: "name",
+            desc: false,
+        },
+    ]);
     const [columnResizeMode] = React.useState<ColumnResizeMode>("onChange");
 
     const table = useReactTable({
