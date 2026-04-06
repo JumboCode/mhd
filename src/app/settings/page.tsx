@@ -134,11 +134,11 @@ export default function Settings() {
                         </p>
                     </div>
                     <div className="space-y-6">
-                        <div className="space-y-3">
+                        <div>
                             <h3 className="font-bold">
                                 Schools in Gateway Cities
                             </h3>
-                            <h4>
+                            <h4 className="mb-2">
                                 Select schools that represent students from
                                 gateway cities.
                             </h4>
