@@ -22,6 +22,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 type YearDropdownProps = {
     selectedYear?: number | null;
@@ -39,7 +40,9 @@ export default function YearDropdown({
     const [yearsWithData, setYearsWithData] = useState<Set<number>>(new Set());
     const hasSetDefaultRef = useRef(false);
     const currentYear = new Date().getFullYear();
-    const years = Array.from({ length: 10 }, (_, i) => currentYear - i);
+    const [years, setYears] = useState<number[]>(
+        Array.from({ length: 10 }, (_, i) => currentYear - i),
+    );
 
     useEffect(() => {
         async function fetchYearsWithData() {
@@ -47,7 +50,25 @@ export default function YearDropdown({
                 const res = await fetch("/api/years-with-data");
                 if (!res.ok) return;
                 const data = await res.json();
-                setYearsWithData(new Set(data.years));
+                const dataSet = new Set<number>(data.years);
+                setYearsWithData(dataSet);
+
+                const firstYear = Math.min(...dataSet);
+                const lastYear = Math.max(...dataSet);
+
+                const trimmed = Array.from(
+                    { length: lastYear - firstYear + 1 },
+                    (_, i) => lastYear - i,
+                );
+
+                setYears(trimmed);
+
+                // Ensure the selection has a value
+                if (trimmed.length > 0) {
+                    setYear(Math.max(...trimmed));
+                } else {
+                    toast.error("No available years to view.");
+                }
             } catch (err) {}
         }
         fetchYearsWithData();
@@ -80,8 +101,8 @@ export default function YearDropdown({
 
     const handlePreviousYear = () => {
         const currentIndex = years.findIndex((y) => y === year);
-        if (currentIndex < years.length - 1) {
-            const newYear = years[currentIndex + 1];
+        if (currentIndex > 0) {
+            const newYear = years[currentIndex - 1];
             setYear(newYear);
             onYearChange?.(newYear);
         }
@@ -89,8 +110,8 @@ export default function YearDropdown({
 
     const handleNextYear = () => {
         const currentIndex = years.findIndex((y) => y === year);
-        if (currentIndex > 0) {
-            const newYear = years[currentIndex - 1];
+        if (currentIndex < years.length - 1) {
+            const newYear = years[currentIndex + 1];
             setYear(newYear);
             onYearChange?.(newYear);
         }
@@ -105,7 +126,7 @@ export default function YearDropdown({
             <Button
                 variant="outline"
                 onClick={handlePreviousYear}
-                disabled={!year || isAtOldestYear}
+                disabled={!year || isAtNewestYear}
                 className="h-9 w-10 rounded-r-none border-r-0 shadow-none z-[1]"
             >
                 <ChevronLeft className="h-4 w-4" />
@@ -119,7 +140,7 @@ export default function YearDropdown({
                 <SelectTrigger className="w-[100px] rounded-none h-9 text-center shadow-none z-[10]">
                     <SelectValue placeholder="Select a year" />
                 </SelectTrigger>
-                <SelectContent className="z-[100]">
+                <SelectContent className="z-[100] max-h-120 overflow-y-auto">
                     {years.map((y) => (
                         <SelectItem
                             key={y}
@@ -146,7 +167,7 @@ export default function YearDropdown({
             <Button
                 variant="outline"
                 onClick={handleNextYear}
-                disabled={!year || isAtNewestYear}
+                disabled={!year || isAtOldestYear}
                 className="h-9 w-10 rounded-l-none border-l-0 shadow-none z-[1]"
             >
                 <ChevronRight className="h-4 w-4" />
