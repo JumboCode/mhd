@@ -283,6 +283,8 @@ function SchoolLocationEditor() {
                 `/api/coordinate-to-region/?lat=${lat}&long=${long}`,
             );
             const data = await res.json();
+
+            // Location is only in MA if it has a region
             if (res.ok && data.region) {
                 validLocation = true;
             } else {
@@ -290,7 +292,8 @@ function SchoolLocationEditor() {
                     "A school's location must fall within Massachusetts.",
                 );
             }
-        } finally {
+        } catch {
+            toast.error("Error validating school location");
         }
 
         if (validLocation) {
