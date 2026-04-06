@@ -125,8 +125,8 @@ export default function YearDropdown({
             {/* Left Arrow Button */}
             <Button
                 variant="outline"
-                onClick={handlePreviousYear}
-                disabled={!year || isAtNewestYear}
+                onClick={handleNextYear}
+                disabled={!year || isAtOldestYear}
                 className="h-9 w-10 rounded-r-none border-r-0 shadow-none z-[1]"
             >
                 <ChevronLeft className="h-4 w-4" />
@@ -166,8 +166,8 @@ export default function YearDropdown({
             {/* Right Arrow Button */}
             <Button
                 variant="outline"
-                onClick={handleNextYear}
-                disabled={!year || isAtOldestYear}
+                onClick={handlePreviousYear}
+                disabled={!year || isAtNewestYear}
                 className="h-9 w-10 rounded-l-none border-l-0 shadow-none z-[1]"
             >
                 <ChevronRight className="h-4 w-4" />
