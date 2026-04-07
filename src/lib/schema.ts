@@ -22,6 +22,9 @@ export const schools = pgTable("schools", {
     zipcode: text("zipcode"),
     gateway: boolean("gateway").default(false).notNull(),
     region: text("region").default("").notNull(),
+    division: text("division").notNull(),
+    implementationModel: text("implementation_model").notNull(),
+    schoolType: text("school_type").notNull(),
 });
 
 // Ties a school to the years it has participated
