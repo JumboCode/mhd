@@ -22,10 +22,10 @@ export async function GET(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url);
 
-        // Lightweight list mode: returns id, name, lat, lng for all schools
+        // Lightweight list mode: school info for all schools
         if (searchParams.get("list") === "true") {
             const gatewayParam = searchParams.get("gateway");
-            const isGateway = gatewayParam === "true"; // boolean
+            const isGateway = gatewayParam === "true";
 
             const query = db
                 .select({
@@ -35,6 +35,9 @@ export async function GET(req: NextRequest) {
                     longitude: schools.longitude,
                     region: schools.region,
                     gateway: schools.gateway,
+                    division: schools.division,
+                    implementationModel: schools.implementationModel,
+                    schoolType: schools.schoolType,
                 })
                 .from(schools);
 
@@ -63,7 +66,13 @@ export async function GET(req: NextRequest) {
                 id: schools.id,
                 name: schools.name,
                 city: schools.town,
+                latitude: schools.latitude,
+                longitude: schools.longitude,
                 region: schools.region,
+                gateway: schools.gateway,
+                division: schools.division,
+                implementationModel: schools.implementationModel,
+                schoolType: schools.schoolType,
             })
             .from(schools);
 
@@ -166,8 +175,9 @@ export async function GET(req: NextRequest) {
                 name: school.name,
                 city: school.city,
                 region: school.region,
-                instructionModel: "Dummy 1", // TODO: Not in schema yet
-                implementationModel: "Dummy 1", // TODO: Not in schema yet
+                division: school.division,
+                implementationModel: school.implementationModel,
+                schoolType: school.schoolType,
                 numStudents: currStudents,
                 studentChange: percentageChange(currStudents, lastStudents),
                 numTeachers: currTeachers,
