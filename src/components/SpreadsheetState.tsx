@@ -499,7 +499,16 @@ export default function SpreadsheetState() {
             </div>
 
             <div className={`flex-1 ${tabIndex === 2 ? "w-full" : ""}`}>
-                {tab}
+                {isSubmitting ? (
+                    <div className="flex flex-col items-center gap-4 mt-8">
+                        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
+                        <p className="text-sm text-muted-foreground">
+                            Uploading and processing your data... please wait.
+                        </p>
+                    </div>
+                ) : (
+                    tab
+                )}
             </div>
 
             <div
