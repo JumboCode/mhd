@@ -30,6 +30,7 @@ export default function SpreadsheetPreview({
     fileName,
     numRows,
     spreadsheetData,
+    columns = studentRequiredColumns,
 }: PreviewProps) {
     const [cols, setCols] = useState<
         { id: string; accessorKey: string; header: string }[]
@@ -61,27 +62,27 @@ export default function SpreadsheetPreview({
             displayName: string;
         }[] = [];
 
-        requiredColumns.forEach((requiredCol) => {
-            const normalizedRequired = normalizeColumnName(requiredCol);
+        columns.forEach((col: string) => {
+            const normalizedRequired = normalizeColumnName(col);
             const columnIndex = headerMap.get(normalizedRequired);
 
             if (columnIndex !== undefined) {
                 // Convert camelCase to readable display name
-                const displayName = requiredCol
+                const displayName = col
                     .replace(/([A-Z])/g, " $1")
-                    .replace(/^./, (str) => str.toUpperCase())
+                    .replace(/^./, (str: string) => str.toUpperCase())
                     .trim();
 
                 columnMapping.push({
                     index: columnIndex,
-                    name: requiredCol,
+                    name: col,
                     displayName,
                 });
             }
         });
 
         // Create columns with sequential accessorKeys
-        const cols = columnMapping.map((col, arrayIndex) => ({
+        const tableCols = columnMapping.map((col, arrayIndex) => ({
             id: String(arrayIndex),
             accessorKey: String(arrayIndex),
             header: col.displayName,
@@ -94,9 +95,9 @@ export default function SpreadsheetPreview({
             .map((row) => columnMapping.map((col) => row[col.index]));
 
         setNumCols(columnMapping.length);
-        setCols(cols);
+        setCols(tableCols);
         setRows(filteredRows);
-    }, [spreadsheetData]);
+    }, [spreadsheetData, columns]);
 
     return (
         <>
