@@ -1,6 +1,6 @@
 /***************************************************************
  *
- *                /api/import/route.ts
+ *                /api/upload/route.ts
  *
  *         Author: Anne Wu & Chiara Martello
  *           Date: 11/17/2025
@@ -20,20 +20,75 @@ import {
     yearlyTeacherParticipation,
     yearlySchoolParticipation,
 } from "@/lib/schema";
-import { requiredColumns } from "@/lib/required-spreadsheet-columns";
+import { studentRequiredColumns } from "@/lib/required-spreadsheet-columns";
 import { standardize } from "@/lib/school-name-standardize";
 import { findRegionOf } from "@/lib/region-finder";
 
 type RowData = Array<string | number | boolean | null>;
 
-/**
- * School coordinates sent from frontend after matching
- */
 type SchoolCoordinateData = {
     schoolId: string;
     lat: number | null;
     long: number | null;
 };
+
+type SchoolInfoEntry = {
+    division: string;
+    implementationModel: string;
+    schoolType: string;
+};
+
+/**
+ * Builds a lookup map from schoolId to school info fields using the school info spreadsheet.
+ * Matches rows by schoolId column (case/whitespace-insensitive header match).
+ */
+function buildSchoolInfoMap(rawData: RowData[]): Map<string, SchoolInfoEntry> {
+    const map = new Map<string, SchoolInfoEntry>();
+    if (!rawData || rawData.length === 0) return map;
+
+    const normalize = (s: string) => s.toLowerCase().replace(/\s+/g, "");
+
+    const headers = rawData[0] as string[];
+    const headerMap = new Map<string, number>();
+    headers.forEach((h, i) => headerMap.set(normalize(h), i));
+
+    const schoolIdIdx =
+        headerMap.get(normalize("schoolId")) ??
+        headerMap.get(normalize("School id"));
+    const divisionIdx = headerMap.get(normalize("division"));
+    const implModelIdx =
+        headerMap.get(normalize("implementationModel")) ??
+        headerMap.get(normalize("Implementation Model"));
+    const schoolTypeIdx =
+        headerMap.get(normalize("schoolType")) ??
+        headerMap.get(normalize("School Type"));
+
+    if (schoolIdIdx === undefined) return map;
+
+    for (let i = 1; i < rawData.length; i++) {
+        const row = rawData[i];
+        const rawId = row[schoolIdIdx];
+        if (rawId === null || rawId === undefined || rawId === "") continue;
+
+        const schoolId = String(rawId).trim();
+        map.set(schoolId, {
+            division:
+                divisionIdx !== undefined
+                    ? String(row[divisionIdx] ?? "").trim()
+                    : "",
+            implementationModel:
+                implModelIdx !== undefined
+                    ? String(row[implModelIdx] ?? "").trim()
+                    : "",
+            schoolType:
+                schoolTypeIdx !== undefined
+                    ? String(row[schoolTypeIdx] ?? "").trim()
+                    : "",
+        });
+    }
+
+    return map;
+}
 
 export async function POST(req: NextRequest) {
     try {
@@ -43,7 +98,13 @@ export async function POST(req: NextRequest) {
         const schoolCoordinates: SchoolCoordinateData[] =
             jsonReq.schoolCoordinates || [];
 
-        // Create a map for quick lookup of school coordinates by schoolId
+        // Parse the school info spreadsheet if provided
+        const schoolInfoMap: Map<string, SchoolInfoEntry> =
+            jsonReq.schoolInfoData
+                ? buildSchoolInfoMap(JSON.parse(jsonReq.schoolInfoData))
+                : new Map();
+
+        // Build coordinates lookup
         const coordsMap = new Map<
             string,
             { lat: number | null; long: number | null }
@@ -61,32 +122,27 @@ export async function POST(req: NextRequest) {
 
         // Get header row and normalize column names for lookup
         const headers = rawData[0] as string[];
-        const normalizeColumnName = (name: string): string => {
-            return name.toLowerCase().replace(/\s+/g, "");
-        };
+        const normalizeColumnName = (name: string): string =>
+            name.toLowerCase().replace(/\s+/g, "");
 
-        // Create a map of normalized header names to their column indices
         const headerMap = new Map<string, number>();
         headers.forEach((header, index) => {
             headerMap.set(normalizeColumnName(header), index);
         });
 
-        // Helper function to find column index by name
-        const getColumnIndex = (columnName: string): number | undefined => {
-            return headerMap.get(normalizeColumnName(columnName));
-        };
+        const getColumnIndex = (columnName: string): number | undefined =>
+            headerMap.get(normalizeColumnName(columnName));
 
-        // Build column indices object dynamically
+        // Build column indices dynamically from student required columns
         const COLUMN_INDICES: Record<string, number> = {};
-        requiredColumns.forEach((col) => {
+        studentRequiredColumns.forEach((col) => {
             const index = getColumnIndex(col);
             if (index !== undefined) {
                 COLUMN_INDICES[col] = index;
             }
         });
 
-        // Validate all required columns exist
-        const missingColumns = requiredColumns.filter(
+        const missingColumns = studentRequiredColumns.filter(
             (col) => COLUMN_INDICES[col] === undefined,
         );
 
@@ -113,7 +169,6 @@ export async function POST(req: NextRequest) {
 
         let insertedCount = 0;
         for (const row of filteredRows) {
-            // Find or create school using schoolId
             const schoolIdValue = String(row[COLUMN_INDICES.schoolId]);
             let school = await db.query.schools.findFirst({
                 where: eq(schools.schoolId, schoolIdValue),
@@ -121,9 +176,9 @@ export async function POST(req: NextRequest) {
 
             const schoolName = row[COLUMN_INDICES.schoolName] as string;
             const schoolTown = row[COLUMN_INDICES.city] as string;
+            const schoolInfo = schoolInfoMap.get(schoolIdValue);
 
             if (!school) {
-                // Get coordinates from frontend matching
                 const coords = coordsMap.get(schoolIdValue);
                 const region = findRegionOf(coords?.lat, coords?.long);
 
@@ -137,18 +192,35 @@ export async function POST(req: NextRequest) {
                         latitude: coords?.lat ?? null,
                         longitude: coords?.long ?? null,
                         region: region,
+                        division: schoolInfo?.division ?? "",
+                        implementationModel:
+                            schoolInfo?.implementationModel ?? "",
+                        schoolType: schoolInfo?.schoolType ?? "",
                     })
                     .returning();
                 school = inserted;
-            } else if (!school.latitude || !school.longitude) {
-                // School exists but missing coordinates - update if we have them
+            } else {
+                // Update coordinates if missing, and always update school info fields
                 const coords = coordsMap.get(schoolIdValue);
-                if (coords?.lat && coords?.long) {
+                const needsCoordUpdate =
+                    (!school.latitude || !school.longitude) &&
+                    coords?.lat &&
+                    coords?.long;
+
+                if (needsCoordUpdate || schoolInfo) {
                     const [updated] = await db
                         .update(schools)
                         .set({
-                            latitude: coords.lat,
-                            longitude: coords.long,
+                            ...(needsCoordUpdate && {
+                                latitude: coords!.lat,
+                                longitude: coords!.long,
+                            }),
+                            ...(schoolInfo && {
+                                division: schoolInfo.division,
+                                implementationModel:
+                                    schoolInfo.implementationModel,
+                                schoolType: schoolInfo.schoolType,
+                            }),
                         })
                         .where(eq(schools.id, school.id))
                         .returning();
@@ -156,7 +228,7 @@ export async function POST(req: NextRequest) {
                 }
             }
 
-            // Find or create teacher using teacherId
+            // Find or create teacher
             const teacherIdValue = String(row[COLUMN_INDICES.teacherId]);
             let teacher = await db.query.teachers.findFirst({
                 where: eq(teachers.teacherId, teacherIdValue),
@@ -192,7 +264,7 @@ export async function POST(req: NextRequest) {
                         teacherId: teacher.id,
                         projectId: projectIdValue,
                         title: row[COLUMN_INDICES.title] as string,
-                        division: "General", // TODO: Update if division column is added
+                        division: schoolInfo?.division ?? "",
                         categoryId: String(row[COLUMN_INDICES.categoryId]),
                         category: row[COLUMN_INDICES.categoryName] as string,
                         year: year,
