@@ -407,6 +407,8 @@ export default function SpreadsheetState() {
                 ? await parseFile(schoolInfoFile)
                 : null;
 
+            console.log(jsonData);
+
             if (!jsonData) {
                 setTab(
                     <SpreadsheetPreviewFail

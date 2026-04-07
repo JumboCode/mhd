@@ -107,18 +107,22 @@ export const studentColumnSpec: ColumnSpec = {
  * Dictionary mapping required school column names to their expected types.
  */
 export const schoolRequiredColumnsDict: Record<string, ColumnType> = {
-    division: "string",
-    implementationModel: "string",
-    schoolType: "string",
+    "School name": "string",
+    "School id": "number",
+    "Division": "string",
+    "Implementation Model": "string",
+    "School Type": "string",
 };
 
-/** Default column spec used for the main student spreadsheet. */
+/** Column spec used for the school info spreadsheet. */
 export const schoolColumnSpec: ColumnSpec = {
     columns: schoolRequiredColumns,
     columnsDict: {
-        division: "enum",
-        implementationModel: "enum",
-        schoolType: "enum",
+        "School name": "string",
+        "School id": "number",
+        "Division": "enum",
+        "Implementation Model": "enum",
+        "School Type": "enum",
     },
     enumValues: {
         division: [

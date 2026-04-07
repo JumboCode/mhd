@@ -20,6 +20,8 @@ export const studentRequiredColumns = [
 
 /** Required columns from school spreadsheet */
 export const schoolRequiredColumns = [
+    "School name",
+    "School id",
     "Division",
     "Implementation Model",
     "School Type",
