@@ -33,14 +33,34 @@ type SchoolCoordinateData = {
 };
 
 type SchoolInfoEntry = {
-    division: string;
+    /** A school may participate in multiple divisions. */
+    division: string[];
     implementationModel: string;
     schoolType: string;
 };
 
 /**
- * Builds a lookup map from schoolId to school info fields using the school info spreadsheet.
- * Matches rows by schoolId column (case/whitespace-insensitive header match).
+ * Removes extraneous whitespace around slashes, e.g. "Private/ Independent" → "Private/Independent".
+ */
+function normalizeSlashes(s: string): string {
+    return s.replace(/\s*\/\s*/g, "/").trim();
+}
+
+/**
+ * Parses a division cell value into one or more division strings.
+ * Handles both comma-separated values in a single cell and empty values.
+ */
+function parseDivisions(raw: string): string[] {
+    return raw
+        .split(",")
+        .map((d) => d.trim())
+        .filter(Boolean);
+}
+
+/**
+ * Builds a lookup map from schoolId → school info fields using the school info spreadsheet.
+ * If a school appears on multiple rows (one per division), divisions are accumulated.
+ * Comma-separated divisions within a single cell are also supported.
  */
 function buildSchoolInfoMap(rawData: RowData[]): Map<string, SchoolInfoEntry> {
     const map = new Map<string, SchoolInfoEntry>();
@@ -71,20 +91,35 @@ function buildSchoolInfoMap(rawData: RowData[]): Map<string, SchoolInfoEntry> {
         if (rawId === null || rawId === undefined || rawId === "") continue;
 
         const schoolId = String(rawId).trim();
-        map.set(schoolId, {
-            division:
-                divisionIdx !== undefined
-                    ? String(row[divisionIdx] ?? "").trim()
-                    : "",
-            implementationModel:
-                implModelIdx !== undefined
-                    ? String(row[implModelIdx] ?? "").trim()
-                    : "",
-            schoolType:
-                schoolTypeIdx !== undefined
-                    ? String(row[schoolTypeIdx] ?? "").trim()
-                    : "",
-        });
+
+        const divisions =
+            divisionIdx !== undefined
+                ? parseDivisions(String(row[divisionIdx] ?? ""))
+                : [];
+        const implementationModel =
+            implModelIdx !== undefined
+                ? normalizeSlashes(String(row[implModelIdx] ?? ""))
+                : "";
+        const schoolType =
+            schoolTypeIdx !== undefined
+                ? normalizeSlashes(String(row[schoolTypeIdx] ?? ""))
+                : "";
+
+        const existing = map.get(schoolId);
+        if (existing) {
+            // Accumulate divisions from additional rows for the same school
+            for (const div of divisions) {
+                if (!existing.division.includes(div)) {
+                    existing.division.push(div);
+                }
+            }
+        } else {
+            map.set(schoolId, {
+                division: divisions,
+                implementationModel,
+                schoolType,
+            });
+        }
     }
 
     return map;
@@ -192,7 +227,7 @@ export async function POST(req: NextRequest) {
                         latitude: coords?.lat ?? null,
                         longitude: coords?.long ?? null,
                         region: region,
-                        division: schoolInfo?.division ?? "",
+                        division: schoolInfo?.division ?? [],
                         implementationModel:
                             schoolInfo?.implementationModel ?? "",
                         schoolType: schoolInfo?.schoolType ?? "",
@@ -264,7 +299,7 @@ export async function POST(req: NextRequest) {
                         teacherId: teacher.id,
                         projectId: projectIdValue,
                         title: row[COLUMN_INDICES.title] as string,
-                        division: schoolInfo?.division ?? "",
+                        division: (schoolInfo?.division ?? []).join(", "),
                         categoryId: String(row[COLUMN_INDICES.categoryId]),
                         category: row[COLUMN_INDICES.categoryName] as string,
                         year: year,
