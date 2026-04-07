@@ -115,7 +115,32 @@ export const schoolRequiredColumnsDict: Record<string, ColumnType> = {
 /** Default column spec used for the main student spreadsheet. */
 export const schoolColumnSpec: ColumnSpec = {
     columns: schoolRequiredColumns,
-    columnsDict: schoolRequiredColumnsDict,
+    columnsDict: {
+        division: "enum",
+        implementationModel: "enum",
+        schoolType: "enum",
+    },
+    enumValues: {
+        division: [
+            "Junior Division (6-8)",
+            "Senior Division (9-12)",
+            "Young Historians (4-5)",
+        ],
+        implementationModel: [
+            "Student participate independently",
+            "Curricular requirement (class or grade level)",
+            "Co-curricular club",
+            "Student participate independently",
+            "Other",
+        ],
+        schoolType: [
+            "Public School",
+            "Public Charter",
+            "Private/ Independent",
+            "Private/ Parochial/Religious",
+            "Other",
+        ],
+    },
 };
 
 /**
