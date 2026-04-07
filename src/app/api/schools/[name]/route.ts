@@ -29,7 +29,14 @@ export async function PATCH(
         const { name } = await params;
 
         const body = await req.json();
-        const { latitude, longitude, name: newName, city } = body;
+        const {
+            latitude,
+            longitude,
+            name: newName,
+            city,
+            implementationModel,
+            schoolType,
+        } = body;
 
         const schoolResult = await db
             .select({ id: schools.id })
@@ -75,6 +82,40 @@ export async function PATCH(
                 .where(eq(schools.id, schoolId));
             return NextResponse.json({
                 message: "School name updated successfully",
+            });
+        }
+
+        // Handle implementation model update
+        if (implementationModel !== undefined) {
+            if (typeof implementationModel !== "string") {
+                return NextResponse.json(
+                    { error: "implementationModel must be a string" },
+                    { status: 400 },
+                );
+            }
+            await db
+                .update(schools)
+                .set({ implementationModel: implementationModel.trim() })
+                .where(eq(schools.id, schoolId));
+            return NextResponse.json({
+                message: "Implementation model updated successfully",
+            });
+        }
+
+        // Handle schoolType update
+        if (schoolType !== undefined) {
+            if (typeof schoolType !== "string") {
+                return NextResponse.json(
+                    { error: "schoolType must be a string" },
+                    { status: 400 },
+                );
+            }
+            await db
+                .update(schools)
+                .set({ schoolType: schoolType.trim() })
+                .where(eq(schools.id, schoolId));
+            return NextResponse.json({
+                message: "School type updated successfully",
             });
         }
 
