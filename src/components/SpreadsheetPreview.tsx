@@ -16,12 +16,14 @@ import { useState, useEffect } from "react";
 import { DataTable } from "./DataTable";
 import { CircleCheck, FileChartColumn } from "lucide-react";
 import type { CellValue, SpreadsheetData } from "@/types/spreadsheet";
-import { requiredColumns } from "@/lib/required-spreadsheet-columns";
+import { studentRequiredColumns } from "@/lib/required-spreadsheet-columns";
 
 type PreviewProps = {
     fileName: string;
     numRows: number;
     spreadsheetData: SpreadsheetData;
+    /** Column names to display. Defaults to the student spreadsheet columns. */
+    columns?: string[];
 };
 
 export default function SpreadsheetPreview({
