@@ -357,10 +357,19 @@ function checkRequiredColumnTypes(
                 case "enum": {
                     const allowed = enumValues?.[colName];
                     if (allowed && allowed.length > 0) {
-                        const normalized = String(cell).toLowerCase().trim();
-                        isValid = allowed.some(
-                            (v) => v.toLowerCase().trim() === normalized,
-                        );
+                        const parts = String(cell)
+                            .split(",")
+                            .map((p) => p.trim())
+                            .filter(Boolean);
+                        isValid =
+                            parts.length > 0 &&
+                            parts.every((part) =>
+                                allowed.some(
+                                    (v) =>
+                                        v.toLowerCase().trim() ===
+                                        part.toLowerCase(),
+                                ),
+                            );
                     }
                     break;
                 }
