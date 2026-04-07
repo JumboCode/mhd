@@ -241,9 +241,9 @@ export async function GET(
             projectCount: projectCount[0]?.count ?? 0,
             firstYear: firstYearData[0]?.year ?? null,
             projects: projectRows,
-            // TO DO: Not in database yet — replace with real values once DB columns exist
-            instructionalModel: "Dummy 1",
-            implementationModel: "Dummy 1",
+            division: school.division,
+            implementationModel: school.implementationModel,
+            schoolType: school.schoolType,
         });
     } catch (error) {
         return NextResponse.json(

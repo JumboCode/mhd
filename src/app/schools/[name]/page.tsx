@@ -44,9 +44,10 @@ type SchoolData = {
     projectCount: string;
     firstYear: string;
     projects: ProjectRow[];
-    instructionalModel: string;
     region: string;
+    division: string[];
     implementationModel: string;
+    schoolType: string;
 };
 
 type MapCoordinates = {
@@ -68,7 +69,6 @@ export default function SchoolProfilePage() {
     const [editingName, setEditingName] = useState(false);
     const [nameDraft, setNameDraft] = useState("");
     const nameInputRef = useRef<HTMLInputElement>(null);
-    const [instructionalModel, setInstructionalModel] = useState("Dummy 1");
     const [studentYearData, setstudentYearData] = useState<
         { x: string | number; y: number }[]
     >([]);
@@ -86,7 +86,6 @@ export default function SchoolProfilePage() {
             .then((data) => {
                 setSchoolData(data);
                 setProjects(data.projects);
-                setInstructionalModel(data.instructionalModel ?? "Dummy 1");
             })
             .catch(() => {
                 toast.error(
@@ -257,7 +256,7 @@ export default function SchoolProfilePage() {
                 {/* Info Row */}
                 <SchoolInfoRow
                     town={schoolData.town}
-                    instructionalModel={instructionalModel}
+                    implementationModel={schoolData.implementationModel}
                     firstYear={schoolData.firstYear}
                 />
                 <Link
