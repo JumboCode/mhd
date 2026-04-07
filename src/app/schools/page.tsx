@@ -39,7 +39,7 @@ export default function SchoolsPage() {
         (
             rowName: string,
             columnId: string,
-            value: string | number | boolean,
+            value: string | number | boolean | string[],
         ) => {
             setSchoolInfo((prev) =>
                 prev.map((row) =>

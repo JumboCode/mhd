@@ -15,12 +15,16 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { ChevronsUpDownSort } from "@/components/icons/ChevronsUpDownSort";
-import { EditableCell, StringSelectCell } from "@/components/EditableCells";
+import {
+    EditableCell,
+    StringMultiSelectCell,
+    StringSelectCell,
+} from "@/components/EditableCells";
 
 const DIVISION_OPTIONS = [
     "Junior Division (6-8)",
     "Senior Division (9-12)",
-    "Young Historian",
+    "Young Historians (4-5)",
 ];
 
 const IMPLEMENTATION_MODEL_OPTIONS = [
@@ -55,7 +59,7 @@ export function createColumns(
     onCommit: (
         rowName: string,
         columnId: string,
-        value: string | number | boolean,
+        value: string | number | boolean | string[],
     ) => void,
 ): ColumnDef<Schools>[] {
     return [
@@ -180,8 +184,14 @@ export function createColumns(
                     />
                 </Button>
             ),
-            cell: ({ getValue }) => (
-                <span>{(getValue() as string[]).join(", ")}</span>
+            cell: ({ getValue, row, column }) => (
+                <StringMultiSelectCell
+                    value={getValue() as string[]}
+                    options={DIVISION_OPTIONS}
+                    rowId={String(row.original.name)}
+                    columnId={column.id}
+                    onCommit={onCommit}
+                />
             ),
         },
         {

@@ -36,6 +36,7 @@ export async function PATCH(
             city,
             implementationModel,
             schoolType,
+            division,
         } = body;
 
         const schoolResult = await db
@@ -82,6 +83,26 @@ export async function PATCH(
                 .where(eq(schools.id, schoolId));
             return NextResponse.json({
                 message: "School name updated successfully",
+            });
+        }
+
+        // Handle division update
+        if (division !== undefined) {
+            if (
+                !Array.isArray(division) ||
+                division.some((d: unknown) => typeof d !== "string")
+            ) {
+                return NextResponse.json(
+                    { error: "division must be an array of strings" },
+                    { status: 400 },
+                );
+            }
+            await db
+                .update(schools)
+                .set({ division })
+                .where(eq(schools.id, schoolId));
+            return NextResponse.json({
+                message: "Division updated successfully",
             });
         }
 
