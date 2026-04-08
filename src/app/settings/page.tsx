@@ -107,7 +107,7 @@ export default function Settings() {
     };
 
     return (
-        <div className="flex flex-col gap-12 p-6 max-w-4xl pb-24">
+        <div className="flex flex-col gap-12 p-8 max-w-4xl pb-24">
             <div>
                 <h1 className="text-3xl font-bold">Settings</h1>
             </div>

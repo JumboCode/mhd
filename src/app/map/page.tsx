@@ -258,7 +258,7 @@ function HeatMapPage() {
     const filterName = `Heatmap - ${metric} ${onlyGatewaySchools ? " at Gateway Schools" : ""} in ${regionView === "Default" ? "MA" : regionView + ` Region `} (${year})`;
 
     return (
-        <div className="flex p-6 flex-col h-screen w-full justify-center">
+        <div className="flex p-8 flex-col h-screen w-full justify-center">
             <div className="flex justify-between items-center mb-4">
                 <h1 className="text-2xl py-4 font-semibold">{filterName}</h1>
                 <div className="flex gap-3">
