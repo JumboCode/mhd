@@ -20,6 +20,15 @@ import { EditableCell, StringSelectCell } from "@/components/EditableCells";
 // Placeholder options — replace with real values once DB columns exist
 const MODEL_OPTIONS = ["Dummy 1", "Dummy 2", "Dummy 3"];
 
+// Normalize school name formatting in table
+function toTitleCase(str: string) {
+    return str
+        .toLowerCase()
+        .split(" ")
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" ");
+}
+
 export type Schools = {
     name: string;
     city: string;
@@ -97,14 +106,19 @@ export function createColumns(
                     </Button>
                 );
             },
-            cell: ({ getValue, row, column }) => (
-                <EditableCell
-                    value={getValue() as string}
-                    columnId={column.id}
-                    rowId={String(row.original.name)}
-                    onCommit={onCommit}
-                />
-            ),
+            cell: ({ getValue, row, column }) => {
+                const rawValue = getValue() as string;
+                const formattedValue = toTitleCase(rawValue);
+
+                return (
+                    <EditableCell
+                        value={formattedValue}
+                        columnId={column.id}
+                        rowId={String(row.original.name)}
+                        onCommit={onCommit}
+                    />
+                );
+            },
         },
         {
             accessorKey: "region",
