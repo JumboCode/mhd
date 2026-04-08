@@ -229,7 +229,7 @@ export function EditableProjectsTable({
         {
             accessorKey: "teamProject",
             header: "Team?",
-            size: 80,
+            size: 120,
             cell: ({ getValue, row, column }) => (
                 <BooleanSelectCell
                     value={getValue() as boolean}
