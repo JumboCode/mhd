@@ -21,13 +21,13 @@ export function ChevronsUpDownSort({
     className,
 }: ChevronsUpDownSortProps) {
     const topStroke =
-        sortDirection === "asc" ? "var(--primary)" : "currentColor";
-    const bottomStroke =
         sortDirection === "desc" ? "var(--primary)" : "currentColor";
+    const bottomStroke =
+        sortDirection === "asc" ? "var(--primary)" : "currentColor";
     const topOpacity =
-        sortDirection === "asc" ? 1 : sortDirection === "desc" ? 0.35 : 0.6;
-    const bottomOpacity =
         sortDirection === "desc" ? 1 : sortDirection === "asc" ? 0.35 : 0.6;
+    const bottomOpacity =
+        sortDirection === "asc" ? 1 : sortDirection === "desc" ? 0.35 : 0.6;
 
     return (
         <svg
