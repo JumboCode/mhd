@@ -130,13 +130,16 @@ export async function POST(req: NextRequest) {
                 const [inserted] = await db
                     .insert(schools)
                     .values({
-                        schoolId: schoolIdValue,
+                        schoolId: schoolIdValue, // or "id: schoolIdValue" if table uses "id"
                         name: schoolName,
                         standardizedName: standardize(schoolName),
                         town: schoolTown,
                         latitude: coords?.lat ?? null,
                         longitude: coords?.long ?? null,
                         region: region,
+                        division: "General", // default if not in spreadsheet
+                        implementationModel: "N/A", // default or extract from spreadsheet
+                        schoolType: "Public", // default or extract from spreadsheet
                     })
                     .returning();
                 school = inserted;
