@@ -47,12 +47,18 @@ export function useHeatmapLayers({
     const popupRef = useRef<maplibregl.Popup | null>(null);
     const pinnedRef = useRef(false);
 
+    const closePopup = () => {
+        if (popupRef.current) {
+            popupRef.current.remove();
+        }
+        pinnedRef.current = false;
+    };
+
     // Dismiss popup on Escape
     useEffect(() => {
         const handleEscape = (e: KeyboardEvent) => {
             if (e.key === "Escape") {
-                popupRef.current?.remove();
-                pinnedRef.current = false;
+                closePopup();
             }
         };
         document.addEventListener("keydown", handleEscape);
@@ -483,4 +489,6 @@ export function useHeatmapLayers({
             map.off("load", onLoad);
         };
     }, [metric, filteredSchoolPoints, showSchools]);
+
+    return { closePopup };
 }

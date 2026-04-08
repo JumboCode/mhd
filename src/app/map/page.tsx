@@ -207,7 +207,17 @@ function HeatMapPage() {
         };
     }, [schoolPoints, onlyGatewaySchools]);
 
-    useHeatmapLayers({ mapRef, filteredSchoolPoints, metric, showSchools });
+    // Close popup whenever any setting changes
+    const { closePopup } = useHeatmapLayers({
+        mapRef,
+        filteredSchoolPoints,
+        metric,
+        showSchools,
+    });
+
+    useEffect(() => {
+        closePopup?.();
+    }, [metric, year, regionView, onlyGatewaySchools, showSchools, closePopup]);
 
     useEffect(() => {
         if (!mapRef.current) {
