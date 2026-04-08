@@ -180,6 +180,7 @@ export default function ChartPage() {
     const [gatewaySchools, setGatewaySchools] = useState<string[]>([]);
     const [isExporting, setIsExporting] = useState(false);
     const [exportDialogOpen, setExportDialogOpen] = useState(false);
+    const [isLoaded, setIsLoaded] = useState(false);
 
     // Setting hooks
     const [timePeriod, setTimePeriod] = useQueryState(
@@ -302,6 +303,7 @@ export default function ChartPage() {
     // Fetch all project data
     useEffect(() => {
         const fetchProjects = async () => {
+            setIsLoaded(false);
             try {
                 const response = await fetch("/api/projects");
                 if (!response.ok) throw new Error("Failed to fetch");
@@ -320,6 +322,8 @@ export default function ChartPage() {
                 toast.error(
                     "Failed to load project data. Please refresh the page.",
                 );
+            } finally {
+                setIsLoaded(true);
             }
         };
 
@@ -406,7 +410,7 @@ export default function ChartPage() {
 
     // Calculate the current year range based on time period selection
     useMemo(() => {
-        if (timePeriod === "custom") {
+        if (timePeriod === "custom" || allProjects.length === 0) {
             return;
         }
 
@@ -722,413 +726,394 @@ export default function ChartPage() {
 
             {/* Main Content Area */}
             <div className="flex-1 flex flex-col h-screen overflow-hidden">
-                {allProjects.length > 0 ? (
-                    <div className="flex flex-col gap-4 h-full overflow-hidden">
-                        {/* Header */}
-                        <div className="flex items-center justify-between px-8 pt-4 shrink-0">
-                            <div className="relative">
-                                <AnimatePresence
-                                    initial={false}
-                                    mode="popLayout"
+                <div className="flex flex-col gap-4 h-full overflow-hidden">
+                    {/* Header */}
+                    <div className="flex items-center justify-between px-8 pt-4 shrink-0">
+                        <div className="relative">
+                            <AnimatePresence initial={false} mode="popLayout">
+                                <motion.h1
+                                    key={chartType}
+                                    className="text-xl font-semibold text-foreground"
+                                    initial={{ opacity: 0, x: -20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: 20 }}
+                                    transition={{
+                                        duration: 0.15,
+                                        ease: "easeOut",
+                                    }}
                                 >
-                                    <motion.h1
-                                        key={chartType}
-                                        className="text-xl font-semibold text-foreground"
-                                        initial={{ opacity: 0, x: -20 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        exit={{ opacity: 0, x: 20 }}
-                                        transition={{
-                                            duration: 0.15,
-                                            ease: "easeOut",
-                                        }}
+                                    {generateChartTitle(
+                                        chartType,
+                                        measuredAs,
+                                        groupBy,
+                                        yearRange.start,
+                                        yearRange.end,
+                                        {
+                                            schools: selectedSchools.length,
+                                            cities: selectedCities.length,
+                                            projectTypes:
+                                                selectedProjectTypes.length,
+                                            hasTeacherYearsFilter:
+                                                teacherYearsValue !== "",
+                                        },
+                                    )}
+                                </motion.h1>
+                            </AnimatePresence>
+                        </div>
+                        <div className="flex gap-3">
+                            <AlertDialog
+                                open={exportDialogOpen}
+                                onOpenChange={setExportDialogOpen}
+                            >
+                                <AlertDialogTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="flex items-center gap-2"
+                                        disabled={isExporting}
                                     >
-                                        {generateChartTitle(
-                                            chartType,
-                                            measuredAs,
-                                            groupBy,
-                                            yearRange.start,
-                                            yearRange.end,
-                                            {
-                                                schools: selectedSchools.length,
-                                                cities: selectedCities.length,
-                                                projectTypes:
-                                                    selectedProjectTypes.length,
-                                                hasTeacherYearsFilter:
-                                                    teacherYearsValue !== "",
-                                            },
+                                        {isExporting ? (
+                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                        ) : (
+                                            <>
+                                                <Share className="w-4 h-4" />
+                                                Export
+                                            </>
                                         )}
-                                    </motion.h1>
-                                </AnimatePresence>
-                            </div>
-                            <div className="flex gap-3">
-                                <AlertDialog
-                                    open={exportDialogOpen}
-                                    onOpenChange={setExportDialogOpen}
-                                >
-                                    <AlertDialogTrigger asChild>
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>
+                                            Export graph to PDF?
+                                        </AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            This will download a PDF of the
+                                            current graph to your computer.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>
+                                            Cancel
+                                        </AlertDialogCancel>
+                                        <AlertDialogAction
+                                            onClick={async () => {
+                                                setExportDialogOpen(false);
+                                                setIsExporting(true);
+                                                await downloadSingleGraph(
+                                                    chartRef,
+                                                    filterName,
+                                                );
+                                                setIsExporting(false);
+                                                toast.success(
+                                                    "Graph exported successfully!",
+                                                );
+                                            }}
+                                        >
+                                            Download
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                            <HoverCard>
+                                <HoverCardTrigger
+                                    delay={10}
+                                    closeDelay={100}
+                                    render={
                                         <Button
                                             variant="outline"
                                             size="sm"
                                             className="flex items-center gap-2"
-                                            disabled={isExporting}
+                                            onClick={() =>
+                                                addToCart(
+                                                    chartRef,
+                                                    cart,
+                                                    setCart,
+                                                    filterNames,
+                                                    setFilterNames,
+                                                    filterName,
+                                                )
+                                            }
                                         >
-                                            {isExporting ? (
-                                                <Loader2 className="h-4 w-4 animate-spin" />
-                                            ) : (
-                                                <>
-                                                    <Share className="w-4 h-4" />
-                                                    Export
-                                                </>
-                                            )}
+                                            <PlusCircle className="w-4 h-4" />
+                                            Add to
                                         </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                        <AlertDialogHeader>
-                                            <AlertDialogTitle>
-                                                Export graph to PDF?
-                                            </AlertDialogTitle>
-                                            <AlertDialogDescription>
-                                                This will download a PDF of the
-                                                current graph to your computer.
-                                            </AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                            <AlertDialogCancel>
-                                                Cancel
-                                            </AlertDialogCancel>
-                                            <AlertDialogAction
-                                                onClick={async () => {
-                                                    setExportDialogOpen(false);
-                                                    setIsExporting(true);
-                                                    await downloadSingleGraph(
-                                                        chartRef,
-                                                        filterName,
-                                                    );
-                                                    setIsExporting(false);
-                                                    toast.success(
-                                                        "Graph exported successfully!",
-                                                    );
-                                                }}
-                                            >
-                                                Download
-                                            </AlertDialogAction>
-                                        </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                </AlertDialog>
-                                <HoverCard>
-                                    <HoverCardTrigger
-                                        delay={10}
-                                        closeDelay={100}
-                                        render={
+                                    }
+                                />
+                                <HoverCardContent
+                                    className="flex flex-col gap-0.5 mt-2"
+                                    align="end"
+                                >
+                                    <Cart
+                                        filterNames={filterNames}
+                                        cart={cart}
+                                        setCart={setCart}
+                                        setFilterNames={setFilterNames}
+                                    />
+                                </HoverCardContent>
+                            </HoverCard>
+
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="flex items-center gap-2"
+                                onClick={copyURLtoClipboard}
+                            >
+                                <Link className="w-4 h-4" />
+                                Share
+                            </Button>
+                        </div>
+                    </div>
+
+                    {/* Chart Controls */}
+                    <div className="flex items-center justify-between px-8 py-3 shrink-0">
+                        <div className="flex items-center">
+                            <Tabs
+                                value={chartType}
+                                onValueChange={handleChartTypeChange}
+                            >
+                                <TabsList>
+                                    <TabsTrigger value="bar" className="gap-2">
+                                        <ChartColumn className="w-4 h-4" />
+                                        Bar
+                                        <Kbd>B</Kbd>
+                                    </TabsTrigger>
+                                    <TabsTrigger value="line" className="gap-2">
+                                        <LineChart className="w-4 h-4" />
+                                        Line
+                                        <Kbd>L</Kbd>
+                                    </TabsTrigger>
+                                </TabsList>
+                            </Tabs>
+                        </div>
+
+                        <div className="flex items-center">
+                            <Button
+                                type="button"
+                                variant={
+                                    timePeriod === "3y" ? "default" : "outline"
+                                }
+                                size="sm"
+                                onClick={() => setTimePeriod("3y")}
+                                className="rounded-l-md rounded-r-none border-r-0"
+                            >
+                                3y
+                            </Button>
+                            <Button
+                                type="button"
+                                variant={
+                                    timePeriod === "5y" ? "default" : "outline"
+                                }
+                                size="sm"
+                                onClick={() => setTimePeriod("5y")}
+                                className="rounded-none border-l-0 border-r-0 -ml-px"
+                            >
+                                5y
+                            </Button>
+                            <Popover
+                                open={yearRangeOpen}
+                                onOpenChange={setYearRangeOpen}
+                            >
+                                <PopoverTrigger asChild>
+                                    <Button
+                                        type="button"
+                                        variant={
+                                            timePeriod === "custom"
+                                                ? "default"
+                                                : "outline"
+                                        }
+                                        size="sm"
+                                        onClick={() => {
+                                            if (timePeriod !== "custom") {
+                                                setTimePeriod("custom");
+                                            }
+                                        }}
+                                        className="rounded-r-md rounded-l-none border-l-0 -ml-px flex items-center gap-2"
+                                    >
+                                        <CalendarDays />
+                                        {yearRange.start} - {yearRange.end}
+                                        <ChevronDown />
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-80">
+                                    <div className="space-y-4">
+                                        <h4 className="font-semibold text-sm">
+                                            Select Year Range
+                                        </h4>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="text-xs text-muted-foreground mb-1 block">
+                                                    Start Year
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    value={tempYearRange.start}
+                                                    onChange={(e) =>
+                                                        setTempYearRange({
+                                                            ...tempYearRange,
+                                                            start:
+                                                                parseInt(
+                                                                    e.target
+                                                                        .value,
+                                                                ) || 2020,
+                                                        })
+                                                    }
+                                                    className="w-full px-3 py-2 border border-input rounded-md text-sm"
+                                                    min="2000"
+                                                    max={tempYearRange.end}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="text-xs text-muted-foreground mb-1 block">
+                                                    End Year
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    value={tempYearRange.end}
+                                                    onChange={(e) =>
+                                                        setTempYearRange({
+                                                            ...tempYearRange,
+                                                            end:
+                                                                parseInt(
+                                                                    e.target
+                                                                        .value,
+                                                                ) || 2025,
+                                                        })
+                                                    }
+                                                    className="w-full px-3 py-2 border border-input rounded-md text-sm"
+                                                    min={tempYearRange.start}
+                                                    max="2100"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="flex gap-2 justify-end">
                                             <Button
                                                 variant="outline"
                                                 size="sm"
-                                                className="flex items-center gap-2"
                                                 onClick={() =>
-                                                    addToCart(
-                                                        chartRef,
-                                                        cart,
-                                                        setCart,
-                                                        filterNames,
-                                                        setFilterNames,
-                                                        filterName,
-                                                    )
+                                                    setYearRangeOpen(false)
                                                 }
                                             >
-                                                <PlusCircle className="w-4 h-4" />
-                                                Add to
+                                                Cancel
                                             </Button>
-                                        }
-                                    />
-                                    <HoverCardContent
-                                        className="flex flex-col gap-0.5 mt-2"
-                                        align="end"
-                                    >
-                                        <Cart
-                                            filterNames={filterNames}
-                                            cart={cart}
-                                            setCart={setCart}
-                                            setFilterNames={setFilterNames}
-                                        />
-                                    </HoverCardContent>
-                                </HoverCard>
-
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="flex items-center gap-2"
-                                    onClick={copyURLtoClipboard}
-                                >
-                                    <Link className="w-4 h-4" />
-                                    Share
-                                </Button>
-                            </div>
-                        </div>
-
-                        {/* Chart Controls */}
-                        <div className="flex items-center justify-between px-8 py-3 shrink-0">
-                            <div className="flex items-center">
-                                <Tabs
-                                    value={chartType}
-                                    onValueChange={handleChartTypeChange}
-                                >
-                                    <TabsList>
-                                        <TabsTrigger
-                                            value="bar"
-                                            className="gap-2"
-                                        >
-                                            <ChartColumn className="w-4 h-4" />
-                                            Bar
-                                            <Kbd>B</Kbd>
-                                        </TabsTrigger>
-                                        <TabsTrigger
-                                            value="line"
-                                            className="gap-2"
-                                        >
-                                            <LineChart className="w-4 h-4" />
-                                            Line
-                                            <Kbd>L</Kbd>
-                                        </TabsTrigger>
-                                    </TabsList>
-                                </Tabs>
-                            </div>
-
-                            <div className="flex items-center">
-                                <Button
-                                    type="button"
-                                    variant={
-                                        timePeriod === "3y"
-                                            ? "default"
-                                            : "outline"
-                                    }
-                                    size="sm"
-                                    onClick={() => setTimePeriod("3y")}
-                                    className="rounded-l-md rounded-r-none border-r-0"
-                                >
-                                    3y
-                                </Button>
-                                <Button
-                                    type="button"
-                                    variant={
-                                        timePeriod === "5y"
-                                            ? "default"
-                                            : "outline"
-                                    }
-                                    size="sm"
-                                    onClick={() => setTimePeriod("5y")}
-                                    className="rounded-none border-l-0 border-r-0 -ml-px"
-                                >
-                                    5y
-                                </Button>
-                                <Popover
-                                    open={yearRangeOpen}
-                                    onOpenChange={setYearRangeOpen}
-                                >
-                                    <PopoverTrigger asChild>
-                                        <Button
-                                            type="button"
-                                            variant={
-                                                timePeriod === "custom"
-                                                    ? "default"
-                                                    : "outline"
-                                            }
-                                            size="sm"
-                                            onClick={() => {
-                                                if (timePeriod !== "custom") {
+                                            <Button
+                                                size="sm"
+                                                onClick={() => {
+                                                    setStartYear(
+                                                        tempYearRange.start,
+                                                    );
+                                                    setEndYear(
+                                                        tempYearRange.end,
+                                                    );
                                                     setTimePeriod("custom");
-                                                }
-                                            }}
-                                            className="rounded-r-md rounded-l-none border-l-0 -ml-px flex items-center gap-2"
-                                        >
-                                            <CalendarDays />
-                                            {yearRange.start} - {yearRange.end}
-                                            <ChevronDown />
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-80">
-                                        <div className="space-y-4">
-                                            <h4 className="font-semibold text-sm">
-                                                Select Year Range
-                                            </h4>
-                                            <div className="grid grid-cols-2 gap-4">
-                                                <div>
-                                                    <label className="text-xs text-muted-foreground mb-1 block">
-                                                        Start Year
-                                                    </label>
-                                                    <input
-                                                        type="number"
-                                                        value={
-                                                            tempYearRange.start
-                                                        }
-                                                        onChange={(e) =>
-                                                            setTempYearRange({
-                                                                ...tempYearRange,
-                                                                start:
-                                                                    parseInt(
-                                                                        e.target
-                                                                            .value,
-                                                                    ) || 2020,
-                                                            })
-                                                        }
-                                                        className="w-full px-3 py-2 border border-input rounded-md text-sm"
-                                                        min="2000"
-                                                        max={tempYearRange.end}
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <label className="text-xs text-muted-foreground mb-1 block">
-                                                        End Year
-                                                    </label>
-                                                    <input
-                                                        type="number"
-                                                        value={
-                                                            tempYearRange.end
-                                                        }
-                                                        onChange={(e) =>
-                                                            setTempYearRange({
-                                                                ...tempYearRange,
-                                                                end:
-                                                                    parseInt(
-                                                                        e.target
-                                                                            .value,
-                                                                    ) || 2025,
-                                                            })
-                                                        }
-                                                        className="w-full px-3 py-2 border border-input rounded-md text-sm"
-                                                        min={
-                                                            tempYearRange.start
-                                                        }
-                                                        max="2100"
-                                                    />
-                                                </div>
-                                            </div>
-                                            <div className="flex gap-2 justify-end">
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={() =>
-                                                        setYearRangeOpen(false)
-                                                    }
-                                                >
-                                                    Cancel
-                                                </Button>
-                                                <Button
-                                                    size="sm"
-                                                    onClick={() => {
-                                                        setStartYear(
-                                                            tempYearRange.start,
-                                                        );
-                                                        setEndYear(
-                                                            tempYearRange.end,
-                                                        );
-                                                        setTimePeriod("custom");
-                                                        setYearRangeOpen(false);
-                                                    }}
-                                                >
-                                                    Apply
-                                                </Button>
-                                            </div>
+                                                    setYearRangeOpen(false);
+                                                }}
+                                            >
+                                                Apply
+                                            </Button>
                                         </div>
-                                    </PopoverContent>
-                                </Popover>
-                            </div>
+                                    </div>
+                                </PopoverContent>
+                            </Popover>
                         </div>
+                    </div>
 
-                        {/* Chart Area */}
-
-                        {Math.round(filteredProjectCount) !== 0 ? (
-                            <div className="relative flex-1 overflow-hidden">
-                                <AnimatePresence initial={false}>
-                                    <motion.div
-                                        key={chartType}
-                                        className="flex h-full w-full items-center justify-center px-8 bg-background overflow-auto"
-                                        initial={{
-                                            opacity: 0,
-                                            x: slideDirection.current * -50,
-                                        }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        exit={{
-                                            opacity: 0,
-                                            x: slideDirection.current * -50,
-                                            position: "absolute",
-                                            inset: 0,
-                                        }}
-                                        transition={{
-                                            duration: 0.15,
-                                            ease: "easeInOut",
-                                        }}
-                                    >
-                                        {chartType === "bar" ? (
-                                            <BarGraph
-                                                dataset={graphDataset}
-                                                yAxisLabel={
-                                                    measuredAsLabels[
-                                                        filters.measuredAs
-                                                    ]
-                                                }
-                                                xAxisLabel="Year"
-                                                legendTitle={
-                                                    filters.groupBy === "none"
-                                                        ? undefined
-                                                        : groupByLabels[
-                                                              filters.groupBy
-                                                          ]
-                                                }
-                                                chartRef={chartRef}
-                                                tooltipFormatter={
-                                                    tooltipFormatter
-                                                }
-                                            />
-                                        ) : (
-                                            <LineGraph
-                                                datasets={graphDataset}
-                                                yAxisLabel={
-                                                    measuredAsLabels[
-                                                        filters.measuredAs
-                                                    ]
-                                                }
-                                                xAxisLabel="Year"
-                                                legendTitle={
-                                                    filters.groupBy === "none"
-                                                        ? undefined
-                                                        : groupByLabels[
-                                                              filters.groupBy
-                                                          ]
-                                                }
-                                                chartRef={chartRef}
-                                                tooltipFormatter={
-                                                    tooltipFormatter
-                                                }
-                                            />
-                                        )}
-                                    </motion.div>
-                                </AnimatePresence>
-                            </div>
-                        ) : (
-                            /* If no data is found that fits the filters, display this */
-                            <div className="flex-1 flex items-center justify-center px-8 bg-background overflow-auto">
-                                No Data Found
+                    {/* Chart Area */}
+                    <div className="relative flex-1 overflow-hidden">
+                        {/* Loading overlay */}
+                        {!isLoaded && (
+                            <div className="absolute inset-0 z-50 flex items-center justify-center bg-white backdrop-blur-sm">
+                                <Loader2 className="h-12 w-12 animate-spin text-slate-800" />
                             </div>
                         )}
 
-                        {/* Footer */}
-                        <div className="flex flex-col justify-center items-end gap-3 px-8 pb-4 text-xs text-foreground shrink-0">
-                            <p className="font-medium">
-                                <span className="font-mono bg-gray/4 border rounded-sm border-gray/2 py-1 px-2">
-                                    {Math.round(filteredProjectCount)}
-                                </span>{" "}
-                                data rows total
-                            </p>
-                            {/* TO DO: get most recent date from db but requires storing date */}
-                            <p>
-                                <span className="font-mono bg-gray/4 border rounded-sm border-gray/2 py-1 px-2">
-                                    06/25/2025
-                                </span>{" "}
-                                data last updated
-                            </p>
-                        </div>
+                        {Math.round(filteredProjectCount) !== 0 ? (
+                            <AnimatePresence initial={false}>
+                                <motion.div
+                                    key={chartType}
+                                    className="flex h-full w-full items-center justify-center px-8 bg-background overflow-auto"
+                                    initial={{
+                                        opacity: 0,
+                                        x: slideDirection.current * -50,
+                                    }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{
+                                        opacity: 0,
+                                        x: slideDirection.current * -50,
+                                        position: "absolute",
+                                        inset: 0,
+                                    }}
+                                    transition={{
+                                        duration: 0.15,
+                                        ease: "easeInOut",
+                                    }}
+                                >
+                                    {chartType === "bar" ? (
+                                        <BarGraph
+                                            dataset={graphDataset}
+                                            yAxisLabel={
+                                                measuredAsLabels[
+                                                    filters.measuredAs
+                                                ]
+                                            }
+                                            xAxisLabel="Year"
+                                            legendTitle={
+                                                filters.groupBy === "none"
+                                                    ? undefined
+                                                    : groupByLabels[
+                                                          filters.groupBy
+                                                      ]
+                                            }
+                                            chartRef={chartRef}
+                                            tooltipFormatter={tooltipFormatter}
+                                        />
+                                    ) : (
+                                        <LineGraph
+                                            datasets={graphDataset}
+                                            yAxisLabel={
+                                                measuredAsLabels[
+                                                    filters.measuredAs
+                                                ]
+                                            }
+                                            xAxisLabel="Year"
+                                            legendTitle={
+                                                filters.groupBy === "none"
+                                                    ? undefined
+                                                    : groupByLabels[
+                                                          filters.groupBy
+                                                      ]
+                                            }
+                                            chartRef={chartRef}
+                                            tooltipFormatter={tooltipFormatter}
+                                        />
+                                    )}
+                                </motion.div>
+                            </AnimatePresence>
+                        ) : (
+                            /*  If no data is found that fits the filters, display this */
+                            <div className="flex h-full w-full items-center justify-center px-8 bg-background">
+                                {isLoaded ? "No Data Found" : ""}
+                            </div>
+                        )}
                     </div>
-                ) : null}
+
+                    {/* Footer */}
+                    <div className="flex flex-col justify-center items-end gap-3 px-8 pb-4 text-xs text-foreground shrink-0">
+                        <p className="font-medium">
+                            <span className="font-mono bg-gray/4 border rounded-sm border-gray/2 py-1 px-2">
+                                {Math.round(filteredProjectCount)}
+                            </span>{" "}
+                            data rows total
+                        </p>
+                        {/* TO DO: get most recent date from db but requires storing date */}
+                        <p>
+                            <span className="font-mono bg-gray/4 border rounded-sm border-gray/2 py-1 px-2">
+                                06/25/2025
+                            </span>{" "}
+                            data last updated
+                        </p>
+                    </div>
+                </div>
             </div>
         </div>
     );
