@@ -18,16 +18,15 @@ export default function NotFound() {
     const router = useRouter();
 
     useEffect(() => {
-        // Toast
-        toast.success(
-            "Page not found. You have been redirected to the homepage.",
-        );
         // Timer so toast can show
-        const timer = setTimeout(() => {
-            router.replace("/");
-        }, 1500);
+        setTimeout(() => {
+            toast.error(
+                "Invalid URL. You have been redirected to the homepage.",
+            );
+        }, 50);
 
-        return () => clearTimeout(timer);
+        // Reroute to homepage
+        router.replace("/");
     }, [router]);
 
     return null;
