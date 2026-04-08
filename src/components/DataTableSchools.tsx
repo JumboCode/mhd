@@ -10,7 +10,7 @@
  **************************************************************/
 
 "use client";
-import React, { ReactNode } from "react";
+import { useState, ReactNode } from "react";
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { standardize } from "@/lib/school-name-standardize";
 
@@ -56,19 +56,19 @@ export function SchoolsDataTable<TData, TValue>({
     setGlobalFilter,
     isLoading = false,
 }: DataTableProps<TData, TValue>) {
-    const [sorting, setSorting] = React.useState<SortingState>([
+    const [sorting, setSorting] = useState<SortingState>([
         {
             id: "name",
             desc: false,
         },
     ]);
-    const [columnResizeMode] = React.useState<ColumnResizeMode>("onChange");
+    const [columnResizeMode] = useState<ColumnResizeMode>("onChange");
 
     const table = useReactTable({
         data,
         columns,
         columnResizeMode,
-        getSortedRowModel: getSortedRowModel(), // May not need this?
+        getSortedRowModel: getSortedRowModel(),
         onSortingChange: setSorting,
         onGlobalFilterChange: setGlobalFilter,
         getCoreRowModel: getCoreRowModel(),
