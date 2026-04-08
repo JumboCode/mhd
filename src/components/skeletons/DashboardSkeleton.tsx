@@ -3,15 +3,7 @@ import { StatCardSkeleton } from "./StatCardSkeleton";
 
 export function DashboardSkeleton() {
     return (
-        <div className="flex flex-col gap-8 w-full px-6 py-10">
-            {/* Header row: title + dropdown */}
-            <div className="flex flex-row items-center gap-5">
-                <Skeleton className="h-8 w-48" />
-                <div className="ml-auto">
-                    <Skeleton className="h-10 w-36" />
-                </div>
-            </div>
-
+        <div className="w-full">
             {/* Stats cards - 4 cards in grid */}
             <div className="grid grid-cols-4 gap-5">
                 <StatCardSkeleton />
