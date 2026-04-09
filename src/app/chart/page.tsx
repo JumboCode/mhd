@@ -577,7 +577,7 @@ export default function ChartPage() {
                     return projects.length;
 
                 case "total-school-count":
-                    return new Set(projects.map((p) => p.schoolId)).size;
+                    return new Set(projects.map((p) => p.schoolName)).size;
 
                 case "total-student-count":
                     return projects.reduce(
