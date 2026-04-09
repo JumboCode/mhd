@@ -17,6 +17,8 @@ import { dmSans, millerBanner, millerDisplay, millerText } from "@/app/fonts";
 import ConditionalLayout from "@/components/ConditionalLayout";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { UnsavedChangesProvider } from "@/components/UnsavedChangesContext";
+import { Suspense } from "react";
+import InvalidURLHandler from "@/components/InvalidURLHandler";
 
 export const metadata: Metadata = {
     title: "MHD",
@@ -42,6 +44,9 @@ export default function RootLayout({
                     </NuqsAdapter>
                 </UnsavedChangesProvider>
                 <Toaster />
+                <Suspense>
+                    <InvalidURLHandler />
+                </Suspense>
             </body>
         </html>
     );
