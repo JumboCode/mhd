@@ -153,8 +153,8 @@ export async function GET(req: NextRequest) {
             lastYearTeachers.map((t) => [t.schoolId, t.count]),
         );
 
-        // Combine data for each school
-        const schoolsToReturn = allSchools.map((school) => {
+        // Combine data for each school, excluding schools with no participation in the current year
+        const schoolsToReturn = allSchools.flatMap((school) => {
             const currProjects = currProjectsMap.get(school.id) ?? 0;
             const lastProjects = lastProjectsMap.get(school.id) ?? 0;
             const currStudents = currStudentsMap.get(school.id) ?? 0;
@@ -162,19 +162,29 @@ export async function GET(req: NextRequest) {
             const currTeachers = currTeachersMap.get(school.id) ?? 0;
             const lastTeachers = lastTeachersMap.get(school.id) ?? 0;
 
-            return {
-                name: school.name,
-                city: school.city,
-                region: school.region,
-                instructionModel: "Dummy 1", // TODO: Not in schema yet
-                implementationModel: "Dummy 1", // TODO: Not in schema yet
-                numStudents: currStudents,
-                studentChange: percentageChange(currStudents, lastStudents),
-                numTeachers: currTeachers,
-                teacherChange: percentageChange(currTeachers, lastTeachers),
-                numProjects: currProjects,
-                projectChange: percentageChange(currProjects, lastProjects),
-            };
+            if (
+                currProjects === 0 &&
+                currStudents === 0 &&
+                currTeachers === 0
+            ) {
+                return [];
+            }
+
+            return [
+                {
+                    name: school.name,
+                    city: school.city,
+                    region: school.region,
+                    instructionModel: "Dummy 1", // TODO: Not in schema yet
+                    implementationModel: "Dummy 1", // TODO: Not in schema yet
+                    numStudents: currStudents,
+                    studentChange: percentageChange(currStudents, lastStudents),
+                    numTeachers: currTeachers,
+                    teacherChange: percentageChange(currTeachers, lastTeachers),
+                    numProjects: currProjects,
+                    projectChange: percentageChange(currProjects, lastProjects),
+                },
+            ];
         });
 
         return NextResponse.json(schoolsToReturn);
