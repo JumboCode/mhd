@@ -19,6 +19,7 @@ import { ENTITY_CONFIG } from "@/lib/entity-config";
 import MultiLineGraph from "./LineGraph";
 import type { GraphDataset } from "./LineGraph";
 import Link from "next/link";
+import { DashboardSkeleton } from "@/components/skeletons/DashboardSkeleton";
 
 type Stats = {
     totals: {
@@ -243,7 +244,9 @@ export default function Dashboard() {
                         </Link>
                     </div>
                 </div>
-            ) : null}
+            ) : (
+                <DashboardSkeleton />
+            )}
         </div>
     );
 }
