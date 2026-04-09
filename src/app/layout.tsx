@@ -21,8 +21,12 @@ import { Suspense } from "react";
 import InvalidURLHandler from "@/components/InvalidURLHandler";
 
 export const metadata: Metadata = {
-    title: "MHD",
-    description: "MHD",
+    title: {
+        template: "%s | MHD",
+        default: "MHD",
+    },
+    description:
+        "Data visualization dashboard for Massachusetts History Society's annual contest, Massachusetts History Day.",
 };
 
 export default function RootLayout({

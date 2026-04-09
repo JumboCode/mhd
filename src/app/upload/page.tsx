@@ -10,7 +10,12 @@
  *
  **************************************************************/
 
+import type { Metadata } from "next";
 import SpreadsheetState from "@/components/SpreadsheetState";
+
+export const metadata: Metadata = {
+    title: "Upload",
+};
 
 export default function UploadPage() {
     return <SpreadsheetState />;
