@@ -32,11 +32,16 @@ export default function StatusBar({
     const barColor = hasError ? "bg-destructive" : "bg-primary";
 
     return (
-        <div className="w-full h-1 bg-muted rounded-full">
+        <div className="relative w-full h-1 bg-muted rounded-full">
             <div
                 className={`h-1 ${barColor} rounded-full transition-all duration-300`}
                 style={{ width: `${fillPercentage}%` }}
             ></div>
+            {tabIndex === 0 && (
+                <div
+                    className={`absolute -top-1 left-0 w-3 h-3 rounded-full border-2 border-white ${"bg-primary"}`}
+                />
+            )}
         </div>
     );
 }
