@@ -1090,7 +1090,7 @@ export default function ChartPage() {
                                 </motion.div>
                             </AnimatePresence>
                         ) : (
-                            /*  If no data is found that fits the filters, display this */
+                            /*  No data found */
                             <div className="flex h-full w-full items-center justify-center px-8 bg-background">
                                 {isLoaded ? "No Data Found" : ""}
                             </div>
