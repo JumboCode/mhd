@@ -143,7 +143,7 @@ export default function Dashboard() {
     const schoolsSparkline = filteredStats.map((s) => s.total_schools);
 
     return (
-        <div className="flex flex-col gap-8 w-full px-6 py-10">
+        <div className="flex flex-col gap-8 w-full px-8 py-10">
             <div className="flex flex-row items-center gap-5">
                 <h1 className="text-2xl font-semibold">Overview Dashboard</h1>
                 <div className="ml-auto">

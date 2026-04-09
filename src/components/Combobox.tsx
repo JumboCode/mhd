@@ -27,6 +27,7 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
+import { CommandList } from "cmdk";
 
 type Option = { value: string; label: string };
 
@@ -69,28 +70,29 @@ export function Combobox({
                     <CommandInput placeholder={placeholder ?? "Search..."} />
 
                     <CommandEmpty>No results found.</CommandEmpty>
-
-                    <CommandGroup>
-                        {options.map((opt) => (
-                            <CommandItem
-                                key={opt.value}
-                                onSelect={() => {
-                                    onChange(opt.value);
-                                    setOpen(false);
-                                }}
-                            >
-                                <Check
-                                    className={cn(
-                                        "mr-2 h-4 w-4",
-                                        opt.value === value
-                                            ? "opacity-100"
-                                            : "opacity-0",
-                                    )}
-                                />
-                                {opt.label}
-                            </CommandItem>
-                        ))}
-                    </CommandGroup>
+                    <CommandList className="max-h-60 overflow-y-auto">
+                        <CommandGroup>
+                            {options.map((opt) => (
+                                <CommandItem
+                                    key={opt.value}
+                                    onSelect={() => {
+                                        onChange(opt.value);
+                                        setOpen(false);
+                                    }}
+                                >
+                                    <Check
+                                        className={cn(
+                                            "mr-2 h-4 w-4",
+                                            opt.value === value
+                                                ? "opacity-100"
+                                                : "opacity-0",
+                                        )}
+                                    />
+                                    {opt.label}
+                                </CommandItem>
+                            ))}
+                        </CommandGroup>
+                    </CommandList>
                 </Command>
             </PopoverContent>
         </Popover>
