@@ -21,7 +21,8 @@ import type { SpreadsheetData } from "@/types/spreadsheet";
 import SpreadsheetConfirmation from "./SpreadsheetConfirmation";
 import SpreadsheetPreview from "./SpreadsheetPreview";
 import SpreadsheetPreviewFail from "./SpreadsheetPreviewFail";
-import SpreadsheetUpload from "./SpreadsheetUpload";
+import SpreadsheetUpload from "./StudentInfoUpload";
+import SchoolInfoUpload from "./SchoolInfoUpload";
 import SpreadsheetEdits from "./SpreadsheetEdits";
 import {
     ErrorReport,
@@ -43,10 +44,11 @@ import { schoolRequiredColumns } from "@/lib/required-spreadsheet-columns";
 // Step indices
 const STEP_UPLOAD = 0;
 const STEP_STUDENT_PREVIEW = 1;
-const STEP_SCHOOL_INFO_PREVIEW = 2;
-const STEP_SCHOOL_MATCHING = 3;
-const STEP_CONFIRM = 4;
-const MAX_TABS = 4;
+const STEP_SCHOOL_UPLOAD = 2;
+const STEP_SCHOOL_INFO_PREVIEW = 3;
+const STEP_SCHOOL_MATCHING = 4;
+const STEP_CONFIRM = 5;
+const MAX_TABS = 5;
 
 function parseFile(file: File): Promise<SpreadsheetData | null> {
     return new Promise((resolve) => {
@@ -95,8 +97,6 @@ export default function SpreadsheetState() {
         <SpreadsheetUpload
             file={file}
             setFile={setFile}
-            schoolInfoFile={schoolInfoFile}
-            setSchoolInfoFile={setSchoolInfoFile}
             year={year}
             setYear={setYear}
         />,
@@ -187,12 +187,19 @@ export default function SpreadsheetState() {
         setYearHasData(year !== null && yearsWithData.has(year));
     }, [year, yearsWithData]);
 
-    // Enable Next on upload step only when both files and year are set
+    // Enable Next on upload step only when student file and year are set
     useEffect(() => {
         if (tabIndex === STEP_UPLOAD) {
-            setCanNext(year !== null && !!file && !!schoolInfoFile);
+            setCanNext(year !== null && !!file);
         }
-    }, [file, schoolInfoFile, year, tabIndex]);
+    }, [file, year, tabIndex]);
+
+    // Enable Next on school upload step when school file is set
+    useEffect(() => {
+        if (tabIndex === STEP_SCHOOL_UPLOAD) {
+            setCanNext(!!schoolInfoFile);
+        }
+    }, [schoolInfoFile, tabIndex]);
 
     // Enable Next on confirmation step when checkbox is checked
     useEffect(() => {
@@ -334,8 +341,6 @@ export default function SpreadsheetState() {
                 <SpreadsheetUpload
                     file={file}
                     setFile={setFile}
-                    schoolInfoFile={schoolInfoFile}
-                    setSchoolInfoFile={setSchoolInfoFile}
                     year={year}
                     setYear={setYear}
                 />,
@@ -396,6 +401,18 @@ export default function SpreadsheetState() {
                 />,
             );
             setCanNext(true);
+            setHasError(false);
+            setCanPrevious(true);
+            setNextText("Next");
+        } else if (index === STEP_SCHOOL_UPLOAD) {
+            setTabIndex(STEP_SCHOOL_UPLOAD);
+            setTab(
+                <SchoolInfoUpload
+                    schoolInfoFile={schoolInfoFile}
+                    setSchoolInfoFile={setSchoolInfoFile}
+                />,
+            );
+            setCanNext(!!schoolInfoFile);
             setHasError(false);
             setCanPrevious(true);
             setNextText("Next");
@@ -540,11 +557,12 @@ export default function SpreadsheetState() {
                     />
                 </div>
                 <div className="flex flex-row justify-between w-full font-semibold text-sm">
-                    <p className="-translate-x-6">Upload</p>
-                    <p>Student Data</p>
+                    <p className="-translate-x-4">Upload</p>
+                    <p>Student</p>
+                    <p>School</p>
                     <p>School Info</p>
-                    <p>Schools</p>
-                    <p className="translate-x-6">Confirm</p>
+                    <p>Matching</p>
+                    <p className="translate-x-4">Confirm</p>
                 </div>
             </div>
 
