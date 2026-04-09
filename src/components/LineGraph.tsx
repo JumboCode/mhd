@@ -134,7 +134,7 @@ export default function MultiLineGraph({
                     <div
                         key={i}
                         style={{ top: `${yScale(value)}%`, left: 24, right: 0 }}
-                        className="absolute text-xs tabular-nums -translate-y-1/2 text-muted-foreground text-right pr-4"
+                        className="absolute text-xs tabular-nums -translate-y-1/2 text-muted-foreground text-right pr-2"
                     >
                         {value.toLocaleString()}
                     </div>
