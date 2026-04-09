@@ -153,7 +153,7 @@ export async function GET(req: NextRequest) {
             lastYearTeachers.map((t) => [t.schoolId, t.count]),
         );
 
-        // Combine data for each school, excluding schools with no participation in the current year
+        // Combine data for each school excluding schools with no participation in the current year
         const schoolsToReturn = allSchools.flatMap((school) => {
             const currProjects = currProjectsMap.get(school.id) ?? 0;
             const lastProjects = lastProjectsMap.get(school.id) ?? 0;
