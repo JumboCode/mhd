@@ -19,6 +19,7 @@ import {
 import { toast } from "sonner";
 import { Pencil, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import Image from "next/image";
 
 interface SchoolCoordinates {
     latitude: number | null;
@@ -266,9 +267,13 @@ export const MapPlacer = ({
                                 latitude={coordinates.latitude}
                             >
                                 <MarkerContent>
-                                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-teal-500 shadow-lg cursor-pointer border-2 border-white">
-                                        <MapPin className="h-5 w-5 text-white" />
-                                    </div>
+                                    <Image
+                                        src="/maps/location-marker.svg"
+                                        alt="📍"
+                                        width={32}
+                                        height={32}
+                                        className="h-10 w-10 text-white"
+                                    />
                                 </MarkerContent>
                             </MapMarker>
                         )}
