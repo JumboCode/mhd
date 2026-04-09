@@ -121,9 +121,10 @@ export function clearCart(
     setCart: Dispatch<SetStateAction<string[]>>,
     setFilterNames: Dispatch<SetStateAction<string[]>>,
 ) {
-    // Resets cart and filter names
     setCart([]);
     setFilterNames([]);
+    sessionStorage.removeItem("cartStorage");
+    sessionStorage.removeItem("cartNameStorage");
 }
 
 export function deleteFromCart(

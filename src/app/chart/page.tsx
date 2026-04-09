@@ -384,6 +384,8 @@ export default function ChartPage() {
     useEffect(() => {
         if (cart.length !== 0) {
             sessionStorage.setItem("cartStorage", JSON.stringify(cart));
+        } else {
+            sessionStorage.removeItem("cartStorage");
         }
     }, [cart]);
 
@@ -394,6 +396,8 @@ export default function ChartPage() {
                 "cartNameStorage",
                 JSON.stringify(filterNames),
             );
+        } else {
+            sessionStorage.removeItem("cartNameStorage");
         }
     }, [filterNames]);
 

@@ -44,29 +44,31 @@ export function Cart({
 }: CartProps) {
     const [isExporting, setIsExporting] = useState(false);
     return (
-        <div className="flex flex-col gap-2 p-2 w-full max-w-5xl">
-            {filterNames.map((filterName, index) => (
-                <div
-                    key={index}
-                    className="flex flex-row gap-4 justify-between"
-                >
-                    <p>{filterName}</p>
-                    <button
-                        onClick={() =>
-                            deleteFromCart(
-                                cart,
-                                setCart,
-                                filterNames,
-                                setFilterNames,
-                                index,
-                            )
-                        }
-                        className="text-gray-400 hover:text-red-500 p-1 pr-2 transition-colors duration-150 ease-in-out"
+        <div className="flex flex-col max-h-[80vh] gap-2 p-2 w-full max-w-5xl h-full ">
+            <div className="flex flex-col gap-2 overflow-y-auto flex-1 pr-1">
+                {filterNames.map((filterName, index) => (
+                    <div
+                        key={index}
+                        className="flex flex-row gap-4 justify-between"
                     >
-                        <Trash2 className="h-4 w-4" />
-                    </button>
-                </div>
-            ))}
+                        <p>{filterName}</p>
+                        <button
+                            onClick={() =>
+                                deleteFromCart(
+                                    cart,
+                                    setCart,
+                                    filterNames,
+                                    setFilterNames,
+                                    index,
+                                )
+                            }
+                            className="text-gray-400 hover:text-red-500 p-1 pr-2 transition-colors duration-150 ease-in-out"
+                        >
+                            <Trash2 className="h-4 w-4" />
+                        </button>
+                    </div>
+                ))}
+            </div>
             <div
                 className={`flex flex-row justify-between ${cart.length > 0 && "border-t pt-2"}`}
             >
