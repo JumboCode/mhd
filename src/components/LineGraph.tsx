@@ -40,7 +40,6 @@ export default function MultiLineGraph({
     const mTop = config?.margin?.top ?? 6;
     const mRight = config?.margin?.right ?? 8;
     const mBottom = config?.margin?.bottom ?? 80;
-    const mLeft = config?.margin?.left ?? 54;
     const strokeWidth = config?.strokeWidth ?? 2;
     const dotRadius = config?.dotRadius ?? 6;
 
@@ -58,6 +57,14 @@ export default function MultiLineGraph({
         .domain([0, max(allPoints.map((d) => d.y)) ?? 10])
         .range([100, 0])
         .nice();
+
+    const maxTickLen = yScale
+        .ticks(8)
+        .filter((t) => Number.isInteger(t))
+        .reduce((a, b) => Math.max(a, b), 0)
+        .toLocaleString().length;
+
+    const mLeft = config?.margin?.left ?? Math.max(54, 24 + maxTickLen * 8);
 
     const lineGen = d3Line<{ x: string | number; y: number }>()
         .x((d) => xScale(Number(d.x)))
@@ -127,7 +134,7 @@ export default function MultiLineGraph({
                     <div
                         key={i}
                         style={{ top: `${yScale(value)}%`, left: 24, right: 0 }}
-                        className="absolute text-xs tabular-nums -translate-y-1/2 text-muted-foreground text-right pr-4"
+                        className="absolute text-xs tabular-nums -translate-y-1/2 text-muted-foreground text-right pr-2"
                     >
                         {value.toLocaleString()}
                     </div>
