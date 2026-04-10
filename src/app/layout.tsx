@@ -21,6 +21,7 @@ import { UnsavedChangesProvider } from "@/components/UnsavedChangesContext";
 export const metadata: Metadata = {
     title: "MHD",
     description: "MHD",
+    icons: { icon: "/favicon.png" },
 };
 
 export default function RootLayout({
