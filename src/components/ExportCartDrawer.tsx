@@ -27,7 +27,8 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "./ui/alert-dialog";
-import { clearCart, deleteFromCart, downloadGraphs } from "@/lib/export-to-pdf";
+import { downloadGraphs } from "@/lib/export-to-pdf";
+import { clearCart, deleteFromCart } from "@/lib/cart-db";
 
 type ExportCartDrawerProps = {
     filterNames: string[];

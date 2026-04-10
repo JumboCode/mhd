@@ -1,3 +1,6 @@
+import type React from "react";
+import type { Dispatch, SetStateAction } from "react";
+
 const DB_NAME = "mhd-export-cart";
 const STORE_NAME = "cart";
 const DB_VERSION = 1;
@@ -43,6 +46,47 @@ export async function saveCart(
     } catch {
         // Silently fail — cart just won't persist across refreshes
     }
+}
+
+export async function addToCart(
+    chartRef: React.RefObject<HTMLDivElement | null>,
+    cart: string[],
+    setCart: Dispatch<SetStateAction<string[]>>,
+    filterNames: string[],
+    setFilterNames: Dispatch<SetStateAction<string[]>>,
+    filterName: string,
+) {
+    const { captureChartAsDataUrl } = await import("./export-to-pdf");
+    const dataUrl = await captureChartAsDataUrl(chartRef);
+    if (!dataUrl) return;
+    const newCart = [...cart, dataUrl];
+    const newFilterNames = [...filterNames, filterName];
+    setCart(newCart);
+    setFilterNames(newFilterNames);
+    await saveCart(newCart, newFilterNames);
+}
+
+export function deleteFromCart(
+    cart: string[],
+    setCart: Dispatch<SetStateAction<string[]>>,
+    filterNames: string[],
+    setFilterNames: Dispatch<SetStateAction<string[]>>,
+    index: number,
+) {
+    const newCart = cart.filter((_, i) => i !== index);
+    const newFilterNames = filterNames.filter((_, i) => i !== index);
+    setCart(newCart);
+    setFilterNames(newFilterNames);
+    saveCart(newCart, newFilterNames);
+}
+
+export function clearCart(
+    setCart: Dispatch<SetStateAction<string[]>>,
+    setFilterNames: Dispatch<SetStateAction<string[]>>,
+) {
+    setCart([]);
+    setFilterNames([]);
+    saveCart([], []);
 }
 
 export async function loadCart(): Promise<{

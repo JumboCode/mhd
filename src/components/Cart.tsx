@@ -13,7 +13,8 @@
 
 import { Loader2, Trash2 } from "lucide-react";
 import { Button } from "./ui/button";
-import { clearCart, deleteFromCart, downloadGraphs } from "@/lib/export-to-pdf";
+import { downloadGraphs } from "@/lib/export-to-pdf";
+import { clearCart, deleteFromCart } from "@/lib/cart-db";
 import { Dispatch, SetStateAction, useState } from "react";
 import { toast } from "sonner";
 
