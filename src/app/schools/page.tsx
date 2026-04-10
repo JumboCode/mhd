@@ -138,10 +138,8 @@ export default function SchoolsPage() {
 
     return (
         <div className="font-sans w-full max-w-full h-full min-h-0 flex flex-col overscroll-none">
-            <div className="shrink-0 z-40 flex items-center h-16 px-6 backdrop-blur-xl bg-background/70 border-b">
-                <div className="flex-1 text-center">
-                    <h1 className="text-xl font-bold sm: pr-6"> Schools </h1>
-                </div>
+            <div className="shrink-0 z-40 flex items-center h-16 px-6 backdrop-blur-xl bg-background/70 border-b justify-between">
+                <h1 className="text-lg font-bold">Schools</h1>
 
                 <div className="flex items-center gap-4">
                     <div className="relative z-50">
