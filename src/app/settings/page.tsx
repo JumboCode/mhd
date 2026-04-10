@@ -262,8 +262,7 @@ function SchoolLocationEditor() {
     useEffect(() => {
         fetch("/api/schools?list=true")
             .then((res) => res.json())
-            .then((data) => setSchools(data))
-            .catch(() => toast.error("Failed to load schools"));
+            .then((data) => setSchools(data));
     }, []);
 
     const selectedSchool = schools.find(
