@@ -142,7 +142,12 @@ const YearsOfData = forwardRef<
                                 <td className="px-4 py-3 text-sm text-center">
                                     <button
                                         onClick={() => handleRemoveYear(year)}
-                                        className="text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
+                                        disabled={!yearsWithData.has(year)}
+                                        className={`transition-colors ${
+                                            yearsWithData.has(year)
+                                                ? "text-gray-400 hover:text-red-500 cursor-pointer"
+                                                : "text-gray-200 cursor-not-allowed"
+                                        }`}
                                         aria-label={`Remove ${year}`}
                                     >
                                         <Trash className="w-4 h-4" />
