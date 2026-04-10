@@ -1,20 +1,8 @@
-/***************************************************************
- *
- *         /src/components/ExportCartDrawer.tsx
- *
- *         Author: Amp
- *         Date: 4/8/2026
- *
- *         Summary: Bottom-right drawer (Vaul) showing the export
- *                  cart with item list and PDF export action
- **************************************************************/
-
 "use client";
 
 import { Loader2, Trash2 } from "lucide-react";
-import { Dispatch, SetStateAction, useState } from "react";
+import React from "react";
 import { Drawer as DrawerPrimitive } from "vaul";
-import { toast } from "sonner";
 import { Button } from "./ui/button";
 import {
     AlertDialog,
@@ -27,24 +15,21 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "./ui/alert-dialog";
-import { downloadGraphs } from "@/lib/export-to-pdf";
-import { clearCart, deleteFromCart } from "@/lib/cart-db";
+import { clearCart, removeFromCart, type CartItem } from "@/lib/cart-db";
 
 type ExportCartDrawerProps = {
-    filterNames: string[];
-    cart: string[];
-    setCart: Dispatch<SetStateAction<string[]>>;
-    setFilterNames: Dispatch<SetStateAction<string[]>>;
+    items: CartItem[];
+    setItems: React.Dispatch<React.SetStateAction<CartItem[]>>;
+    onExport: () => Promise<void>;
+    isExporting: boolean;
 };
 
 export function ExportCartDrawer({
-    filterNames,
-    cart,
-    setCart,
-    setFilterNames,
+    items,
+    setItems,
+    onExport,
+    isExporting,
 }: ExportCartDrawerProps) {
-    const [isExporting, setIsExporting] = useState(false);
-
     return (
         <DrawerPrimitive.Root
             modal={false}
@@ -54,9 +39,9 @@ export function ExportCartDrawer({
             <DrawerPrimitive.Trigger asChild>
                 <button className="absolute bottom-4 right-8 z-40 flex items-center gap-3 rounded-xl border bg-background px-6 py-3 shadow-lg cursor-pointer hover:bg-accent transition-colors">
                     <span className="text-lg font-bold">Export Cart</span>
-                    {cart.length > 0 && (
+                    {items.length > 0 && (
                         <span className="flex items-center justify-center min-w-6 h-6 rounded-full bg-red-500 text-white text-xs font-semibold px-1.5">
-                            {cart.length}
+                            {items.length}
                         </span>
                     )}
                 </button>
@@ -70,36 +55,34 @@ export function ExportCartDrawer({
                         <DrawerPrimitive.Title className="text-2xl font-bold leading-none">
                             Export Cart
                         </DrawerPrimitive.Title>
-                        {cart.length > 0 && (
+                        {items.length > 0 && (
                             <span className="flex items-center justify-center min-w-7 h-7 rounded-full bg-red-500 text-white text-sm font-semibold px-2">
-                                {cart.length}
+                                {items.length}
                             </span>
                         )}
                     </div>
 
                     <div className="flex-1 overflow-y-auto px-4 pb-2">
-                        {cart.length === 0 ? (
+                        {items.length === 0 ? (
                             <p className="text-muted-foreground text-sm py-8 text-center">
                                 No items in cart. Add charts or maps to export
                                 them as PDF.
                             </p>
                         ) : (
                             <div className="flex flex-col gap-1">
-                                {filterNames.map((name, index) => (
+                                {items.map((item, index) => (
                                     <div
                                         key={index}
                                         className="flex items-center justify-between gap-4 rounded-md px-3 py-2.5 hover:bg-accent transition-colors"
                                     >
                                         <p className="text-sm font-medium truncate">
-                                            {name}
+                                            {item.name}
                                         </p>
                                         <button
                                             onClick={() =>
-                                                deleteFromCart(
-                                                    cart,
-                                                    setCart,
-                                                    filterNames,
-                                                    setFilterNames,
+                                                removeFromCart(
+                                                    items,
+                                                    setItems,
                                                     index,
                                                 )
                                             }
@@ -114,12 +97,10 @@ export function ExportCartDrawer({
                     </div>
 
                     <div className="flex flex-col gap-2 p-4 mt-auto">
-                        {cart.length > 0 && (
+                        {items.length > 0 && (
                             <div className="flex items-center justify-between pb-1">
                                 <button
-                                    onClick={() =>
-                                        clearCart(setCart, setFilterNames)
-                                    }
+                                    onClick={() => clearCart(setItems)}
                                     className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                                 >
                                     Clear All
@@ -131,7 +112,7 @@ export function ExportCartDrawer({
                             <AlertDialogTrigger asChild>
                                 <Button
                                     className="w-full h-12 text-base"
-                                    disabled={cart.length === 0 || isExporting}
+                                    disabled={items.length === 0 || isExporting}
                                 >
                                     {isExporting ? (
                                         <Loader2 className="h-5 w-5 animate-spin" />
@@ -143,13 +124,13 @@ export function ExportCartDrawer({
                             <AlertDialogContent>
                                 <AlertDialogHeader>
                                     <AlertDialogTitle>
-                                        Export {cart.length} graph
-                                        {cart.length !== 1 ? "s" : ""} to PDF?
+                                        Export {items.length} graph
+                                        {items.length !== 1 ? "s" : ""} to PDF?
                                     </AlertDialogTitle>
                                     <AlertDialogDescription>
                                         This will download a PDF containing{" "}
-                                        {cart.length} graph
-                                        {cart.length !== 1 ? "s" : ""} to your
+                                        {items.length} graph
+                                        {items.length !== 1 ? "s" : ""} to your
                                         computer.
                                     </AlertDialogDescription>
                                 </AlertDialogHeader>
@@ -157,19 +138,7 @@ export function ExportCartDrawer({
                                     <AlertDialogCancel>
                                         Cancel
                                     </AlertDialogCancel>
-                                    <AlertDialogAction
-                                        onClick={async () => {
-                                            setIsExporting(true);
-                                            await downloadGraphs(
-                                                cart,
-                                                filterNames,
-                                            );
-                                            setIsExporting(false);
-                                            toast.success(
-                                                "Graphs exported successfully!",
-                                            );
-                                        }}
-                                    >
+                                    <AlertDialogAction onClick={onExport}>
                                         Download
                                     </AlertDialogAction>
                                 </AlertDialogFooter>

@@ -14,7 +14,6 @@
 import { Loader2, Trash2 } from "lucide-react";
 import { Button } from "./ui/button";
 import { downloadGraphs } from "@/lib/export-to-pdf";
-import { clearCart, deleteFromCart } from "@/lib/cart-db";
 import { Dispatch, SetStateAction, useState } from "react";
 import { toast } from "sonner";
 
@@ -53,15 +52,12 @@ export function Cart({
                 >
                     <p>{filterName}</p>
                     <button
-                        onClick={() =>
-                            deleteFromCart(
-                                cart,
-                                setCart,
-                                filterNames,
-                                setFilterNames,
-                                index,
-                            )
-                        }
+                        onClick={() => {
+                            setCart(cart.filter((_, i) => i !== index));
+                            setFilterNames(
+                                filterNames.filter((_, i) => i !== index),
+                            );
+                        }}
                         className="text-gray-400 hover:text-red-500 p-1 pr-2 transition-colors duration-150 ease-in-out"
                     >
                         <Trash2 className="h-4 w-4" />
@@ -72,7 +68,10 @@ export function Cart({
                 className={`flex flex-row justify-between ${cart.length > 0 && "border-t pt-2"}`}
             >
                 <button
-                    onClick={() => clearCart(setCart, setFilterNames)}
+                    onClick={() => {
+                        setCart([]);
+                        setFilterNames([]);
+                    }}
                     className="hover:cursor-pointer pl-2"
                 >
                     Clear All

@@ -26,6 +26,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import PermittedUsers from "@/components/PermittedUsers";
 import { useRouter } from "next/navigation";
 import { useUnsavedChanges } from "@/components/UnsavedChangesContext";
+import LoadError from "@/components/LoadError";
 import {
     Dialog,
     DialogContent,
@@ -120,19 +121,6 @@ export default function Settings() {
                 </TabsList>
                 {/* Data management tab */}
                 <TabsContent value="data-management" className="mt-6 space-y-6">
-                    <div>
-                        <h2 className="text-xl font-semibold">Preferences</h2>
-                        <p className="text-gray-600">
-                            How would you like to view charts...
-                        </p>
-                    </div>
-                    <div>
-                        <h2 className="text-xl font-semibold">Configuration</h2>
-                        <p className="text-gray-600">
-                            These settings configure how data is calculated.
-                            Only edit these settings if you really mean to.
-                        </p>
-                    </div>
                     <div className="space-y-6">
                         <div>
                             <h3 className="font-bold">
@@ -246,6 +234,9 @@ interface SchoolEntry {
 
 function SchoolLocationEditor() {
     const [schools, setSchools] = useState<SchoolEntry[]>([]);
+    const [schoolsLoadError, setSchoolsLoadError] = useState<string | null>(
+        null,
+    );
     const [selectedSchoolId, setSelectedSchoolId] = useState("");
     const [editing, setEditing] = useState(false);
     const [newPin, setNewPin] = useState<{
@@ -259,12 +250,25 @@ function SchoolLocationEditor() {
         setMounted(true);
     }, []);
 
-    useEffect(() => {
+    const fetchSchools = useCallback(() => {
+        setSchoolsLoadError(null);
         fetch("/api/schools?list=true")
-            .then((res) => res.json())
-            .then((data) => setSchools(data))
-            .catch(() => toast.error("Failed to load schools"));
+            .then(async (res) => {
+                const data = await res.json();
+                if (!res.ok || !Array.isArray(data)) {
+                    throw new Error("Failed to load schools.");
+                }
+                setSchools(data);
+            })
+            .catch(() => {
+                setSchools([]);
+                setSchoolsLoadError("Failed to load schools.");
+            });
     }, []);
+
+    useEffect(() => {
+        fetchSchools();
+    }, [fetchSchools]);
 
     const selectedSchool = schools.find(
         (s) => String(s.id) === selectedSchoolId,
@@ -368,16 +372,27 @@ function SchoolLocationEditor() {
             <div className="flex items-center justify-between">
                 <h3 className="font-bold">School Locations</h3>
             </div>
-            <div className="min-w-72 w-fit">
-                <Combobox
-                    options={schoolOptions}
-                    value={selectedSchoolId}
-                    onChange={handleSchoolChange}
-                    placeholder="Search for a school..."
+            {schoolsLoadError ? (
+                <LoadError
+                    heading="School locations are unavailable"
+                    message={schoolsLoadError}
+                    description="We couldn’t load the school list for this editor, so location updates are temporarily paused."
+                    onRetry={fetchSchools}
+                    compact
+                    className="max-w-2xl"
                 />
-            </div>
+            ) : (
+                <div className="min-w-72 w-fit">
+                    <Combobox
+                        options={schoolOptions}
+                        value={selectedSchoolId}
+                        onChange={handleSchoolChange}
+                        placeholder="Search for a school..."
+                    />
+                </div>
+            )}
 
-            {selectedSchool && mounted && (
+            {selectedSchool && mounted && !schoolsLoadError && (
                 <div className="space-y-3">
                     <div className="h-80 rounded-lg overflow-hidden border border-gray-200 relative">
                         <Map

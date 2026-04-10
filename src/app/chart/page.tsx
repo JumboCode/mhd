@@ -13,6 +13,7 @@
 
 import {
     CalendarDays,
+    Check,
     ChartColumn,
     ChevronDown,
     LineChart,
@@ -58,11 +59,16 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { downloadSingleGraph } from "@/lib/export-to-pdf";
-import { addToCart, loadCart } from "@/lib/cart-db";
+import {
+    downloadSingleGraph,
+    downloadGraphs,
+    captureChartAsDataUrl,
+} from "@/lib/export-to-pdf";
+import { addToCart, loadCart, type CartItem } from "@/lib/cart-db";
 import { ExportCartDrawer } from "@/components/ExportCartDrawer";
 import { Kbd } from "@/components/ui/kbd";
 import { useHotkey } from "@/hooks/useHotkey";
+import LoadError from "@/components/LoadError";
 
 type Project = {
     id: number;
@@ -183,6 +189,13 @@ const generateChartTitle = (
 export default function ChartPage() {
     const [allProjects, setAllProjects] = useState<Project[]>([]);
     const [gatewaySchools, setGatewaySchools] = useState<string[]>([]);
+    const [isProjectsLoading, setIsProjectsLoading] = useState(true);
+    const [projectLoadError, setProjectLoadError] = useState<string | null>(
+        null,
+    );
+    const [gatewaySchoolsError, setGatewaySchoolsError] = useState<
+        string | null
+    >(null);
     const [isExporting, setIsExporting] = useState(false);
     const [exportDialogOpen, setExportDialogOpen] = useState(false);
 
@@ -268,14 +281,11 @@ export default function ChartPage() {
         parseAsBoolean.withDefault(false),
     );
 
-    const [cart, setCart] = useState<string[]>([]);
-    const [filterNames, setFilterNames] = useState<string[]>([]);
+    const [cartItems, setCartItems] = useState<CartItem[]>([]);
+    const [isCartExporting, setIsCartExporting] = useState(false);
 
     useEffect(() => {
-        loadCart().then(({ cart, filterNames }) => {
-            setCart(cart);
-            setFilterNames(filterNames);
-        });
+        loadCart().then(setCartItems);
     }, []);
 
     const filters: Filters = useMemo(
@@ -310,37 +320,128 @@ export default function ChartPage() {
     );
     const chartRef = useRef<HTMLDivElement | null>(null);
 
-    // Fetch all project data
-    useEffect(() => {
-        const fetchProjects = async () => {
-            try {
-                const response = await fetch("/api/projects");
-                if (!response.ok) throw new Error("Failed to fetch");
+    // Apply URL search params to all filter state
+    const applyParams = useCallback(
+        (params: string) => {
+            const sp = new URLSearchParams(params);
+            setTimePeriod(sp.get("period") ?? "custom");
+            setStartYear(parseInt(sp.get("startYear") ?? "2020", 10));
+            setEndYear(parseInt(sp.get("endYear") ?? "2025", 10));
+            setChartType(sp.get("type") ?? "bar");
+            setGroupBy(sp.get("groupBy") ?? "none");
+            setMeasuredAs(sp.get("measuredAs") ?? "total-school-count");
+            setSelectedSchools(sp.getAll("schools"));
+            setSelectedCities(sp.getAll("cities"));
+            setSelectedProjectTypes(sp.getAll("projectTypes"));
+            setTeacherYearsValue(sp.get("teacherYearsValue") ?? "");
+            setTeacherYearsOperator(sp.get("teacherYearsOperator") ?? "=");
+            setTeacherYearsValue2(sp.get("teacherYearsValue2") ?? "");
+            setOnlyGatewaySchools(sp.get("onlyGatewaySchools") === "true");
+        },
+        [
+            setTimePeriod,
+            setStartYear,
+            setEndYear,
+            setChartType,
+            setGroupBy,
+            setMeasuredAs,
+            setSelectedSchools,
+            setSelectedCities,
+            setSelectedProjectTypes,
+            setTeacherYearsValue,
+            setTeacherYearsOperator,
+            setTeacherYearsValue2,
+            setOnlyGatewaySchools,
+        ],
+    );
 
-                const data = await response.json();
+    // Export all cart items to PDF
+    const handleCartExport = useCallback(async () => {
+        if (cartItems.length === 0) return;
 
-                const updatedProjects = data.map((p: Project) => ({
-                    ...p,
-                    gatewaySchool: gatewaySchools.includes(p.schoolName)
-                        ? "Gateway"
-                        : "Non-Gateway",
-                }));
+        setIsCartExporting(true);
+        const screenshots: string[] = [];
+        const names: string[] = [];
 
-                setAllProjects(updatedProjects);
-            } catch {
-                toast.error(
-                    "Failed to load project data. Please refresh the page.",
-                );
+        // Save current params to restore later
+        const originalParams = window.location.search;
+
+        try {
+            for (const item of cartItems) {
+                // Apply this item's params
+                applyParams(item.params);
+
+                // Wait for React to re-render and chart to update
+                await new Promise((resolve) => {
+                    requestAnimationFrame(() => {
+                        setTimeout(resolve, 100);
+                    });
+                });
+
+                // Capture the chart
+                const dataUrl = await captureChartAsDataUrl(chartRef);
+                if (dataUrl) {
+                    screenshots.push(dataUrl);
+                    names.push(item.name);
+                }
             }
-        };
 
-        fetchProjects();
+            // Restore original params
+            applyParams(originalParams);
+
+            // Build and download PDF
+            if (screenshots.length > 0) {
+                await downloadGraphs(screenshots, names);
+                toast.success("Graphs exported successfully!");
+            }
+        } catch (err) {
+            console.error("[Export Cart] Export failed:", err);
+            toast.error(
+                "Export failed. Check the browser console for details.",
+            );
+            // Try to restore original params on error
+            applyParams(originalParams);
+        } finally {
+            setIsCartExporting(false);
+        }
+    }, [cartItems, applyParams]);
+
+    const fetchProjects = useCallback(async () => {
+        setIsProjectsLoading(true);
+        setProjectLoadError(null);
+        try {
+            const response = await fetch("/api/projects");
+            if (!response.ok) throw new Error("Failed to fetch");
+
+            const data = await response.json();
+
+            const updatedProjects = data.map((p: Project) => ({
+                ...p,
+                gatewaySchool: gatewaySchools.includes(p.schoolName)
+                    ? "Gateway"
+                    : "Non-Gateway",
+            }));
+
+            setAllProjects(updatedProjects);
+        } catch {
+            setAllProjects([]);
+            setProjectLoadError(
+                "Failed to load project data. Please refresh the page.",
+            );
+        } finally {
+            setIsProjectsLoading(false);
+        }
     }, [gatewaySchools]);
 
-    // Fetch gateway schools
-    useEffect(() => {
+    const fetchGatewaySchools = useCallback(() => {
+        setGatewaySchoolsError(null);
         fetch("/api/schools?gateway=true&list=true")
-            .then((res) => res.json())
+            .then((res) => {
+                if (!res.ok) {
+                    throw new Error("Failed to load gateway schools");
+                }
+                return res.json();
+            })
             .then((data) => {
                 const schoolNames: string[] = data.map(
                     (school: { name: string }) => school.name,
@@ -348,8 +449,20 @@ export default function ChartPage() {
 
                 setGatewaySchools(schoolNames);
             })
-            .catch(() => toast.error("Failed to load gateway schools"));
+            .catch(() =>
+                setGatewaySchoolsError("Failed to load gateway schools."),
+            );
     }, []);
+
+    // Fetch all project data
+    useEffect(() => {
+        fetchProjects();
+    }, [fetchProjects]);
+
+    // Fetch gateway schools
+    useEffect(() => {
+        fetchGatewaySchools();
+    }, [fetchGatewaySchools]);
 
     const filterName = generateChartTitle(
         chartType,
@@ -701,7 +814,17 @@ export default function ChartPage() {
 
             {/* Main Content Area */}
             <div className="flex-1 flex flex-col h-screen overflow-hidden relative">
-                {allProjects.length > 0 ? (
+                {projectLoadError ? (
+                    <div className="flex-1 p-8">
+                        <LoadError
+                            heading="Chart data is unavailable"
+                            message={projectLoadError}
+                            description="We couldn’t load the project records needed to build this chart. Retry from here and keep your current filters intact."
+                            onRetry={fetchProjects}
+                            className="h-full min-h-0"
+                        />
+                    </div>
+                ) : allProjects.length > 0 ? (
                     <div className="flex flex-col gap-4 h-full overflow-hidden">
                         {/* Header */}
                         <div className="flex items-center justify-between px-8 pt-4 shrink-0">
@@ -800,19 +923,33 @@ export default function ChartPage() {
                                     variant="outline"
                                     size="sm"
                                     className="flex items-center gap-2"
+                                    disabled={
+                                        cartItems.some(
+                                            (i) => i.name === filterName,
+                                        ) ||
+                                        Math.round(filteredProjectCount) === 0
+                                    }
                                     onClick={() =>
-                                        addToCart(
-                                            chartRef,
-                                            cart,
-                                            setCart,
-                                            filterNames,
-                                            setFilterNames,
-                                            filterName,
-                                        )
+                                        addToCart(cartItems, setCartItems, {
+                                            name: filterName,
+                                            source: "chart",
+                                            params: window.location.search,
+                                        })
                                     }
                                 >
-                                    <PlusCircle className="w-4 h-4" />
-                                    Add to Cart
+                                    {cartItems.some(
+                                        (i) => i.name === filterName,
+                                    ) ? (
+                                        <>
+                                            <Check className="w-4 h-4" />
+                                            Added to Cart
+                                        </>
+                                    ) : (
+                                        <>
+                                            <PlusCircle className="w-4 h-4" />
+                                            Add to Cart
+                                        </>
+                                    )}
                                 </Button>
 
                                 <Button
@@ -1090,13 +1227,29 @@ export default function ChartPage() {
                             </p>
                         </div>
                     </div>
-                ) : null}
+                ) : (
+                    <div className="flex flex-1 items-center justify-center px-8">
+                        {isProjectsLoading ? (
+                            <Loader2 className="h-12 w-12 animate-spin text-slate-800" />
+                        ) : (
+                            <div className="rounded-3xl border bg-card px-10 py-12 text-center shadow-sm">
+                                <p className="text-lg font-semibold text-foreground">
+                                    No chart data found
+                                </p>
+                                <p className="mt-2 text-sm text-muted-foreground">
+                                    Try changing the year range or removing one
+                                    of the active filters.
+                                </p>
+                            </div>
+                        )}
+                    </div>
+                )}
 
                 <ExportCartDrawer
-                    filterNames={filterNames}
-                    cart={cart}
-                    setCart={setCart}
-                    setFilterNames={setFilterNames}
+                    items={cartItems}
+                    setItems={setCartItems}
+                    onExport={handleCartExport}
+                    isExporting={isCartExporting}
                 />
             </div>
         </div>
