@@ -2,10 +2,8 @@
 
 import * as React from "react";
 import NextLink from "next/link";
-import { ArrowUp, ArrowDown } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { TrendingUp } from "lucide-react";
-import { TrendingDown } from "lucide-react";
+import { TrendingUp, TrendingDown } from "lucide-react";
 
 /**
  * Generates an SVG path string for a sparkline from data points.
