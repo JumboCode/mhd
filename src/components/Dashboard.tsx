@@ -20,6 +20,7 @@ import MultiLineGraph from "./LineGraph";
 import type { GraphDataset } from "./LineGraph";
 import Link from "next/link";
 import { DashboardSkeleton } from "@/components/skeletons/DashboardSkeleton";
+import { LoadError } from "@/components/ui/load-error";
 
 type Stats = {
     totals: {
@@ -54,21 +55,24 @@ export default function Dashboard() {
     const [percentChanges, setPercentChanges] = useState<PercentChanges | null>(
         null,
     );
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         if (year === null) return;
         const fetchStats = async (selectedYear: number) => {
+            setError(null);
             try {
                 const res = await fetch(
                     `/api/yearly-totals?year=${selectedYear}`,
                 );
+                if (!res.ok) throw new Error("Failed to load dashboard data");
                 const data = await res.json();
 
                 setStats(data.yearlyStats);
                 setAllYearsStats(data.allYearsStats || []);
                 setPercentChanges(data.percentChanges || null);
             } catch {
-                toast.error("Failed to load dashboard data. Please try again.");
+                setError("Failed to load dashboard data");
             }
         };
 
@@ -89,12 +93,14 @@ export default function Dashboard() {
         if (year === null) return;
         const fetchData = async () => {
             const years = Array.from({ length: 6 }, (_, i) => year - (5 - i));
+            setError(null);
             try {
                 const results = await Promise.all(
                     years.map((y) =>
-                        fetch(`/api/yearly-totals?year=${y}`).then((r) =>
-                            r.json(),
-                        ),
+                        fetch(`/api/yearly-totals?year=${y}`).then((r) => {
+                            if (!r.ok) throw new Error("Failed to fetch data");
+                            return r.json();
+                        }),
                     ),
                 );
                 const projectsPoints = results.map((yearInfo, i) => ({
@@ -108,7 +114,7 @@ export default function Dashboard() {
                 setprojectsYearData(projectsPoints);
                 setschoolYearData(schoolsPoints);
             } catch {
-                toast.error("Failed to load dashboard data. Please try again.");
+                setError("Failed to load dashboard data");
             }
         };
         fetchData();
@@ -143,6 +149,14 @@ export default function Dashboard() {
     const studentsSparkline = filteredStats.map((s) => s.total_students);
     const schoolsSparkline = filteredStats.map((s) => s.total_schools);
 
+    const handleRetry = () => {
+        setError(null);
+        setStats(null);
+        if (year !== null) {
+            setYear(year);
+        }
+    };
+
     return (
         <div className="flex flex-col gap-8 w-full px-8 py-10">
             <div className="flex flex-row items-center gap-5">
@@ -160,7 +174,13 @@ export default function Dashboard() {
                 </div>
             </div>
 
-            {stats ? (
+            {error ? (
+                <LoadError
+                    message={error}
+                    onRetry={handleRetry}
+                    className="h-96"
+                />
+            ) : stats ? (
                 <div className="">
                     <div className="grid grid-cols-4 gap-5">
                         <StatCard

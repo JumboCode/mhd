@@ -64,11 +64,15 @@ const GatewaySchools = forwardRef<
             fetch("/api/schools?gateway=true&list=true").then((res) =>
                 res.json(),
             ),
-        ]).then(([allSchools, gatewaySchoolsData]) => {
-            setSchools(allSchools);
-            setGatewaySchools(gatewaySchoolsData);
-            setError(null);
-        });
+        ])
+            .then(([allSchools, gatewaySchoolsData]) => {
+                setSchools(allSchools);
+                setGatewaySchools(gatewaySchoolsData);
+                setError(null);
+            })
+            .catch(() => {
+                setError("Failed to load schools data");
+            });
     };
 
     useEffect(() => {
