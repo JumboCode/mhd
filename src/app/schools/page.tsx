@@ -19,6 +19,7 @@ import { SchoolsDataTable } from "@/components/DataTableSchools";
 import { SaveDiscardBar } from "@/components/EditableCells";
 import SchoolSearchBar from "@/components/SchoolSearchbar";
 import YearDropdown from "@/components/YearDropdown";
+import LoadError from "@/components/LoadError";
 import { standardize } from "@/lib/school-name-standardize";
 
 export default function SchoolsPage() {
@@ -27,6 +28,10 @@ export default function SchoolsPage() {
     const [year, setYear] = useState<number | null>(null);
     const [search, setSearch] = useState("");
     const [isLoading, setIsLoading] = useState(false);
+    const [schoolLoadError, setSchoolLoadError] = useState<string | null>(null);
+    const [prevYearLoadError, setPrevYearLoadError] = useState<string | null>(
+        null,
+    );
     const [originalSchoolInfo, setOriginalSchoolInfo] = useState<Schools[]>([]);
     const [pendingChanges, setPendingChanges] = useState<
         Map<string, Partial<Schools>>
@@ -94,15 +99,14 @@ export default function SchoolsPage() {
 
     const columns = useMemo(() => createColumns(onCommit), [onCommit]);
 
-    useEffect(() => {
-        if (!year) return;
-
+    const fetchSchoolInfo = useCallback((selectedYear: number) => {
         setIsLoading(true);
+        setSchoolLoadError(null);
 
-        fetch(`/api/schools?year=${year}`)
+        fetch(`/api/schools?year=${selectedYear}`)
             .then((response) => {
                 if (!response.ok) {
-                    throw new Error(`Failed to fetch school data`);
+                    throw new Error("Failed to fetch school data");
                 }
                 return response.json();
             })
@@ -112,20 +116,23 @@ export default function SchoolsPage() {
                 setPendingChanges(new Map());
             })
             .catch(() => {
-                toast.error("Failed to load school data.");
+                setSchoolInfo([]);
+                setOriginalSchoolInfo([]);
+                setPendingChanges(new Map());
+                setSchoolLoadError("Failed to load school data.");
             })
             .finally(() => {
                 setIsLoading(false);
             });
-    }, [year]);
+    }, []);
 
-    useEffect(() => {
-        if (!year) return;
+    const fetchPrevYearSchoolInfo = useCallback((selectedYear: number) => {
+        setPrevYearLoadError(null);
 
-        fetch(`/api/schools?year=${year - 1}`)
+        fetch(`/api/schools?year=${selectedYear - 1}`)
             .then((response) => {
                 if (!response.ok) {
-                    throw new Error(`Failed to fetch school data`);
+                    throw new Error("Failed to fetch school data");
                 }
                 return response.json();
             })
@@ -133,9 +140,20 @@ export default function SchoolsPage() {
                 setPrevYearSchoolInfo(data);
             })
             .catch(() => {
-                toast.error("Failed to load previous year data.");
+                setPrevYearSchoolInfo([]);
+                setPrevYearLoadError("Failed to load previous year data.");
             });
-    }, [year]);
+    }, []);
+
+    useEffect(() => {
+        if (!year) return;
+        fetchSchoolInfo(year);
+    }, [year, fetchSchoolInfo]);
+
+    useEffect(() => {
+        if (!year) return;
+        fetchPrevYearSchoolInfo(year);
+    }, [year, fetchPrevYearSchoolInfo]);
 
     return (
         <div className="font-sans w-full max-w-full h-full min-h-0 flex flex-col overscroll-none">
@@ -158,14 +176,39 @@ export default function SchoolsPage() {
 
             <div className="flex-1 min-h-0 flex flex-col overflow-hidden overscroll-none">
                 <div className="flex-1 min-h-0 min-w-0 overflow-hidden">
-                    <SchoolsDataTable
-                        columns={columns}
-                        data={schoolInfo}
-                        prevData={prevYearSchoolInfo}
-                        globalFilter={search}
-                        setGlobalFilter={setSearch}
-                        isLoading={isLoading}
-                    />
+                    {schoolLoadError ? (
+                        <div className="h-full p-6">
+                            <LoadError
+                                message={schoolLoadError}
+                                onRetry={() => year && fetchSchoolInfo(year)}
+                                className="h-full min-h-0"
+                            />
+                        </div>
+                    ) : (
+                        <div className="flex h-full flex-col">
+                            {prevYearLoadError && year && (
+                                <div className="p-4 pb-0">
+                                    <LoadError
+                                        message={prevYearLoadError}
+                                        onRetry={() =>
+                                            fetchPrevYearSchoolInfo(year)
+                                        }
+                                        compact
+                                    />
+                                </div>
+                            )}
+                            <div className="flex-1 min-h-0">
+                                <SchoolsDataTable
+                                    columns={columns}
+                                    data={schoolInfo}
+                                    prevData={prevYearSchoolInfo}
+                                    globalFilter={search}
+                                    setGlobalFilter={setSearch}
+                                    isLoading={isLoading}
+                                />
+                            </div>
+                        </div>
+                    )}
                 </div>
                 <SaveDiscardBar
                     hasChanges={hasChanges}

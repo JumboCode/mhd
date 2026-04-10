@@ -10,7 +10,7 @@
  *        Summary: Export an svg graph as a pdf
  **************************************************************/
 
-import React, { Dispatch, SetStateAction } from "react";
+import type React from "react";
 import html2canvas from "html2canvas-pro";
 import jsPDF from "jspdf";
 import logoImg from "../../public/images/mhd-logo-full.png";
@@ -82,24 +82,18 @@ export function downloadGraphs(cart: string[], filterNames: string[]) {
     });
 }
 
-export async function addToCart(
+export async function captureChartAsDataUrl(
     chartRef: React.RefObject<HTMLDivElement | null>,
-    cart: string[],
-    setCart: Dispatch<SetStateAction<string[]>>,
-    filterNames: string[],
-    setFilterNames: Dispatch<SetStateAction<string[]>>,
-    filterName: string,
-): Promise<void> {
+): Promise<string | null> {
     const el = chartRef.current;
-    if (!el) return;
+    if (!el) return null;
 
     const canvas = await html2canvas(el, {
         backgroundColor: "#fff",
         scale: 2,
     });
 
-    setCart([...cart, canvas.toDataURL()]);
-    setFilterNames([...filterNames, filterName]);
+    return canvas.toDataURL();
 }
 
 export async function downloadSingleGraph(
@@ -115,24 +109,4 @@ export async function downloadSingleGraph(
     });
 
     downloadGraphs([canvas.toDataURL()], [filterName]);
-}
-
-export function clearCart(
-    setCart: Dispatch<SetStateAction<string[]>>,
-    setFilterNames: Dispatch<SetStateAction<string[]>>,
-) {
-    // Resets cart and filter names
-    setCart([]);
-    setFilterNames([]);
-}
-
-export function deleteFromCart(
-    cart: string[],
-    setCart: Dispatch<SetStateAction<string[]>>,
-    filterNames: string[],
-    setFilterNames: Dispatch<SetStateAction<string[]>>,
-    idx: number,
-) {
-    setCart(cart.filter((_, index) => index !== idx));
-    setFilterNames(filterNames.filter((_, index) => index !== idx));
 }

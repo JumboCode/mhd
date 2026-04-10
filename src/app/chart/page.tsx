@@ -59,12 +59,8 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { addToCart, downloadSingleGraph } from "@/lib/export-to-pdf";
-import {
-    HoverCard,
-    HoverCardContent,
-    HoverCardTrigger,
-} from "@/components/ui/hover-card";
-import { Cart } from "@/components/Cart";
+import { loadCart } from "@/lib/cart-db";
+import { ExportCartDrawer } from "@/components/ExportCartDrawer";
 import { Kbd } from "@/components/ui/kbd";
 import { useHotkey } from "@/hooks/useHotkey";
 
@@ -273,8 +269,14 @@ export default function ChartPage() {
     );
 
     const [cart, setCart] = useState<string[]>([]);
-
     const [filterNames, setFilterNames] = useState<string[]>([]);
+
+    useEffect(() => {
+        loadCart().then(({ cart, filterNames }) => {
+            setCart(cart);
+            setFilterNames(filterNames);
+        });
+    }, []);
 
     const filters: Filters = useMemo(
         () => ({
@@ -349,8 +351,6 @@ export default function ChartPage() {
             .catch(() => toast.error("Failed to load gateway schools"));
     }, []);
 
-    /* Fetch and set cart to and from session storage to persist between refreshes */
-
     const filterName = generateChartTitle(
         chartType,
         measuredAs,
@@ -365,37 +365,6 @@ export default function ChartPage() {
             onlyGatewaySchools: onlyGatewaySchools,
         },
     );
-
-    // Fetch all graphs from session storage on load
-    useEffect(() => {
-        const cartStorage = sessionStorage.getItem("cartStorage");
-        const cartNameStorage = sessionStorage.getItem("cartNameStorage");
-
-        if (cartStorage) {
-            setCart(JSON.parse(cartStorage));
-        }
-
-        if (cartNameStorage) {
-            setFilterNames(JSON.parse(cartNameStorage));
-        }
-    }, []);
-
-    // Update cart in session storage when user changes cart
-    useEffect(() => {
-        if (cart.length !== 0) {
-            sessionStorage.setItem("cartStorage", JSON.stringify(cart));
-        }
-    }, [cart]);
-
-    // Update cart names when use changes the filters
-    useEffect(() => {
-        if (filterNames.length !== 0) {
-            sessionStorage.setItem(
-                "cartNameStorage",
-                JSON.stringify(filterNames),
-            );
-        }
-    }, [filterNames]);
 
     // Sync tempYearRange with yearRange only when popover opens in custom mode
     useEffect(() => {
@@ -731,7 +700,7 @@ export default function ChartPage() {
             </div>
 
             {/* Main Content Area */}
-            <div className="flex-1 flex flex-col h-screen overflow-hidden">
+            <div className="flex-1 flex flex-col h-screen overflow-hidden relative">
                 {allProjects.length > 0 ? (
                     <div className="flex flex-col gap-4 h-full overflow-hidden">
                         {/* Header */}
@@ -827,43 +796,24 @@ export default function ChartPage() {
                                         </AlertDialogFooter>
                                     </AlertDialogContent>
                                 </AlertDialog>
-                                <HoverCard>
-                                    <HoverCardTrigger
-                                        delay={10}
-                                        closeDelay={100}
-                                        render={
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                className="flex items-center gap-2"
-                                                onClick={() =>
-                                                    addToCart(
-                                                        chartRef,
-                                                        cart,
-                                                        setCart,
-                                                        filterNames,
-                                                        setFilterNames,
-                                                        filterName,
-                                                    )
-                                                }
-                                            >
-                                                <PlusCircle className="w-4 h-4" />
-                                                Add to
-                                            </Button>
-                                        }
-                                    />
-                                    <HoverCardContent
-                                        className="flex flex-col gap-0.5 mt-2"
-                                        align="end"
-                                    >
-                                        <Cart
-                                            filterNames={filterNames}
-                                            cart={cart}
-                                            setCart={setCart}
-                                            setFilterNames={setFilterNames}
-                                        />
-                                    </HoverCardContent>
-                                </HoverCard>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="flex items-center gap-2"
+                                    onClick={() =>
+                                        addToCart(
+                                            chartRef,
+                                            cart,
+                                            setCart,
+                                            filterNames,
+                                            setFilterNames,
+                                            filterName,
+                                        )
+                                    }
+                                >
+                                    <PlusCircle className="w-4 h-4" />
+                                    Add to Cart
+                                </Button>
 
                                 <Button
                                     variant="outline"
@@ -1141,6 +1091,13 @@ export default function ChartPage() {
                         </div>
                     </div>
                 ) : null}
+
+                <ExportCartDrawer
+                    filterNames={filterNames}
+                    cart={cart}
+                    setCart={setCart}
+                    setFilterNames={setFilterNames}
+                />
             </div>
         </div>
     );
