@@ -11,7 +11,14 @@
  **************************************************************/
 
 import { Map } from "@/components/ui/map";
-import { Suspense, useEffect, useState, useRef, useMemo } from "react";
+import {
+    Suspense,
+    useEffect,
+    useState,
+    useRef,
+    useMemo,
+    useCallback,
+} from "react";
 import { toast } from "sonner";
 import { Loader2, Link, Share } from "lucide-react";
 
@@ -33,6 +40,7 @@ import { Button } from "@/components/ui/button";
 import { exportMapToPDF } from "@/lib/heatmap-export";
 import { useHeatmapLayers } from "@/hooks/useHeatmapLayers";
 import { Cart } from "@/components/Cart";
+import LoadError from "@/components/LoadError";
 import {
     HoverCard,
     HoverCardContent,
@@ -156,11 +164,22 @@ function HeatMapPage() {
     };
 
     const [gatewaySchools, setGatewaySchools] = useState<string[]>([]);
+    const [gatewaySchoolsError, setGatewaySchoolsError] = useState<
+        string | null
+    >(null);
+    const [schoolPointsError, setSchoolPointsError] = useState<string | null>(
+        null,
+    );
 
-    // Fetch gateway schools
-    useEffect(() => {
+    const fetchGatewaySchools = useCallback(() => {
+        setGatewaySchoolsError(null);
         fetch("/api/schools?gateway=true&list=true")
-            .then((res) => res.json())
+            .then((res) => {
+                if (!res.ok) {
+                    throw new Error("Failed to load gateway schools");
+                }
+                return res.json();
+            })
             .then((data) => {
                 const schoolNames: string[] = data.map(
                     (school: { name: string }) => school.name,
@@ -168,31 +187,49 @@ function HeatMapPage() {
 
                 setGatewaySchools(schoolNames);
             })
-            .catch(() => toast.error("Failed to load gateway schools"));
+            .catch(() =>
+                setGatewaySchoolsError("Failed to load gateway schools."),
+            );
     }, []);
+
+    const fetchSchoolPoints = useCallback(
+        (signal?: AbortSignal) => {
+            setIsLoaded(false);
+            setSchoolPointsError(null);
+            fetch(`/api/heat-layer?year=${year}`, { signal })
+                .then((response) => {
+                    if (!response.ok) {
+                        throw new Error("Failed to fetch school data");
+                    }
+                    return response.json();
+                })
+                .then((data) => {
+                    setSchoolPoints(data);
+                    setIsLoaded(true);
+                })
+                .catch((error) => {
+                    if (error.name === "AbortError") return;
+                    setSchoolPoints(null);
+                    setSchoolPointsError(
+                        error.message || "Failed to load school data",
+                    );
+                    setIsLoaded(true);
+                });
+        },
+        [year],
+    );
+
+    // Fetch gateway schools
+    useEffect(() => {
+        fetchGatewaySchools();
+    }, [fetchGatewaySchools]);
 
     // Fetch school point data for heat layer
     useEffect(() => {
         const controller = new AbortController();
-        setIsLoaded(false);
-        fetch(`/api/heat-layer?year=${year}`, { signal: controller.signal })
-            .then((response) => {
-                if (!response.ok) {
-                    throw new Error(`Failed to fetch school data`);
-                }
-                return response.json();
-            })
-            .then((data) => {
-                setSchoolPoints(data);
-                setIsLoaded(true);
-            })
-            .catch((error) => {
-                if (error.name === "AbortError") return;
-                toast.error(error.message || "Failed to load school data");
-                setIsLoaded(true);
-            });
+        fetchSchoolPoints(controller.signal);
         return () => controller.abort();
-    }, [year]);
+    }, [fetchSchoolPoints]);
 
     // Filter school points based on the gateway toggle
     const filteredSchoolPoints = useMemo(() => {
@@ -424,6 +461,14 @@ function HeatMapPage() {
                     {showSchools ? "Hide Schools" : "Show Schools"}
                 </Button>
             </div>
+            {gatewaySchoolsError && (
+                <LoadError
+                    message={gatewaySchoolsError}
+                    onRetry={fetchGatewaySchools}
+                    compact
+                    className="mb-5"
+                />
+            )}
             <div className="flex-1 rounded-2xl overflow-hidden border border-slate-200 relative">
                 <Map
                     center={regions[regionView].center}
@@ -439,6 +484,15 @@ function HeatMapPage() {
                     // Allows layers to be added
                     ref={mapRef}
                 />
+                {schoolPointsError && (
+                    <div className="absolute inset-0 z-50 bg-background/90 p-6 backdrop-blur-sm">
+                        <LoadError
+                            message={schoolPointsError}
+                            onRetry={() => fetchSchoolPoints()}
+                            className="h-full min-h-0"
+                        />
+                    </div>
+                )}
                 {!isLoaded && (
                     // Gray overlay + loading wheel
                     <div className="absolute inset-0 z-50 flex items-center justify-center bg-slate-500/20 backdrop-blur-sm">

@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import maplibregl from "maplibre-gl";
 
 import regionsData from "@/data/regions.json";
+import { schoolProfileHrefWithReturnTo } from "@/lib/return-to";
 import { standardize } from "@/lib/school-name-standardize";
 
 const regions = Object.values(regionsData).map((region) => ({
@@ -254,7 +255,14 @@ export function useHeatmapLayers({
                 const { name } = feature.properties || {};
                 const value = feature.properties?.[metric] || 0;
                 const schoolSlug = standardize(name);
-                const profileUrl = `/schools/${schoolSlug}`;
+                const schoolPath = `/schools/${schoolSlug}`;
+                const profileUrl =
+                    typeof window !== "undefined"
+                        ? schoolProfileHrefWithReturnTo(schoolPath, {
+                              pathname: window.location.pathname,
+                              search: window.location.search,
+                          })
+                        : schoolPath;
 
                 const html = `
                     <div style="

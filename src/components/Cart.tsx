@@ -13,7 +13,7 @@
 
 import { Loader2, Trash2 } from "lucide-react";
 import { Button } from "./ui/button";
-import { clearCart, deleteFromCart, downloadGraphs } from "@/lib/export-to-pdf";
+import { downloadGraphs } from "@/lib/export-to-pdf";
 import { Dispatch, SetStateAction, useState } from "react";
 import { toast } from "sonner";
 
@@ -44,12 +44,21 @@ export function Cart({
 }: CartProps) {
     const [isExporting, setIsExporting] = useState(false);
     return (
-        <div className="flex flex-col max-h-[80vh] gap-2 p-2 w-full max-w-5xl h-full ">
-            <div className="flex flex-col gap-2 overflow-y-auto flex-1 pr-1">
-                {filterNames.map((filterName, index) => (
-                    <div
-                        key={index}
-                        className="flex flex-row gap-4 justify-between"
+        <div className="flex flex-col gap-2 p-2 w-full max-w-5xl">
+            {filterNames.map((filterName, index) => (
+                <div
+                    key={index}
+                    className="flex flex-row gap-4 justify-between"
+                >
+                    <p>{filterName}</p>
+                    <button
+                        onClick={() => {
+                            setCart(cart.filter((_, i) => i !== index));
+                            setFilterNames(
+                                filterNames.filter((_, i) => i !== index),
+                            );
+                        }}
+                        className="text-gray-400 hover:text-red-500 p-1 pr-2 transition-colors duration-150 ease-in-out"
                     >
                         <p>{filterName}</p>
                         <button
@@ -73,7 +82,10 @@ export function Cart({
                 className={`flex flex-row justify-between ${cart.length > 0 && "border-t pt-2"}`}
             >
                 <button
-                    onClick={() => clearCart(setCart, setFilterNames)}
+                    onClick={() => {
+                        setCart([]);
+                        setFilterNames([]);
+                    }}
                     className="hover:cursor-pointer pl-2"
                 >
                     Clear All

@@ -134,14 +134,22 @@ export default function Dashboard() {
             : "#";
 
     // Extract sparkline data arrays from allYearsStats (up to selected year)
-    const filteredStats =
-        year !== null
-            ? allYearsStats.filter((s) => s.year <= year)
-            : allYearsStats;
-    const projectsSparkline = filteredStats.map((s) => s.total_projects);
-    const teachersSparkline = filteredStats.map((s) => s.total_teachers);
-    const studentsSparkline = filteredStats.map((s) => s.total_students);
-    const schoolsSparkline = filteredStats.map((s) => s.total_schools);
+    // Include all years in the range, filling in 0 for missing years
+    const sparklineYears =
+        year !== null ? Array.from({ length: 6 }, (_, i) => year - 5 + i) : [];
+    const statsMap = new Map(allYearsStats.map((s) => [s.year, s]));
+    const projectsSparkline = sparklineYears.map(
+        (y) => statsMap.get(y)?.total_projects ?? 0,
+    );
+    const teachersSparkline = sparklineYears.map(
+        (y) => statsMap.get(y)?.total_teachers ?? 0,
+    );
+    const studentsSparkline = sparklineYears.map(
+        (y) => statsMap.get(y)?.total_students ?? 0,
+    );
+    const schoolsSparkline = sparklineYears.map(
+        (y) => statsMap.get(y)?.total_schools ?? 0,
+    );
 
     return (
         <div className="flex flex-col gap-8 w-full px-8 py-10">
