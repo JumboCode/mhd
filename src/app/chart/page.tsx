@@ -24,6 +24,7 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { toast } from "sonner";
+import { LoadError } from "@/components/ui/load-error";
 import BarGraph from "@/components/BarGraph";
 import { type ChartDataset } from "@/components/chartTypes";
 import GraphFilters, {
@@ -189,6 +190,9 @@ export default function ChartPage() {
     const [isExporting, setIsExporting] = useState(false);
     const [exportDialogOpen, setExportDialogOpen] = useState(false);
     const [isLoaded, setIsLoaded] = useState(false);
+    const [projectDataError, setProjectDataError] = useState<string | null>(
+        null,
+    );
 
     // Setting hooks
     const [timePeriod, setTimePeriod] = useQueryState(
@@ -309,34 +313,38 @@ export default function ChartPage() {
     const chartRef = useRef<HTMLDivElement | null>(null);
 
     // Fetch all project data
-    useEffect(() => {
-        const fetchProjects = async () => {
-            setIsLoaded(false);
-            try {
-                const response = await fetch("/api/projects");
-                if (!response.ok) throw new Error("Failed to fetch");
+    const fetchProjects = useCallback(async () => {
+        setIsLoaded(false);
+        setProjectDataError(null);
+        try {
+            const response = await fetch("/api/projects");
+            if (!response.ok) throw new Error("Failed to load project data");
 
-                const data = await response.json();
+            const data = await response.json();
 
-                const updatedProjects = data.map((p: Project) => ({
-                    ...p,
-                    gatewaySchool: gatewaySchools.includes(p.schoolName)
-                        ? "Gateway"
-                        : "Non-Gateway",
-                }));
+            const updatedProjects = data.map((p: Project) => ({
+                ...p,
+                gatewaySchool: gatewaySchools.includes(p.schoolName)
+                    ? "Gateway"
+                    : "Non-Gateway",
+            }));
 
-                setAllProjects(updatedProjects);
-            } catch {
-                toast.error(
-                    "Failed to load project data. Please refresh the page.",
-                );
-            } finally {
-                setIsLoaded(true);
-            }
-        };
-
-        fetchProjects();
+            setAllProjects(updatedProjects);
+            setProjectDataError(null);
+        } catch (error) {
+            setProjectDataError(
+                error instanceof Error
+                    ? error.message
+                    : "Failed to load project data",
+            );
+        } finally {
+            setIsLoaded(true);
+        }
     }, [gatewaySchools]);
+
+    useEffect(() => {
+        fetchProjects();
+    }, [fetchProjects]);
 
     // Fetch gateway schools
     useEffect(() => {
@@ -348,8 +356,7 @@ export default function ChartPage() {
                 );
 
                 setGatewaySchools(schoolNames);
-            })
-            .catch(() => toast.error("Failed to load gateway schools"));
+            });
     }, []);
 
     /* Fetch and set cart to and from session storage to persist between refreshes */
@@ -1037,80 +1044,98 @@ export default function ChartPage() {
 
                     {/* Chart Area */}
                     <div className="relative flex-1 overflow-hidden">
-                        {/* Loading overlay */}
-                        {!isLoaded && (
-                            <div className="absolute inset-0 z-50 flex items-center justify-center bg-white backdrop-blur-sm">
-                                <Loader2 className="h-12 w-12 animate-spin text-slate-800" />
-                            </div>
-                        )}
-
-                        {Math.round(filteredProjectCount) !== 0 ? (
-                            <AnimatePresence initial={false}>
-                                <motion.div
-                                    key={chartType}
-                                    className="flex h-full w-full items-center justify-center px-8 bg-background overflow-auto"
-                                    initial={{
-                                        opacity: 0,
-                                        x: slideDirection.current * -50,
-                                    }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    exit={{
-                                        opacity: 0,
-                                        x: slideDirection.current * -50,
-                                        position: "absolute",
-                                        inset: 0,
-                                    }}
-                                    transition={{
-                                        duration: 0.15,
-                                        ease: "easeInOut",
-                                    }}
-                                >
-                                    {chartType === "bar" ? (
-                                        <BarGraph
-                                            dataset={graphDataset}
-                                            yAxisLabel={
-                                                measuredAsLabels[
-                                                    filters.measuredAs
-                                                ]
-                                            }
-                                            xAxisLabel="Year"
-                                            legendTitle={
-                                                filters.groupBy === "none"
-                                                    ? undefined
-                                                    : groupByLabels[
-                                                          filters.groupBy
-                                                      ]
-                                            }
-                                            chartRef={chartRef}
-                                            tooltipFormatter={tooltipFormatter}
-                                        />
-                                    ) : (
-                                        <LineGraph
-                                            datasets={graphDataset}
-                                            yAxisLabel={
-                                                measuredAsLabels[
-                                                    filters.measuredAs
-                                                ]
-                                            }
-                                            xAxisLabel="Year"
-                                            legendTitle={
-                                                filters.groupBy === "none"
-                                                    ? undefined
-                                                    : groupByLabels[
-                                                          filters.groupBy
-                                                      ]
-                                            }
-                                            chartRef={chartRef}
-                                            tooltipFormatter={tooltipFormatter}
-                                        />
-                                    )}
-                                </motion.div>
-                            </AnimatePresence>
+                        {projectDataError ? (
+                            <LoadError
+                                message={projectDataError}
+                                onRetry={fetchProjects}
+                                className="h-full"
+                            />
                         ) : (
-                            /*  No data found */
-                            <div className="flex h-full w-full items-center justify-center px-8 bg-background">
-                                {isLoaded ? "No Data Found" : ""}
-                            </div>
+                            <>
+                                {/* Loading overlay */}
+                                {!isLoaded && (
+                                    <div className="absolute inset-0 z-50 flex items-center justify-center bg-white backdrop-blur-sm">
+                                        <Loader2 className="h-12 w-12 animate-spin text-slate-800" />
+                                    </div>
+                                )}
+
+                                {Math.round(filteredProjectCount) !== 0 ? (
+                                    <AnimatePresence initial={false}>
+                                        <motion.div
+                                            key={chartType}
+                                            className="flex h-full w-full items-center justify-center px-8 bg-background overflow-auto"
+                                            initial={{
+                                                opacity: 0,
+                                                x: slideDirection.current * -50,
+                                            }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            exit={{
+                                                opacity: 0,
+                                                x: slideDirection.current * -50,
+                                                position: "absolute",
+                                                inset: 0,
+                                            }}
+                                            transition={{
+                                                duration: 0.15,
+                                                ease: "easeInOut",
+                                            }}
+                                        >
+                                            {chartType === "bar" ? (
+                                                <BarGraph
+                                                    dataset={graphDataset}
+                                                    yAxisLabel={
+                                                        measuredAsLabels[
+                                                            filters.measuredAs
+                                                        ]
+                                                    }
+                                                    xAxisLabel="Year"
+                                                    legendTitle={
+                                                        filters.groupBy ===
+                                                        "none"
+                                                            ? undefined
+                                                            : groupByLabels[
+                                                                  filters
+                                                                      .groupBy
+                                                              ]
+                                                    }
+                                                    chartRef={chartRef}
+                                                    tooltipFormatter={
+                                                        tooltipFormatter
+                                                    }
+                                                />
+                                            ) : (
+                                                <LineGraph
+                                                    datasets={graphDataset}
+                                                    yAxisLabel={
+                                                        measuredAsLabels[
+                                                            filters.measuredAs
+                                                        ]
+                                                    }
+                                                    xAxisLabel="Year"
+                                                    legendTitle={
+                                                        filters.groupBy ===
+                                                        "none"
+                                                            ? undefined
+                                                            : groupByLabels[
+                                                                  filters
+                                                                      .groupBy
+                                                              ]
+                                                    }
+                                                    chartRef={chartRef}
+                                                    tooltipFormatter={
+                                                        tooltipFormatter
+                                                    }
+                                                />
+                                            )}
+                                        </motion.div>
+                                    </AnimatePresence>
+                                ) : (
+                                    /*  No data found */
+                                    <div className="flex h-full w-full items-center justify-center px-8 bg-background">
+                                        {isLoaded ? "No Data Found" : ""}
+                                    </div>
+                                )}
+                            </>
                         )}
                     </div>
 

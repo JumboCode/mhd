@@ -11,7 +11,7 @@
 
 "use client";
 import { useState, ReactNode } from "react";
-import { TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, AlertCircle, X } from "lucide-react";
 import { standardize } from "@/lib/school-name-standardize";
 
 import {
@@ -46,6 +46,7 @@ interface DataTableProps<TData, TValue> {
     globalFilter: string;
     setGlobalFilter: (value: string) => void;
     isLoading?: boolean;
+    prevYearError?: string | null;
 }
 
 export function SchoolsDataTable<TData, TValue>({
@@ -55,7 +56,9 @@ export function SchoolsDataTable<TData, TValue>({
     globalFilter,
     setGlobalFilter,
     isLoading = false,
+    prevYearError = null,
 }: DataTableProps<TData, TValue>) {
+    const [showPrevYearError, setShowPrevYearError] = useState(true);
     const [sorting, setSorting] = useState<SortingState>([
         {
             id: "name",
@@ -137,116 +140,135 @@ export function SchoolsDataTable<TData, TValue>({
     }
 
     return (
-        <div className="h-full w-full min-w-0 overflow-auto border text-center">
-            <Table
-                className="caption-bottom text-sm border-separate border-spacing-0"
-                style={{
-                    width: table.getCenterTotalSize(),
-                    tableLayout: "fixed",
-                }}
-            >
-                <TableHeader className="bg-muted">
-                    {table.getHeaderGroups().map((headerGroup) => (
-                        <TableRow
-                            key={headerGroup.id}
-                            className="bg-muted hover:bg-muted border-0"
-                        >
-                            {headerGroup.headers.map((header) => {
-                                return (
-                                    <TableHead
-                                        key={header.id}
-                                        className={
-                                            header.index === 0
-                                                ? "sticky top-0 left-0 z-40 text-center bg-muted border-r border-b relative"
-                                                : "sticky top-0 z-30 text-center border-r border-b bg-muted relative"
-                                        }
-                                        style={{
-                                            width: header.getSize(),
-                                            maxWidth: header.getSize(),
-                                            position: "sticky",
-                                            top: 0,
-                                            ...(header.index === 0 && {
-                                                left: 0,
-                                            }),
-                                        }}
-                                    >
-                                        <div>
-                                            {header.isPlaceholder
-                                                ? null
-                                                : flexRender(
-                                                      header.column.columnDef
-                                                          .header,
-                                                      header.getContext(),
-                                                  )}
-                                        </div>
-                                        <div
-                                            onMouseDown={header.getResizeHandler()}
-                                            onTouchStart={header.getResizeHandler()}
-                                            className={`absolute right-0 top-0 h-full w-1 cursor-col-resize select-none touch-none hover:bg-blue-500 ${
-                                                header.column.getIsResizing()
-                                                    ? "bg-blue-500"
-                                                    : ""
-                                            }`}
-                                        />
-                                    </TableHead>
-                                );
-                            })}
-                        </TableRow>
-                    ))}
-                </TableHeader>
-                <TableBody>
-                    {table.getRowModel().rows?.length ? (
-                        table.getRowModel().rows.map((row) => (
+        <div className="h-full w-full min-w-0 flex flex-col">
+            {prevYearError && showPrevYearError && (
+                <div className="flex items-center gap-2 px-4 py-2 bg-yellow-50 border-b border-yellow-200 text-yellow-900 text-sm">
+                    <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                    <span className="flex-1">{prevYearError}</span>
+                    <button
+                        onClick={() => setShowPrevYearError(false)}
+                        className="flex-shrink-0 hover:bg-yellow-100 rounded p-1"
+                        aria-label="Dismiss"
+                    >
+                        <X className="h-4 w-4" />
+                    </button>
+                </div>
+            )}
+            <div className="flex-1 overflow-auto border text-center">
+                <Table
+                    className="caption-bottom text-sm border-separate border-spacing-0"
+                    style={{
+                        width: table.getCenterTotalSize(),
+                        tableLayout: "fixed",
+                    }}
+                >
+                    <TableHeader className="bg-muted">
+                        {table.getHeaderGroups().map((headerGroup) => (
                             <TableRow
-                                key={row.id}
-                                data-state={row.getIsSelected() && "selected"}
+                                key={headerGroup.id}
+                                className="bg-muted hover:bg-muted border-0"
                             >
-                                {row.getVisibleCells().map((cell) => (
-                                    <TableCell
-                                        key={cell.id}
-                                        className={
-                                            cell.column.getIndex() === 0
-                                                ? "text-center sticky left-0 z-20 bg-muted border-r border-b"
-                                                : "text-center z-0 border-b"
-                                        }
-                                        style={{
-                                            width: cell.column.getSize(),
-                                            maxWidth: cell.column.getSize(),
-                                            ...(cell.column.getIndex() ===
-                                                0 && {
+                                {headerGroup.headers.map((header) => {
+                                    return (
+                                        <TableHead
+                                            key={header.id}
+                                            className={
+                                                header.index === 0
+                                                    ? "sticky top-0 left-0 z-40 text-center bg-muted border-r border-b relative"
+                                                    : "sticky top-0 z-30 text-center border-r border-b bg-muted relative"
+                                            }
+                                            style={{
+                                                width: header.getSize(),
+                                                maxWidth: header.getSize(),
                                                 position: "sticky",
-                                                left: 0,
-                                            }),
-                                        }}
-                                    >
-                                        {cell.column.getIndex() === 0 ? (
-                                            <Link
-                                                href={`/schools/${standardize(String(cell.getValue()))}`}
-                                                className="hover:underline"
-                                            >
-                                                {flexRender(
-                                                    cell.column.columnDef.cell,
-                                                    cell.getContext(),
-                                                )}
-                                            </Link>
-                                        ) : (
-                                            <div className="flex flex-row items-center justify-center space-x-1 gap-2 h-12 px-1 py-2">
-                                                {flexRender(
-                                                    cell.column.columnDef.cell,
-                                                    cell.getContext(),
-                                                )}
-                                                {yoyChange(cell, row)}
+                                                top: 0,
+                                                ...(header.index === 0 && {
+                                                    left: 0,
+                                                }),
+                                            }}
+                                        >
+                                            <div>
+                                                {header.isPlaceholder
+                                                    ? null
+                                                    : flexRender(
+                                                          header.column
+                                                              .columnDef.header,
+                                                          header.getContext(),
+                                                      )}
                                             </div>
-                                        )}
-                                    </TableCell>
-                                ))}
+                                            <div
+                                                onMouseDown={header.getResizeHandler()}
+                                                onTouchStart={header.getResizeHandler()}
+                                                className={`absolute right-0 top-0 h-full w-1 cursor-col-resize select-none touch-none hover:bg-blue-500 ${
+                                                    header.column.getIsResizing()
+                                                        ? "bg-blue-500"
+                                                        : ""
+                                                }`}
+                                            />
+                                        </TableHead>
+                                    );
+                                })}
                             </TableRow>
-                        ))
-                    ) : (
-                        <TableRow></TableRow>
-                    )}
-                </TableBody>
-            </Table>
+                        ))}
+                    </TableHeader>
+                    <TableBody>
+                        {table.getRowModel().rows?.length ? (
+                            table.getRowModel().rows.map((row) => (
+                                <TableRow
+                                    key={row.id}
+                                    data-state={
+                                        row.getIsSelected() && "selected"
+                                    }
+                                >
+                                    {row.getVisibleCells().map((cell) => (
+                                        <TableCell
+                                            key={cell.id}
+                                            className={
+                                                cell.column.getIndex() === 0
+                                                    ? "text-center sticky left-0 z-20 bg-muted border-r border-b"
+                                                    : "text-center z-0 border-b"
+                                            }
+                                            style={{
+                                                width: cell.column.getSize(),
+                                                maxWidth: cell.column.getSize(),
+                                                ...(cell.column.getIndex() ===
+                                                    0 && {
+                                                    position: "sticky",
+                                                    left: 0,
+                                                }),
+                                            }}
+                                        >
+                                            {cell.column.getIndex() === 0 ? (
+                                                <Link
+                                                    href={`/schools/${standardize(String(cell.getValue()))}`}
+                                                    className="hover:underline"
+                                                >
+                                                    {flexRender(
+                                                        cell.column.columnDef
+                                                            .cell,
+                                                        cell.getContext(),
+                                                    )}
+                                                </Link>
+                                            ) : (
+                                                <div className="flex flex-row items-center justify-center space-x-1 gap-2 h-12 px-1 py-2">
+                                                    {flexRender(
+                                                        cell.column.columnDef
+                                                            .cell,
+                                                        cell.getContext(),
+                                                    )}
+                                                    {yoyChange(cell, row)}
+                                                </div>
+                                            )}
+                                        </TableCell>
+                                    ))}
+                                </TableRow>
+                            ))
+                        ) : (
+                            <TableRow></TableRow>
+                        )}
+                    </TableBody>
+                </Table>
+            </div>
         </div>
     );
 }

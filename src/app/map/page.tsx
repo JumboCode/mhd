@@ -14,6 +14,7 @@ import { Map } from "@/components/ui/map";
 import { Suspense, useEffect, useState, useRef, useMemo } from "react";
 import { toast } from "sonner";
 import { Loader2, Link, Share } from "lucide-react";
+import { LoadError } from "@/components/ui/load-error";
 
 // queryStates required for URL sharing with nuqs
 import {
@@ -145,6 +146,7 @@ function HeatMapPage() {
 
     // Loading state
     const [isLoaded, setIsLoaded] = useState(false);
+    const [schoolDataError, setSchoolDataError] = useState<string | null>(null);
 
     const copyURLtoClipboard = async () => {
         try {
@@ -167,31 +169,35 @@ function HeatMapPage() {
                 );
 
                 setGatewaySchools(schoolNames);
-            })
-            .catch(() => toast.error("Failed to load gateway schools"));
+            });
     }, []);
 
     // Fetch school point data for heat layer
-    useEffect(() => {
-        const controller = new AbortController();
+    const fetchSchoolData = () => {
         setIsLoaded(false);
-        fetch(`/api/heat-layer?year=${year}`, { signal: controller.signal })
+        setSchoolDataError(null);
+        fetch(`/api/heat-layer?year=${year}`)
             .then((response) => {
                 if (!response.ok) {
-                    throw new Error(`Failed to fetch school data`);
+                    throw new Error(`Failed to load school data`);
                 }
                 return response.json();
             })
             .then((data) => {
                 setSchoolPoints(data);
+                setSchoolDataError(null);
                 setIsLoaded(true);
             })
             .catch((error) => {
-                if (error.name === "AbortError") return;
-                toast.error(error.message || "Failed to load school data");
+                setSchoolDataError(
+                    error.message || "Failed to load school data",
+                );
                 setIsLoaded(true);
             });
-        return () => controller.abort();
+    };
+
+    useEffect(() => {
+        fetchSchoolData();
     }, [year]);
 
     // Filter school points based on the gateway toggle
@@ -425,25 +431,35 @@ function HeatMapPage() {
                 </Button>
             </div>
             <div className="flex-1 rounded-2xl overflow-hidden border border-slate-200 relative">
-                <Map
-                    center={regions[regionView].center}
-                    zoom={regions[regionView].zoom}
-                    // Restrict zoom to stay on MA approximately
-                    maxZoom={regions[regionView].maxZoom}
-                    minZoom={regions[regionView].minZoom}
-                    // Restrict canvas to stay on MA approximately
-                    maxBounds={[
-                        [-74.5, 40.2],
-                        [-68.9, 43.9],
-                    ]}
-                    // Allows layers to be added
-                    ref={mapRef}
-                />
-                {!isLoaded && (
-                    // Gray overlay + loading wheel
-                    <div className="absolute inset-0 z-50 flex items-center justify-center bg-slate-500/20 backdrop-blur-sm">
-                        <Loader2 className="h-12 w-12 animate-spin text-slate-800" />
-                    </div>
+                {schoolDataError ? (
+                    <LoadError
+                        message={schoolDataError}
+                        onRetry={fetchSchoolData}
+                        className="h-full"
+                    />
+                ) : (
+                    <>
+                        <Map
+                            center={regions[regionView].center}
+                            zoom={regions[regionView].zoom}
+                            // Restrict zoom to stay on MA approximately
+                            maxZoom={regions[regionView].maxZoom}
+                            minZoom={regions[regionView].minZoom}
+                            // Restrict canvas to stay on MA approximately
+                            maxBounds={[
+                                [-74.5, 40.2],
+                                [-68.9, 43.9],
+                            ]}
+                            // Allows layers to be added
+                            ref={mapRef}
+                        />
+                        {!isLoaded && (
+                            // Gray overlay + loading wheel
+                            <div className="absolute inset-0 z-50 flex items-center justify-center bg-slate-500/20 backdrop-blur-sm">
+                                <Loader2 className="h-12 w-12 animate-spin text-slate-800" />
+                            </div>
+                        )}
+                    </>
                 )}
             </div>
         </div>

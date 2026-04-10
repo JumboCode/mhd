@@ -19,6 +19,7 @@ import { SaveDiscardBar } from "@/components/EditableCells";
 import SchoolSearchBar from "@/components/SchoolSearchbar";
 import YearDropdown from "@/components/YearDropdown";
 import { standardize } from "@/lib/school-name-standardize";
+import { LoadError } from "@/components/ui/load-error";
 
 export default function SchoolsPage() {
     const [schoolInfo, setSchoolInfo] = useState<Schools[]>([]);
@@ -31,6 +32,9 @@ export default function SchoolsPage() {
         Map<string, Partial<Schools>>
     >(new Map());
     const [saving, setSaving] = useState(false);
+    const [schoolDataError, setSchoolDataError] = useState<string | null>(null);
+    const [prevYearError, setPrevYearError] = useState<string | null>(null);
+    const [retryTrigger, setRetryTrigger] = useState(0);
 
     const hasChanges = pendingChanges.size > 0;
 
@@ -93,15 +97,20 @@ export default function SchoolsPage() {
 
     const columns = useMemo(() => createColumns(onCommit), [onCommit]);
 
+    const fetchSchoolData = useCallback(() => {
+        setRetryTrigger((prev) => prev + 1);
+    }, []);
+
     useEffect(() => {
         if (!year) return;
 
         setIsLoading(true);
+        setSchoolDataError(null);
 
         fetch(`/api/schools?year=${year}`)
             .then((response) => {
                 if (!response.ok) {
-                    throw new Error(`Failed to fetch school data`);
+                    throw new Error(`Failed to load school data`);
                 }
                 return response.json();
             })
@@ -109,30 +118,34 @@ export default function SchoolsPage() {
                 setSchoolInfo(data);
                 setOriginalSchoolInfo(data);
                 setPendingChanges(new Map());
+                setSchoolDataError(null);
             })
             .catch(() => {
-                toast.error("Failed to load school data.");
+                setSchoolDataError("Failed to load school data");
             })
             .finally(() => {
                 setIsLoading(false);
             });
-    }, [year]);
+    }, [year, retryTrigger]);
 
     useEffect(() => {
         if (!year) return;
 
+        setPrevYearError(null);
+
         fetch(`/api/schools?year=${year - 1}`)
             .then((response) => {
                 if (!response.ok) {
-                    throw new Error(`Failed to fetch school data`);
+                    throw new Error(`Failed to fetch previous year data`);
                 }
                 return response.json();
             })
             .then((data) => {
                 setPrevYearSchoolInfo(data);
+                setPrevYearError(null);
             })
             .catch(() => {
-                toast.error("Failed to load previous year data.");
+                setPrevYearError("Previous year comparison data unavailable");
             });
     }, [year]);
 
@@ -154,14 +167,23 @@ export default function SchoolsPage() {
 
             <div className="flex-1 min-h-0 flex flex-col overflow-hidden overscroll-none">
                 <div className="flex-1 min-h-0 min-w-0 overflow-hidden">
-                    <SchoolsDataTable
-                        columns={columns}
-                        data={schoolInfo}
-                        prevData={prevYearSchoolInfo}
-                        globalFilter={search}
-                        setGlobalFilter={setSearch}
-                        isLoading={isLoading}
-                    />
+                    {schoolDataError ? (
+                        <LoadError
+                            message={schoolDataError}
+                            onRetry={fetchSchoolData}
+                            className="h-full"
+                        />
+                    ) : (
+                        <SchoolsDataTable
+                            columns={columns}
+                            data={schoolInfo}
+                            prevData={prevYearSchoolInfo}
+                            globalFilter={search}
+                            setGlobalFilter={setSearch}
+                            isLoading={isLoading}
+                            prevYearError={prevYearError}
+                        />
+                    )}
                 </div>
                 <SaveDiscardBar
                     hasChanges={hasChanges}
