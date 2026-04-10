@@ -111,28 +111,14 @@ export default function Settings() {
             <div>
                 <h1 className="text-3xl font-bold">Settings</h1>
             </div>
-            <Tabs defaultValue="data-management">
+            <Tabs defaultValue="configuration">
                 <TabsList>
-                    <TabsTrigger value="data-management">
-                        Data Management
+                    <TabsTrigger value="configuration">
+                        Configuration
                     </TabsTrigger>
                     <TabsTrigger value="team-access">Team & Access</TabsTrigger>
                 </TabsList>
-                {/* Data management tab */}
-                <TabsContent value="data-management" className="mt-6 space-y-6">
-                    <div>
-                        <h2 className="text-xl font-semibold">Preferences</h2>
-                        <p className="text-gray-600">
-                            How would you like to view charts...
-                        </p>
-                    </div>
-                    <div>
-                        <h2 className="text-xl font-semibold">Configuration</h2>
-                        <p className="text-gray-600">
-                            These settings configure how data is calculated.
-                            Only edit these settings if you really mean to.
-                        </p>
-                    </div>
+                <TabsContent value="configuration" className="mt-6 space-y-6">
                     <div className="space-y-6">
                         <div>
                             <h3 className="font-bold">

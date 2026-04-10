@@ -71,6 +71,7 @@ export default function SchoolProfilePage() {
     const [studentYearData, setstudentYearData] = useState<
         { x: string | number; y: number }[]
     >([]);
+    const [allYearsData, setAllYearsData] = useState<SchoolData[]>([]);
 
     useEffect(() => {
         if (!year) return;
@@ -98,11 +99,11 @@ export default function SchoolProfilePage() {
             });
     }, [schoolName, router, year]);
 
-    // Fetches student data for the last 5 years in parallel
+    // Fetches data for the last 5 years in parallel for sparklines
     useEffect(() => {
         if (!year) return;
         const fetchData = async () => {
-            const years = Array.from({ length: 6 }, (_, i) => year - (5 - i));
+            const years = Array.from({ length: 5 }, (_, i) => year - (4 - i));
             try {
                 const results = await Promise.all(
                     years.map((y) =>
@@ -116,6 +117,7 @@ export default function SchoolProfilePage() {
                     y: Number(yearInfo.studentCount),
                 }));
                 setstudentYearData(points);
+                setAllYearsData(results);
             } catch {
                 toast.error("Failed to load dashboard data. Please try again.");
             }
@@ -156,6 +158,53 @@ export default function SchoolProfilePage() {
         year !== null
             ? `/chart?type=line&startYear=${year - 5}&endYear=${year}&measuredAs=total-student-count&schools=${encodeURIComponent(schoolData?.name ?? "")}`
             : "#";
+
+    // Calculate sparkline data arrays from allYearsData
+    const projectsSparkline = allYearsData.map((d) =>
+        Number(d.projectCount || 0),
+    );
+    const teachersSparkline = allYearsData.map((d) =>
+        Number(d.teacherCount || 0),
+    );
+    const studentsSparkline = allYearsData.map((d) =>
+        Number(d.studentCount || 0),
+    );
+
+    // Calculate percent changes (current year vs previous year)
+    const calculatePercentChange = (current: number, previous: number) => {
+        if (previous === 0) return null;
+        return ((current - previous) / previous) * 100;
+    };
+
+    const currentProjects = Number(schoolData?.projectCount || 0);
+    const previousProjects =
+        allYearsData.length >= 2
+            ? Number(allYearsData[allYearsData.length - 2]?.projectCount || 0)
+            : 0;
+    const projectsPercentChange = calculatePercentChange(
+        currentProjects,
+        previousProjects,
+    );
+
+    const currentTeachers = Number(schoolData?.teacherCount || 0);
+    const previousTeachers =
+        allYearsData.length >= 2
+            ? Number(allYearsData[allYearsData.length - 2]?.teacherCount || 0)
+            : 0;
+    const teachersPercentChange = calculatePercentChange(
+        currentTeachers,
+        previousTeachers,
+    );
+
+    const currentStudents = Number(schoolData?.studentCount || 0);
+    const previousStudents =
+        allYearsData.length >= 2
+            ? Number(allYearsData[allYearsData.length - 2]?.studentCount || 0)
+            : 0;
+    const studentsPercentChange = calculatePercentChange(
+        currentStudents,
+        previousStudents,
+    );
 
     if (!schoolData) {
         return (
@@ -233,6 +282,10 @@ export default function SchoolProfilePage() {
                         value={schoolData.projectCount}
                         icon={ENTITY_CONFIG.projects.icon}
                         iconColor={ENTITY_CONFIG.projects.color}
+                        sparklineData={projectsSparkline}
+                        sparklineStroke={ENTITY_CONFIG.projects.colorMid}
+                        sparklineFill={ENTITY_CONFIG.projects.colorMuted}
+                        percentChange={projectsPercentChange ?? undefined}
                         variant="with-aspect"
                     />
                     <StatCard
@@ -240,6 +293,10 @@ export default function SchoolProfilePage() {
                         value={schoolData.teacherCount}
                         icon={ENTITY_CONFIG.teachers.icon}
                         iconColor={ENTITY_CONFIG.teachers.color}
+                        sparklineData={teachersSparkline}
+                        sparklineStroke={ENTITY_CONFIG.teachers.colorMid}
+                        sparklineFill={ENTITY_CONFIG.teachers.colorMuted}
+                        percentChange={teachersPercentChange ?? undefined}
                         variant="with-aspect"
                     />
                     <StatCard
@@ -247,6 +304,10 @@ export default function SchoolProfilePage() {
                         value={schoolData.studentCount}
                         icon={ENTITY_CONFIG.students.icon}
                         iconColor={ENTITY_CONFIG.students.color}
+                        sparklineData={studentsSparkline}
+                        sparklineStroke={ENTITY_CONFIG.students.colorMid}
+                        sparklineFill={ENTITY_CONFIG.students.colorMuted}
+                        percentChange={studentsPercentChange ?? undefined}
                         variant="with-aspect"
                     />
                 </div>
