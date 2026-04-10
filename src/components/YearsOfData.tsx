@@ -145,7 +145,7 @@ const YearsOfData = forwardRef<
                                             onClick={() =>
                                                 handleRemoveYear(year)
                                             }
-                                            className="w-full h-full px-4 py-3 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors cursor-pointer"
+                                            className="w-full h-full px-4 py-3 flex items-center justify-center text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
                                             aria-label={`Delete ${year}`}
                                         >
                                             <Trash className="w-4 h-4" />
@@ -153,7 +153,7 @@ const YearsOfData = forwardRef<
                                     ) : (
                                         <Link
                                             href="/upload"
-                                            className="w-full h-full px-4 py-3 flex items-center justify-center text-gray-400 hover:text-blue-500 hover:bg-blue-50 transition-colors"
+                                            className="w-full h-full px-4 py-3 flex items-center justify-center text-gray-400 hover:text-blue-500 transition-colors"
                                             aria-label={`Upload ${year}`}
                                         >
                                             <Upload className="w-4 h-4" />
