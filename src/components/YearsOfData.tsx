@@ -14,7 +14,8 @@
 
 import { useState, useEffect, useImperativeHandle, forwardRef } from "react";
 import { toast } from "sonner";
-import { Trash } from "lucide-react";
+import { Check, Trash, Upload, X } from "lucide-react";
+import Link from "next/link";
 
 export interface YearsOfDataHandle {
     save: () => Promise<void>;
@@ -124,34 +125,40 @@ const YearsOfData = forwardRef<
                                     {year}
                                 </td>
                                 <td className="px-4 py-3 text-sm text-center">
-                                    <div className="flex items-center justify-center gap-2">
-                                        <span
-                                            className={`h-2 w-2 rounded-full ${
-                                                yearsWithData.has(year)
-                                                    ? "bg-green-500"
-                                                    : "bg-red-500"
-                                            }`}
-                                        />
-                                        <span className="text-gray-600">
-                                            {yearsWithData.has(year)
-                                                ? "Available"
-                                                : "Unavailable"}
-                                        </span>
+                                    <div className="flex items-center justify-center">
+                                        {yearsWithData.has(year) ? (
+                                            <span className="inline-flex items-center justify-center gap-1.5 w-32 px-3 py-1 rounded-sm text-xs font-medium bg-green-100 text-green-700 border border-green-300">
+                                                <Check className="w-3 h-3" />
+                                                Uploaded
+                                            </span>
+                                        ) : (
+                                            <span className="inline-flex items-center justify-center gap-1.5 w-32 px-3 py-1 rounded-sm text-xs font-medium bg-red-100 text-red-600 border border-red-300">
+                                                <X className="w-3 h-3" />
+                                                Missing
+                                            </span>
+                                        )}
                                     </div>
                                 </td>
-                                <td className="px-4 py-3 text-sm text-center">
-                                    <button
-                                        onClick={() => handleRemoveYear(year)}
-                                        disabled={!yearsWithData.has(year)}
-                                        className={`transition-colors ${
-                                            yearsWithData.has(year)
-                                                ? "text-gray-400 hover:text-red-500 cursor-pointer"
-                                                : "text-gray-200 cursor-not-allowed"
-                                        }`}
-                                        aria-label={`Remove ${year}`}
-                                    >
-                                        <Trash className="w-4 h-4" />
-                                    </button>
+                                <td className="text-sm p-0">
+                                    {yearsWithData.has(year) ? (
+                                        <button
+                                            onClick={() =>
+                                                handleRemoveYear(year)
+                                            }
+                                            className="w-full h-full px-4 py-3 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors cursor-pointer"
+                                            aria-label={`Delete ${year}`}
+                                        >
+                                            <Trash className="w-4 h-4" />
+                                        </button>
+                                    ) : (
+                                        <Link
+                                            href="/upload"
+                                            className="w-full h-full px-4 py-3 flex items-center justify-center text-gray-400 hover:text-blue-500 hover:bg-blue-50 transition-colors"
+                                            aria-label={`Upload ${year}`}
+                                        >
+                                            <Upload className="w-4 h-4" />
+                                        </Link>
+                                    )}
                                 </td>
                             </tr>
                         ))
