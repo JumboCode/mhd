@@ -26,7 +26,6 @@ import { AnimatePresence, motion } from "framer-motion";
 import { toast } from "sonner";
 import BarGraph from "@/components/BarGraph";
 import { type ChartDataset } from "@/components/chartTypes";
-import { Breadcrumbs } from "@/components/Breadcrumbs";
 import GraphFilters, {
     type Filters,
     type GroupBy,
@@ -714,7 +713,6 @@ export default function ChartPage() {
         <div className="w-full min-h-screen flex bg-background">
             {/* Left Sidebar - Filter Panel */}
             <div className="flex flex-col border-r border-border p-8 bg-card w-70 h-screen overflow-y-auto sticky top-0 gap-12">
-                <Breadcrumbs />
                 <GraphFilters
                     schools={schools}
                     cities={cities}

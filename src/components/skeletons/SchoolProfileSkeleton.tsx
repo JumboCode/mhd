@@ -13,9 +13,6 @@ export function SchoolProfileSkeleton({
         <>
             {!skipHeader && (
                 <>
-                    {/* Breadcrumbs skeleton */}
-                    <Skeleton className="h-6 w-48" />
-
                     {/* Header skeleton */}
                     <Skeleton className="h-8 w-64" />
                 </>
