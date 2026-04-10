@@ -127,12 +127,12 @@ const YearsOfData = forwardRef<
                                 <td className="px-4 py-3 text-sm text-center">
                                     <div className="flex items-center justify-center">
                                         {yearsWithData.has(year) ? (
-                                            <span className="inline-flex items-center justify-center gap-1.5 w-32 px-3 py-1 rounded-sm text-xs font-medium bg-green-100 text-green-700 border border-green-300">
+                                            <span className="inline-flex items-center justify-center gap-1.5 w-24 px-3 py-1 rounded-sm text-xs font-medium bg-green-100 text-green-700 border border-green-300">
                                                 <Check className="w-3 h-3" />
                                                 Uploaded
                                             </span>
                                         ) : (
-                                            <span className="inline-flex items-center justify-center gap-1.5 w-32 px-3 py-1 rounded-sm text-xs font-medium bg-red-100 text-red-600 border border-red-300">
+                                            <span className="inline-flex items-center justify-center gap-1.5 w-24 px-3 py-1 rounded-sm text-xs font-medium bg-red-100 text-red-600 border border-red-300">
                                                 <X className="w-3 h-3" />
                                                 Missing
                                             </span>
