@@ -110,3 +110,24 @@ export async function downloadSingleGraph(
 
     downloadGraphs([canvas.toDataURL()], [filterName]);
 }
+
+export function clearCart(
+    setCart: Dispatch<SetStateAction<string[]>>,
+    setFilterNames: Dispatch<SetStateAction<string[]>>,
+) {
+    setCart([]);
+    setFilterNames([]);
+    sessionStorage.removeItem("cartStorage");
+    sessionStorage.removeItem("cartNameStorage");
+}
+
+export function deleteFromCart(
+    cart: string[],
+    setCart: Dispatch<SetStateAction<string[]>>,
+    filterNames: string[],
+    setFilterNames: Dispatch<SetStateAction<string[]>>,
+    idx: number,
+) {
+    setCart(cart.filter((_, index) => index !== idx));
+    setFilterNames(filterNames.filter((_, index) => index !== idx));
+}

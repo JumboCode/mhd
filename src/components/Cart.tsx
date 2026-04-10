@@ -60,10 +60,24 @@ export function Cart({
                         }}
                         className="text-gray-400 hover:text-red-500 p-1 pr-2 transition-colors duration-150 ease-in-out"
                     >
-                        <Trash2 className="h-4 w-4" />
-                    </button>
-                </div>
-            ))}
+                        <p>{filterName}</p>
+                        <button
+                            onClick={() =>
+                                deleteFromCart(
+                                    cart,
+                                    setCart,
+                                    filterNames,
+                                    setFilterNames,
+                                    index,
+                                )
+                            }
+                            className="text-gray-400 hover:text-red-500 p-1 pr-2 transition-colors duration-150 ease-in-out"
+                        >
+                            <Trash2 className="h-4 w-4" />
+                        </button>
+                    </div>
+                ))}
+            </div>
             <div
                 className={`flex flex-row justify-between ${cart.length > 0 && "border-t pt-2"}`}
             >
