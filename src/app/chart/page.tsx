@@ -16,7 +16,6 @@ import {
     ChartColumn,
     ChevronDown,
     LineChart,
-    Link,
     Loader2,
     PlusCircle,
     Share,
@@ -33,11 +32,17 @@ import GraphFilters, {
 } from "@/components/GraphFilters/GraphFilters";
 import LineGraph from "@/components/LineGraph";
 import { Button } from "@/components/ui/button";
+import { CopyButton } from "@/components/ui/copy-button";
 import {
     Popover,
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
     useQueryState,
@@ -411,13 +416,15 @@ export default function ChartPage() {
         }
     }, [yearRangeOpen, timePeriod, yearRange]);
 
-    const copyURLtoClipboard = async () => {
+    const copyURLtoClipboard = async (): Promise<boolean> => {
         try {
             const url = window.location.href;
             await navigator.clipboard.writeText(url);
             toast.success("URL copied to clipboard!");
+            return true;
         } catch {
             toast.error("Failed to copy URL to clipboard");
+            return false;
         }
     };
 
@@ -870,15 +877,17 @@ export default function ChartPage() {
                                 </HoverCardContent>
                             </HoverCard>
 
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                className="flex items-center gap-2"
-                                onClick={copyURLtoClipboard}
-                            >
-                                <Link className="w-4 h-4" />
-                                Share
-                            </Button>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <CopyButton
+                                        aria-label="Copy chart link"
+                                        onCopy={copyURLtoClipboard}
+                                    />
+                                </TooltipTrigger>
+                                <TooltipContent side="bottom">
+                                    Copy chart link
+                                </TooltipContent>
+                            </Tooltip>
                         </div>
                     </div>
 
