@@ -12,10 +12,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { toast } from "sonner";
 import { createColumns, Schools } from "@/components/Columns";
 import { SchoolsDataTable } from "@/components/DataTableSchools";
-import { SaveDiscardBar } from "@/components/EditableCells";
 import SchoolSearchBar from "@/components/SchoolSearchbar";
 import YearDropdown from "@/components/YearDropdown";
 import { LoadError } from "@/components/ui/load-error";
@@ -27,75 +25,11 @@ export default function SchoolsPage() {
     const [year, setYear] = useState<number | null>(null);
     const [search, setSearch] = useState("");
     const [isLoading, setIsLoading] = useState(false);
-    const [originalSchoolInfo, setOriginalSchoolInfo] = useState<Schools[]>([]);
-    const [pendingChanges, setPendingChanges] = useState<
-        Map<string, Partial<Schools>>
-    >(new Map());
-    const [saving, setSaving] = useState(false);
     const [schoolDataError, setSchoolDataError] = useState<string | null>(null);
     const [prevYearError, setPrevYearError] = useState<string | null>(null);
     const [retryTrigger, setRetryTrigger] = useState(0);
 
-    const hasChanges = pendingChanges.size > 0;
-
-    const onCommit = useCallback(
-        (
-            rowName: string,
-            columnId: string,
-            value: string | number | boolean,
-        ) => {
-            setSchoolInfo((prev) =>
-                prev.map((row) =>
-                    row.name === rowName ? { ...row, [columnId]: value } : row,
-                ),
-            );
-            setPendingChanges((prev) => {
-                const next = new Map(prev);
-                next.set(rowName, {
-                    ...(next.get(rowName) ?? {}),
-                    [columnId]: value,
-                });
-                return next;
-            });
-        },
-        [],
-    );
-
-    const handleSave = async () => {
-        setSaving(true);
-        try {
-            const requests = Array.from(pendingChanges.entries()).map(
-                ([rowName, changes]) =>
-                    fetch(`/api/schools/${standardize(rowName)}`, {
-                        method: "PATCH",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify(changes),
-                    }),
-            );
-            const results = await Promise.all(requests);
-            const failed = results.filter((r) => !r.ok);
-            if (failed.length > 0) {
-                toast.error(
-                    `${failed.length} update(s) failed. Please try again.`,
-                );
-            } else {
-                toast.success("Changes saved successfully.");
-                setOriginalSchoolInfo(schoolInfo);
-                setPendingChanges(new Map());
-            }
-        } catch {
-            toast.error("Failed to save changes. Please try again.");
-        } finally {
-            setSaving(false);
-        }
-    };
-
-    const handleDiscard = useCallback(() => {
-        setSchoolInfo(originalSchoolInfo);
-        setPendingChanges(new Map());
-    }, [originalSchoolInfo]);
-
-    const columns = useMemo(() => createColumns(onCommit), [onCommit]);
+    const columns = useMemo(() => createColumns(), []);
 
     const fetchSchoolData = useCallback(() => {
         setRetryTrigger((prev) => prev + 1);
@@ -115,9 +49,13 @@ export default function SchoolsPage() {
                 return response.json();
             })
             .then((data) => {
-                setSchoolInfo(data);
-                setOriginalSchoolInfo(data);
-                setPendingChanges(new Map());
+                const filtered = data.filter(
+                    (s: Schools) =>
+                        s.numStudents > 0 ||
+                        s.numTeachers > 0 ||
+                        s.numProjects > 0,
+                );
+                setSchoolInfo(filtered);
                 setSchoolDataError(null);
             })
             .catch(() => {
@@ -185,12 +123,6 @@ export default function SchoolsPage() {
                         />
                     )}
                 </div>
-                <SaveDiscardBar
-                    hasChanges={hasChanges}
-                    saving={saving}
-                    onSave={handleSave}
-                    onDiscard={handleDiscard}
-                />
             </div>
         </div>
     );

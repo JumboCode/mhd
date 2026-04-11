@@ -15,11 +15,6 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { ChevronsUpDownSort } from "@/components/icons/ChevronsUpDownSort";
-import { EditableCell, StringSelectCell } from "@/components/EditableCells";
-import { toTitleCase } from "@/lib/string-standardize";
-
-// Placeholder options — replace with real values once DB columns exist
-const MODEL_OPTIONS = ["Dummy 1", "Dummy 2", "Dummy 3"];
 
 export type Schools = {
     name: string;
@@ -33,13 +28,7 @@ export type Schools = {
     trend: string; //TODO: calculate trend and change type if needed
 };
 
-export function createColumns(
-    onCommit: (
-        rowName: string,
-        columnId: string,
-        value: string | number | boolean,
-    ) => void,
-): ColumnDef<Schools>[] {
+export function createColumns(): ColumnDef<Schools>[] {
     return [
         {
             accessorKey: "name",
@@ -98,20 +87,6 @@ export function createColumns(
                     </Button>
                 );
             },
-            cell: ({ getValue, row, column }) => {
-                // Standardize city name (redundant because also done in upload)
-                const rawValue = getValue() as string;
-                const formattedValue = toTitleCase(rawValue);
-
-                return (
-                    <EditableCell
-                        value={formattedValue}
-                        columnId={column.id}
-                        rowId={String(row.original.name)}
-                        onCommit={onCommit}
-                    />
-                );
-            },
         },
         {
             accessorKey: "region",
@@ -144,9 +119,9 @@ export function createColumns(
         },
         {
             accessorKey: "instructionModel",
-            size: 185,
-            minSize: 185,
-            maxSize: 350,
+            size: 160,
+            minSize: 160,
+            maxSize: 250,
             header: ({ column }) => {
                 return (
                     <Button
@@ -162,7 +137,7 @@ export function createColumns(
                             }
                         }}
                     >
-                        Instruction Model
+                        School Type
                         <ChevronsUpDownSort
                             sortDirection={column.getIsSorted()}
                             className="ml-2"
@@ -170,20 +145,11 @@ export function createColumns(
                     </Button>
                 );
             },
-            cell: ({ getValue, row, column }) => (
-                <StringSelectCell
-                    value={getValue() as string}
-                    options={MODEL_OPTIONS}
-                    rowId={String(row.index)}
-                    columnId={column.id}
-                    onCommit={() => {}} // TODO: wire up once DB column exists
-                />
-            ),
         },
         {
             accessorKey: "implementationModel",
-            size: 210,
-            minSize: 210,
+            size: 220,
+            minSize: 220,
             maxSize: 350,
             header: ({ column }) => {
                 return (
@@ -208,20 +174,11 @@ export function createColumns(
                     </Button>
                 );
             },
-            cell: ({ getValue, row, column }) => (
-                <StringSelectCell
-                    value={getValue() as string}
-                    options={MODEL_OPTIONS}
-                    rowId={String(row.index)}
-                    columnId={column.id}
-                    onCommit={() => {}} // TODO: wire up once DB column exists
-                />
-            ),
         },
         {
             accessorKey: "numStudents",
-            size: 135,
-            minSize: 135,
+            size: 145,
+            minSize: 145,
             maxSize: 250,
             header: ({ column }) => {
                 return (
@@ -249,8 +206,8 @@ export function createColumns(
         },
         {
             accessorKey: "numTeachers",
-            size: 135,
-            minSize: 135,
+            size: 140,
+            minSize: 140,
             maxSize: 250,
             header: ({ column }) => {
                 return (
@@ -278,8 +235,8 @@ export function createColumns(
         },
         {
             accessorKey: "numProjects",
-            size: 130,
-            minSize: 130,
+            size: 140,
+            minSize: 140,
             maxSize: 250,
             header: ({ column }) => {
                 return (
