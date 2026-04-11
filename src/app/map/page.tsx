@@ -15,6 +15,7 @@ import { Suspense, useEffect, useState, useRef, useMemo } from "react";
 import { toast } from "sonner";
 import { Loader2, Link, Share } from "lucide-react";
 import { LoadError } from "@/components/ui/load-error";
+import { ListFilter } from "lucide-react";
 
 // queryStates required for URL sharing with nuqs
 import {
@@ -31,6 +32,11 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import YearDropdown from "@/components/YearDropdown";
 import CountDropdown from "@/components/CountDropdown";
 import { Button } from "@/components/ui/button";
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover";
 import { exportMapToPDF } from "@/lib/heatmap-export";
 import { useHeatmapLayers } from "@/hooks/useHeatmapLayers";
 import { Cart } from "@/components/Cart";
@@ -399,36 +405,56 @@ function HeatMapPage() {
                             options={Object.keys(regions)}
                         />
                     </div>
-                    <div className="flex flex-col gap-1.5 w-48">
-                        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pl-1">
-                            Filters
-                        </label>
-                        <div className="flex items-center h-10 px-2">
-                            <input
-                                id="gateway-toggle"
-                                type="checkbox"
-                                className="w-4 h-4 cursor-pointer rounded border-slate-300"
-                                checked={onlyGatewaySchools}
-                                onChange={(e) =>
-                                    setOnlyGatewaySchools(e.target.checked)
-                                }
-                            />
-                            <label
-                                htmlFor="gateway-toggle"
-                                className="ml-2 text-sm cursor-pointer select-none"
-                            >
-                                Gateway Schools Only
-                            </label>
-                        </div>
-                    </div>
                 </div>
 
-                <Button
-                    onClick={() => setShowSchools(!showSchools)}
-                    className="w-32 py-2"
-                >
-                    {showSchools ? "Hide Schools" : "Show Schools"}
-                </Button>
+                <Popover>
+                    <PopoverTrigger asChild>
+                        <Button variant="outline" className="px-3">
+                            <ListFilter />
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent align="end" className="w-56">
+                        <div className="flex flex-col gap-3">
+                            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                                Layers
+                            </p>
+                            <div className="flex items-center gap-2">
+                                <input
+                                    id="show-schools-toggle"
+                                    type="checkbox"
+                                    className="w-4 h-4 cursor-pointer rounded border-slate-300"
+                                    checked={showSchools}
+                                    onChange={(e) =>
+                                        setShowSchools(e.target.checked)
+                                    }
+                                />
+                                <label
+                                    htmlFor="show-schools-toggle"
+                                    className="text-sm cursor-pointer select-none"
+                                >
+                                    Show Schools
+                                </label>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <input
+                                    id="gateway-toggle"
+                                    type="checkbox"
+                                    className="w-4 h-4 cursor-pointer rounded border-slate-300"
+                                    checked={onlyGatewaySchools}
+                                    onChange={(e) =>
+                                        setOnlyGatewaySchools(e.target.checked)
+                                    }
+                                />
+                                <label
+                                    htmlFor="gateway-toggle"
+                                    className="text-sm cursor-pointer select-none"
+                                >
+                                    Gateway Schools Only
+                                </label>
+                            </div>
+                        </div>
+                    </PopoverContent>
+                </Popover>
             </div>
             <div className="flex-1 rounded-2xl overflow-hidden border border-slate-200 relative">
                 {schoolDataError ? (
