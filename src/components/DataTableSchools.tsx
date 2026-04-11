@@ -12,7 +12,7 @@
 "use client";
 import React, { ReactNode } from "react";
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
-import { standardize } from "@/lib/school-name-standardize";
+import { standardize } from "@/lib/string-standardize";
 
 import {
     ColumnDef,

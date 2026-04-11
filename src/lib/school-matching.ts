@@ -11,7 +11,7 @@
  *
  **************************************************************/
 
-import { standardize } from "./school-name-standardize";
+import { standardize } from "./string-standardize";
 
 /**
  * Known school data from the CSV

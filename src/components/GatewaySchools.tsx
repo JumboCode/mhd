@@ -16,7 +16,7 @@ import { useEffect, useState, useImperativeHandle, forwardRef } from "react";
 import { Combobox } from "@/components/Combobox";
 import { Trash } from "lucide-react";
 import { toast } from "sonner";
-import { standardize } from "@/lib/school-name-standardize";
+import { standardize } from "@/lib/string-standardize";
 
 /**
  * Represents a single school entry in the system.

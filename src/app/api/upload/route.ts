@@ -21,7 +21,7 @@ import {
     yearlySchoolParticipation,
 } from "@/lib/schema";
 import { requiredColumns } from "@/lib/required-spreadsheet-columns";
-import { standardize } from "@/lib/school-name-standardize";
+import { standardize } from "@/lib/string-standardize";
 import { findRegionOf } from "@/lib/region-finder";
 
 type RowData = Array<string | number | boolean | null>;

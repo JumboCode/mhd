@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import maplibregl from "maplibre-gl";
 
 import regionsData from "@/data/regions.json";
-import { standardize } from "@/lib/school-name-standardize";
+import { standardize } from "@/lib/string-standardize";
 
 const regions = Object.values(regionsData).map((region) => ({
     name: region.name,

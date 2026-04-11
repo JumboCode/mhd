@@ -16,18 +16,10 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { ChevronsUpDownSort } from "@/components/icons/ChevronsUpDownSort";
 import { EditableCell, StringSelectCell } from "@/components/EditableCells";
+import { toTitleCase } from "@/lib/string-standardize";
 
 // Placeholder options — replace with real values once DB columns exist
 const MODEL_OPTIONS = ["Dummy 1", "Dummy 2", "Dummy 3"];
-
-// Normalize school name formatting in table
-function toTitleCase(str: string) {
-    return str
-        .toLowerCase()
-        .split(" ")
-        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(" ");
-}
 
 export type Schools = {
     name: string;
