@@ -22,7 +22,7 @@ import { SchoolInfoRow } from "@/components/SchoolInfoRow";
 import { StatCard } from "@/components/ui/stat-card";
 import { ENTITY_CONFIG } from "@/lib/entity-config";
 import YearDropdown from "@/components/YearDropdown";
-import MultiLineGraph, { GraphDataset } from "@/components/LineGraph";
+import MultiLineGraph, { GraphDataset } from "@/components/charts/LineGraph";
 import { Info } from "lucide-react";
 import {
     Tooltip,
@@ -33,6 +33,8 @@ import {
     EditableProjectsTable,
     ProjectRow as EditableProjectRow,
 } from "@/components/EditableProjectsTable";
+import PieChart from "@/components/charts/PieChart";
+import { projectCategoryDistribution } from "@/lib/utils";
 
 // interface such that data can be blank if API is loading
 type SchoolData = {
@@ -332,13 +334,15 @@ export default function SchoolProfilePage() {
                     />
                 </Link>
 
-                {/* Placeholders for charts */}
+                {/* Project type distribution — same 3-col grid as stats; spans 2 cells */}
                 <div className="grid grid-cols-3 gap-8">
-                    <PlaceholderCard
-                        title="Region Distribution"
-                        className="col-span-2"
-                    />
-                    <PlaceholderCard title="% Highschool" />
+                    <div className="col-span-2 min-w-0">
+                        <PieChart
+                            slices={projectCategoryDistribution(projects)}
+                            legendTitle="Project Type Distribution"
+                            emptyMessage="No project data"
+                        />
+                    </div>
                 </div>
 
                 {/* School location map */}
@@ -399,30 +403,6 @@ export default function SchoolProfilePage() {
                         key={`${schoolName}-${year}`}
                         initialData={projects}
                     />
-                </div>
-            </div>
-        </div>
-    );
-}
-
-// Reusable placeholder card component
-function PlaceholderCard({
-    title,
-    className = "",
-}: {
-    title: string;
-    className?: string;
-}) {
-    return (
-        <div className={`border border-border rounded-lg p-6 ${className}`}>
-            <div className="h-48 flex items-center justify-center bg-muted rounded">
-                <div className="text-center">
-                    <p className="text-sm font-semibold text-foreground">
-                        {title}
-                    </p>
-                    <p className="text-sm text-muted-foreground mt-2">
-                        Chart placeholder
-                    </p>
                 </div>
             </div>
         </div>

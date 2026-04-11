@@ -1,5 +1,5 @@
 /**
- * Shared types and constants for BarGraph and LineGraph components.
+ * Shared types and constants for BarGraph, LineGraph, and PieChart components.
  */
 
 export const CHART_COLORS = [
@@ -14,6 +14,13 @@ export const CHART_COLORS = [
     "#f97316", // orange-500
     "#6366f1", // indigo-500
 ];
+
+export type PieSlice = {
+    label: string;
+    value: number;
+    /** If omitted, PieChart assigns from CHART_COLORS by slice index. */
+    color?: string;
+};
 
 export type ChartDataset = {
     label: string;
@@ -39,6 +46,12 @@ export type ChartConfig = {
     dotRadius?: number;
     /** LineGraph: line stroke width. Default: 2 */
     strokeWidth?: number;
+    /** PieChart: pad angle between slices (radians). Default: 0.02 */
+    piePadAngle?: number;
+    /** PieChart: donut inner radius in SVG units. Default: 20 */
+    pieInnerRadius?: number;
+    /** PieChart: arc corner radius. Default: 8 */
+    pieCornerRadius?: number;
 };
 
 /**
@@ -48,4 +61,11 @@ export type ChartConfig = {
 export type TooltipFormatter = (
     point: { x: string | number; y: number },
     seriesLabel: string,
+) => string;
+
+/**
+ * Receives a pie slice with resolved color. Return the tooltip string.
+ */
+export type PieTooltipFormatter = (
+    slice: PieSlice & { color: string },
 ) => string;
