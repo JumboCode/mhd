@@ -50,7 +50,10 @@ export default function YearDropdown({
                 const res = await fetch("/api/years-with-data");
                 if (!res.ok) return;
                 const data = await res.json();
-                const dataSet = new Set<number>(data.years);
+                const yearNumbers: number[] = data.years.map(
+                    (e: { year: number }) => e.year,
+                );
+                const dataSet = new Set<number>(yearNumbers);
                 setYearsWithData(dataSet);
 
                 const firstYear = Math.min(...dataSet);

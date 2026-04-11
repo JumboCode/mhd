@@ -23,6 +23,7 @@ import InvalidURLHandler from "@/components/InvalidURLHandler";
 export const metadata: Metadata = {
     title: "MHD",
     description: "MHD",
+    icons: { icon: "/favicon.png" },
 };
 
 export default function RootLayout({

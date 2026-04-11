@@ -15,6 +15,7 @@ import {
     projects,
     yearlySchoolParticipation,
     yearlyTeacherParticipation,
+    yearMetadata,
 } from "@/lib/schema";
 import { eq } from "drizzle-orm";
 
@@ -45,6 +46,7 @@ export async function DELETE(req: NextRequest) {
         await db
             .delete(yearlyTeacherParticipation)
             .where(eq(yearlyTeacherParticipation.year, currentYear));
+        await db.delete(yearMetadata).where(eq(yearMetadata.year, currentYear));
 
         // Return a success response so fetch.ok becomes true
         return NextResponse.json({ success: true });
