@@ -141,13 +141,18 @@ export default function YearDropdown({
                 onValueChange={handleValueChange}
             >
                 <SelectTrigger className="w-[100px] rounded-none h-9 text-center shadow-none z-[10]">
-                    <SelectValue placeholder="Select a year" />
+                    <SelectValue placeholder="Year" />
                 </SelectTrigger>
                 <SelectContent className="z-[100] max-h-120 overflow-y-auto">
                     {years.map((y) => (
                         <SelectItem
                             key={y}
                             value={y.toString()}
+                            className={
+                                showDataIndicator && !hasData(y)
+                                    ? "cursor-not-allowed"
+                                    : undefined
+                            }
                             rightContent={
                                 showDataIndicator ? (
                                     <div
