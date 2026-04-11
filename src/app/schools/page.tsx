@@ -66,7 +66,7 @@ export default function SchoolsPage() {
                     fetch(`/api/schools/${standardize(rowName)}`, {
                         method: "PATCH",
                         headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify(changes),
+                        body: JSON.stringify({ ...changes, year }),
                     }),
             );
             const results = await Promise.all(requests);

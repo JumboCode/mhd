@@ -11,8 +11,13 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { projects, schools, yearlyTeacherParticipation } from "@/lib/schema";
-import { count, eq, sum } from "drizzle-orm";
+import {
+    projects,
+    schools,
+    yearlySchoolParticipation,
+    yearlyTeacherParticipation,
+} from "@/lib/schema";
+import { and, count, eq, sum } from "drizzle-orm";
 
 function percentageChange(curr: number, past: number) {
     return past !== 0 ? Math.round(((curr - past) / past) * 100) : undefined;
@@ -27,7 +32,7 @@ export async function GET(req: NextRequest) {
             const gatewayParam = searchParams.get("gateway");
             const isGateway = gatewayParam === "true";
 
-            const query = db
+            const baseQuery = db
                 .select({
                     id: schools.id,
                     name: schools.name,
@@ -35,18 +40,13 @@ export async function GET(req: NextRequest) {
                     longitude: schools.longitude,
                     region: schools.region,
                     gateway: schools.gateway,
-                    division: schools.division,
-                    implementationModel: schools.implementationModel,
-                    schoolType: schools.schoolType,
                 })
                 .from(schools);
 
             // Only filter if gateway=true is explicitly passed
-            if (isGateway) {
-                query.where(eq(schools.gateway, true));
-            }
-
-            const allSchools = await query;
+            const allSchools = await (isGateway
+                ? baseQuery.where(eq(schools.gateway, true))
+                : baseQuery);
             return NextResponse.json(allSchools);
         }
 
@@ -60,7 +60,7 @@ export async function GET(req: NextRequest) {
             );
         }
 
-        // Fetch all schools
+        // Fetch all schools with yearly data for the requested year
         const allSchools = await db
             .select({
                 id: schools.id,
@@ -70,11 +70,19 @@ export async function GET(req: NextRequest) {
                 longitude: schools.longitude,
                 region: schools.region,
                 gateway: schools.gateway,
-                division: schools.division,
-                implementationModel: schools.implementationModel,
-                schoolType: schools.schoolType,
+                division: yearlySchoolParticipation.division,
+                implementationModel:
+                    yearlySchoolParticipation.implementationModel,
+                schoolType: yearlySchoolParticipation.schoolType,
             })
-            .from(schools);
+            .from(schools)
+            .leftJoin(
+                yearlySchoolParticipation,
+                and(
+                    eq(yearlySchoolParticipation.schoolId, schools.id),
+                    eq(yearlySchoolParticipation.year, currentYear),
+                ),
+            );
 
         // Fetch project counts for current year grouped by school
         const currYearProjects = await db
@@ -175,9 +183,9 @@ export async function GET(req: NextRequest) {
                 name: school.name,
                 city: school.city,
                 region: school.region,
-                division: school.division,
-                implementationModel: school.implementationModel,
-                schoolType: school.schoolType,
+                division: school.division ?? [],
+                implementationModel: school.implementationModel ?? "",
+                schoolType: school.schoolType ?? "",
                 numStudents: currStudents,
                 studentChange: percentageChange(currStudents, lastStudents),
                 numTeachers: currTeachers,

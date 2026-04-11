@@ -227,10 +227,6 @@ export async function POST(req: NextRequest) {
                         latitude: coords?.lat ?? null,
                         longitude: coords?.long ?? null,
                         region: region,
-                        division: schoolInfo?.division ?? [],
-                        implementationModel:
-                            schoolInfo?.implementationModel ?? "",
-                        schoolType: schoolInfo?.schoolType ?? "",
                     })
                     .returning();
                 school = inserted;
@@ -242,20 +238,12 @@ export async function POST(req: NextRequest) {
                     coords?.lat &&
                     coords?.long;
 
-                if (needsCoordUpdate || schoolInfo) {
+                if (needsCoordUpdate) {
                     const [updated] = await db
                         .update(schools)
                         .set({
-                            ...(needsCoordUpdate && {
-                                latitude: coords!.lat,
-                                longitude: coords!.long,
-                            }),
-                            ...(schoolInfo && {
-                                division: schoolInfo.division,
-                                implementationModel:
-                                    schoolInfo.implementationModel,
-                                schoolType: schoolInfo.schoolType,
-                            }),
+                            latitude: coords!.lat,
+                            longitude: coords!.long,
                         })
                         .where(eq(schools.id, school.id))
                         .returning();
@@ -349,7 +337,24 @@ export async function POST(req: NextRequest) {
                 await db.insert(yearlySchoolParticipation).values({
                     year: year,
                     schoolId: school.id,
+                    division: schoolInfo?.division ?? [],
+                    implementationModel: schoolInfo?.implementationModel ?? "",
+                    schoolType: schoolInfo?.schoolType ?? "",
                 });
+            } else if (schoolInfo) {
+                await db
+                    .update(yearlySchoolParticipation)
+                    .set({
+                        division: schoolInfo.division,
+                        implementationModel: schoolInfo.implementationModel,
+                        schoolType: schoolInfo.schoolType,
+                    })
+                    .where(
+                        eq(
+                            yearlySchoolParticipation.id,
+                            existingYearlySchool.id,
+                        ),
+                    );
             }
 
             insertedCount++;
