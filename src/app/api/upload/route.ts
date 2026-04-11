@@ -21,7 +21,7 @@ import {
     yearlySchoolParticipation,
 } from "@/lib/schema";
 import { requiredColumns } from "@/lib/required-spreadsheet-columns";
-import { standardize } from "@/lib/school-name-standardize";
+import { standardize, toTitleCase } from "@/lib/string-standardize";
 import { findRegionOf } from "@/lib/region-finder";
 
 type RowData = Array<string | number | boolean | null>;
@@ -120,7 +120,7 @@ export async function POST(req: NextRequest) {
             });
 
             const schoolName = row[COLUMN_INDICES.schoolName] as string;
-            const schoolTown = row[COLUMN_INDICES.city] as string;
+            const schoolTown = toTitleCase(row[COLUMN_INDICES.city] as string);
 
             if (!school) {
                 // Get coordinates from frontend matching
@@ -130,7 +130,7 @@ export async function POST(req: NextRequest) {
                 const [inserted] = await db
                     .insert(schools)
                     .values({
-                        schoolId: schoolIdValue,
+                        schoolId: schoolIdValue, // or "id: schoolIdValue" if table uses "id"
                         name: schoolName,
                         standardizedName: standardize(schoolName),
                         town: schoolTown,

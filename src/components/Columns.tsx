@@ -16,6 +16,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { ChevronsUpDownSort } from "@/components/icons/ChevronsUpDownSort";
 import { EditableCell, StringSelectCell } from "@/components/EditableCells";
+import { toTitleCase } from "@/lib/string-standardize";
 
 // Placeholder options — replace with real values once DB columns exist
 const MODEL_OPTIONS = ["Dummy 1", "Dummy 2", "Dummy 3"];
@@ -97,14 +98,19 @@ export function createColumns(
                     </Button>
                 );
             },
-            cell: ({ getValue, row, column }) => (
-                <EditableCell
-                    value={getValue() as string}
-                    columnId={column.id}
-                    rowId={String(row.original.name)}
-                    onCommit={onCommit}
-                />
-            ),
+            cell: ({ getValue, row, column }) => {
+                const rawValue = getValue() as string;
+                const formattedValue = toTitleCase(rawValue);
+
+                return (
+                    <EditableCell
+                        value={formattedValue}
+                        columnId={column.id}
+                        rowId={String(row.original.name)}
+                        onCommit={onCommit}
+                    />
+                );
+            },
         },
         {
             accessorKey: "region",

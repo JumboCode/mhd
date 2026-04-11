@@ -18,8 +18,8 @@ import { SchoolsDataTable } from "@/components/DataTableSchools";
 import { SaveDiscardBar } from "@/components/EditableCells";
 import SchoolSearchBar from "@/components/SchoolSearchbar";
 import YearDropdown from "@/components/YearDropdown";
-import { standardize } from "@/lib/school-name-standardize";
 import { LoadError } from "@/components/ui/load-error";
+import { standardize } from "@/lib/string-standardize";
 
 export default function SchoolsPage() {
     const [schoolInfo, setSchoolInfo] = useState<Schools[]>([]);

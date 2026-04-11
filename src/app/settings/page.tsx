@@ -21,7 +21,7 @@ import { toast } from "sonner";
 import GatewaySchools, {
     GatewaySchoolsHandle,
 } from "@/components/GatewaySchools";
-import { standardize } from "@/lib/school-name-standardize";
+import { standardize } from "@/lib/string-standardize";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import PermittedUsers from "@/components/PermittedUsers";
 import { useRouter } from "next/navigation";
