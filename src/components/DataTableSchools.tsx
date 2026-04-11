@@ -154,7 +154,7 @@ export function SchoolsDataTable<TData, TValue>({
                     </button>
                 </div>
             )}
-            <div className="flex-1 overflow-auto overscroll-none text-center">
+            <div className="flex-1 overflow-auto overscroll-none text-left">
                 <Table
                     className="caption-bottom text-sm border-separate border-spacing-0"
                     style={{
@@ -175,8 +175,8 @@ export function SchoolsDataTable<TData, TValue>({
                                             key={header.id}
                                             className={
                                                 header.index === 0
-                                                    ? "sticky top-0 left-0 z-40 text-center bg-muted border-r border-b relative"
-                                                    : "sticky top-0 z-30 text-center border-r border-b bg-muted relative"
+                                                    ? "sticky top-0 left-0 z-40 text-left bg-muted border-r border-b relative"
+                                                    : "sticky top-0 z-30 text-left border-r border-b bg-muted relative"
                                             }
                                             style={{
                                                 width: header.getSize(),
@@ -225,8 +225,8 @@ export function SchoolsDataTable<TData, TValue>({
                                             key={cell.id}
                                             className={
                                                 cell.column.getIndex() === 0
-                                                    ? "text-center sticky left-0 z-20 bg-muted border-r border-b overflow-hidden"
-                                                    : "text-center z-0 border-b overflow-hidden"
+                                                    ? "text-left sticky left-0 z-20 bg-muted border-r border-b overflow-hidden"
+                                                    : "text-left z-0 border-b overflow-hidden"
                                             }
                                             style={{
                                                 width: cell.column.getSize(),
@@ -249,7 +249,7 @@ export function SchoolsDataTable<TData, TValue>({
                                                     )}
                                                 </Link>
                                             ) : (
-                                                <div className="flex flex-row items-center justify-center space-x-1 gap-2 h-12 px-1 py-2 truncate">
+                                                <div className="flex flex-row items-center space-x-1 gap-2 h-12 px-1 py-2 truncate">
                                                     {flexRender(
                                                         cell.column.columnDef
                                                             .cell,
