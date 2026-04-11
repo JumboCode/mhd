@@ -17,6 +17,7 @@ import { dmSans, millerBanner, millerDisplay, millerText } from "@/app/fonts";
 import ConditionalLayout from "@/components/ConditionalLayout";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { UnsavedChangesProvider } from "@/components/UnsavedChangesContext";
+import { CartProvider } from "@/hooks/useCart";
 import { Suspense } from "react";
 import InvalidURLHandler from "@/components/InvalidURLHandler";
 
@@ -38,9 +39,11 @@ export default function RootLayout({
             <body className="font-sans flex flex-row h-screen overflow-hidden">
                 <UnsavedChangesProvider>
                     <NuqsAdapter>
-                        <ConditionalLayout>
-                            <TooltipProvider>{children}</TooltipProvider>
-                        </ConditionalLayout>
+                        <CartProvider>
+                            <ConditionalLayout>
+                                <TooltipProvider>{children}</TooltipProvider>
+                            </ConditionalLayout>
+                        </CartProvider>
                     </NuqsAdapter>
                 </UnsavedChangesProvider>
                 <Toaster />
