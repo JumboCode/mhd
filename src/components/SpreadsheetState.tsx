@@ -71,6 +71,7 @@ export default function SpreadsheetState() {
         Map<string, { lat: number; long: number }>
     >(new Map());
     const [currentSchoolIndex, setCurrentSchoolIndex] = useState(0);
+    const [progress, setProgress] = useState<number>(0);
 
     // Handler for when a school location is assigned via the map
     const handleSchoolLocationAssigned = useCallback(
@@ -264,6 +265,14 @@ export default function SpreadsheetState() {
         }
 
         try {
+            const source = new EventSource("/api/upload");
+            source.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                setProgress(data.progress);
+                if (data.complete) {
+                    source.close();
+                }
+            };
             const response = await fetch("/api/upload", {
                 method: "POST",
                 headers: {
@@ -499,7 +508,21 @@ export default function SpreadsheetState() {
             </div>
 
             <div className={`flex-1 ${tabIndex === 2 ? "w-full" : ""}`}>
-                {tab}
+                {isSubmitting ? (
+                    <div className="flex flex-col items-center gap-4 mt-8 w-full max-w-md">
+                        <div className="w-full bg-gray-200 rounded-full h-4">
+                            <div
+                                className="bg-primary h-4 rounded-full transition-all duration-300"
+                                style={{ width: `${progress}%` }}
+                            />
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                            Progress: ({progress}%)
+                        </p>
+                    </div>
+                ) : (
+                    tab
+                )}
             </div>
 
             <div
