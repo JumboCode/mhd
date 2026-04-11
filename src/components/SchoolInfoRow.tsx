@@ -46,7 +46,7 @@ export function SchoolInfoRow({
                     </span>
                 </div>
                 <span className="text-lg font-semibold text-foreground">
-                    {implementationModel || "Implementation model Not found"}
+                    {implementationModel || "None"}
                 </span>
             </div>
 
