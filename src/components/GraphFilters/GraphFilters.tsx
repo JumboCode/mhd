@@ -417,7 +417,7 @@ export default function GraphFilters({
                                                   : selectedProjectTypes
                                         }
                                         gatewayCities={
-                                            filter.value === "city"
+                                            filter.value === "school"
                                                 ? gatewaySchools
                                                 : undefined
                                         }
