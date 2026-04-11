@@ -11,8 +11,13 @@
 
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { projects, schools, teachers } from "@/lib/schema";
-import { eq } from "drizzle-orm";
+import {
+    projects,
+    schools,
+    teachers,
+    yearlySchoolParticipation,
+} from "@/lib/schema";
+import { and, eq } from "drizzle-orm";
 
 export async function GET() {
     try {
@@ -32,10 +37,21 @@ export async function GET() {
                 teacherName: teachers.name,
                 teacherEmail: teachers.email,
                 numStudents: projects.numStudents,
+                schoolDivisions: yearlySchoolParticipation.division,
+                schoolImplementationModel:
+                    yearlySchoolParticipation.implementationModel,
+                schoolSchoolType: yearlySchoolParticipation.schoolType,
             })
             .from(projects)
             .innerJoin(schools, eq(schools.id, projects.schoolId))
-            .innerJoin(teachers, eq(teachers.id, projects.teacherId));
+            .innerJoin(teachers, eq(teachers.id, projects.teacherId))
+            .leftJoin(
+                yearlySchoolParticipation,
+                and(
+                    eq(yearlySchoolParticipation.schoolId, projects.schoolId),
+                    eq(yearlySchoolParticipation.year, projects.year),
+                ),
+            );
 
         return NextResponse.json(allProjects);
     } catch (error) {

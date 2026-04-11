@@ -84,6 +84,9 @@ type Project = {
     teacherName: string;
     teacherEmail: string;
     numStudents: number;
+    schoolDivisions: string[] | null;
+    schoolImplementationModel: string | null;
+    schoolSchoolType: string | null;
 };
 
 // possible values for measured as filter
@@ -102,7 +105,7 @@ const groupByLabels: Record<string, string> = {
     "region": "Region",
     "school-type": "School Type",
     "division": "Division",
-    "implementation-type": "Implementation Type",
+    "implementation-model": "Implementation Model",
     "project-type": "Project Type",
     "gateway-school": "Gateway School",
 };
@@ -520,47 +523,6 @@ export default function ChartPage() {
             return true;
         });
 
-        // Determine the key to group data by for different lines on the graph
-        let groupKey: keyof Project | null = null;
-
-        switch (filters.groupBy) {
-            case "none":
-                groupKey = null;
-                break;
-            case "division":
-                groupKey = "division";
-                break;
-            case "project-type":
-                groupKey = "category";
-                break;
-            case "region":
-                groupKey = "schoolRegion"; // temp
-                break;
-            case "school-type":
-                groupKey = "category"; // temp
-                break;
-            case "implementation-type":
-                groupKey = "category"; // temp
-                break;
-            case "gateway-school":
-                groupKey = "gatewaySchool";
-                break;
-        }
-
-        // Get a sorted list of unique group names
-        // If groupKey is null (none grouping), use a single "All" group
-        const uniqueGroups =
-            groupKey === null
-                ? ["All"]
-                : Array.from(
-                      new Set(
-                          filteredProjects.map((p) =>
-                              String(p[groupKey] || "Unknown"),
-                          ),
-                      ),
-                  ).sort();
-
-        // added to handle measured by filter!
         function computeMetric(projects: Project[], metric: string) {
             switch (metric) {
                 case "total-project-count":
@@ -579,21 +541,16 @@ export default function ChartPage() {
                     return new Set(projects.map((p) => p.schoolTown)).size;
 
                 case "school-return-rate": {
-                    // schools that have projects in this year for this group
                     const schoolsThisYear = new Set(
                         projects.map((p) => p.schoolId),
                     );
                     const year = projects[0].year;
-
-                    // all earlier participation by these same schools
                     const priorParticipation = allProjects.filter(
                         (x) => schoolsThisYear.has(x.schoolId) && x.year < year,
                     );
-
                     const returningSchools = new Set(
                         priorParticipation.map((p) => p.schoolId),
                     );
-
                     return returningSchools.size / schoolsThisYear.size || 0;
                 }
 
@@ -602,39 +559,120 @@ export default function ChartPage() {
             }
         }
 
-        // Format the filtered and grouped data for the graph components
-        return uniqueGroups.map((groupName) => {
-            // Isolate projects belonging to the current group
-            // If groupKey is null (none grouping), include all filtered projects
-            const projectsInGroup =
-                groupKey === null
-                    ? filteredProjects
-                    : filteredProjects.filter(
-                          (p) => String(p[groupKey] || "Unknown") === groupName,
-                      );
+        function buildDatasets(
+            groups: string[],
+            getProjectsInGroup: (groupName: string) => Project[],
+        ) {
+            const metric = filters?.measuredAs || "total-school-count";
+            setMeasuredAs(metric as MeasuredAs);
+            return groups.map((groupName) => {
+                const projectsInGroup = getProjectsInGroup(groupName);
+                const projectsByYear: Record<number, Project[]> = {};
+                projectsInGroup.forEach((p) => {
+                    if (!projectsByYear[p.year]) projectsByYear[p.year] = [];
+                    projectsByYear[p.year].push(p);
+                });
+                const dataPoints = Object.entries(projectsByYear)
+                    .map(([year, projs]) => ({
+                        x: Number(year),
+                        y: computeMetric(projs, metric),
+                    }))
+                    .sort((a, b) => a.x - b.x);
+                return { label: groupName, data: dataPoints };
+            });
+        }
 
-            const projectsByYear: Record<number, Project[]> = {};
+        // Division groupby: school-level array field, one project can belong to multiple groups
+        if (filters.groupBy === "division") {
+            const normalizeDivision = (d: string): string => {
+                const lower = d.toLowerCase();
+                if (lower.startsWith("junior")) return "Junior";
+                if (lower.startsWith("senior")) return "Senior";
+                if (lower.startsWith("young")) return "Young Historian";
+                return d;
+            };
 
-            projectsInGroup.forEach((p) => {
-                if (!projectsByYear[p.year]) projectsByYear[p.year] = [];
-                projectsByYear[p.year].push(p);
+            const allDivisionGroups = new Set<string>();
+            filteredProjects.forEach((p) => {
+                const divs = p.schoolDivisions;
+                if (!divs || divs.length === 0) {
+                    allDivisionGroups.add("Unassigned");
+                } else {
+                    divs.forEach((d) =>
+                        allDivisionGroups.add(normalizeDivision(d)),
+                    );
+                }
             });
 
-            setMeasuredAs(filters?.measuredAs || "total-school-count");
-            const metric = filters?.measuredAs || "total-school-count";
+            const divisionGroups = Array.from(allDivisionGroups).sort((a, b) =>
+                a === "Unassigned"
+                    ? 1
+                    : b === "Unassigned"
+                      ? -1
+                      : a.localeCompare(b),
+            );
 
-            const dataPoints = Object.entries(projectsByYear)
-                .map(([year, projs]) => ({
-                    x: Number(year),
-                    y: computeMetric(projs, metric),
-                }))
-                .sort((a, b) => a.x - b.x);
+            return buildDatasets(divisionGroups, (groupName) =>
+                filteredProjects.filter((p) => {
+                    const divs = p.schoolDivisions;
+                    if (groupName === "Unassigned")
+                        return !divs || divs.length === 0;
+                    return (
+                        divs?.some((d) => normalizeDivision(d) === groupName) ??
+                        false
+                    );
+                }),
+            );
+        }
 
-            return {
-                label: groupName,
-                data: dataPoints,
-            };
-        });
+        // Determine the key to group data by for all other groupBys
+        let groupKey: keyof Project | null = null;
+
+        switch (filters.groupBy) {
+            case "none":
+                groupKey = null;
+                break;
+            case "project-type":
+                groupKey = "category";
+                break;
+            case "region":
+                groupKey = "schoolRegion";
+                break;
+            case "school-type":
+                groupKey = "schoolSchoolType";
+                break;
+            case "implementation-model":
+                groupKey = "schoolImplementationModel";
+                break;
+            case "gateway-school":
+                groupKey = "gatewaySchool";
+                break;
+        }
+
+        const uniqueGroups =
+            groupKey === null
+                ? ["All"]
+                : Array.from(
+                      new Set(
+                          filteredProjects.map((p) =>
+                              String(p[groupKey] || "Unassigned"),
+                          ),
+                      ),
+                  ).sort((a, b) =>
+                      a === "Unassigned"
+                          ? 1
+                          : b === "Unassigned"
+                            ? -1
+                            : a.localeCompare(b),
+                  );
+
+        return buildDatasets(uniqueGroups, (groupName) =>
+            groupKey === null
+                ? filteredProjects
+                : filteredProjects.filter(
+                      (p) => String(p[groupKey] || "Unassigned") === groupName,
+                  ),
+        );
     }, [
         allProjects,
         selectedSchools,
