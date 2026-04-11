@@ -154,7 +154,7 @@ export function SchoolsDataTable<TData, TValue>({
                     </button>
                 </div>
             )}
-            <div className="flex-1 overflow-auto border text-center">
+            <div className="flex-1 overflow-auto overscroll-none text-center bg-muted">
                 <Table
                     className="caption-bottom text-sm border-separate border-spacing-0"
                     style={{
@@ -179,7 +179,6 @@ export function SchoolsDataTable<TData, TValue>({
                                             }
                                             style={{
                                                 width: header.getSize(),
-                                                maxWidth: header.getSize(),
                                                 position: "sticky",
                                                 top: 0,
                                                 ...(header.index === 0 && {
@@ -230,7 +229,6 @@ export function SchoolsDataTable<TData, TValue>({
                                             }
                                             style={{
                                                 width: cell.column.getSize(),
-                                                maxWidth: cell.column.getSize(),
                                                 ...(cell.column.getIndex() ===
                                                     0 && {
                                                     position: "sticky",

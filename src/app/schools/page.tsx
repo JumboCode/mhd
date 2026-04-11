@@ -115,8 +115,14 @@ export default function SchoolsPage() {
                 return response.json();
             })
             .then((data) => {
-                setSchoolInfo(data);
-                setOriginalSchoolInfo(data);
+                const filtered = data.filter(
+                    (s: Schools) =>
+                        s.numStudents > 0 ||
+                        s.numTeachers > 0 ||
+                        s.numProjects > 0,
+                );
+                setSchoolInfo(filtered);
+                setOriginalSchoolInfo(filtered);
                 setPendingChanges(new Map());
                 setSchoolDataError(null);
             })
