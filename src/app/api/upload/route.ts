@@ -35,7 +35,13 @@ type SchoolCoordinateData = {
     long: number | null;
 };
 
+let currentProgress = {
+    progress: 0,
+    complete: false,
+};
+
 export async function POST(req: NextRequest) {
+    currentProgress = { progress: 0, complete: false };
     try {
         const jsonReq = await req.json();
         const year: number = jsonReq.formYear;
@@ -111,8 +117,9 @@ export async function POST(req: NextRequest) {
             .delete(yearlyTeacherParticipation)
             .where(eq(yearlyTeacherParticipation.year, year));
 
-        let insertedCount = 0;
-        for (const row of filteredRows) {
+        const total = filteredRows.length;
+        for (let i = 0; i < filteredRows.length; i++) {
+            const row = filteredRows[i];
             // Find or create school using schoolId
             const schoolIdValue = String(row[COLUMN_INDICES.schoolId]);
             let school = await db.query.schools.findFirst({
@@ -245,11 +252,14 @@ export async function POST(req: NextRequest) {
                 });
             }
 
-            insertedCount++;
+            currentProgress.progress = Math.round(((i + 1) / total) * 100);
+            currentProgress.complete = false;
         }
+        currentProgress.progress = 100;
+        currentProgress.complete = true;
 
         return NextResponse.json(
-            { message: "Upload successful", rowsProcessed: insertedCount },
+            { message: "Upload started" },
             { status: 200 },
         );
     } catch (error) {
@@ -258,4 +268,43 @@ export async function POST(req: NextRequest) {
             { status: 500 },
         );
     }
+}
+
+export async function GET() {
+    let interval: NodeJS.Timeout;
+
+    const stream = new ReadableStream({
+        start(controller) {
+            interval = setInterval(() => {
+                try {
+                    // Only enqueue if not complete
+                    if (!currentProgress.complete) {
+                        controller.enqueue(
+                            `data: ${JSON.stringify(currentProgress)}\n\n`,
+                        );
+                    } else {
+                        controller.enqueue(
+                            `data: ${JSON.stringify(currentProgress)}\n\n`,
+                        );
+                        clearInterval(interval);
+                        controller.close();
+                    }
+                } catch (err) {
+                    clearInterval(interval);
+                    controller.close();
+                }
+            }, 500);
+        },
+        cancel() {
+            clearInterval(interval);
+        },
+    });
+
+    return new Response(stream, {
+        headers: {
+            "Content-Type": "text/event-stream",
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+        },
+    });
 }
