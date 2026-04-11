@@ -14,11 +14,7 @@ import jsPDF from "jspdf";
 import { toast } from "sonner";
 import BarGraph from "@/components/BarGraph";
 import LineGraph from "@/components/LineGraph";
-import {
-    type Filters,
-    type GroupBy,
-    type MeasuredAs,
-} from "@/components/GraphFilters/GraphFilters";
+import { type Filters } from "@/components/GraphFilters/GraphFilters";
 import {
     computeGraphDataset,
     measuredAsLabels,

@@ -9,11 +9,7 @@
  **************************************************************/
 
 import { type ChartDataset } from "@/components/chartTypes";
-import {
-    type Filters,
-    type GroupBy,
-    type MeasuredAs,
-} from "@/components/GraphFilters/GraphFilters";
+import { type Filters } from "@/components/GraphFilters/GraphFilters";
 
 export type Project = {
     id: number;
