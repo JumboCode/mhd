@@ -145,6 +145,11 @@ export default function YearDropdown({
                         <SelectItem
                             key={y}
                             value={y.toString()}
+                            className={
+                                showDataIndicator && !hasData(y)
+                                    ? "cursor-not-allowed"
+                                    : undefined
+                            }
                             rightContent={
                                 showDataIndicator ? (
                                     <div
