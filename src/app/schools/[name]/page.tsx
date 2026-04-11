@@ -63,6 +63,7 @@ export default function SchoolProfilePage() {
     const router = useRouter();
 
     const [schoolData, setSchoolData] = useState<SchoolData | null>(null);
+    const [prevYearData, setPrevYearData] = useState<SchoolData | null>(null);
     const [coordinates, setCoordinates] = useState<MapCoordinates | null>(null);
     const [year, setYear] = useState<number | null>(null);
     const [projects, setProjects] = useState<ProjectRow[]>([]);
@@ -77,55 +78,81 @@ export default function SchoolProfilePage() {
 
     useEffect(() => {
         if (!year) return;
+        const controller = new AbortController();
+        const { signal } = controller;
 
-        fetch(`/api/schools/${schoolName}?year=${year}`)
-            .then((response) => {
-                if (!response.ok) {
-                    throw new Error(`Failed to fetch school data`);
-                }
-                return response.json();
-            })
-            .then((data) => {
-                setSchoolData(data);
-                setProjects(data.projects);
-                setInstructionalModel(data.instructionalModel ?? "Dummy 1");
-            })
-            .catch(() => {
-                toast.error(
-                    "Failed to load school data. Redirecting to schools page.",
-                );
-                // Redirect after showing error
-                setTimeout(() => {
-                    router.push("/schools");
-                }, 2000);
-            });
-    }, [schoolName, router, year]);
-
-    // Fetches data for the last 5 years in parallel for sparklines
-    useEffect(() => {
-        if (!year) return;
-        const fetchData = async () => {
-            const years = Array.from({ length: 5 }, (_, i) => year - (4 - i));
+        const fetchAll = async () => {
             try {
-                const results = await Promise.all(
-                    years.map((y) =>
-                        fetch(`/api/schools/${schoolName}?year=${y}`).then(
-                            (r) => r.json(),
-                        ),
+                // Fetch 6 years in one batch: year-5..year-1 for sparklines + year for current.
+                // year-1 is index 4 (prev), year is index 5 (curr).
+                // All state updates happen atomically after the await, and the AbortController
+                // ensures stale responses from prior navigations are discarded.
+                const fetchYears = Array.from(
+                    { length: 6 },
+                    (_, i) => year - (5 - i),
+                );
+                // fetchYears = [year-5, year-4, year-3, year-2, year-1, year]
+                //   index 4 = year-1 (previous year for trend)
+                //   index 5 = year   (current year)
+                //   index 0..4 = last 5 years for sparkline
+
+                const responses = await Promise.all(
+                    fetchYears.map((y) =>
+                        fetch(`/api/schools/${schoolName}?year=${y}`, {
+                            signal,
+                        }).then((r) => {
+                            if (!r.ok)
+                                throw new Error(`Failed to fetch year ${y}`);
+                            return r.json();
+                        }),
                     ),
                 );
-                const points = results.map((yearInfo, i) => ({
-                    x: years[i],
-                    y: Number(yearInfo.studentCount),
+
+                if (signal.aborted) return;
+
+                const curr = responses[5]; // current year
+                const sparklineResults = responses.slice(1); // year-4..year (5 items)
+                const sparklineYears = fetchYears.slice(1);
+
+                // Find the most recent prior year where this school actually
+                // had data (projectCount > 0). Scanning from year-1 backwards
+                // avoids treating sparse/gap years as the meaningful baseline.
+                const prev =
+                    [...sparklineResults]
+                        .slice(0, 4) // year-4..year-1 (exclude current)
+                        .reverse()
+                        .find((d) => Number(d.projectCount) > 0) ?? null;
+
+                // Sparkline points (5 years ending at current year)
+                const points = sparklineResults.map((d, i) => ({
+                    x: sparklineYears[i],
+                    y: Number(d.studentCount),
                 }));
+
+                setSchoolData(curr);
+                setPrevYearData(prev);
+                setProjects(curr.projects);
+                setInstructionalModel(curr.instructionalModel ?? "Dummy 1");
                 setstudentYearData(points);
-                setAllYearsData(results);
-            } catch {
-                toast.error("Failed to load dashboard data. Please try again.");
+                setAllYearsData(sparklineResults);
+            } catch (err: unknown) {
+                if (signal.aborted) return;
+                const isAbort =
+                    err instanceof Error && err.name === "AbortError";
+                if (!isAbort) {
+                    toast.error(
+                        "Failed to load school data. Redirecting to schools page.",
+                    );
+                    setTimeout(() => {
+                        router.push("/schools");
+                    }, 2000);
+                }
             }
         };
-        fetchData();
-    }, [year, schoolName]);
+
+        fetchAll();
+        return () => controller.abort();
+    }, [schoolName, router, year]);
 
     const handleNameDoubleClick = () => {
         setNameDraft(schoolData?.name ?? "");
@@ -172,40 +199,24 @@ export default function SchoolProfilePage() {
         Number(d.studentCount || 0),
     );
 
-    // Calculate percent changes (current year vs previous year)
-    const calculatePercentChange = (current: number, previous: number) => {
-        if (previous === 0) return null;
+    // Calculate percent changes against the previous chronological year.
+    // null = either year has no data for this school (shows flat/no-trend icon).
+    const calcPct = (current: number, previous: number) => {
+        if (current === 0 || previous === 0) return null;
         return ((current - previous) / previous) * 100;
     };
 
-    const currentProjects = Number(schoolData?.projectCount || 0);
-    const previousProjects =
-        allYearsData.length >= 2
-            ? Number(allYearsData[allYearsData.length - 2]?.projectCount || 0)
-            : 0;
-    const projectsPercentChange = calculatePercentChange(
-        currentProjects,
-        previousProjects,
+    const projectsPercentChange = calcPct(
+        Number(schoolData?.projectCount || 0),
+        Number(prevYearData?.projectCount || 0),
     );
-
-    const currentTeachers = Number(schoolData?.teacherCount || 0);
-    const previousTeachers =
-        allYearsData.length >= 2
-            ? Number(allYearsData[allYearsData.length - 2]?.teacherCount || 0)
-            : 0;
-    const teachersPercentChange = calculatePercentChange(
-        currentTeachers,
-        previousTeachers,
+    const teachersPercentChange = calcPct(
+        Number(schoolData?.teacherCount || 0),
+        Number(prevYearData?.teacherCount || 0),
     );
-
-    const currentStudents = Number(schoolData?.studentCount || 0);
-    const previousStudents =
-        allYearsData.length >= 2
-            ? Number(allYearsData[allYearsData.length - 2]?.studentCount || 0)
-            : 0;
-    const studentsPercentChange = calculatePercentChange(
-        currentStudents,
-        previousStudents,
+    const studentsPercentChange = calcPct(
+        Number(schoolData?.studentCount || 0),
+        Number(prevYearData?.studentCount || 0),
     );
 
     if (!schoolData) {
@@ -223,7 +234,7 @@ export default function SchoolProfilePage() {
                                     }
                                 }}
                                 showDataIndicator={true}
-                                school={decodeURIComponent(schoolName)}
+                                school={schoolName}
                             />
                         </div>
                     </div>
@@ -272,7 +283,7 @@ export default function SchoolProfilePage() {
                                 }
                             }}
                             showDataIndicator={true}
-                            school={schoolData.name}
+                            school={schoolName}
                         />
                     </div>
                 </div>
@@ -287,7 +298,8 @@ export default function SchoolProfilePage() {
                         sparklineData={projectsSparkline}
                         sparklineStroke={ENTITY_CONFIG.projects.colorMid}
                         sparklineFill={ENTITY_CONFIG.projects.colorMuted}
-                        percentChange={projectsPercentChange ?? undefined}
+                        percentChange={projectsPercentChange}
+                        showTrend={true}
                         variant="with-aspect"
                     />
                     <StatCard
@@ -298,7 +310,8 @@ export default function SchoolProfilePage() {
                         sparklineData={teachersSparkline}
                         sparklineStroke={ENTITY_CONFIG.teachers.colorMid}
                         sparklineFill={ENTITY_CONFIG.teachers.colorMuted}
-                        percentChange={teachersPercentChange ?? undefined}
+                        percentChange={teachersPercentChange}
+                        showTrend={true}
                         variant="with-aspect"
                     />
                     <StatCard
@@ -309,7 +322,8 @@ export default function SchoolProfilePage() {
                         sparklineData={studentsSparkline}
                         sparklineStroke={ENTITY_CONFIG.students.colorMid}
                         sparklineFill={ENTITY_CONFIG.students.colorMuted}
-                        percentChange={studentsPercentChange ?? undefined}
+                        percentChange={studentsPercentChange}
+                        showTrend={true}
                         variant="with-aspect"
                     />
                 </div>

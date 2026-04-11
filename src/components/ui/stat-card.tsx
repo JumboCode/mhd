@@ -81,9 +81,23 @@ function TrendIndicator({
     value,
     className,
 }: {
-    value: number;
+    value: number | null;
     className?: string;
 }) {
+    // null = no data for previous year: show flat icon only, no percentage
+    if (value === null) {
+        return (
+            <span
+                className={cn(
+                    "inline-flex items-center gap-1 text-sm font-medium text-muted-foreground",
+                    className,
+                )}
+            >
+                <Minus className="h-5 w-5" />
+            </span>
+        );
+    }
+
     const isFlat = value === 0;
     const isPositive = value > 0;
 
@@ -126,8 +140,10 @@ export interface StatCardProps {
     sparklineStroke?: string;
     /** Sparkline fill color */
     sparklineFill?: string;
-    /** Percentage change to show with trend indicator (optional) */
-    percentChange?: number;
+    /** Percentage change to show with trend indicator (optional).
+     *  null = previous year exists but has no data (shows flat icon, no %).
+     *  undefined = no trend slot rendered (or invisible placeholder if showTrend=true). */
+    percentChange?: number | null;
     /** Whether to show the trend indicator (defaults to true if percentChange provided) */
     showTrend?: boolean;
     /** Layout variant */
