@@ -137,9 +137,6 @@ export async function POST(req: NextRequest) {
                         latitude: coords?.lat ?? null,
                         longitude: coords?.long ?? null,
                         region: region,
-                        division: "General", // default if not in spreadsheet
-                        implementationModel: "N/A", // default or extract from spreadsheet
-                        schoolType: "Public", // default or extract from spreadsheet
                     })
                     .returning();
                 school = inserted;
