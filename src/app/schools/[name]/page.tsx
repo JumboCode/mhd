@@ -33,10 +33,8 @@ import {
     EditableProjectsTable,
     ProjectRow as EditableProjectRow,
 } from "@/components/EditableProjectsTable";
-import {
-    PieChartLabels,
-    projectCategoryDistribution,
-} from "@/components/charts/PieChart";
+import PieChart from "@/components/charts/PieChart";
+import { projectCategoryDistribution } from "@/lib/project-category-distribution";
 
 // interface such that data can be blank if API is loading
 type SchoolData = {
@@ -336,11 +334,16 @@ export default function SchoolProfilePage() {
                     />
                 </Link>
 
-                {/* Project type distribution pie chart */}
-                <PieChartLabels
-                    data={projectCategoryDistribution(projects)}
-                    title="Project Type Distribution"
-                />
+                {/* Project type distribution — same 3-col grid as stats; spans 2 cells */}
+                <div className="grid grid-cols-3 gap-8">
+                    <div className="col-span-2 min-w-0">
+                        <PieChart
+                            slices={projectCategoryDistribution(projects)}
+                            legendTitle="Project Type Distribution"
+                            emptyMessage="No project data"
+                        />
+                    </div>
+                </div>
 
                 {/* School location map */}
                 <div className="rounded-lg space-y-4">

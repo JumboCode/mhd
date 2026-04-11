@@ -1,37 +1,42 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import { pie, arc, PieArcDatum } from "d3";
-import { CHART_COLORS } from "@/components/charts/chartTypes";
+import {
+    CHART_COLORS,
+    type ChartConfig,
+    type PieSlice,
+    type PieTooltipFormatter,
+} from "./chartTypes";
 
-type DataItem = {
-    name: string;
-    value: number;
-    color: string;
+export type { PieSlice };
+
+type PieSliceResolved = PieSlice & { color: string };
+
+function resolveSlices(slices: PieSlice[]): PieSliceResolved[] {
+    return slices.map((s, i) => ({
+        ...s,
+        color: s.color ?? CHART_COLORS[i % CHART_COLORS.length],
+    }));
+}
+
+type PieChartProps = {
+    slices: PieSlice[];
+    legendTitle?: string;
+    chartRef?: React.RefObject<HTMLDivElement | null>;
+    config?: ChartConfig;
+    tooltipFormatter?: PieTooltipFormatter;
+    emptyMessage?: string;
 };
 
-export function projectCategoryDistribution(
-    projects: { category: string }[],
-): DataItem[] {
-    const counts: Record<string, number> = {};
-    for (const p of projects) {
-        counts[p.category] = (counts[p.category] || 0) + 1;
-    }
-    return Object.entries(counts)
-        .sort((a, b) => b[1] - a[1])
-        .map(([name, value], i) => ({
-            name,
-            value,
-            color: CHART_COLORS[i % CHART_COLORS.length],
-        }));
-}
-
-interface PieChartProps {
-    data: DataItem[];
-    title?: string;
-}
-
-export function PieChartLabels({ data, title }: PieChartProps) {
+export default function PieChart({
+    slices,
+    legendTitle,
+    chartRef,
+    config,
+    tooltipFormatter,
+    emptyMessage = "No data",
+}: PieChartProps) {
     const [tooltip, setTooltip] = useState<{
         x: number;
         y: number;
@@ -39,31 +44,39 @@ export function PieChartLabels({ data, title }: PieChartProps) {
     } | null>(null);
 
     const radius = Math.PI * 100;
-    const gap = 0.02;
+    const padAngle = config?.piePadAngle ?? 0.02;
+    const innerRadius = config?.pieInnerRadius ?? 20;
+    const cornerRadius = config?.pieCornerRadius ?? 8;
 
-    const pieLayout = pie<DataItem>()
+    const resolved = resolveSlices(slices);
+
+    const pieLayout = pie<PieSliceResolved>()
         .sort(null)
         .value((d) => d.value)
-        .padAngle(gap);
+        .padAngle(padAngle);
 
-    const arcGenerator = arc<PieArcDatum<DataItem>>()
-        .innerRadius(20)
+    const arcGenerator = arc<PieArcDatum<PieSliceResolved>>()
+        .innerRadius(innerRadius)
         .outerRadius(radius)
-        .cornerRadius(8);
+        .cornerRadius(cornerRadius);
 
-    const arcs = pieLayout(data);
+    const arcs = pieLayout(resolved);
 
-    if (data.length === 0) {
+    const formatTooltip: PieTooltipFormatter =
+        tooltipFormatter ??
+        ((d) => `${d.label}: ${d.value.toLocaleString("en-US")}`);
+
+    if (slices.length === 0) {
         return (
-            <div className="border border-border rounded-lg p-6">
-                {title && (
+            <div ref={chartRef} className="border border-border rounded-lg p-6">
+                {legendTitle && (
                     <p className="text-sm font-semibold text-foreground mb-2">
-                        {title}
+                        {legendTitle}
                     </p>
                 )}
                 <div className="h-48 flex items-center justify-center bg-muted rounded">
                     <p className="text-sm text-muted-foreground">
-                        No project data
+                        {emptyMessage}
                     </p>
                 </div>
             </div>
@@ -71,7 +84,7 @@ export function PieChartLabels({ data, title }: PieChartProps) {
     }
 
     return (
-        <div className="border border-border rounded-lg p-6">
+        <div ref={chartRef} className="border border-border rounded-lg p-6">
             {tooltip && (
                 <div
                     className="fixed z-50 bg-popover text-popover-foreground border border-border shadow-sm text-xs px-2 py-1 rounded-md pointer-events-none whitespace-nowrap"
@@ -84,15 +97,14 @@ export function PieChartLabels({ data, title }: PieChartProps) {
                     {tooltip.content}
                 </div>
             )}
-            <div className="flex items-center gap-8">
-                {/* Pie chart */}
-                <div className="max-w-[16rem] shrink-0">
+            <div className="flex flex-row items-center gap-8">
+                <div className="w-full max-w-[14rem] shrink-0 aspect-square">
                     <svg
                         viewBox={`-${radius} -${radius} ${radius * 2} ${radius * 2}`}
-                        className="overflow-visible w-full h-auto"
+                        className="overflow-visible h-full w-full"
+                        preserveAspectRatio="xMidYMid meet"
                     >
-                        {/* Slices */}
-                        {arcs.map((d: PieArcDatum<DataItem>, i) => (
+                        {arcs.map((d: PieArcDatum<PieSliceResolved>, i) => (
                             <path
                                 key={i}
                                 fill={d.data.color}
@@ -102,14 +114,14 @@ export function PieChartLabels({ data, title }: PieChartProps) {
                                     setTooltip({
                                         x: e.clientX,
                                         y: e.clientY,
-                                        content: `${d.data.name}: ${d.data.value.toLocaleString("en-US")}`,
+                                        content: formatTooltip(d.data),
                                     })
                                 }
                                 onMouseMove={(e) =>
                                     setTooltip({
                                         x: e.clientX,
                                         y: e.clientY,
-                                        content: `${d.data.name}: ${d.data.value.toLocaleString("en-US")}`,
+                                        content: formatTooltip(d.data),
                                     })
                                 }
                                 onMouseLeave={() => setTooltip(null)}
@@ -118,25 +130,24 @@ export function PieChartLabels({ data, title }: PieChartProps) {
                     </svg>
                 </div>
 
-                {/* Legend */}
-                <div className="flex-1 min-w-0">
-                    {title && (
-                        <p className="text-sm font-semibold text-foreground mb-3">
-                            {title}
+                <div className="min-w-0 flex-1 flex flex-col gap-3 justify-center">
+                    {legendTitle && (
+                        <p className="text-sm font-semibold text-foreground">
+                            {legendTitle}
                         </p>
                     )}
-                    <div className="grid grid-cols-2 gap-x-6 gap-y-2">
-                        {data.map((item, i) => (
+                    <div className="flex flex-col gap-2">
+                        {resolved.map((item, i) => (
                             <div
                                 key={i}
-                                className="flex items-center gap-2 min-w-0"
+                                className="flex min-w-0 items-center gap-2"
                             >
                                 <div
-                                    className="w-4 h-4 rounded-sm shrink-0"
+                                    className="h-4 w-4 shrink-0 rounded-sm"
                                     style={{ backgroundColor: item.color }}
                                 />
-                                <span className="text-sm text-foreground truncate">
-                                    {item.name}
+                                <span className="text-sm text-foreground">
+                                    {item.label}
                                 </span>
                             </div>
                         ))}
