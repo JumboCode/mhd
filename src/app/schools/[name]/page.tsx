@@ -33,6 +33,10 @@ import {
     EditableProjectsTable,
     ProjectRow as EditableProjectRow,
 } from "@/components/EditableProjectsTable";
+import {
+    PieChartLabels,
+    projectCategoryDistribution,
+} from "@/components/PieChart";
 
 // interface such that data can be blank if API is loading
 type SchoolData = {
@@ -332,14 +336,11 @@ export default function SchoolProfilePage() {
                     />
                 </Link>
 
-                {/* Placeholders for charts */}
-                <div className="grid grid-cols-3 gap-8">
-                    <PlaceholderCard
-                        title="Region Distribution"
-                        className="col-span-2"
-                    />
-                    <PlaceholderCard title="% Highschool" />
-                </div>
+                {/* Project type distribution pie chart */}
+                <PieChartLabels
+                    data={projectCategoryDistribution(projects)}
+                    title="Project Type Distribution"
+                />
 
                 {/* School location map */}
                 <div className="rounded-lg space-y-4">
@@ -399,30 +400,6 @@ export default function SchoolProfilePage() {
                         key={`${schoolName}-${year}`}
                         initialData={projects}
                     />
-                </div>
-            </div>
-        </div>
-    );
-}
-
-// Reusable placeholder card component
-function PlaceholderCard({
-    title,
-    className = "",
-}: {
-    title: string;
-    className?: string;
-}) {
-    return (
-        <div className={`border border-border rounded-lg p-6 ${className}`}>
-            <div className="h-48 flex items-center justify-center bg-muted rounded">
-                <div className="text-center">
-                    <p className="text-sm font-semibold text-foreground">
-                        {title}
-                    </p>
-                    <p className="text-sm text-muted-foreground mt-2">
-                        Chart placeholder
-                    </p>
                 </div>
             </div>
         </div>
