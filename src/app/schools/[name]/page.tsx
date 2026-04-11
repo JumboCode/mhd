@@ -34,7 +34,7 @@ import {
     ProjectRow as EditableProjectRow,
 } from "@/components/EditableProjectsTable";
 import PieChart from "@/components/charts/PieChart";
-import { projectCategoryDistribution } from "@/lib/project-category-distribution";
+import { projectCategoryDistribution } from "@/lib/utils";
 
 // interface such that data can be blank if API is loading
 type SchoolData = {
