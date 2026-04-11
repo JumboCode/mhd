@@ -214,13 +214,13 @@ export default function SchoolProfilePage() {
                         <Skeleton className="h-8 w-64" />
                         <div className="ml-auto">
                             <YearDropdown
-                                showDataIndicator={true}
                                 selectedYear={year}
                                 onYearChange={(selectedYear) => {
                                     if (selectedYear !== null) {
                                         setYear(selectedYear);
                                     }
                                 }}
+                                showDataIndicator={true}
                                 school={decodeURIComponent(schoolName)}
                             />
                         </div>
@@ -263,13 +263,13 @@ export default function SchoolProfilePage() {
                     )}
                     <div className="ml-auto">
                         <YearDropdown
-                            showDataIndicator={true}
                             selectedYear={year}
                             onYearChange={(selectedYear) => {
                                 if (selectedYear !== null) {
                                     setYear(selectedYear);
                                 }
                             }}
+                            showDataIndicator={true}
                             school={schoolData.name}
                         />
                     </div>

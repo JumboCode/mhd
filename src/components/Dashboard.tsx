@@ -170,13 +170,13 @@ export default function Dashboard() {
                 <h1 className="text-2xl font-semibold">Overview Dashboard</h1>
                 <div className="ml-auto">
                     <YearDropdown
-                        showDataIndicator={true}
                         selectedYear={year}
                         onYearChange={(selectedYear) => {
                             if (selectedYear !== null) {
                                 setYear(selectedYear);
                             }
                         }}
+                        showDataIndicator={true}
                     />
                 </div>
             </div>
@@ -201,6 +201,7 @@ export default function Dashboard() {
                             percentChange={
                                 percentChanges?.projects ?? undefined
                             }
+                            showTrend={true}
                             href="/chart?measuredAs=total-project-count"
                         />
                         <StatCard
@@ -214,6 +215,7 @@ export default function Dashboard() {
                             percentChange={
                                 percentChanges?.teachers ?? undefined
                             }
+                            showTrend={true}
                             href="/chart?measuredAs=total-teacher-count"
                         />
                         <StatCard
@@ -227,6 +229,7 @@ export default function Dashboard() {
                             percentChange={
                                 percentChanges?.students ?? undefined
                             }
+                            showTrend={true}
                             href="/chart?measuredAs=total-student-count"
                         />
                         <StatCard
@@ -238,6 +241,7 @@ export default function Dashboard() {
                             sparklineStroke={ENTITY_CONFIG.schools.colorMid}
                             sparklineFill={ENTITY_CONFIG.schools.colorMuted}
                             percentChange={percentChanges?.schools ?? undefined}
+                            showTrend={true}
                             href="/chart?measuredAs=total-school-count"
                         />
                         {/* TODO: Once we store type of school, make this correct */}

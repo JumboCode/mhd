@@ -3,7 +3,7 @@
 import * as React from "react";
 import NextLink from "next/link";
 import { cn } from "@/lib/utils";
-import { TrendingUp, TrendingDown } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 
 /**
  * Generates an SVG path string for a sparkline from data points.
@@ -84,17 +84,24 @@ function TrendIndicator({
     value: number;
     className?: string;
 }) {
-    const isPositive = value >= 0;
+    const isFlat = value === 0;
+    const isPositive = value > 0;
 
     return (
         <span
             className={cn(
                 "inline-flex items-center gap-1 text-sm font-medium",
-                isPositive ? "text-green-600" : "text-red-600",
+                isFlat
+                    ? "text-muted-foreground"
+                    : isPositive
+                      ? "text-green-600"
+                      : "text-red-600",
                 className,
             )}
         >
-            {isPositive ? (
+            {isFlat ? (
+                <Minus className="h-5 w-5" />
+            ) : isPositive ? (
                 <TrendingUp className="h-5 w-5" />
             ) : (
                 <TrendingDown className="h-5 w-5" />
@@ -203,9 +210,14 @@ export function StatCard({
                     {formattedValue}
                 </span>
 
-                {showTrend && percentChange !== undefined && (
-                    <TrendIndicator value={percentChange} />
-                )}
+                {showTrend &&
+                    (percentChange !== undefined ? (
+                        <TrendIndicator value={percentChange} />
+                    ) : (
+                        <span className="inline-flex items-center gap-1 text-sm font-medium text-muted-foreground/40">
+                            <Minus className="h-5 w-5" />
+                        </span>
+                    ))}
             </div>
 
             {/* Sparkline background */}

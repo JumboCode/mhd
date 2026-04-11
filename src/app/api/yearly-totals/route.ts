@@ -19,10 +19,12 @@ export async function GET(req: Request) {
             getAllYearsStats(),
         ]);
 
-        // Calculate year-over-year percentage changes
-        const currentIndex = allYearsStats.findIndex((s) => s.year === yearNum);
+        // Calculate year-over-year percentage changes against the immediately
+        // preceding chronological year. If that year has no data (gap in the
+        // dataset), treat as no trend rather than skipping back to the last
+        // year that does have data.
         const prevYearStats =
-            currentIndex > 0 ? allYearsStats[currentIndex - 1] : null;
+            allYearsStats.find((s) => s.year === yearNum - 1) ?? null;
 
         const percentChanges = prevYearStats
             ? {

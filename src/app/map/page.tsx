@@ -384,9 +384,9 @@ function HeatMapPage() {
                             Year
                         </label>
                         <YearDropdown
-                            showDataIndicator={true}
                             selectedYear={year}
                             onYearChange={setYear}
+                            showDataIndicator={true}
                         />
                     </div>
                     <div className="flex flex-col gap-1.5 w-48">

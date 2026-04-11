@@ -56,13 +56,7 @@ export default function YearDropdown({
                 const dataSet = new Set<number>(yearNumbers);
                 setYearsWithData(dataSet);
 
-                const firstYear = Math.min(...dataSet);
-                const lastYear = Math.max(...dataSet);
-
-                const trimmed = Array.from(
-                    { length: lastYear - firstYear + 1 },
-                    (_, i) => lastYear - i,
-                );
+                const trimmed = Array.from(dataSet).sort((a, b) => b - a);
 
                 setYears(trimmed);
 
@@ -99,8 +93,6 @@ export default function YearDropdown({
         setYear(selected);
         onYearChange?.(selected);
     };
-
-    const hasData = (year: number) => yearsWithData.has(year);
 
     const handlePreviousYear = () => {
         const currentIndex = years.findIndex((y) => y === year);
@@ -148,20 +140,9 @@ export default function YearDropdown({
                         <SelectItem
                             key={y}
                             value={y.toString()}
-                            className={
-                                showDataIndicator && !hasData(y)
-                                    ? "cursor-not-allowed"
-                                    : undefined
-                            }
                             rightContent={
                                 showDataIndicator ? (
-                                    <div
-                                        className={`h-2 w-2 rounded-full shrink-0 ${
-                                            hasData(y)
-                                                ? "bg-green-500"
-                                                : "bg-red-500"
-                                        }`}
-                                    />
+                                    <div className="h-2 w-2 rounded-full shrink-0 bg-green-500" />
                                 ) : null
                             }
                         >
