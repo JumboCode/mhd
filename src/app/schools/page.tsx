@@ -96,6 +96,7 @@ export default function SchoolsPage() {
                         <YearDropdown
                             selectedYear={year}
                             onYearChange={setYear}
+                            showDataIndicator={true}
                         />
                     </div>
                     <SchoolSearchBar search={search} setSearch={setSearch} />
