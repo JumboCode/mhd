@@ -31,6 +31,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import YearDropdown from "@/components/YearDropdown";
 import CountDropdown from "@/components/CountDropdown";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { exportMapToPDF } from "@/lib/heatmap-export";
 import { useHeatmapLayers } from "@/hooks/useHeatmapLayers";
 import { Cart } from "@/components/Cart";
@@ -423,12 +424,19 @@ function HeatMapPage() {
                     </div>
                 </div>
 
-                <Button
-                    onClick={() => setShowSchools(!showSchools)}
-                    className="w-32 py-2"
-                >
-                    {showSchools ? "Hide Schools" : "Show Schools"}
-                </Button>
+                <div className="flex items-center gap-2">
+                    <label
+                        htmlFor="show-schools-toggle"
+                        className="text-sm cursor-pointer select-none"
+                    >
+                        Show Schools
+                    </label>
+                    <Switch
+                        id="show-schools-toggle"
+                        checked={showSchools}
+                        onCheckedChange={setShowSchools}
+                    />
+                </div>
             </div>
             <div className="flex-1 rounded-2xl overflow-hidden border border-slate-200 relative">
                 {schoolDataError ? (

@@ -1,5 +1,10 @@
+import type { Metadata } from "next";
 import AuthForm from "@/components/AuthForm";
 import WarpShader from "@/components/WarpShader";
+
+export const metadata: Metadata = {
+    title: "Sign In",
+};
 
 export default async function SignInPage({
     searchParams,
