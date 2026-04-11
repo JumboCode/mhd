@@ -162,8 +162,8 @@ export function StatCard({
         "relative flex flex-col items-center justify-center",
         "rounded-lg border border-border bg-card overflow-hidden",
         {
-            "py-6 gap-5": variant === "default",
-            "p-6 aspect-[247/138] gap-5": variant === "with-aspect",
+            "py-6": variant === "default",
+            "p-6 aspect-[247/138]": variant === "with-aspect",
         },
         href && "transition-colors hover:bg-accent/50 cursor-pointer",
         className,
@@ -181,25 +181,25 @@ export function StatCard({
 
     return (
         <Wrapper>
-            {/* Label */}
-            <span
-                className={cn(
-                    "relative flex items-center gap-1.5 text-muted-foreground",
-                    variant === "default" ? "text-xs" : "text-sm",
-                )}
-            >
-                {Icon && (
-                    <Icon
-                        className="h-4 w-4"
-                        style={iconColor ? { color: iconColor } : undefined}
-                    />
-                )}
-                {label}
-            </span>
+            <div className="relative flex flex-col items-center gap-2">
+                {/* Label */}
+                <span
+                    className={cn(
+                        "flex items-center gap-1.5 text-muted-foreground",
+                        variant === "default" ? "text-xs" : "text-sm",
+                    )}
+                >
+                    {Icon && (
+                        <Icon
+                            className="h-4 w-4"
+                            style={iconColor ? { color: iconColor } : undefined}
+                        />
+                    )}
+                    {label}
+                </span>
 
-            <div className="flex flex-col gap-1">
-                {/* Value with optional trend */}
-                <span className="tabular-nums text-5xl font-bold leading-none">
+                {/* Value */}
+                <span className="tabular-nums text-5xl font-bold leading-none -mb-1.5">
                     {formattedValue}
                 </span>
 
