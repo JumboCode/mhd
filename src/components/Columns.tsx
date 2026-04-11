@@ -15,6 +15,11 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { ChevronsUpDownSort } from "@/components/icons/ChevronsUpDownSort";
+import { EditableCell, StringSelectCell } from "@/components/EditableCells";
+import { toTitleCase } from "@/lib/string-standardize";
+
+// Placeholder options — replace with real values once DB columns exist
+const MODEL_OPTIONS = ["Dummy 1", "Dummy 2", "Dummy 3"];
 
 export type Schools = {
     name: string;
@@ -28,7 +33,13 @@ export type Schools = {
     trend: string; //TODO: calculate trend and change type if needed
 };
 
-export function createColumns(): ColumnDef<Schools>[] {
+export function createColumns(
+    onCommit: (
+        rowName: string,
+        columnId: string,
+        value: string | number | boolean,
+    ) => void,
+): ColumnDef<Schools>[] {
     return [
         {
             accessorKey: "name",
@@ -87,6 +98,20 @@ export function createColumns(): ColumnDef<Schools>[] {
                     </Button>
                 );
             },
+            cell: ({ getValue, row, column }) => {
+                // Standardize city name (redundant because also done in upload)
+                const rawValue = getValue() as string;
+                const formattedValue = toTitleCase(rawValue);
+
+                return (
+                    <EditableCell
+                        value={formattedValue}
+                        columnId={column.id}
+                        rowId={String(row.original.name)}
+                        onCommit={onCommit}
+                    />
+                );
+            },
         },
         {
             accessorKey: "region",
@@ -119,9 +144,9 @@ export function createColumns(): ColumnDef<Schools>[] {
         },
         {
             accessorKey: "instructionModel",
-            size: 160,
-            minSize: 160,
-            maxSize: 250,
+            size: 185,
+            minSize: 185,
+            maxSize: 350,
             header: ({ column }) => {
                 return (
                     <Button
@@ -137,7 +162,7 @@ export function createColumns(): ColumnDef<Schools>[] {
                             }
                         }}
                     >
-                        School Type
+                        Instruction Model
                         <ChevronsUpDownSort
                             sortDirection={column.getIsSorted()}
                             className="ml-2"
@@ -145,11 +170,20 @@ export function createColumns(): ColumnDef<Schools>[] {
                     </Button>
                 );
             },
+            cell: ({ getValue, row, column }) => (
+                <StringSelectCell
+                    value={getValue() as string}
+                    options={MODEL_OPTIONS}
+                    rowId={String(row.index)}
+                    columnId={column.id}
+                    onCommit={() => {}} // TODO: wire up once DB column exists
+                />
+            ),
         },
         {
             accessorKey: "implementationModel",
-            size: 220,
-            minSize: 220,
+            size: 210,
+            minSize: 210,
             maxSize: 350,
             header: ({ column }) => {
                 return (
@@ -174,11 +208,20 @@ export function createColumns(): ColumnDef<Schools>[] {
                     </Button>
                 );
             },
+            cell: ({ getValue, row, column }) => (
+                <StringSelectCell
+                    value={getValue() as string}
+                    options={MODEL_OPTIONS}
+                    rowId={String(row.index)}
+                    columnId={column.id}
+                    onCommit={() => {}} // TODO: wire up once DB column exists
+                />
+            ),
         },
         {
             accessorKey: "numStudents",
-            size: 145,
-            minSize: 145,
+            size: 135,
+            minSize: 135,
             maxSize: 250,
             header: ({ column }) => {
                 return (
@@ -206,8 +249,8 @@ export function createColumns(): ColumnDef<Schools>[] {
         },
         {
             accessorKey: "numTeachers",
-            size: 140,
-            minSize: 140,
+            size: 135,
+            minSize: 135,
             maxSize: 250,
             header: ({ column }) => {
                 return (
@@ -235,8 +278,8 @@ export function createColumns(): ColumnDef<Schools>[] {
         },
         {
             accessorKey: "numProjects",
-            size: 140,
-            minSize: 140,
+            size: 130,
+            minSize: 130,
             maxSize: 250,
             header: ({ column }) => {
                 return (
