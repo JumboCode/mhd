@@ -225,8 +225,8 @@ export function SchoolsDataTable<TData, TValue>({
                                             key={cell.id}
                                             className={
                                                 cell.column.getIndex() === 0
-                                                    ? "text-center sticky left-0 z-20 bg-muted border-r border-b"
-                                                    : "text-center z-0 border-b"
+                                                    ? "text-center sticky left-0 z-20 bg-muted border-r border-b overflow-hidden"
+                                                    : "text-center z-0 border-b overflow-hidden"
                                             }
                                             style={{
                                                 width: cell.column.getSize(),
@@ -240,7 +240,7 @@ export function SchoolsDataTable<TData, TValue>({
                                             {cell.column.getIndex() === 0 ? (
                                                 <Link
                                                     href={`/schools/${standardize(String(cell.getValue()))}`}
-                                                    className="hover:underline"
+                                                    className="hover:underline block truncate"
                                                 >
                                                     {flexRender(
                                                         cell.column.columnDef
@@ -249,7 +249,7 @@ export function SchoolsDataTable<TData, TValue>({
                                                     )}
                                                 </Link>
                                             ) : (
-                                                <div className="flex flex-row items-center justify-center space-x-1 gap-2 h-12 px-1 py-2">
+                                                <div className="flex flex-row items-center justify-center space-x-1 gap-2 h-12 px-1 py-2 truncate">
                                                     {flexRender(
                                                         cell.column.columnDef
                                                             .cell,
