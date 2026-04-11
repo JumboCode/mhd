@@ -8,7 +8,7 @@
  *
  **************************************************************/
 
-import { type ChartDataset } from "@/components/chartTypes";
+import { type ChartDataset } from "@/components/charts/chartTypes";
 import { type Filters } from "@/components/GraphFilters/GraphFilters";
 
 export type Project = {

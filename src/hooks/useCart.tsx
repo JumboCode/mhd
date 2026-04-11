@@ -12,8 +12,6 @@ import { createRoot } from "react-dom/client";
 import html2canvas from "html2canvas-pro";
 import jsPDF from "jspdf";
 import { toast } from "sonner";
-import BarGraph from "@/components/BarGraph";
-import LineGraph from "@/components/LineGraph";
 import { type Filters } from "@/components/GraphFilters/GraphFilters";
 import {
     computeGraphDataset,
@@ -23,6 +21,9 @@ import {
 } from "@/lib/compute-chart-data";
 import logoImg from "../../public/images/mhd-logo-full.png";
 import "../app/fonts/DMSans-VariableFont_opsz,wght-normal";
+import { ChartDataset } from "@/components/charts/chartTypes";
+import BarGraph from "@/components/charts/BarGraph";
+import MultiLineGraph from "@/components/charts/LineGraph";
 
 /**
  * Chart items store only the filter params — no data.
@@ -97,7 +98,7 @@ async function fetchAndComputeDataset(params: ChartCartParams) {
 /** Render a chart component offscreen and capture it as a data URL. */
 async function renderChartToImage(
     params: ChartCartParams,
-    dataset: import("@/components/chartTypes").ChartDataset[],
+    dataset: ChartDataset[],
 ) {
     const yAxisLabel =
         measuredAsLabels[params.filters.measuredAs] || "Total Schools";
@@ -128,7 +129,7 @@ async function renderChartToImage(
         );
     } else {
         root.render(
-            <LineGraph
+            <MultiLineGraph
                 datasets={dataset}
                 yAxisLabel={yAxisLabel}
                 xAxisLabel="Year"
