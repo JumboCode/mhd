@@ -99,6 +99,7 @@ export function createColumns(
                 );
             },
             cell: ({ getValue, row, column }) => {
+                // Standardize city name (redundant because also done in upload)
                 const rawValue = getValue() as string;
                 const formattedValue = toTitleCase(rawValue);
 
