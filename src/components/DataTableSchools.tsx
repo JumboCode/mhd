@@ -154,11 +154,12 @@ export function SchoolsDataTable<TData, TValue>({
                     </button>
                 </div>
             )}
-            <div className="flex-1 overflow-auto overscroll-none text-center bg-muted">
+            <div className="flex-1 overflow-auto overscroll-none text-center">
                 <Table
                     className="caption-bottom text-sm border-separate border-spacing-0"
                     style={{
-                        width: table.getCenterTotalSize(),
+                        minWidth: table.getCenterTotalSize(),
+                        width: "100%",
                         tableLayout: "fixed",
                     }}
                 >
