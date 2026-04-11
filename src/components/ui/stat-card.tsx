@@ -2,8 +2,8 @@
 
 import * as React from "react";
 import NextLink from "next/link";
-import { ArrowUp, ArrowDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { TrendingUp, TrendingDown } from "lucide-react";
 
 /**
  * Generates an SVG path string for a sparkline from data points.
@@ -85,17 +85,20 @@ function TrendIndicator({
     className?: string;
 }) {
     const isPositive = value >= 0;
-    const Icon = isPositive ? ArrowUp : ArrowDown;
 
     return (
         <span
             className={cn(
-                "inline-flex items-center gap-0.5 text-xs font-medium",
+                "inline-flex items-center gap-1 text-sm font-medium",
                 isPositive ? "text-green-600" : "text-red-600",
                 className,
             )}
         >
-            <Icon className="h-3 w-3" />
+            {isPositive ? (
+                <TrendingUp className="h-5 w-5" />
+            ) : (
+                <TrendingDown className="h-5 w-5" />
+            )}
             {Math.abs(value).toFixed(1)}%
         </span>
     );
@@ -178,19 +181,10 @@ export function StatCard({
 
     return (
         <Wrapper>
-            {/* Sparkline background */}
-            {sparklineData && sparklineData.length > 1 && (
-                <Sparkline
-                    data={sparklineData}
-                    strokeColor={sparklineStroke}
-                    fillColor={sparklineFill}
-                />
-            )}
-
             {/* Label */}
             <span
                 className={cn(
-                    "relative z-10 flex items-center gap-1.5 text-muted-foreground",
+                    "relative flex items-center gap-1.5 text-muted-foreground",
                     variant === "default" ? "text-xs" : "text-sm",
                 )}
             >
@@ -203,8 +197,8 @@ export function StatCard({
                 {label}
             </span>
 
-            {/* Value with optional trend */}
-            <div className="relative z-10 flex items-baseline gap-2">
+            <div className="flex flex-col gap-1">
+                {/* Value with optional trend */}
                 <span className="tabular-nums text-5xl font-bold leading-none">
                     {formattedValue}
                 </span>
@@ -213,6 +207,15 @@ export function StatCard({
                     <TrendIndicator value={percentChange} />
                 )}
             </div>
+
+            {/* Sparkline background */}
+            {sparklineData && sparklineData.length > 1 && (
+                <Sparkline
+                    data={sparklineData}
+                    strokeColor={sparklineStroke}
+                    fillColor={sparklineFill}
+                />
+            )}
         </Wrapper>
     );
 }
