@@ -117,7 +117,6 @@ export async function POST(req: NextRequest) {
             .delete(yearlyTeacherParticipation)
             .where(eq(yearlyTeacherParticipation.year, year));
 
-        let insertedCount = 0;
         const total = filteredRows.length;
         for (let i = 0; i < filteredRows.length; i++) {
             const row = filteredRows[i];
@@ -252,8 +251,6 @@ export async function POST(req: NextRequest) {
                     schoolId: school.id,
                 });
             }
-
-            insertedCount++;
 
             currentProgress.progress = Math.round(((i + 1) / total) * 100);
             currentProgress.complete = false;
