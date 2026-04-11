@@ -25,14 +25,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { toast } from "sonner";
 import { LoadError } from "@/components/ui/load-error";
-import BarGraph from "@/components/BarGraph";
-import { type ChartDataset } from "@/components/chartTypes";
+import BarGraph from "@/components/charts/BarGraph";
+import { type ChartDataset } from "@/components/charts/chartTypes";
 import GraphFilters, {
     type Filters,
     type GroupBy,
     type MeasuredAs,
 } from "@/components/GraphFilters/GraphFilters";
-import LineGraph from "@/components/LineGraph";
+import LineGraph from "@/components/charts/LineGraph";
 import { Button } from "@/components/ui/button";
 import {
     Popover,

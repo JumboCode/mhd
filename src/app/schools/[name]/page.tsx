@@ -22,7 +22,7 @@ import { SchoolInfoRow } from "@/components/SchoolInfoRow";
 import { StatCard } from "@/components/ui/stat-card";
 import { ENTITY_CONFIG } from "@/lib/entity-config";
 import YearDropdown from "@/components/YearDropdown";
-import MultiLineGraph, { GraphDataset } from "@/components/LineGraph";
+import MultiLineGraph, { GraphDataset } from "@/components/charts/LineGraph";
 import { Info } from "lucide-react";
 import {
     Tooltip,
@@ -36,7 +36,7 @@ import {
 import {
     PieChartLabels,
     projectCategoryDistribution,
-} from "@/components/PieChart";
+} from "@/components/charts/PieChart";
 
 // interface such that data can be blank if API is loading
 type SchoolData = {
