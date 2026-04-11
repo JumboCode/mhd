@@ -63,6 +63,13 @@ export const projects = pgTable("projects", {
     numStudents: integer("num_students").notNull().default(1),
 });
 
+// Tracks upload and edit timestamps for each year's dataset
+export const yearMetadata = pgTable("year_metadata", {
+    year: integer("year").primaryKey(),
+    uploadedAt: timestamp("uploaded_at").notNull(),
+    lastUpdatedAt: timestamp("last_updated_at").notNull(),
+});
+
 // Ties a teacher to a school for a given year
 export const yearlyTeacherParticipation = pgTable(
     "yearly_teacher_participation",

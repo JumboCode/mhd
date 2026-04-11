@@ -19,6 +19,7 @@ import {
     projects,
     yearlyTeacherParticipation,
     yearlySchoolParticipation,
+    yearMetadata,
 } from "@/lib/schema";
 import { requiredColumns } from "@/lib/required-spreadsheet-columns";
 import { standardize } from "@/lib/school-name-standardize";
@@ -247,6 +248,15 @@ export async function POST(req: NextRequest) {
 
             insertedCount++;
         }
+
+        const now = new Date();
+        await db
+            .insert(yearMetadata)
+            .values({ year, uploadedAt: now, lastUpdatedAt: now })
+            .onConflictDoUpdate({
+                target: yearMetadata.year,
+                set: { uploadedAt: now, lastUpdatedAt: now },
+            });
 
         return NextResponse.json(
             { message: "Upload successful", rowsProcessed: insertedCount },

@@ -22,14 +22,28 @@ export interface YearsOfDataHandle {
     discard: () => void;
 }
 
+type YearEntry = {
+    year: number;
+    uploadedAt: string | null;
+    lastUpdatedAt: string | null;
+};
+
+function formatDate(iso: string | null): string {
+    if (!iso) return "—";
+    return new Date(iso).toLocaleString(undefined, {
+        dateStyle: "medium",
+        timeStyle: "short",
+    });
+}
+
 const YearsOfData = forwardRef<
     YearsOfDataHandle,
     { onUnsavedChange?: () => void }
 >(function YearsOfData({ onUnsavedChange }, ref) {
-    const [years, setYears] = useState<number[]>([]);
+    const [entries, setEntries] = useState<YearEntry[]>([]);
     const [yearsWithData, setYearsWithData] = useState<Set<number>>(new Set());
     const [pendingRemovals, setPendingRemovals] = useState<number[]>([]);
-    const [originalYears, setOriginalYears] = useState<number[]>([]);
+    const [originalEntries, setOriginalEntries] = useState<YearEntry[]>([]);
     const [originalYearsWithData, setOriginalYearsWithData] = useState<
         Set<number>
     >(new Set());
@@ -43,18 +57,30 @@ const YearsOfData = forwardRef<
                 const data = await res.json();
                 if (!data.years || data.years.length === 0) return;
 
-                const existingYears: number[] = data.years;
+                const fetched: YearEntry[] = data.years;
+                const existingYears = fetched.map((e) => e.year);
                 const minYear = Math.min(...existingYears);
                 const maxYear = Math.max(...existingYears);
 
-                const allYears = Array.from(
+                const metaMap = new Map(fetched.map((e) => [e.year, e]));
+
+                const allEntries: YearEntry[] = Array.from(
                     { length: maxYear - minYear + 1 },
-                    (_, i) => maxYear - i,
+                    (_, i) => {
+                        const year = maxYear - i;
+                        return (
+                            metaMap.get(year) ?? {
+                                year,
+                                uploadedAt: null,
+                                lastUpdatedAt: null,
+                            }
+                        );
+                    },
                 );
 
-                setYears(allYears);
+                setEntries(allEntries);
                 setYearsWithData(new Set(existingYears));
-                setOriginalYears(allYears);
+                setOriginalEntries(allEntries);
                 setOriginalYearsWithData(new Set(existingYears));
             } catch {
                 toast.error("Failed to load years");
@@ -65,7 +91,7 @@ const YearsOfData = forwardRef<
     }, []);
 
     const handleRemoveYear = (year: number) => {
-        setYears((prev) => prev.filter((y) => y !== year));
+        setEntries((prev) => prev.filter((e) => e.year !== year));
         setYearsWithData((prev) => {
             const newSet = new Set(prev);
             newSet.delete(year);
@@ -87,7 +113,7 @@ const YearsOfData = forwardRef<
                 );
                 const hadChanges = pendingRemovals.length > 0;
                 setPendingRemovals([]);
-                setOriginalYears(years);
+                setOriginalEntries(entries);
                 setOriginalYearsWithData(new Set(yearsWithData));
                 if (hadChanges) toast.success("Years saved");
             } catch {
@@ -95,7 +121,7 @@ const YearsOfData = forwardRef<
             }
         },
         discard: () => {
-            setYears(originalYears);
+            setEntries(originalEntries);
             setYearsWithData(originalYearsWithData);
             setPendingRemovals([]);
         },
@@ -106,27 +132,33 @@ const YearsOfData = forwardRef<
             <table className="w-full">
                 <thead className="bg-gray-50 border-b-2 border-gray-200">
                     <tr className="divide-x-2 divide-gray-200">
-                        <th className="text-center px-4 py-3 text-sm font-medium text-gray-500 w-[40%]">
+                        <th className="text-center px-4 py-3 text-sm font-medium text-gray-500 w-[15%]">
                             Year
                         </th>
-                        <th className="text-center px-4 py-3 text-sm font-medium text-gray-500 w-[40%]">
+                        <th className="text-center px-4 py-3 text-sm font-medium text-gray-500 w-[20%]">
                             Status
                         </th>
-                        <th className="text-center px-4 py-3 text-sm font-medium text-gray-500 w-[20%]">
+                        <th className="text-center px-4 py-3 text-sm font-medium text-gray-500 w-[27%]">
+                            Uploaded
+                        </th>
+                        <th className="text-center px-4 py-3 text-sm font-medium text-gray-500 w-[27%]">
+                            Last Updated
+                        </th>
+                        <th className="text-center px-4 py-3 text-sm font-medium text-gray-500 w-[11%]">
                             Actions
                         </th>
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 bg-white">
-                    {years.length > 0 ? (
-                        years.map((year) => (
-                            <tr key={year} className="hover:bg-gray-50">
+                    {entries.length > 0 ? (
+                        entries.map((entry) => (
+                            <tr key={entry.year} className="hover:bg-gray-50">
                                 <td className="px-4 py-3 text-sm text-center">
-                                    {year}
+                                    {entry.year}
                                 </td>
                                 <td className="px-4 py-3 text-sm text-center">
                                     <div className="flex items-center justify-center">
-                                        {yearsWithData.has(year) ? (
+                                        {yearsWithData.has(entry.year) ? (
                                             <span className="inline-flex items-center justify-center gap-1.5 w-24 px-3 py-1 rounded-sm text-xs font-medium bg-green-100 text-green-700 border border-green-300">
                                                 <Check className="w-3 h-3" />
                                                 Uploaded
@@ -139,14 +171,20 @@ const YearsOfData = forwardRef<
                                         )}
                                     </div>
                                 </td>
+                                <td className="px-4 py-3 text-sm text-center text-gray-600">
+                                    {formatDate(entry.uploadedAt)}
+                                </td>
+                                <td className="px-4 py-3 text-sm text-center text-gray-600">
+                                    {formatDate(entry.lastUpdatedAt)}
+                                </td>
                                 <td className="text-sm p-0">
-                                    {yearsWithData.has(year) ? (
+                                    {yearsWithData.has(entry.year) ? (
                                         <button
                                             onClick={() =>
-                                                handleRemoveYear(year)
+                                                handleRemoveYear(entry.year)
                                             }
                                             className="w-full h-full px-4 py-3 flex items-center justify-center text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
-                                            aria-label={`Delete ${year}`}
+                                            aria-label={`Delete ${entry.year}`}
                                         >
                                             <Trash className="w-4 h-4" />
                                         </button>
@@ -154,7 +192,7 @@ const YearsOfData = forwardRef<
                                         <Link
                                             href="/upload"
                                             className="w-full h-full px-4 py-3 flex items-center justify-center text-gray-400 hover:text-blue-500 transition-colors"
-                                            aria-label={`Upload ${year}`}
+                                            aria-label={`Upload ${entry.year}`}
                                         >
                                             <Upload className="w-4 h-4" />
                                         </Link>
@@ -165,7 +203,7 @@ const YearsOfData = forwardRef<
                     ) : (
                         <tr>
                             <td
-                                colSpan={3}
+                                colSpan={5}
                                 className="px-4 py-3 text-sm text-gray-500 text-center"
                             >
                                 No years available

@@ -11,21 +11,39 @@
 
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { yearlySchoolParticipation } from "@/lib/schema";
+import { yearlySchoolParticipation, yearMetadata } from "@/lib/schema";
+import { eq } from "drizzle-orm";
 
 export async function GET() {
     try {
-        const result = await db
-            .select({
-                year: yearlySchoolParticipation.year,
-            })
+        const participation = await db
+            .select({ year: yearlySchoolParticipation.year })
             .from(yearlySchoolParticipation)
             .groupBy(yearlySchoolParticipation.year)
             .orderBy(yearlySchoolParticipation.year);
 
-        const years = result.map((row) => row.year);
+        const years = participation.map((row) => row.year);
 
-        return NextResponse.json({ years }, { status: 200 });
+        const metadata = await Promise.all(
+            years.map((year) =>
+                db
+                    .select({
+                        uploadedAt: yearMetadata.uploadedAt,
+                        lastUpdatedAt: yearMetadata.lastUpdatedAt,
+                    })
+                    .from(yearMetadata)
+                    .where(eq(yearMetadata.year, year))
+                    .then((rows) => rows[0] ?? null),
+            ),
+        );
+
+        const yearsWithMetadata = years.map((year, i) => ({
+            year,
+            uploadedAt: metadata[i]?.uploadedAt ?? null,
+            lastUpdatedAt: metadata[i]?.lastUpdatedAt ?? null,
+        }));
+
+        return NextResponse.json({ years: yearsWithMetadata }, { status: 200 });
     } catch (error) {
         return NextResponse.json(
             { error: "Internal server error: " + (error as Error).message },
