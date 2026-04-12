@@ -15,6 +15,7 @@ import { Suspense, useEffect, useState, useRef, useMemo } from "react";
 import { toast } from "sonner";
 import { Loader2, Link, Share, CheckCircle2 } from "lucide-react";
 import { LoadError } from "@/components/ui/load-error";
+import { capitalize } from "@/lib/utils";
 
 // queryStates required for URL sharing with nuqs
 import {
@@ -24,7 +25,7 @@ import {
     parseAsBoolean,
 } from "nuqs";
 
-const VALID_METRICS = ["Students", "Projects", "Teachers"];
+const VALID_METRICS = ["students", "projects", "teachers"];
 
 import "maplibre-gl/dist/maplibre-gl.css";
 
@@ -62,41 +63,37 @@ type Region = {
 };
 
 const regions: Record<string, Region> = {
-    Default: {
+    default: {
         center: [-71.7, 42.2],
         zoom: 7,
         maxZoom: 24,
         minZoom: 7,
     },
-    Western: {
+    western: {
         center: [-72.75, 42.35],
         zoom: 8.3,
         maxZoom: 24,
         minZoom: 7,
     },
-
-    Central: {
+    central: {
         center: [-71.8, 42.35],
         zoom: 8.5,
         maxZoom: 24,
         minZoom: 7,
     },
-
-    Boston: {
+    boston: {
         center: [-71.06, 42.33],
         zoom: 10,
         maxZoom: 24,
         minZoom: 8,
     },
-
-    Northeast: {
+    northeast: {
         center: [-71.2053, 42.4973],
         zoom: 8.6,
         maxZoom: 24,
         minZoom: 8,
     },
-
-    Southeast: {
+    southeast: {
         center: [-70.7313, 41.7842],
         zoom: 8,
         maxZoom: 24,
@@ -109,16 +106,13 @@ function HeatMapPage() {
         useState<GeoJSON.FeatureCollection | null>(null);
 
     // Controlled by dropdowns, parameterized for link sharing
-    // Year dropdown, set to range of our data
-    const [rawYear, setYear] = useQueryState(
-        "year",
-        parseAsInteger.withDefault(2025),
-    );
+    // Year dropdown — null default lets YearDropdown pick the most recent year with data
+    const [rawYear, setYear] = useQueryState("year", parseAsInteger);
 
-    // totalStudents | totalProjects |totalTeachers
-    const [rawMetric, setMetric] = useQueryState(
+    // totalStudents | totalProjects | totalTeachers (lowercase in URL)
+    const [rawMetric, setRawMetric] = useQueryState(
         "metric",
-        parseAsString.withDefault("Projects"),
+        parseAsString.withDefault("projects"),
     );
 
     // gateway school toggle variable
@@ -127,10 +121,11 @@ function HeatMapPage() {
         parseAsBoolean.withDefault(false),
     );
 
-    const [regionView, setregionView] = useQueryState(
+    const [rawRegionView, setRegionView] = useQueryState(
         "regionView",
-        parseAsString.withDefault("Default"),
+        parseAsString.withDefault("default"),
     );
+    const regionView = rawRegionView.toLowerCase();
 
     const [showSchools, setShowSchools] = useQueryState(
         "showSchools",
@@ -139,8 +134,18 @@ function HeatMapPage() {
 
     // Validate query params during render
     const currentYear = new Date().getFullYear();
-    const year = rawYear > currentYear || rawYear < 1990 ? 2025 : rawYear;
-    const metric = VALID_METRICS.includes(rawMetric) ? rawMetric : "Projects";
+    const year =
+        rawYear !== null && rawYear >= 1990 && rawYear <= currentYear
+            ? rawYear
+            : null;
+    const metric = capitalize(
+        VALID_METRICS.includes(rawMetric.toLowerCase())
+            ? rawMetric.toLowerCase()
+            : "projects",
+    );
+
+    /** Wrapper so CountDropdown can set lowercase metric in URL */
+    const setMetric = (value: string) => setRawMetric(value.toLowerCase());
 
     // Reference to the map, needed for updating the heat layer
     const mapRef = useRef<import("maplibre-gl").Map | null>(null);
@@ -176,6 +181,7 @@ function HeatMapPage() {
 
     // Fetch school point data for heat layer
     const fetchSchoolData = () => {
+        if (year === null) return;
         setIsLoaded(false);
         setSchoolDataError(null);
         fetch(`/api/heat-layer?year=${year}`)
@@ -231,17 +237,18 @@ function HeatMapPage() {
         if (!mapRef.current) {
             return;
         }
+        const region = regions[regionView] ?? regions.default;
         const map = mapRef.current;
         map?.flyTo({
-            center: regions[regionView].center,
-            zoom: regions[regionView].zoom,
+            center: region.center,
+            zoom: region.zoom,
             essential: true,
         });
     }, [regionView]);
 
     const { addMapItem, hasItem } = useCart();
 
-    const filterName = `Heatmap - ${metric} ${onlyGatewaySchools ? " for Schools Representing Gateway Cities" : ""} in ${regionView === "Default" ? "MA" : regionView + ` Region `} (${year})`;
+    const filterName = `Heatmap - ${metric} ${onlyGatewaySchools ? " for Schools Representing Gateway Cities" : ""} in ${regionView === "default" ? "MA" : capitalize(regionView) + ` Region `} (${year ?? ""})`;
 
     const mapInCart = hasItem(filterName);
     useEffect(() => {
@@ -350,7 +357,7 @@ function HeatMapPage() {
                         <CountDropdown
                             selectedCount={metric}
                             onCountChange={setMetric}
-                            options={["Students", "Projects", "Teachers"]}
+                            options={VALID_METRICS.map(capitalize)}
                         />
                     </div>
                     <div className="flex flex-col gap-1.5 w-48">
@@ -359,8 +366,7 @@ function HeatMapPage() {
                         </label>
                         <YearDropdown
                             selectedYear={year}
-                            onYearChange={setYear}
-                            showDataIndicator={true}
+                            onYearChange={(y) => setYear(y)}
                         />
                     </div>
                     <div className="flex flex-col gap-1.5 w-48">
@@ -368,9 +374,11 @@ function HeatMapPage() {
                             Region View
                         </label>
                         <CountDropdown
-                            selectedCount={regionView}
-                            onCountChange={setregionView}
-                            options={Object.keys(regions)}
+                            selectedCount={capitalize(regionView)}
+                            onCountChange={(v) =>
+                                setRegionView(v.toLowerCase())
+                            }
+                            options={Object.keys(regions).map(capitalize)}
                         />
                     </div>
                     <div className="flex flex-col gap-1.5 w-48">
@@ -414,11 +422,17 @@ function HeatMapPage() {
                 ) : (
                     <>
                         <Map
-                            center={regions[regionView].center}
-                            zoom={regions[regionView].zoom}
+                            center={
+                                (regions[regionView] ?? regions.default).center
+                            }
+                            zoom={(regions[regionView] ?? regions.default).zoom}
                             // Restrict zoom to stay on MA approximately
-                            maxZoom={regions[regionView].maxZoom}
-                            minZoom={regions[regionView].minZoom}
+                            maxZoom={
+                                (regions[regionView] ?? regions.default).maxZoom
+                            }
+                            minZoom={
+                                (regions[regionView] ?? regions.default).minZoom
+                            }
                             // Restrict canvas to stay on MA approximately
                             maxBounds={[
                                 [-74.5, 40.2],

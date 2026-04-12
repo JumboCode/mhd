@@ -21,3 +21,7 @@ export function projectCategoryDistribution(
             color: CHART_COLORS[i % CHART_COLORS.length],
         }));
 }
+
+export function capitalize(str: string): string {
+    return str.charAt(0).toUpperCase() + str.slice(1);
+}

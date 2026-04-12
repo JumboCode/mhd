@@ -22,8 +22,6 @@ import GatewaySchools, {
     GatewaySchoolsHandle,
 } from "@/components/GatewaySchools";
 import { standardize } from "@/lib/string-standardize";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import PermittedUsers from "@/components/PermittedUsers";
 import { useRouter } from "next/navigation";
 import { useUnsavedChanges } from "@/components/UnsavedChangesContext";
 import {
@@ -111,50 +109,27 @@ export default function Settings() {
             <div>
                 <h1 className="text-3xl font-bold">Settings</h1>
             </div>
-            <Tabs defaultValue="configuration">
-                <TabsList>
-                    <TabsTrigger value="configuration">
-                        Configuration
-                    </TabsTrigger>
-                    <TabsTrigger value="team-access">Team & Access</TabsTrigger>
-                </TabsList>
-                <TabsContent value="configuration" className="mt-6 space-y-6">
-                    <div className="space-y-6">
-                        <div>
-                            <h3 className="font-bold">
-                                Schools in Gateway Cities
-                            </h3>
-                            <h4 className="mb-2">
-                                Select schools that represent students from
-                                gateway cities.
-                            </h4>
-                            <GatewaySchools
-                                ref={gatewaySchoolsRef}
-                                onUnsavedChange={() =>
-                                    setHasUnsavedChanges(true)
-                                }
-                            />
-                        </div>
-                        <SchoolLocationEditor />
-                        <div className="space-y-3">
-                            <h3 className="font-bold">Available Data</h3>
-                            <YearsOfData
-                                ref={yearsOfDataRef}
-                                onUnsavedChange={() =>
-                                    setHasUnsavedChanges(true)
-                                }
-                            />
-                        </div>
-                    </div>
-                </TabsContent>
-
-                {/* Team and access tab */}
-                <TabsContent value="team-access" className="mt-6 space-y-5">
-                    <PermittedUsers
+            <div className="space-y-6">
+                <div>
+                    <h3 className="font-bold">Schools in Gateway Cities</h3>
+                    <h4 className="mb-2">
+                        Select schools that represent students from gateway
+                        cities.
+                    </h4>
+                    <GatewaySchools
+                        ref={gatewaySchoolsRef}
                         onUnsavedChange={() => setHasUnsavedChanges(true)}
                     />
-                </TabsContent>
-            </Tabs>
+                </div>
+                <SchoolLocationEditor />
+                <div className="space-y-3">
+                    <h3 className="font-bold">Available Data</h3>
+                    <YearsOfData
+                        ref={yearsOfDataRef}
+                        onUnsavedChange={() => setHasUnsavedChanges(true)}
+                    />
+                </div>
+            </div>
 
             <div
                 className={`fixed bottom-0 left-56 right-0 z-50 flex items-center justify-between px-8 py-4 bg-white/20 backdrop-blur-md shadow-lg transition-transform duration-200 ease-in-out ${hasUnsavedChanges ? "translate-y-0" : "translate-y-full"}`}
