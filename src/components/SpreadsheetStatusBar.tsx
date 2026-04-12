@@ -19,16 +19,18 @@ type StatusBarProps = {
 
 export default function StatusBar({
     tabIndex,
-    maxTabs = 3,
     hasError = false,
 }: StatusBarProps) {
-    // Match status bar exactly to labels
-    const fillPercentage =
-        tabIndex === 1
-            ? (tabIndex / maxTabs) * 100 + 1
-            : tabIndex === 2
-              ? (tabIndex / maxTabs) * 100 - 2
-              : (tabIndex / maxTabs) * 100;
+    const progressMap: Record<number, number> = {
+        0: 0,
+        1: 0,
+        2: 1,
+        3: 1,
+        4: 2,
+        5: 3,
+    };
+    const visualStep = progressMap[tabIndex] ?? 0;
+    const fillPercentage = (visualStep / 3) * 100;
     const barColor = hasError ? "bg-destructive" : "bg-primary";
 
     return (
@@ -36,7 +38,7 @@ export default function StatusBar({
             <div
                 className={`h-1 ${barColor} rounded-full transition-all duration-300`}
                 style={{ width: `${fillPercentage}%` }}
-            ></div>
+            />
         </div>
     );
 }

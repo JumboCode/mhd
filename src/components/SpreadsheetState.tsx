@@ -556,13 +556,31 @@ export default function SpreadsheetState() {
                         hasError={hasError}
                     />
                 </div>
-                <div className="flex flex-row justify-between w-full font-semibold text-sm">
-                    <p className="-translate-x-4">Upload</p>
-                    <p>Student</p>
-                    <p>School</p>
-                    <p>School Info</p>
-                    <p>Matching</p>
-                    <p className="translate-x-4">Confirm</p>
+                <div className="relative w-full font-semibold text-sm h-4">
+                    <p
+                        className="absolute left-0 -translate-x-1/2 text-center whitespace-nowrap"
+                        style={{ left: "0%" }}
+                    >
+                        Student
+                    </p>
+                    <p
+                        className="absolute -translate-x-1/2 text-center whitespace-nowrap"
+                        style={{ left: "33.33%" }}
+                    >
+                        School
+                    </p>
+                    <p
+                        className="absolute -translate-x-1/2 text-center whitespace-nowrap"
+                        style={{ left: "66.67%" }}
+                    >
+                        Location
+                    </p>
+                    <p
+                        className="absolute -translate-x-1/2 text-center whitespace-nowrap"
+                        style={{ left: "100%" }}
+                    >
+                        Confirm
+                    </p>
                 </div>
             </div>
 
