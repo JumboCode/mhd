@@ -13,7 +13,13 @@
 import { Map } from "@/components/ui/map";
 import { Suspense, useEffect, useState, useRef, useMemo } from "react";
 import { toast } from "sonner";
-import { Loader2, Link, Share, CheckCircle2 } from "lucide-react";
+import {
+    Loader2,
+    Link,
+    Share,
+    CheckCircle2,
+    ShoppingBasket,
+} from "lucide-react";
 import { LoadError } from "@/components/ui/load-error";
 import { capitalize } from "@/lib/utils";
 
@@ -33,11 +39,13 @@ import YearDropdown from "@/components/YearDropdown";
 import CountDropdown from "@/components/CountDropdown";
 import { Button } from "@/components/ui/button";
 import {
-    Popover,
-    PopoverAnchor,
-    PopoverContent,
-} from "@/components/ui/popover";
+    Sheet,
+    SheetContent,
+    SheetHeader,
+    SheetTitle,
+} from "@/components/ui/sheet";
 import { exportMapToPDF } from "@/lib/heatmap-export";
+import { useHotkey } from "@/hooks/useHotkey";
 import { useHeatmapLayers } from "@/hooks/useHeatmapLayers";
 import { Cart } from "@/components/Cart";
 import { PlusCircle } from "lucide-react";
@@ -152,7 +160,8 @@ function HeatMapPage() {
 
     // Loading state
     const [isLoaded, setIsLoaded] = useState(false);
-    const [cartPopoverOpen, setCartPopoverOpen] = useState(false);
+    const [cartOpen, setCartOpen] = useState(false);
+    const [exportDialogOpen, setExportDialogOpen] = useState(false);
     const [schoolDataError, setSchoolDataError] = useState<string | null>(null);
 
     const copyURLtoClipboard = async () => {
@@ -246,21 +255,39 @@ function HeatMapPage() {
         });
     }, [regionView]);
 
-    const { addMapItem, hasItem } = useCart();
+    const { items, addMapItem, hasItem, removeByName } = useCart();
 
     const filterName = `Heatmap - ${metric} ${onlyGatewaySchools ? " for Schools Representing Gateway Cities" : ""} in ${regionView === "default" ? "MA" : capitalize(regionView) + ` Region `} (${year ?? ""})`;
 
     const mapInCart = hasItem(filterName);
-    useEffect(() => {
-        if (!mapInCart) setCartPopoverOpen(false);
-    }, [mapInCart]);
+
+    // Cmd+S to open export dialog, Cmd+P to print PDF
+    useHotkey(
+        "s",
+        () => {
+            if (!exportDialogOpen) setExportDialogOpen(true);
+        },
+        { meta: true },
+    );
+    useHotkey(
+        "p",
+        () => {
+            const map = mapRef.current;
+            if (!map) return;
+            exportMapToPDF(map, filterName, true);
+        },
+        { meta: true },
+    );
 
     return (
         <div className="flex p-8 flex-col h-screen w-full justify-center">
             <div className="flex justify-between items-center mb-4">
                 <h1 className="text-2xl py-4 font-semibold">{filterName}</h1>
                 <div className="flex gap-3">
-                    <AlertDialog>
+                    <AlertDialog
+                        open={exportDialogOpen}
+                        onOpenChange={setExportDialogOpen}
+                    >
                         <AlertDialogTrigger asChild>
                             <Button
                                 variant="outline"
@@ -295,48 +322,57 @@ function HeatMapPage() {
                             </AlertDialogFooter>
                         </AlertDialogContent>
                     </AlertDialog>
-                    <Popover
-                        open={cartPopoverOpen}
-                        onOpenChange={setCartPopoverOpen}
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex items-center gap-2"
+                        onClick={() => {
+                            if (mapInCart) {
+                                removeByName(filterName);
+                            } else {
+                                const map = mapRef.current;
+                                if (!map) return;
+                                const mapImageData = map
+                                    .getCanvas()
+                                    .toDataURL("image/jpeg", 0.5);
+                                addMapItem(filterName, mapImageData);
+                            }
+                        }}
                     >
-                        <PopoverAnchor asChild>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                className="flex items-center gap-2"
-                                onClick={() => {
-                                    if (mapInCart) {
-                                        setCartPopoverOpen((open) => !open);
-                                    } else {
-                                        const map = mapRef.current;
-                                        if (!map) return;
-                                        const mapImageData = map
-                                            .getCanvas()
-                                            .toDataURL("image/jpeg", 0.5);
-                                        addMapItem(filterName, mapImageData);
-                                    }
-                                }}
-                            >
-                                {mapInCart ? (
-                                    <>
-                                        <CheckCircle2 className="w-4 h-4" />
-                                        View in cart
-                                    </>
-                                ) : (
-                                    <>
-                                        <PlusCircle className="w-4 h-4" />
-                                        Add to
-                                    </>
-                                )}
-                            </Button>
-                        </PopoverAnchor>
-                        <PopoverContent
-                            className="flex w-auto max-w-5xl flex-col gap-0.5 p-2"
-                            align="end"
-                        >
+                        {mapInCart ? (
+                            <>
+                                <CheckCircle2 className="w-4 h-4" />
+                                Remove
+                            </>
+                        ) : (
+                            <>
+                                <PlusCircle className="w-4 h-4" />
+                                Add to cart
+                            </>
+                        )}
+                    </Button>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex items-center gap-2 relative"
+                        onClick={() => setCartOpen(true)}
+                    >
+                        <ShoppingBasket className="w-4 h-4" />
+                        Cart
+                        {items.length > 0 && (
+                            <span className="absolute -top-2 -right-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+                                {items.length}
+                            </span>
+                        )}
+                    </Button>
+                    <Sheet open={cartOpen} onOpenChange={setCartOpen}>
+                        <SheetContent>
+                            <SheetHeader>
+                                <SheetTitle>Cart</SheetTitle>
+                            </SheetHeader>
                             <Cart />
-                        </PopoverContent>
-                    </Popover>
+                        </SheetContent>
+                    </Sheet>
                     <Button
                         variant="outline"
                         size="sm"

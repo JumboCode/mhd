@@ -21,6 +21,7 @@ import {
     Loader2,
     PlusCircle,
     Share,
+    ShoppingBasket,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -37,10 +38,15 @@ import LineGraph from "@/components/charts/LineGraph";
 import { Button } from "@/components/ui/button";
 import {
     Popover,
-    PopoverAnchor,
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+    Sheet,
+    SheetContent,
+    SheetHeader,
+    SheetTitle,
+} from "@/components/ui/sheet";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
     useQueryState,
@@ -191,7 +197,7 @@ export default function ChartPage() {
     const [gatewaySchools, setGatewaySchools] = useState<string[]>([]);
     const [isExporting, setIsExporting] = useState(false);
     const [exportDialogOpen, setExportDialogOpen] = useState(false);
-    const [cartPopoverOpen, setCartPopoverOpen] = useState(false);
+    const [cartOpen, setCartOpen] = useState(false);
     const [isLoaded, setIsLoaded] = useState(false);
     const [projectDataError, setProjectDataError] = useState<string | null>(
         null,
@@ -279,7 +285,7 @@ export default function ChartPage() {
         parseAsBoolean.withDefault(false),
     );
 
-    const { addChartItem, hasItem } = useCart();
+    const { items, addChartItem, hasItem, removeByName } = useCart();
 
     const filters: Filters = useMemo(
         () => ({
@@ -376,9 +382,22 @@ export default function ChartPage() {
     );
 
     const chartInCart = hasItem(filterName);
-    useEffect(() => {
-        if (!chartInCart) setCartPopoverOpen(false);
-    }, [chartInCart]);
+
+    // Cmd+S to open export dialog, Cmd+P to print PDF
+    useHotkey(
+        "s",
+        () => {
+            if (!exportDialogOpen) setExportDialogOpen(true);
+        },
+        { meta: true },
+    );
+    useHotkey(
+        "p",
+        () => {
+            downloadSingleGraph(chartRef, filterName, true);
+        },
+        { meta: true },
+    );
 
     // Sync tempYearRange with yearRange only when popover opens in custom mode
     useEffect(() => {
@@ -760,12 +779,18 @@ export default function ChartPage() {
                                 <motion.h1
                                     key={chartType}
                                     className="text-xl font-semibold text-foreground"
-                                    initial={{ opacity: 0, x: -20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    exit={{ opacity: 0, x: 20 }}
                                     transition={{
                                         duration: 0.15,
                                         ease: "easeOut",
+                                    }}
+                                    initial={{
+                                        opacity: 0,
+                                        x: slideDirection.current * -20,
+                                    }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{
+                                        opacity: 0,
+                                        x: slideDirection.current * -20,
                                     }}
                                 >
                                     {generateChartTitle(
@@ -834,7 +859,7 @@ export default function ChartPage() {
                                                 );
                                                 setIsExporting(false);
                                                 toast.success(
-                                                    "Graph exported successfully!",
+                                                    "Chart exported successfully!",
                                                 );
                                             }}
                                         >
@@ -843,52 +868,59 @@ export default function ChartPage() {
                                     </AlertDialogFooter>
                                 </AlertDialogContent>
                             </AlertDialog>
-                            <Popover
-                                open={cartPopoverOpen}
-                                onOpenChange={setCartPopoverOpen}
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="flex items-center gap-2"
+                                onClick={() => {
+                                    if (chartInCart) {
+                                        removeByName(filterName);
+                                    } else {
+                                        addChartItem(filterName, {
+                                            chartType: chartType as
+                                                | "bar"
+                                                | "line",
+                                            filters,
+                                            yearStart: yearRange.start,
+                                            yearEnd: yearRange.end,
+                                        });
+                                    }
+                                }}
                             >
-                                <PopoverAnchor asChild>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="flex items-center gap-2"
-                                        onClick={() => {
-                                            if (chartInCart) {
-                                                setCartPopoverOpen(
-                                                    (open) => !open,
-                                                );
-                                            } else {
-                                                addChartItem(filterName, {
-                                                    chartType: chartType as
-                                                        | "bar"
-                                                        | "line",
-                                                    filters,
-                                                    yearStart: yearRange.start,
-                                                    yearEnd: yearRange.end,
-                                                });
-                                            }
-                                        }}
-                                    >
-                                        {chartInCart ? (
-                                            <>
-                                                <CheckCircle2 className="w-4 h-4" />
-                                                View in cart
-                                            </>
-                                        ) : (
-                                            <>
-                                                <PlusCircle className="w-4 h-4" />
-                                                Add to
-                                            </>
-                                        )}
-                                    </Button>
-                                </PopoverAnchor>
-                                <PopoverContent
-                                    className="flex w-auto max-w-5xl flex-col gap-0.5 p-2"
-                                    align="end"
-                                >
+                                {chartInCart ? (
+                                    <>
+                                        <CheckCircle2 className="w-4 h-4" />
+                                        Remove
+                                    </>
+                                ) : (
+                                    <>
+                                        <PlusCircle className="w-4 h-4" />
+                                        Add to cart
+                                    </>
+                                )}
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="flex items-center gap-2 relative"
+                                onClick={() => setCartOpen(true)}
+                            >
+                                <ShoppingBasket className="w-4 h-4" />
+                                Cart
+                                {items.length > 0 && (
+                                    <span className="absolute -top-2 -right-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+                                        {items.length}
+                                    </span>
+                                )}
+                            </Button>
+                            <Sheet open={cartOpen} onOpenChange={setCartOpen}>
+                                <SheetContent>
+                                    <SheetHeader>
+                                        <SheetTitle>Cart</SheetTitle>
+                                    </SheetHeader>
                                     <Cart />
-                                </PopoverContent>
-                            </Popover>
+                                </SheetContent>
+                            </Sheet>
 
                             <Button
                                 variant="outline"

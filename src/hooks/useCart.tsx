@@ -53,6 +53,7 @@ type CartContextValue = {
     addChartItem: (filterName: string, params: ChartCartParams) => void;
     addMapItem: (filterName: string, imageDataUrl: string) => void;
     removeItem: (index: number) => void;
+    removeByName: (filterName: string) => void;
     clearCart: () => void;
     exportAll: () => Promise<void>;
     isExporting: boolean;
@@ -183,7 +184,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
                 ...prev,
                 { type: "chart", filterName, params },
             ]);
-            toast.success("Added to cart");
         },
         [],
     );
@@ -194,13 +194,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
                 ...prev,
                 { type: "map", filterName, imageDataUrl },
             ]);
-            toast.success("Added to cart");
         },
         [],
     );
 
     const removeItem = useCallback((index: number) => {
         setItems((prev) => prev.filter((_, i) => i !== index));
+    }, []);
+
+    const removeByName = useCallback((filterName: string) => {
+        setItems((prev) => prev.filter((i) => i.filterName !== filterName));
     }, []);
 
     const hasItem = useCallback(
@@ -294,7 +297,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
             });
 
             pdf.save("chart.pdf");
-            toast.success("Graphs exported successfully!");
         } catch (err) {
             toast.error(
                 err instanceof Error ? err.message : "Failed to export",
@@ -311,6 +313,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
                 addChartItem,
                 addMapItem,
                 removeItem,
+                removeByName,
                 clearCart,
                 exportAll,
                 isExporting,
