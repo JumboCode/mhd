@@ -21,6 +21,7 @@ type ConfirmationProps = {
     spreadsheetData: SpreadsheetData;
     setConfirmed: (confirmed: boolean | null) => void;
     yearHasData: boolean;
+    disabled?: boolean;
 };
 
 export default function SpreadsheetConfirmation({
@@ -28,6 +29,7 @@ export default function SpreadsheetConfirmation({
     spreadsheetData,
     setConfirmed,
     yearHasData,
+    disabled = false,
 }: ConfirmationProps) {
     const [uniqueSchools, setUniqueSchools] = useState<number>(0);
     const [students, setStudents] = useState<number>(0);
@@ -142,6 +144,7 @@ export default function SpreadsheetConfirmation({
                     onCheckedChange={(checked: boolean) =>
                         setConfirmed(checked)
                     }
+                    disabled={disabled}
                 />
                 <label htmlFor="confirmation-checkbox">
                     I understand this action may affect existing data
