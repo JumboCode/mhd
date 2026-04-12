@@ -593,7 +593,7 @@ export default function SpreadsheetState() {
                 </div>
             </div>
 
-            <div className={`flex-1 ${tabIndex === 2 ? "w-full" : ""}`}>
+            <div className={`flex-1 ${isWideTab ? "w-full" : ""}`}>
                 {isSubmitting ? (
                     <div className="flex flex-col items-center gap-4 mt-8 w-full max-w-md">
                         <div className="w-full bg-gray-200 rounded-full h-4">
@@ -611,9 +611,7 @@ export default function SpreadsheetState() {
                 )}
             </div>
 
-            <div
-                className={`flex justify-between pb-4 ${isWideTab ? "w-full" : "w-full"}`}
-            >
+            <div className="flex justify-between pb-4 w-full">
                 {canPrevious && (
                     <button
                         className="py-1 w-40 rounded-lg bg-card text-foreground border border-border hover:bg-accent hover:cursor-pointer transition duration-300"
