@@ -779,12 +779,18 @@ export default function ChartPage() {
                                 <motion.h1
                                     key={chartType}
                                     className="text-xl font-semibold text-foreground"
-                                    initial={{ opacity: 0, x: -20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    exit={{ opacity: 0, x: 20 }}
                                     transition={{
                                         duration: 0.15,
                                         ease: "easeOut",
+                                    }}
+                                    initial={{
+                                        opacity: 0,
+                                        x: slideDirection.current * -20,
+                                    }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{
+                                        opacity: 0,
+                                        x: slideDirection.current * -20,
                                     }}
                                 >
                                     {generateChartTitle(
