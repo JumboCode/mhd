@@ -121,7 +121,7 @@ export function Cart() {
     const { items, removeItem, clearCart, exportAll, isExporting } = useCart();
 
     return (
-        <div className="flex flex-col justify-between h-full gap-2 pt-2">
+        <div className="flex flex-col justify-between h-full gap-2 pt-2 pb-6">
             <div className="flex flex-col gap-2 overflow-y-auto pr-1">
                 {items.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-12 text-muted-foreground gap-3">
