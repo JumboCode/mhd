@@ -16,7 +16,7 @@ import {
     LineChart,
     Loader2,
     MapIcon,
-    ShoppingCart,
+    ShoppingBasket,
     Trash2,
 } from "lucide-react";
 import { Button } from "./ui/button";
@@ -112,7 +112,7 @@ export function Cart() {
             <div className="flex flex-col gap-2 overflow-y-auto pr-1">
                 {items.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-12 text-muted-foreground gap-3">
-                        <ShoppingCart className="h-10 w-10 stroke-1" />
+                        <ShoppingBasket className="h-10 w-10 stroke-1" />
                         <div className="text-center">
                             <p className="text-sm font-medium">Cart is empty</p>
                             <p className="text-xs mt-1">

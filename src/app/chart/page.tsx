@@ -22,6 +22,7 @@ import {
     PlusCircle,
     Share,
     ShoppingBasket,
+    SlidersHorizontal,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -48,6 +49,12 @@ import {
     SheetTitle,
 } from "@/components/ui/sheet";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
     useQueryState,
     parseAsInteger,
@@ -198,6 +205,7 @@ export default function ChartPage() {
     const [isExporting, setIsExporting] = useState(false);
     const [exportDialogOpen, setExportDialogOpen] = useState(false);
     const [cartOpen, setCartOpen] = useState(false);
+    const [filterOpen, setFilterOpen] = useState(false);
     const [isLoaded, setIsLoaded] = useState(false);
     const [projectDataError, setProjectDataError] = useState<string | null>(
         null,
@@ -741,8 +749,46 @@ export default function ChartPage() {
 
     return (
         <div className="w-full min-h-screen flex bg-background">
-            {/* Left Sidebar - Filter Panel */}
-            <div className="flex flex-col border-r border-border p-8 bg-card w-70 h-screen overflow-y-auto sticky top-0 gap-12">
+            <Sheet open={filterOpen} onOpenChange={setFilterOpen}>
+                <SheetContent side="left" className="w-80 overflow-y-auto">
+                    <SheetHeader>
+                        <SheetTitle>Filters</SheetTitle>
+                    </SheetHeader>
+                    <div className="mt-6">
+                        <GraphFilters
+                            schools={schools}
+                            cities={cities}
+                            projectTypes={projectTypes}
+                            gatewaySchools={gatewaySchools}
+                            filters={filters}
+                            onFiltersChange={(newFilters) => {
+                                setSelectedSchools(newFilters.selectedSchools);
+                                setSelectedCities(newFilters.selectedCities);
+                                setSelectedProjectTypes(
+                                    newFilters.selectedProjectTypes,
+                                );
+                                setGroupBy(newFilters.groupBy);
+                                setMeasuredAs(newFilters.measuredAs);
+                                setTeacherYearsValue(
+                                    newFilters.teacherYearsValue,
+                                );
+                                setTeacherYearsOperator(
+                                    newFilters.teacherYearsOperator,
+                                );
+                                setTeacherYearsValue2(
+                                    newFilters.teacherYearsValue2 ?? "",
+                                );
+                                setOnlyGatewaySchools(
+                                    newFilters.onlyGatewaySchools,
+                                );
+                            }}
+                        />
+                    </div>
+                </SheetContent>
+            </Sheet>
+
+            {/* Large screens: Always show sidebar */}
+            <div className="hidden lg:flex flex-col border-r border-border p-8 bg-card w-70 h-screen overflow-y-auto sticky top-0 gap-12">
                 <GraphFilters
                     schools={schools}
                     cities={cities}
@@ -771,9 +817,9 @@ export default function ChartPage() {
 
             {/* Main Content Area */}
             <div className="flex-1 flex flex-col h-screen overflow-hidden">
-                <div className="flex flex-col gap-5 h-full px-8 mt-8 overflow-hidden">
-                    {/* Header */}
-                    <div className="flex items-center justify-between shrink-0">
+                <div className="flex flex-col gap-5 h-full overflow-hidden">
+                    {/* Header - title and actions */}
+                    <div className="flex items-center justify-between px-8 pt-8 shrink-0">
                         <div className="relative">
                             <AnimatePresence initial={false} mode="popLayout">
                                 <motion.h1
@@ -813,7 +859,9 @@ export default function ChartPage() {
                                 </motion.h1>
                             </AnimatePresence>
                         </div>
-                        <div className="flex gap-3">
+
+                        {/* Actions - hidden when sidebar is collapsed */}
+                        <div className="hidden lg:flex gap-3">
                             <AlertDialog
                                 open={exportDialogOpen}
                                 onOpenChange={setExportDialogOpen}
@@ -913,15 +961,6 @@ export default function ChartPage() {
                                     </span>
                                 )}
                             </Button>
-                            <Sheet open={cartOpen} onOpenChange={setCartOpen}>
-                                <SheetContent>
-                                    <SheetHeader>
-                                        <SheetTitle>Cart</SheetTitle>
-                                    </SheetHeader>
-                                    <Cart />
-                                </SheetContent>
-                            </Sheet>
-
                             <Button
                                 variant="outline"
                                 size="sm"
@@ -932,11 +971,127 @@ export default function ChartPage() {
                                 Share
                             </Button>
                         </div>
+
+                        {/* Share popover - visible when sidebar is collapsed */}
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="lg:hidden flex items-center gap-2"
+                                >
+                                    <Share className="w-4 h-4" />
+                                    Share
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-56" align="end">
+                                <div className="flex flex-col gap-2">
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="justify-start"
+                                        disabled={isExporting}
+                                        onClick={async () => {
+                                            setIsExporting(true);
+                                            await downloadSingleGraph(
+                                                chartRef,
+                                                filterName,
+                                            );
+                                            setIsExporting(false);
+                                            toast.success(
+                                                "Chart exported successfully!",
+                                            );
+                                        }}
+                                    >
+                                        {isExporting ? (
+                                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                        ) : (
+                                            <Share className="w-4 h-4 mr-2" />
+                                        )}
+                                        Export to PDF
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="justify-start"
+                                        onClick={() => {
+                                            if (chartInCart) {
+                                                removeByName(filterName);
+                                            } else {
+                                                addChartItem(filterName, {
+                                                    chartType: chartType as
+                                                        | "bar"
+                                                        | "line",
+                                                    filters,
+                                                    yearStart: yearRange.start,
+                                                    yearEnd: yearRange.end,
+                                                });
+                                            }
+                                        }}
+                                    >
+                                        {chartInCart ? (
+                                            <>
+                                                <CheckCircle2 className="w-4 h-4 mr-2" />
+                                                Remove from cart
+                                            </>
+                                        ) : (
+                                            <>
+                                                <PlusCircle className="w-4 h-4 mr-2" />
+                                                Add to cart
+                                            </>
+                                        )}
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="justify-start relative"
+                                        onClick={() => setCartOpen(true)}
+                                    >
+                                        <ShoppingBasket className="w-4 h-4 mr-2" />
+                                        View cart
+                                        {items.length > 0 && (
+                                            <span className="ml-auto inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+                                                {items.length}
+                                            </span>
+                                        )}
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="justify-start"
+                                        onClick={copyURLtoClipboard}
+                                    >
+                                        <Link className="w-4 h-4 mr-2" />
+                                        Copy link
+                                    </Button>
+                                </div>
+                            </PopoverContent>
+                        </Popover>
+
+                        <Sheet open={cartOpen} onOpenChange={setCartOpen}>
+                            <SheetContent>
+                                <SheetHeader>
+                                    <SheetTitle>Cart</SheetTitle>
+                                </SheetHeader>
+                                <Cart />
+                            </SheetContent>
+                        </Sheet>
                     </div>
 
-                    {/* Chart Controls */}
-                    <div className="flex items-center justify-between shrink-0">
-                        <div className="flex items-center">
+                    {/* Controls row */}
+                    <div className="flex items-center justify-between px-8 shrink-0">
+                        <div className="flex items-center gap-3">
+                            {/* Filters button (lg and below) */}
+                            <Button
+                                onClick={() => setFilterOpen(true)}
+                                size="sm"
+                                variant="outline"
+                                className="lg:hidden flex items-center gap-2"
+                            >
+                                <SlidersHorizontal className="w-4 h-4" />
+                            </Button>
+
+                            {/* Bar/Line tabs */}
                             <Tabs
                                 value={chartType}
                                 onValueChange={handleChartTypeChange}
@@ -956,6 +1111,7 @@ export default function ChartPage() {
                             </Tabs>
                         </div>
 
+                        {/* Time range */}
                         <div className="flex items-center">
                             <Button
                                 type="button"
