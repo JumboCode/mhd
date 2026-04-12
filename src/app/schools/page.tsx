@@ -69,6 +69,7 @@ export default function SchoolsPage() {
         if (!year) return;
 
         setPrevYearError(null);
+        setPrevYearSchoolInfo([]);
 
         fetch(`/api/schools?year=${year - 1}`)
             .then((response) => {
@@ -82,7 +83,9 @@ export default function SchoolsPage() {
                 setPrevYearError(null);
             })
             .catch(() => {
-                setPrevYearError("Previous year comparison data unavailable");
+                setPrevYearError(
+                    "This is the earliest year of available data — year-over-year comparisons are not available.",
+                );
             });
     }, [year]);
 

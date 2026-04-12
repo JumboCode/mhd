@@ -20,6 +20,7 @@ import type { GraphDataset } from "./charts/LineGraph";
 import Link from "next/link";
 import { DashboardSkeleton } from "@/components/skeletons/DashboardSkeleton";
 import { LoadError } from "@/components/ui/load-error";
+import { AlertCircle, X } from "lucide-react";
 
 type Stats = {
     totals: {
@@ -55,6 +56,11 @@ export default function Dashboard() {
         null,
     );
     const [error, setError] = useState<string | null>(null);
+    const [showPrevYearWarning, setShowPrevYearWarning] = useState(true);
+
+    useEffect(() => {
+        setShowPrevYearWarning(true);
+    }, [year]);
 
     useEffect(() => {
         if (year === null) return;
@@ -156,6 +162,16 @@ export default function Dashboard() {
         (y) => statsMap.get(y)?.total_schools ?? 0,
     );
 
+    const oldestYearWithData =
+        allYearsStats.length > 0
+            ? Math.min(...allYearsStats.map((s) => s.year))
+            : null;
+    const showFirstYearComparisonWarning =
+        year !== null &&
+        oldestYearWithData !== null &&
+        year === oldestYearWithData &&
+        percentChanges === null;
+
     const handleRetry = () => {
         setError(null);
         setStats(null);
@@ -189,6 +205,22 @@ export default function Dashboard() {
                 />
             ) : stats ? (
                 <div className="">
+                    {showFirstYearComparisonWarning && showPrevYearWarning && (
+                        <div className="mb-5 flex items-center gap-2 px-4 py-2 bg-yellow-50 border border-yellow-200 text-yellow-900 text-sm rounded-md">
+                            <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                            <span className="flex-1">
+                                This is the earliest year of available data —
+                                year-over-year comparisons are not available.
+                            </span>
+                            <button
+                                onClick={() => setShowPrevYearWarning(false)}
+                                className="flex-shrink-0 hover:bg-yellow-100 rounded p-1"
+                                aria-label="Dismiss"
+                            >
+                                <X className="h-4 w-4" />
+                            </button>
+                        </div>
+                    )}
                     <div className="grid grid-cols-4 gap-5">
                         <StatCard
                             label={ENTITY_CONFIG.projects.label}

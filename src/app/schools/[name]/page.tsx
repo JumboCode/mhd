@@ -35,6 +35,7 @@ import {
 } from "@/components/EditableProjectsTable";
 import PieChart from "@/components/charts/PieChart";
 import { projectCategoryDistribution } from "@/lib/utils";
+import { AlertCircle, X } from "lucide-react";
 
 // interface such that data can be blank if API is loading
 type SchoolData = {
@@ -75,6 +76,11 @@ export default function SchoolProfilePage() {
         { x: string | number; y: number }[]
     >([]);
     const [allYearsData, setAllYearsData] = useState<SchoolData[]>([]);
+    const [showPrevYearWarning, setShowPrevYearWarning] = useState(true);
+
+    useEffect(() => {
+        setShowPrevYearWarning(true);
+    }, [year]);
 
     useEffect(() => {
         if (!year) return;
@@ -219,6 +225,18 @@ export default function SchoolProfilePage() {
         Number(prevYearData?.studentCount || 0),
     );
 
+    const firstYearNumeric = Number(schoolData?.firstYear);
+    const isOldestSchoolYearSelected =
+        year !== null &&
+        Number.isFinite(firstYearNumeric) &&
+        year === firstYearNumeric;
+    const trendIndicatorsUnavailable =
+        projectsPercentChange === null &&
+        teachersPercentChange === null &&
+        studentsPercentChange === null;
+    const showComparisonWarning =
+        isOldestSchoolYearSelected && trendIndicatorsUnavailable;
+
     if (!schoolData) {
         return (
             <div className="h-screen w-full bg-background overflow-y-auto flex justify-center">
@@ -289,6 +307,22 @@ export default function SchoolProfilePage() {
                 </div>
 
                 {/* Stats cards */}
+                {showComparisonWarning && showPrevYearWarning && (
+                    <div className="flex items-center gap-2 px-4 py-2 bg-yellow-50 border border-yellow-200 text-yellow-900 text-sm rounded-md">
+                        <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                        <span className="flex-1">
+                            This is the earliest year of available data —
+                            year-over-year comparisons are not available.
+                        </span>
+                        <button
+                            onClick={() => setShowPrevYearWarning(false)}
+                            className="flex-shrink-0 hover:bg-yellow-100 rounded p-1"
+                            aria-label="Dismiss"
+                        >
+                            <X className="h-4 w-4" />
+                        </button>
+                    </div>
+                )}
                 <div className="grid grid-cols-3 gap-8">
                     <StatCard
                         label={ENTITY_CONFIG.projects.label}
