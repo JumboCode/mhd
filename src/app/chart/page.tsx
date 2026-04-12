@@ -837,7 +837,7 @@ export default function ChartPage() {
                                                 );
                                                 setIsExporting(false);
                                                 toast.success(
-                                                    "Graph exported successfully!",
+                                                    "Chart exported successfully!",
                                                 );
                                             }}
                                         >

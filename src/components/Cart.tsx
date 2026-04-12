@@ -22,19 +22,6 @@ import {
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { useCart, type CartItem } from "@/hooks/useCart";
-import { toast } from "sonner";
-
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 
 function getFilterCount(item: CartItem): number {
     if (item.type !== "chart") return 0;
@@ -153,46 +140,17 @@ export function Cart() {
                 >
                     Clear All
                 </button>
-                {items.length === 0 ? (
-                    <Button
-                        className="min-w-32"
-                        onClick={() => toast.error("Cart is empty")}
-                    >
-                        Export All
-                    </Button>
-                ) : (
-                    <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                            <Button disabled={isExporting} className="min-w-32">
-                                {isExporting ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                    "Export All"
-                                )}
-                            </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>
-                                    Export {items.length} graph
-                                    {items.length !== 1 ? "s" : ""} to PDF?
-                                </AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    This will download a PDF containing{" "}
-                                    {items.length} graph
-                                    {items.length !== 1 ? "s" : ""} to your
-                                    computer.
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => exportAll()}>
-                                    Download
-                                </AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
-                )}
+                <Button
+                    disabled={items.length === 0 || isExporting}
+                    className="min-w-32"
+                    onClick={() => exportAll()}
+                >
+                    {isExporting ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                        "Download"
+                    )}
+                </Button>
             </div>
         </div>
     );

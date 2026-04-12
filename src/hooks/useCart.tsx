@@ -297,7 +297,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
             });
 
             pdf.save("chart.pdf");
-            toast.success("Graphs exported successfully!");
         } catch (err) {
             toast.error(
                 err instanceof Error ? err.message : "Failed to export",

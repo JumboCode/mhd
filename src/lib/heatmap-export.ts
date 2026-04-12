@@ -67,7 +67,6 @@ export async function exportMapToPDF(map: Map | null, title: string | null) {
         );
 
         pdf.save("heatmap.pdf");
-        toast.success("Heatmap exported successfully!");
     } catch (error) {
         toast.error("Failed to export heatmap");
     }
