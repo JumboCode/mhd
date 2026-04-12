@@ -35,6 +35,7 @@ export type CellTypeError = {
     coord: string;
     value: string;
     expected: ColumnType;
+    allowedValues?: string[];
 };
 
 /**
@@ -373,6 +374,15 @@ function checkRequiredColumnTypes(
                                         part.toLowerCase(),
                                 ),
                             );
+                        if (!isValid) {
+                            typeErrorCoords.push({
+                                coord: coords,
+                                value: String(cell),
+                                expected: expectedType,
+                                allowedValues: allowed,
+                            });
+                            continue;
+                        }
                     }
                     break;
                 }
