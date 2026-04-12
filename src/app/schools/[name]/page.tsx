@@ -310,8 +310,9 @@ export default function SchoolProfilePage() {
                     <div className="flex items-center gap-2 px-4 py-2 bg-yellow-50 border border-yellow-200 text-yellow-900 text-sm rounded-md">
                         <AlertCircle className="h-4 w-4 flex-shrink-0" />
                         <span className="flex-1">
-                            This is the earliest year of available data —
-                            year-over-year comparisons are not available.
+                            This is the earliest year of available data for this
+                            school — year-over-year comparisons are not
+                            available.
                         </span>
                         <button
                             onClick={() => setShowPrevYearWarning(false)}
