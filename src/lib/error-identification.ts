@@ -125,19 +125,18 @@ export const schoolColumnSpec: ColumnSpec = {
         "School Type": "enum",
     },
     enumValues: {
-        division: [
+        "Division": [
             "Junior Division (6-8)",
             "Senior Division (9-12)",
             "Young Historians (4-5)",
         ],
-        implementationModel: [
+        "Implementation Model": [
             "Student participate independently",
             "Curricular requirement (class or grade level)",
             "Co-curricular club",
-            "Student participate independently",
             "Other",
         ],
-        schoolType: [
+        "School Type": [
             "Public School",
             "Public Charter",
             "Private/ Independent",
