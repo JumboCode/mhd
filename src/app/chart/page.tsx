@@ -37,10 +37,15 @@ import LineGraph from "@/components/charts/LineGraph";
 import { Button } from "@/components/ui/button";
 import {
     Popover,
-    PopoverAnchor,
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+    Sheet,
+    SheetContent,
+    SheetHeader,
+    SheetTitle,
+} from "@/components/ui/sheet";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
     useQueryState,
@@ -191,7 +196,7 @@ export default function ChartPage() {
     const [gatewaySchools, setGatewaySchools] = useState<string[]>([]);
     const [isExporting, setIsExporting] = useState(false);
     const [exportDialogOpen, setExportDialogOpen] = useState(false);
-    const [cartPopoverOpen, setCartPopoverOpen] = useState(false);
+    const [cartOpen, setCartOpen] = useState(false);
     const [isLoaded, setIsLoaded] = useState(false);
     const [projectDataError, setProjectDataError] = useState<string | null>(
         null,
@@ -843,52 +848,45 @@ export default function ChartPage() {
                                     </AlertDialogFooter>
                                 </AlertDialogContent>
                             </AlertDialog>
-                            <Popover
-                                open={cartPopoverOpen}
-                                onOpenChange={setCartPopoverOpen}
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="flex items-center gap-2"
+                                onClick={() => {
+                                    if (chartInCart) {
+                                        setCartPopoverOpen((open) => !open);
+                                    } else {
+                                        addChartItem(filterName, {
+                                            chartType: chartType as
+                                                | "bar"
+                                                | "line",
+                                            filters,
+                                            yearStart: yearRange.start,
+                                            yearEnd: yearRange.end,
+                                        });
+                                    }
+                                }}
                             >
-                                <PopoverAnchor asChild>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="flex items-center gap-2"
-                                        onClick={() => {
-                                            if (chartInCart) {
-                                                setCartPopoverOpen(
-                                                    (open) => !open,
-                                                );
-                                            } else {
-                                                addChartItem(filterName, {
-                                                    chartType: chartType as
-                                                        | "bar"
-                                                        | "line",
-                                                    filters,
-                                                    yearStart: yearRange.start,
-                                                    yearEnd: yearRange.end,
-                                                });
-                                            }
-                                        }}
-                                    >
-                                        {chartInCart ? (
-                                            <>
-                                                <CheckCircle2 className="w-4 h-4" />
-                                                View in cart
-                                            </>
-                                        ) : (
-                                            <>
-                                                <PlusCircle className="w-4 h-4" />
-                                                Add to
-                                            </>
-                                        )}
-                                    </Button>
-                                </PopoverAnchor>
-                                <PopoverContent
-                                    className="flex w-auto max-w-5xl flex-col gap-0.5 p-2"
-                                    align="end"
-                                >
+                                {chartInCart ? (
+                                    <>
+                                        <CheckCircle2 className="w-4 h-4" />
+                                        View in cart
+                                    </>
+                                ) : (
+                                    <>
+                                        <PlusCircle className="w-4 h-4" />
+                                        Add to
+                                    </>
+                                )}
+                            </Button>
+                            <Sheet open={cartOpen} onOpenChange={setCartOpen}>
+                                <SheetContent>
+                                    <SheetHeader>
+                                        <SheetTitle>Cart</SheetTitle>
+                                    </SheetHeader>
                                     <Cart />
-                                </PopoverContent>
-                            </Popover>
+                                </SheetContent>
+                            </Sheet>
 
                             <Button
                                 variant="outline"

@@ -32,10 +32,11 @@ import YearDropdown from "@/components/YearDropdown";
 import CountDropdown from "@/components/CountDropdown";
 import { Button } from "@/components/ui/button";
 import {
-    Popover,
-    PopoverAnchor,
-    PopoverContent,
-} from "@/components/ui/popover";
+    Sheet,
+    SheetContent,
+    SheetHeader,
+    SheetTitle,
+} from "@/components/ui/sheet";
 import { exportMapToPDF } from "@/lib/heatmap-export";
 import { useHeatmapLayers } from "@/hooks/useHeatmapLayers";
 import { Cart } from "@/components/Cart";
@@ -147,7 +148,7 @@ function HeatMapPage() {
 
     // Loading state
     const [isLoaded, setIsLoaded] = useState(false);
-    const [cartPopoverOpen, setCartPopoverOpen] = useState(false);
+    const [cartOpen, setCartOpen] = useState(false);
     const [schoolDataError, setSchoolDataError] = useState<string | null>(null);
 
     const copyURLtoClipboard = async () => {
@@ -245,7 +246,7 @@ function HeatMapPage() {
 
     const mapInCart = hasItem(filterName);
     useEffect(() => {
-        if (!mapInCart) setCartPopoverOpen(false);
+        if (!mapInCart) setCartOpen(false);
     }, [mapInCart]);
 
     return (
@@ -288,48 +289,43 @@ function HeatMapPage() {
                             </AlertDialogFooter>
                         </AlertDialogContent>
                     </AlertDialog>
-                    <Popover
-                        open={cartPopoverOpen}
-                        onOpenChange={setCartPopoverOpen}
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex items-center gap-2"
+                        onClick={() => {
+                            if (mapInCart) {
+                                setCartOpen((open) => !open);
+                            } else {
+                                const map = mapRef.current;
+                                if (!map) return;
+                                const mapImageData = map
+                                    .getCanvas()
+                                    .toDataURL("image/jpeg", 0.5);
+                                addMapItem(filterName, mapImageData);
+                            }
+                        }}
                     >
-                        <PopoverAnchor asChild>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                className="flex items-center gap-2"
-                                onClick={() => {
-                                    if (mapInCart) {
-                                        setCartPopoverOpen((open) => !open);
-                                    } else {
-                                        const map = mapRef.current;
-                                        if (!map) return;
-                                        const mapImageData = map
-                                            .getCanvas()
-                                            .toDataURL("image/jpeg", 0.5);
-                                        addMapItem(filterName, mapImageData);
-                                    }
-                                }}
-                            >
-                                {mapInCart ? (
-                                    <>
-                                        <CheckCircle2 className="w-4 h-4" />
-                                        View in cart
-                                    </>
-                                ) : (
-                                    <>
-                                        <PlusCircle className="w-4 h-4" />
-                                        Add to
-                                    </>
-                                )}
-                            </Button>
-                        </PopoverAnchor>
-                        <PopoverContent
-                            className="flex w-auto max-w-5xl flex-col gap-0.5 p-2"
-                            align="end"
-                        >
+                        {mapInCart ? (
+                            <>
+                                <CheckCircle2 className="w-4 h-4" />
+                                View in cart
+                            </>
+                        ) : (
+                            <>
+                                <PlusCircle className="w-4 h-4" />
+                                Add to
+                            </>
+                        )}
+                    </Button>
+                    <Sheet open={cartOpen} onOpenChange={setCartOpen}>
+                        <SheetContent>
+                            <SheetHeader>
+                                <SheetTitle>Cart</SheetTitle>
+                            </SheetHeader>
                             <Cart />
-                        </PopoverContent>
-                    </Popover>
+                        </SheetContent>
+                    </Sheet>
                     <Button
                         variant="outline"
                         size="sm"
