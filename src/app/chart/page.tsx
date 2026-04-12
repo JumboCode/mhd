@@ -771,9 +771,9 @@ export default function ChartPage() {
 
             {/* Main Content Area */}
             <div className="flex-1 flex flex-col h-screen overflow-hidden">
-                <div className="flex flex-col gap-4 h-full overflow-hidden">
+                <div className="flex flex-col gap-5 h-full px-8 mt-8 overflow-hidden">
                     {/* Header */}
-                    <div className="flex items-center justify-between px-8 pt-4 shrink-0">
+                    <div className="flex items-center justify-between shrink-0">
                         <div className="relative">
                             <AnimatePresence initial={false} mode="popLayout">
                                 <motion.h1
@@ -935,7 +935,7 @@ export default function ChartPage() {
                     </div>
 
                     {/* Chart Controls */}
-                    <div className="flex items-center justify-between px-8 py-3 shrink-0">
+                    <div className="flex items-center justify-between shrink-0">
                         <div className="flex items-center">
                             <Tabs
                                 value={chartType}

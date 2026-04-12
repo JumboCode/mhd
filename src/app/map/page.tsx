@@ -281,8 +281,8 @@ function HeatMapPage() {
 
     return (
         <div className="flex p-8 flex-col h-screen w-full justify-center">
-            <div className="flex justify-between items-center mb-4">
-                <h1 className="text-2xl py-4 font-semibold">{filterName}</h1>
+            <div className="flex justify-between items-center mb-5">
+                <h1 className="text-2xl font-semibold">{filterName}</h1>
                 <div className="flex gap-3">
                     <AlertDialog
                         open={exportDialogOpen}
@@ -384,7 +384,7 @@ function HeatMapPage() {
                     </Button>
                 </div>
             </div>
-            <div className="flex flex-row justify-between items-end gap-4 shrink-0 pb-5">
+            <div className="flex flex-row justify-between items-center gap-4 shrink-0 pb-5">
                 <div className="flex flex-row items-center gap-4">
                     <div className="flex flex-col gap-1.5 w-48">
                         <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pl-1">
@@ -441,10 +441,7 @@ function HeatMapPage() {
                     </div>
                 </div>
 
-                <Button
-                    onClick={() => setShowSchools(!showSchools)}
-                    className="w-32 py-2"
-                >
+                <Button onClick={() => setShowSchools(!showSchools)}>
                     {showSchools ? "Hide Schools" : "Show Schools"}
                 </Button>
             </div>

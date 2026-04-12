@@ -181,8 +181,8 @@ export default function Dashboard() {
     };
 
     return (
-        <div className="flex flex-col gap-8 w-full px-8 py-10">
-            <div className="flex flex-row items-center gap-5">
+        <div className="flex flex-col gap-5 w-full p-8">
+            <div className="flex flex-row items-center">
                 <h1 className="text-2xl font-semibold">Overview Dashboard</h1>
                 <div className="ml-auto">
                     <YearDropdown
