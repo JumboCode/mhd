@@ -21,6 +21,7 @@ import {
     Loader2,
     PlusCircle,
     Share,
+    ShoppingBasket,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -381,9 +382,6 @@ export default function ChartPage() {
     );
 
     const chartInCart = hasItem(filterName);
-    useEffect(() => {
-        if (!chartInCart) setCartOpen(false);
-    }, [chartInCart]);
 
     // Sync tempYearRange with yearRange only when popover opens in custom mode
     useEffect(() => {
@@ -851,37 +849,41 @@ export default function ChartPage() {
                             <Button
                                 variant="outline"
                                 size="sm"
+                                disabled={chartInCart}
                                 className="flex items-center gap-2"
                                 onClick={() => {
-                                    if (chartInCart) {
-                                        setCartOpen((open) => !open);
-                                    } else {
-                                        addChartItem(filterName, {
-                                            chartType: chartType as
-                                                | "bar"
-                                                | "line",
-                                            filters,
-                                            yearStart: yearRange.start,
-                                            yearEnd: yearRange.end,
-                                        });
-                                    }
+                                    addChartItem(filterName, {
+                                        chartType: chartType as "bar" | "line",
+                                        filters,
+                                        yearStart: yearRange.start,
+                                        yearEnd: yearRange.end,
+                                    });
                                 }}
                             >
                                 {chartInCart ? (
                                     <>
                                         <CheckCircle2 className="w-4 h-4" />
-                                        View in cart
-                                        {items.length > 0 && (
-                                            <span className="ml-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
-                                                {items.length}
-                                            </span>
-                                        )}
+                                        Added
                                     </>
                                 ) : (
                                     <>
                                         <PlusCircle className="w-4 h-4" />
-                                        Add to
+                                        Add to cart
                                     </>
+                                )}
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="flex items-center gap-2 relative"
+                                onClick={() => setCartOpen(true)}
+                            >
+                                <ShoppingBasket className="w-4 h-4" />
+                                Cart
+                                {items.length > 0 && (
+                                    <span className="absolute -top-2 -right-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+                                        {items.length}
+                                    </span>
                                 )}
                             </Button>
                             <Sheet open={cartOpen} onOpenChange={setCartOpen}>

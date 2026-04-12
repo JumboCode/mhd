@@ -183,7 +183,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
                 ...prev,
                 { type: "chart", filterName, params },
             ]);
-            toast.success("Added to cart");
         },
         [],
     );
@@ -194,7 +193,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
                 ...prev,
                 { type: "map", filterName, imageDataUrl },
             ]);
-            toast.success("Added to cart");
         },
         [],
     );

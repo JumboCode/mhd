@@ -13,7 +13,13 @@
 import { Map } from "@/components/ui/map";
 import { Suspense, useEffect, useState, useRef, useMemo } from "react";
 import { toast } from "sonner";
-import { Loader2, Link, Share, CheckCircle2 } from "lucide-react";
+import {
+    Loader2,
+    Link,
+    Share,
+    CheckCircle2,
+    ShoppingBasket,
+} from "lucide-react";
 import { LoadError } from "@/components/ui/load-error";
 
 // queryStates required for URL sharing with nuqs
@@ -245,9 +251,6 @@ function HeatMapPage() {
     const filterName = `Heatmap - ${metric} ${onlyGatewaySchools ? " for Schools Representing Gateway Cities" : ""} in ${regionView === "Default" ? "MA" : regionView + ` Region `} (${year})`;
 
     const mapInCart = hasItem(filterName);
-    useEffect(() => {
-        if (!mapInCart) setCartOpen(false);
-    }, [mapInCart]);
 
     return (
         <div className="flex p-8 flex-col h-screen w-full justify-center">
@@ -292,35 +295,41 @@ function HeatMapPage() {
                     <Button
                         variant="outline"
                         size="sm"
+                        disabled={mapInCart}
                         className="flex items-center gap-2"
                         onClick={() => {
-                            if (mapInCart) {
-                                setCartOpen((open) => !open);
-                            } else {
-                                const map = mapRef.current;
-                                if (!map) return;
-                                const mapImageData = map
-                                    .getCanvas()
-                                    .toDataURL("image/jpeg", 0.5);
-                                addMapItem(filterName, mapImageData);
-                            }
+                            const map = mapRef.current;
+                            if (!map) return;
+                            const mapImageData = map
+                                .getCanvas()
+                                .toDataURL("image/jpeg", 0.5);
+                            addMapItem(filterName, mapImageData);
                         }}
                     >
                         {mapInCart ? (
                             <>
                                 <CheckCircle2 className="w-4 h-4" />
-                                View in cart
-                                {items.length > 0 && (
-                                    <span className="ml-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
-                                        {items.length}
-                                    </span>
-                                )}
+                                Added
                             </>
                         ) : (
                             <>
                                 <PlusCircle className="w-4 h-4" />
-                                Add to
+                                Add to cart
                             </>
+                        )}
+                    </Button>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex items-center gap-2 relative"
+                        onClick={() => setCartOpen(true)}
+                    >
+                        <ShoppingBasket className="w-4 h-4" />
+                        Cart
+                        {items.length > 0 && (
+                            <span className="absolute -top-2 -right-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+                                {items.length}
+                            </span>
                         )}
                     </Button>
                     <Sheet open={cartOpen} onOpenChange={setCartOpen}>
