@@ -246,6 +246,18 @@ export default function ChartPage() {
     useHotkey("b", () => handleChartTypeChange("bar"));
     useHotkey("l", () => handleChartTypeChange("line"));
 
+    // Cmd+S to open export dialog
+    useEffect(() => {
+        const handler = (e: KeyboardEvent) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === "s") {
+                e.preventDefault();
+                if (!exportDialogOpen) setExportDialogOpen(true);
+            }
+        };
+        window.addEventListener("keydown", handler);
+        return () => window.removeEventListener("keydown", handler);
+    }, [exportDialogOpen]);
+
     // Filter hooks
     const [groupBy, setGroupBy] = useQueryState(
         "groupBy",

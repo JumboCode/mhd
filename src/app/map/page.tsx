@@ -11,7 +11,14 @@
  **************************************************************/
 
 import { Map } from "@/components/ui/map";
-import { Suspense, useEffect, useState, useRef, useMemo } from "react";
+import {
+    Suspense,
+    useCallback,
+    useEffect,
+    useState,
+    useRef,
+    useMemo,
+} from "react";
 import { toast } from "sonner";
 import {
     Loader2,
@@ -155,7 +162,20 @@ function HeatMapPage() {
     // Loading state
     const [isLoaded, setIsLoaded] = useState(false);
     const [cartOpen, setCartOpen] = useState(false);
+    const [exportDialogOpen, setExportDialogOpen] = useState(false);
     const [schoolDataError, setSchoolDataError] = useState<string | null>(null);
+
+    // Cmd+S to open export dialog
+    useEffect(() => {
+        const handler = (e: KeyboardEvent) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === "s") {
+                e.preventDefault();
+                if (!exportDialogOpen) setExportDialogOpen(true);
+            }
+        };
+        window.addEventListener("keydown", handler);
+        return () => window.removeEventListener("keydown", handler);
+    }, [exportDialogOpen]);
 
     const copyURLtoClipboard = async () => {
         try {
@@ -257,7 +277,10 @@ function HeatMapPage() {
             <div className="flex justify-between items-center mb-4">
                 <h1 className="text-2xl py-4 font-semibold">{filterName}</h1>
                 <div className="flex gap-3">
-                    <AlertDialog>
+                    <AlertDialog
+                        open={exportDialogOpen}
+                        onOpenChange={setExportDialogOpen}
+                    >
                         <AlertDialogTrigger asChild>
                             <Button
                                 variant="outline"
