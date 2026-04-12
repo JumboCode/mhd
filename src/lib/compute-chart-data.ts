@@ -47,7 +47,7 @@ export const groupByLabels: Record<string, string> = {
     "region": "Region",
     "school-type": "School Type",
     "division": "Division",
-    "implementation-type": "Implementation Type",
+    "implementation-model": "Implementation Model",
     "project-type": "Project Type",
     "gateway-school": "Schools Representing Gateway Cities",
 };
@@ -158,7 +158,7 @@ export function computeGraphDataset(
         case "school-type":
             groupKey = "category";
             break;
-        case "implementation-type":
+        case "implementation-model":
             groupKey = "category";
             break;
         case "gateway-school":

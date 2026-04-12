@@ -241,43 +241,6 @@ export default function SpreadsheetState() {
         currentSchoolIndex,
     ]);
 
-    const checkFormat = (
-        callback: (jsonData: SpreadsheetData | null) => void,
-    ) => {
-        if (!file) {
-            callback(null);
-            return;
-        }
-
-        const reader = new FileReader();
-        reader.onload = (event: ProgressEvent<FileReader>) => {
-            if (!event.target?.result) {
-                callback(null);
-                return;
-            }
-
-            try {
-                const workbook = XLSX.read(event.target.result, {
-                    type: "binary",
-                });
-                const sheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[sheetName];
-                const jsonData: SpreadsheetData = XLSX.utils.sheet_to_json(
-                    worksheet,
-                    {
-                        header: 1,
-                    },
-                );
-
-                callback(jsonData);
-            } catch {
-                callback(null);
-            }
-        };
-
-        reader.readAsBinaryString(file);
-    };
-
     const handleSubmit = async (): Promise<boolean> => {
         if (spreadsheetData.length === 0) {
             toast.warning("No data to upload.");
