@@ -11,11 +11,34 @@
 
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { yearlySchoolParticipation, yearMetadata } from "@/lib/schema";
+import { yearlySchoolParticipation, yearMetadata, schools } from "@/lib/schema";
 import { eq } from "drizzle-orm";
 
-export async function GET() {
+export async function GET(req: Request) {
     try {
+        const { searchParams } = new URL(req.url);
+        const schoolParam = searchParams.get("school");
+
+        // If a school standardized name is provided, return only years that
+        // school participated in (used by the school profile page).
+        if (schoolParam) {
+            const rows = await db
+                .select({ year: yearlySchoolParticipation.year })
+                .from(yearlySchoolParticipation)
+                .innerJoin(
+                    schools,
+                    eq(yearlySchoolParticipation.schoolId, schools.id),
+                )
+                .where(eq(schools.standardizedName, schoolParam))
+                .groupBy(yearlySchoolParticipation.year)
+                .orderBy(yearlySchoolParticipation.year);
+
+            return NextResponse.json(
+                { years: rows.map((r) => r.year) },
+                { status: 200 },
+            );
+        }
+
         const participation = await db
             .select({ year: yearlySchoolParticipation.year })
             .from(yearlySchoolParticipation)

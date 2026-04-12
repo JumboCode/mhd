@@ -22,7 +22,7 @@ import { SchoolInfoRow } from "@/components/SchoolInfoRow";
 import { StatCard } from "@/components/ui/stat-card";
 import { ENTITY_CONFIG } from "@/lib/entity-config";
 import YearDropdown from "@/components/YearDropdown";
-import MultiLineGraph, { GraphDataset } from "@/components/LineGraph";
+import MultiLineGraph, { GraphDataset } from "@/components/charts/LineGraph";
 import { Info } from "lucide-react";
 import {
     Tooltip,
@@ -33,6 +33,9 @@ import {
     EditableProjectsTable,
     ProjectRow as EditableProjectRow,
 } from "@/components/EditableProjectsTable";
+import PieChart from "@/components/charts/PieChart";
+import { projectCategoryDistribution } from "@/lib/utils";
+import { AlertCircle, X } from "lucide-react";
 
 // interface such that data can be blank if API is loading
 type SchoolData = {
@@ -62,6 +65,7 @@ export default function SchoolProfilePage() {
     const router = useRouter();
 
     const [schoolData, setSchoolData] = useState<SchoolData | null>(null);
+    const [prevYearData, setPrevYearData] = useState<SchoolData | null>(null);
     const [coordinates, setCoordinates] = useState<MapCoordinates | null>(null);
     const [year, setYear] = useState<number | null>(null);
     const [projects, setProjects] = useState<ProjectRow[]>([]);
@@ -72,57 +76,88 @@ export default function SchoolProfilePage() {
         { x: string | number; y: number }[]
     >([]);
     const [allYearsData, setAllYearsData] = useState<SchoolData[]>([]);
+    const [showPrevYearWarning, setShowPrevYearWarning] = useState(true);
+
+    useEffect(() => {
+        setShowPrevYearWarning(true);
+    }, [year]);
 
     useEffect(() => {
         if (!year) return;
+        const controller = new AbortController();
+        const { signal } = controller;
 
-        fetch(`/api/schools/${schoolName}?year=${year}`)
-            .then((response) => {
-                if (!response.ok) {
-                    throw new Error(`Failed to fetch school data`);
-                }
-                return response.json();
-            })
-            .then((data) => {
-                setSchoolData(data);
-                setProjects(data.projects);
-            })
-            .catch(() => {
-                toast.error(
-                    "Failed to load school data. Redirecting to schools page.",
-                );
-                // Redirect after showing error
-                setTimeout(() => {
-                    router.push("/schools");
-                }, 2000);
-            });
-    }, [schoolName, router, year]);
-
-    // Fetches data for the last 5 years in parallel for sparklines
-    useEffect(() => {
-        if (!year) return;
-        const fetchData = async () => {
-            const years = Array.from({ length: 5 }, (_, i) => year - (4 - i));
+        const fetchAll = async () => {
             try {
-                const results = await Promise.all(
-                    years.map((y) =>
-                        fetch(`/api/schools/${schoolName}?year=${y}`).then(
-                            (r) => r.json(),
-                        ),
+                // Fetch 6 years in one batch: year-5..year-1 for sparklines + year for current.
+                // year-1 is index 4 (prev), year is index 5 (curr).
+                // All state updates happen atomically after the await, and the AbortController
+                // ensures stale responses from prior navigations are discarded.
+                const fetchYears = Array.from(
+                    { length: 6 },
+                    (_, i) => year - (5 - i),
+                );
+                // fetchYears = [year-5, year-4, year-3, year-2, year-1, year]
+                //   index 4 = year-1 (previous year for trend)
+                //   index 5 = year   (current year)
+                //   index 0..4 = last 5 years for sparkline
+
+                const responses = await Promise.all(
+                    fetchYears.map((y) =>
+                        fetch(`/api/schools/${schoolName}?year=${y}`, {
+                            signal,
+                        }).then((r) => {
+                            if (!r.ok)
+                                throw new Error(`Failed to fetch year ${y}`);
+                            return r.json();
+                        }),
                     ),
                 );
-                const points = results.map((yearInfo, i) => ({
-                    x: years[i],
-                    y: Number(yearInfo.studentCount),
+
+                if (signal.aborted) return;
+
+                const curr = responses[5]; // current year
+                const sparklineResults = responses.slice(1); // year-4..year (5 items)
+                const sparklineYears = fetchYears.slice(1);
+
+                // Find the most recent prior year where this school actually
+                // had data (projectCount > 0). Scanning from year-1 backwards
+                // avoids treating sparse/gap years as the meaningful baseline.
+                const prev =
+                    [...sparklineResults]
+                        .slice(0, 4) // year-4..year-1 (exclude current)
+                        .reverse()
+                        .find((d) => Number(d.projectCount) > 0) ?? null;
+
+                // Sparkline points (5 years ending at current year)
+                const points = sparklineResults.map((d, i) => ({
+                    x: sparklineYears[i],
+                    y: Number(d.studentCount),
                 }));
+
+                setSchoolData(curr);
+                setPrevYearData(prev);
+                setProjects(curr.projects);
                 setstudentYearData(points);
-                setAllYearsData(results);
-            } catch {
-                toast.error("Failed to load dashboard data. Please try again.");
+                setAllYearsData(sparklineResults);
+            } catch (err: unknown) {
+                if (signal.aborted) return;
+                const isAbort =
+                    err instanceof Error && err.name === "AbortError";
+                if (!isAbort) {
+                    toast.error(
+                        "Failed to load school data. Redirecting to schools page.",
+                    );
+                    setTimeout(() => {
+                        router.push("/schools");
+                    }, 2000);
+                }
             }
         };
-        fetchData();
-    }, [year, schoolName]);
+
+        fetchAll();
+        return () => controller.abort();
+    }, [schoolName, router, year]);
 
     const handleNameDoubleClick = () => {
         setNameDraft(schoolData?.name ?? "");
@@ -169,41 +204,37 @@ export default function SchoolProfilePage() {
         Number(d.studentCount || 0),
     );
 
-    // Calculate percent changes (current year vs previous year)
-    const calculatePercentChange = (current: number, previous: number) => {
-        if (previous === 0) return null;
+    // Calculate percent changes against the previous chronological year.
+    // null = either year has no data for this school (shows flat/no-trend icon).
+    const calcPct = (current: number, previous: number) => {
+        if (current === 0 || previous === 0) return null;
         return ((current - previous) / previous) * 100;
     };
 
-    const currentProjects = Number(schoolData?.projectCount || 0);
-    const previousProjects =
-        allYearsData.length >= 2
-            ? Number(allYearsData[allYearsData.length - 2]?.projectCount || 0)
-            : 0;
-    const projectsPercentChange = calculatePercentChange(
-        currentProjects,
-        previousProjects,
+    const projectsPercentChange = calcPct(
+        Number(schoolData?.projectCount || 0),
+        Number(prevYearData?.projectCount || 0),
+    );
+    const teachersPercentChange = calcPct(
+        Number(schoolData?.teacherCount || 0),
+        Number(prevYearData?.teacherCount || 0),
+    );
+    const studentsPercentChange = calcPct(
+        Number(schoolData?.studentCount || 0),
+        Number(prevYearData?.studentCount || 0),
     );
 
-    const currentTeachers = Number(schoolData?.teacherCount || 0);
-    const previousTeachers =
-        allYearsData.length >= 2
-            ? Number(allYearsData[allYearsData.length - 2]?.teacherCount || 0)
-            : 0;
-    const teachersPercentChange = calculatePercentChange(
-        currentTeachers,
-        previousTeachers,
-    );
-
-    const currentStudents = Number(schoolData?.studentCount || 0);
-    const previousStudents =
-        allYearsData.length >= 2
-            ? Number(allYearsData[allYearsData.length - 2]?.studentCount || 0)
-            : 0;
-    const studentsPercentChange = calculatePercentChange(
-        currentStudents,
-        previousStudents,
-    );
+    const firstYearNumeric = Number(schoolData?.firstYear);
+    const isOldestSchoolYearSelected =
+        year !== null &&
+        Number.isFinite(firstYearNumeric) &&
+        year === firstYearNumeric;
+    const trendIndicatorsUnavailable =
+        projectsPercentChange === null &&
+        teachersPercentChange === null &&
+        studentsPercentChange === null;
+    const showComparisonWarning =
+        isOldestSchoolYearSelected && trendIndicatorsUnavailable;
 
     if (!schoolData) {
         return (
@@ -213,14 +244,14 @@ export default function SchoolProfilePage() {
                         <Skeleton className="h-8 w-64" />
                         <div className="ml-auto">
                             <YearDropdown
-                                showDataIndicator={true}
                                 selectedYear={year}
                                 onYearChange={(selectedYear) => {
                                     if (selectedYear !== null) {
                                         setYear(selectedYear);
                                     }
                                 }}
-                                school={decodeURIComponent(schoolName)}
+                                showDataIndicator={true}
+                                school={schoolName}
                             />
                         </div>
                     </div>
@@ -262,19 +293,35 @@ export default function SchoolProfilePage() {
                     )}
                     <div className="ml-auto">
                         <YearDropdown
-                            showDataIndicator={true}
                             selectedYear={year}
                             onYearChange={(selectedYear) => {
                                 if (selectedYear !== null) {
                                     setYear(selectedYear);
                                 }
                             }}
-                            school={schoolData.name}
+                            showDataIndicator={true}
+                            school={schoolName}
                         />
                     </div>
                 </div>
 
                 {/* Stats cards */}
+                {showComparisonWarning && showPrevYearWarning && (
+                    <div className="flex items-center gap-2 px-4 py-2 bg-yellow-50 border border-yellow-200 text-yellow-900 text-sm rounded-md">
+                        <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                        <span className="flex-1">
+                            This is the earliest year of available data —
+                            year-over-year comparisons are not available.
+                        </span>
+                        <button
+                            onClick={() => setShowPrevYearWarning(false)}
+                            className="flex-shrink-0 hover:bg-yellow-100 rounded p-1"
+                            aria-label="Dismiss"
+                        >
+                            <X className="h-4 w-4" />
+                        </button>
+                    </div>
+                )}
                 <div className="grid grid-cols-3 gap-8">
                     <StatCard
                         label={ENTITY_CONFIG.projects.label}
@@ -284,7 +331,8 @@ export default function SchoolProfilePage() {
                         sparklineData={projectsSparkline}
                         sparklineStroke={ENTITY_CONFIG.projects.colorMid}
                         sparklineFill={ENTITY_CONFIG.projects.colorMuted}
-                        percentChange={projectsPercentChange ?? undefined}
+                        percentChange={projectsPercentChange}
+                        showTrend={true}
                         variant="with-aspect"
                     />
                     <StatCard
@@ -295,7 +343,8 @@ export default function SchoolProfilePage() {
                         sparklineData={teachersSparkline}
                         sparklineStroke={ENTITY_CONFIG.teachers.colorMid}
                         sparklineFill={ENTITY_CONFIG.teachers.colorMuted}
-                        percentChange={teachersPercentChange ?? undefined}
+                        percentChange={teachersPercentChange}
+                        showTrend={true}
                         variant="with-aspect"
                     />
                     <StatCard
@@ -306,7 +355,8 @@ export default function SchoolProfilePage() {
                         sparklineData={studentsSparkline}
                         sparklineStroke={ENTITY_CONFIG.students.colorMid}
                         sparklineFill={ENTITY_CONFIG.students.colorMuted}
-                        percentChange={studentsPercentChange ?? undefined}
+                        percentChange={studentsPercentChange}
+                        showTrend={true}
                         variant="with-aspect"
                     />
                 </div>
@@ -331,13 +381,15 @@ export default function SchoolProfilePage() {
                     />
                 </Link>
 
-                {/* Placeholders for charts */}
+                {/* Project type distribution — same 3-col grid as stats; spans 2 cells */}
                 <div className="grid grid-cols-3 gap-8">
-                    <PlaceholderCard
-                        title="Region Distribution"
-                        className="col-span-2"
-                    />
-                    <PlaceholderCard title="% Highschool" />
+                    <div className="col-span-2 min-w-0">
+                        <PieChart
+                            slices={projectCategoryDistribution(projects)}
+                            legendTitle="Project Type Distribution"
+                            emptyMessage="No project data"
+                        />
+                    </div>
                 </div>
 
                 {/* School location map */}
@@ -398,30 +450,6 @@ export default function SchoolProfilePage() {
                         key={`${schoolName}-${year}`}
                         initialData={projects}
                     />
-                </div>
-            </div>
-        </div>
-    );
-}
-
-// Reusable placeholder card component
-function PlaceholderCard({
-    title,
-    className = "",
-}: {
-    title: string;
-    className?: string;
-}) {
-    return (
-        <div className={`border border-border rounded-lg p-6 ${className}`}>
-            <div className="h-48 flex items-center justify-center bg-muted rounded">
-                <div className="text-center">
-                    <p className="text-sm font-semibold text-foreground">
-                        {title}
-                    </p>
-                    <p className="text-sm text-muted-foreground mt-2">
-                        Chart placeholder
-                    </p>
                 </div>
             </div>
         </div>

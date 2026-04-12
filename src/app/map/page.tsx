@@ -13,7 +13,7 @@
 import { Map } from "@/components/ui/map";
 import { Suspense, useEffect, useState, useRef, useMemo } from "react";
 import { toast } from "sonner";
-import { Loader2, Link, Share } from "lucide-react";
+import { Loader2, Link, Share, CheckCircle2 } from "lucide-react";
 import { LoadError } from "@/components/ui/load-error";
 
 // queryStates required for URL sharing with nuqs
@@ -31,15 +31,16 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import YearDropdown from "@/components/YearDropdown";
 import CountDropdown from "@/components/CountDropdown";
 import { Button } from "@/components/ui/button";
+import {
+    Popover,
+    PopoverAnchor,
+    PopoverContent,
+} from "@/components/ui/popover";
 import { exportMapToPDF } from "@/lib/heatmap-export";
 import { useHeatmapLayers } from "@/hooks/useHeatmapLayers";
 import { Cart } from "@/components/Cart";
-import {
-    HoverCard,
-    HoverCardContent,
-    HoverCardTrigger,
-} from "@/components/ui/hover-card";
 import { PlusCircle } from "lucide-react";
+import { useCart } from "@/hooks/useCart";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -146,6 +147,7 @@ function HeatMapPage() {
 
     // Loading state
     const [isLoaded, setIsLoaded] = useState(false);
+    const [cartPopoverOpen, setCartPopoverOpen] = useState(false);
     const [schoolDataError, setSchoolDataError] = useState<string | null>(null);
 
     const copyURLtoClipboard = async () => {
@@ -237,45 +239,14 @@ function HeatMapPage() {
         });
     }, [regionView]);
 
-    const [cart, setCart] = useState<string[]>([]);
-
-    const [filterNames, setFilterNames] = useState<string[]>([]);
-
-    useEffect(() => {
-        const cartStorage = sessionStorage.getItem("cartStorage");
-        const cartNameStorage = sessionStorage.getItem("cartNameStorage");
-
-        if (cartStorage) {
-            setCart(JSON.parse(cartStorage));
-        }
-
-        if (cartNameStorage) {
-            setFilterNames(JSON.parse(cartNameStorage));
-        }
-    }, []);
-
-    // Update cart in session storage when user changes cart
-    useEffect(() => {
-        if (cart.length !== 0) {
-            sessionStorage.setItem("cartStorage", JSON.stringify(cart));
-        } else {
-            sessionStorage.removeItem("cartStorage");
-        }
-    }, [cart]);
-
-    // Update cart names when use changes the filters
-    useEffect(() => {
-        if (filterNames.length !== 0) {
-            sessionStorage.setItem(
-                "cartNameStorage",
-                JSON.stringify(filterNames),
-            );
-        } else {
-            sessionStorage.removeItem("cartNameStorage");
-        }
-    }, [filterNames]);
+    const { addMapItem, hasItem } = useCart();
 
     const filterName = `Heatmap - ${metric} ${onlyGatewaySchools ? " for Schools Representing Gateway Cities" : ""} in ${regionView === "Default" ? "MA" : regionView + ` Region `} (${year})`;
+
+    const mapInCart = hasItem(filterName);
+    useEffect(() => {
+        if (!mapInCart) setCartPopoverOpen(false);
+    }, [mapInCart]);
 
     return (
         <div className="flex p-8 flex-col h-screen w-full justify-center">
@@ -317,45 +288,48 @@ function HeatMapPage() {
                             </AlertDialogFooter>
                         </AlertDialogContent>
                     </AlertDialog>
-                    <HoverCard>
-                        <HoverCardTrigger
-                            delay={10}
-                            closeDelay={100}
-                            render={
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="flex items-center gap-2"
-                                    onClick={() => {
+                    <Popover
+                        open={cartPopoverOpen}
+                        onOpenChange={setCartPopoverOpen}
+                    >
+                        <PopoverAnchor asChild>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="flex items-center gap-2"
+                                onClick={() => {
+                                    if (mapInCart) {
+                                        setCartPopoverOpen((open) => !open);
+                                    } else {
                                         const map = mapRef.current;
                                         if (!map) return;
                                         const mapImageData = map
                                             .getCanvas()
                                             .toDataURL("image/jpeg", 0.5);
-                                        setCart([...cart, mapImageData]);
-                                        setFilterNames([
-                                            ...filterNames,
-                                            filterName,
-                                        ]);
-                                    }}
-                                >
-                                    <PlusCircle className="w-4 h-4" />
-                                    Add to
-                                </Button>
-                            }
-                        />
-                        <HoverCardContent
-                            className="flex flex-col gap-0.5 mt-2"
+                                        addMapItem(filterName, mapImageData);
+                                    }
+                                }}
+                            >
+                                {mapInCart ? (
+                                    <>
+                                        <CheckCircle2 className="w-4 h-4" />
+                                        View in cart
+                                    </>
+                                ) : (
+                                    <>
+                                        <PlusCircle className="w-4 h-4" />
+                                        Add to
+                                    </>
+                                )}
+                            </Button>
+                        </PopoverAnchor>
+                        <PopoverContent
+                            className="flex w-auto max-w-5xl flex-col gap-0.5 p-2"
                             align="end"
                         >
-                            <Cart
-                                filterNames={filterNames}
-                                cart={cart}
-                                setCart={setCart}
-                                setFilterNames={setFilterNames}
-                            />
-                        </HoverCardContent>
-                    </HoverCard>
+                            <Cart />
+                        </PopoverContent>
+                    </Popover>
                     <Button
                         variant="outline"
                         size="sm"
@@ -384,9 +358,9 @@ function HeatMapPage() {
                             Year
                         </label>
                         <YearDropdown
-                            showDataIndicator={true}
                             selectedYear={year}
                             onYearChange={setYear}
+                            showDataIndicator={true}
                         />
                     </div>
                     <div className="flex flex-col gap-1.5 w-48">

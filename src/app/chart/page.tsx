@@ -14,6 +14,7 @@
 import {
     CalendarDays,
     ChartColumn,
+    CheckCircle2,
     ChevronDown,
     LineChart,
     Link,
@@ -25,17 +26,18 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { toast } from "sonner";
 import { LoadError } from "@/components/ui/load-error";
-import BarGraph from "@/components/BarGraph";
-import { type ChartDataset } from "@/components/chartTypes";
+import BarGraph from "@/components/charts/BarGraph";
+import { type ChartDataset } from "@/components/charts/chartTypes";
 import GraphFilters, {
     type Filters,
     type GroupBy,
     type MeasuredAs,
 } from "@/components/GraphFilters/GraphFilters";
-import LineGraph from "@/components/LineGraph";
+import LineGraph from "@/components/charts/LineGraph";
 import { Button } from "@/components/ui/button";
 import {
     Popover,
+    PopoverAnchor,
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover";
@@ -58,58 +60,17 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { addToCart, downloadSingleGraph } from "@/lib/export-to-pdf";
-import {
-    HoverCard,
-    HoverCardContent,
-    HoverCardTrigger,
-} from "@/components/ui/hover-card";
+import { downloadSingleGraph } from "@/lib/export-to-pdf";
+import { useCart } from "@/hooks/useCart";
 import { Cart } from "@/components/Cart";
 import { Kbd } from "@/components/ui/kbd";
 import { useHotkey } from "@/hooks/useHotkey";
-
-type Project = {
-    id: number;
-    title: string;
-    division: string;
-    category: string;
-    gatewaySchool: string;
-    year: number;
-    teamProject: boolean;
-    schoolId: number;
-    schoolName: string;
-    standardizedSchoolName: string;
-    schoolTown: string;
-    schoolRegion: string;
-    teacherId: number;
-    teacherName: string;
-    teacherEmail: string;
-    numStudents: number;
-    schoolDivisions: string[] | null;
-    schoolImplementationModel: string | null;
-    schoolSchoolType: string | null;
-};
-
-// possible values for measured as filter
-const measuredAsLabels: Record<string, string> = {
-    "total-school-count": "Total Schools",
-    "total-student-count": "Total Students",
-    "total-city-count": "Total Cities",
-    "total-project-count": "Total Projects",
-    "total-teacher-count": "Total Teachers",
-    "school-return-rate": "School Return Rate",
-};
-
-// possible values for group by filter
-const groupByLabels: Record<string, string> = {
-    "none": "None",
-    "region": "Region",
-    "school-type": "School Type",
-    "division": "Division",
-    "implementation-model": "Implementation Model",
-    "project-type": "Project Type",
-    "gateway-school": "Schools Representing Gateway Cities",
-};
+import {
+    type Project,
+    measuredAsLabels,
+    groupByLabels,
+    computeGraphDataset,
+} from "@/lib/compute-chart-data";
 
 // Helper function for generating dynamic titles
 const generateChartTitle = (
@@ -193,6 +154,7 @@ export default function ChartPage() {
     const [gatewaySchools, setGatewaySchools] = useState<string[]>([]);
     const [isExporting, setIsExporting] = useState(false);
     const [exportDialogOpen, setExportDialogOpen] = useState(false);
+    const [cartPopoverOpen, setCartPopoverOpen] = useState(false);
     const [isLoaded, setIsLoaded] = useState(false);
     const [projectDataError, setProjectDataError] = useState<string | null>(
         null,
@@ -280,9 +242,7 @@ export default function ChartPage() {
         parseAsBoolean.withDefault(false),
     );
 
-    const [cart, setCart] = useState<string[]>([]);
-
-    const [filterNames, setFilterNames] = useState<string[]>([]);
+    const { addChartItem, hasItem } = useCart();
 
     const filters: Filters = useMemo(
         () => ({
@@ -363,8 +323,6 @@ export default function ChartPage() {
             });
     }, []);
 
-    /* Fetch and set cart to and from session storage to persist between refreshes */
-
     const filterName = generateChartTitle(
         chartType,
         measuredAs,
@@ -380,40 +338,10 @@ export default function ChartPage() {
         },
     );
 
-    // Fetch all graphs from session storage on load
+    const chartInCart = hasItem(filterName);
     useEffect(() => {
-        const cartStorage = sessionStorage.getItem("cartStorage");
-        const cartNameStorage = sessionStorage.getItem("cartNameStorage");
-
-        if (cartStorage) {
-            setCart(JSON.parse(cartStorage));
-        }
-
-        if (cartNameStorage) {
-            setFilterNames(JSON.parse(cartNameStorage));
-        }
-    }, []);
-
-    // Update cart in session storage when user changes cart
-    useEffect(() => {
-        if (cart.length !== 0) {
-            sessionStorage.setItem("cartStorage", JSON.stringify(cart));
-        } else {
-            sessionStorage.removeItem("cartStorage");
-        }
-    }, [cart]);
-
-    // Update cart names when use changes the filters
-    useEffect(() => {
-        if (filterNames.length !== 0) {
-            sessionStorage.setItem(
-                "cartNameStorage",
-                JSON.stringify(filterNames),
-            );
-        } else {
-            sessionStorage.removeItem("cartNameStorage");
-        }
-    }, [filterNames]);
+        if (!chartInCart) setCartPopoverOpen(false);
+    }, [chartInCart]);
 
     // Sync tempYearRange with yearRange only when popover opens in custom mode
     useEffect(() => {
@@ -462,248 +390,12 @@ export default function ChartPage() {
     // Memoize graph dataset calculation to run only when data or filters change
     const graphDataset: ChartDataset[] = useMemo(() => {
         if (!allProjects.length) return [];
-
-        // Pre-calculate teacher participation years if filter is active
-        const teacherYearsMap = new Map<number, number>();
-        if (filters?.teacherYearsValue) {
-            const tempMap: Record<number, Set<number>> = {};
-            allProjects.forEach((p) => {
-                if (!tempMap[p.teacherId]) tempMap[p.teacherId] = new Set();
-                tempMap[p.teacherId].add(p.year);
-            });
-            Object.entries(tempMap).forEach(([tId, yearsSet]) => {
-                teacherYearsMap.set(Number(tId), yearsSet.size);
-            });
-        }
-
-        // Filter projects based on the active filters
-        const filteredProjects = allProjects.filter((p) => {
-            if (!filters) return true;
-
-            // Year range filter
-            if (p.year < yearRange.start || p.year > yearRange.end) {
-                return false;
-            }
-
-            // Individual vs Group Projects
-            if (
-                filters.individualProjects &&
-                !filters.groupProjects &&
-                p.teamProject
-            )
-                return false;
-            if (
-                filters.groupProjects &&
-                !filters.individualProjects &&
-                !p.teamProject
-            )
-                return false;
-
-            // Selected Schools
-            if (
-                filters.selectedSchools.length > 0 &&
-                !filters.selectedSchools.includes(p.schoolName)
-            )
-                return false;
-
-            if (filters.onlyGatewaySchools && p.gatewaySchool !== "Gateway") {
-                return false;
-            }
-
-            // Selected Cities
-            if (
-                filters.selectedCities.length > 0 &&
-                !filters.selectedCities.includes(p.schoolTown)
-            )
-                return false;
-
-            // Selected Project Types
-            if (
-                filters.selectedProjectTypes.length > 0 &&
-                !filters.selectedProjectTypes.includes(p.category)
-            )
-                return false;
-
-            // Teacher Years Participation
-            if (filters.teacherYearsValue) {
-                const yearsActive = teacherYearsMap.get(p.teacherId) || 0;
-                const op = filters.teacherYearsOperator;
-
-                if (op === "=") {
-                    const target = parseInt(filters.teacherYearsValue, 10);
-                    if (yearsActive !== target) return false;
-                } else if (op === ">") {
-                    const target = parseInt(filters.teacherYearsValue, 10);
-                    if (yearsActive <= target) return false;
-                } else if (op === "<") {
-                    const target = parseInt(filters.teacherYearsValue, 10);
-                    if (yearsActive >= target) return false;
-                } else if (op === "between" && filters.teacherYearsValue2) {
-                    const min = parseInt(filters.teacherYearsValue, 10);
-                    const max = parseInt(filters.teacherYearsValue2, 10);
-                    if (yearsActive < min || yearsActive > max) return false;
-                }
-            }
-
-            return true;
+        setMeasuredAs(filters?.measuredAs || "total-school-count");
+        return computeGraphDataset(allProjects, {
+            filters,
+            yearStart: yearRange.start,
+            yearEnd: yearRange.end,
         });
-
-        function computeMetric(projects: Project[], metric: string) {
-            switch (metric) {
-                case "total-school-count":
-                    return new Set(projects.map((p) => p.schoolId)).size; // TO DO: Change to be something unique for a school (e.g. standardized name)
-
-                case "total-project-count":
-                    return projects.length;
-
-                case "total-school-count":
-                    return new Set(projects.map((p) => p.schoolName)).size;
-
-                case "total-student-count":
-                    return projects.reduce(
-                        (sum, p) => sum + (p.numStudents || 0),
-                        0,
-                    );
-
-                case "total-teacher-count":
-                    return new Set(projects.map((p) => p.teacherId)).size;
-
-                case "total-city-count":
-                    return new Set(projects.map((p) => p.schoolTown)).size;
-
-                case "school-return-rate": {
-                    const schoolsThisYear = new Set(
-                        projects.map((p) => p.schoolId),
-                    );
-                    const year = projects[0].year;
-                    const priorParticipation = allProjects.filter(
-                        (x) => schoolsThisYear.has(x.schoolId) && x.year < year,
-                    );
-                    const returningSchools = new Set(
-                        priorParticipation.map((p) => p.schoolId),
-                    );
-                    return returningSchools.size / schoolsThisYear.size || 0;
-                }
-
-                default:
-                    return projects.length;
-            }
-        }
-
-        function buildDatasets(
-            groups: string[],
-            getProjectsInGroup: (groupName: string) => Project[],
-        ) {
-            const metric = filters?.measuredAs || "total-school-count";
-            setMeasuredAs(metric as MeasuredAs);
-            return groups.map((groupName) => {
-                const projectsInGroup = getProjectsInGroup(groupName);
-                const projectsByYear: Record<number, Project[]> = {};
-                projectsInGroup.forEach((p) => {
-                    if (!projectsByYear[p.year]) projectsByYear[p.year] = [];
-                    projectsByYear[p.year].push(p);
-                });
-                const dataPoints = Object.entries(projectsByYear)
-                    .map(([year, projs]) => ({
-                        x: Number(year),
-                        y: computeMetric(projs, metric),
-                    }))
-                    .sort((a, b) => a.x - b.x);
-                return { label: groupName, data: dataPoints };
-            });
-        }
-
-        // Division groupby: school-level array field, one project can belong to multiple groups
-        if (filters.groupBy === "division") {
-            const normalizeDivision = (d: string): string => {
-                const lower = d.toLowerCase();
-                if (lower.startsWith("junior")) return "Junior";
-                if (lower.startsWith("senior")) return "Senior";
-                if (lower.startsWith("young")) return "Young Historian";
-                return d;
-            };
-
-            const allDivisionGroups = new Set<string>();
-            filteredProjects.forEach((p) => {
-                const divs = p.schoolDivisions;
-                if (!divs || divs.length === 0) {
-                    allDivisionGroups.add("Unassigned");
-                } else {
-                    divs.forEach((d) =>
-                        allDivisionGroups.add(normalizeDivision(d)),
-                    );
-                }
-            });
-
-            const divisionGroups = Array.from(allDivisionGroups).sort((a, b) =>
-                a === "Unassigned"
-                    ? 1
-                    : b === "Unassigned"
-                      ? -1
-                      : a.localeCompare(b),
-            );
-
-            return buildDatasets(divisionGroups, (groupName) =>
-                filteredProjects.filter((p) => {
-                    const divs = p.schoolDivisions;
-                    if (groupName === "Unassigned")
-                        return !divs || divs.length === 0;
-                    return (
-                        divs?.some((d) => normalizeDivision(d) === groupName) ??
-                        false
-                    );
-                }),
-            );
-        }
-
-        // Determine the key to group data by for all other groupBys
-        let groupKey: keyof Project | null = null;
-
-        switch (filters.groupBy) {
-            case "none":
-                groupKey = null;
-                break;
-            case "project-type":
-                groupKey = "category";
-                break;
-            case "region":
-                groupKey = "schoolRegion";
-                break;
-            case "school-type":
-                groupKey = "schoolSchoolType";
-                break;
-            case "implementation-model":
-                groupKey = "schoolImplementationModel";
-                break;
-            case "gateway-school":
-                groupKey = "gatewaySchool";
-                break;
-        }
-
-        const uniqueGroups =
-            groupKey === null
-                ? ["All"]
-                : Array.from(
-                      new Set(
-                          filteredProjects.map((p) =>
-                              String(p[groupKey] || "Unassigned"),
-                          ),
-                      ),
-                  ).sort((a, b) =>
-                      a === "Unassigned"
-                          ? 1
-                          : b === "Unassigned"
-                            ? -1
-                            : a.localeCompare(b),
-                  );
-
-        return buildDatasets(uniqueGroups, (groupName) =>
-            groupKey === null
-                ? filteredProjects
-                : filteredProjects.filter(
-                      (p) => String(p[groupKey] || "Unassigned") === groupName,
-                  ),
-        );
     }, [
         allProjects,
         selectedSchools,
@@ -881,43 +573,52 @@ export default function ChartPage() {
                                     </AlertDialogFooter>
                                 </AlertDialogContent>
                             </AlertDialog>
-                            <HoverCard>
-                                <HoverCardTrigger
-                                    delay={10}
-                                    closeDelay={100}
-                                    render={
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            className="flex items-center gap-2"
-                                            onClick={() =>
-                                                addToCart(
-                                                    chartRef,
-                                                    cart,
-                                                    setCart,
-                                                    filterNames,
-                                                    setFilterNames,
-                                                    filterName,
-                                                )
+                            <Popover
+                                open={cartPopoverOpen}
+                                onOpenChange={setCartPopoverOpen}
+                            >
+                                <PopoverAnchor asChild>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="flex items-center gap-2"
+                                        onClick={() => {
+                                            if (chartInCart) {
+                                                setCartPopoverOpen(
+                                                    (open) => !open,
+                                                );
+                                            } else {
+                                                addChartItem(filterName, {
+                                                    chartType: chartType as
+                                                        | "bar"
+                                                        | "line",
+                                                    filters,
+                                                    yearStart: yearRange.start,
+                                                    yearEnd: yearRange.end,
+                                                });
                                             }
-                                        >
-                                            <PlusCircle className="w-4 h-4" />
-                                            Add to
-                                        </Button>
-                                    }
-                                />
-                                <HoverCardContent
-                                    className="flex flex-col gap-0.5 mt-2"
+                                        }}
+                                    >
+                                        {chartInCart ? (
+                                            <>
+                                                <CheckCircle2 className="w-4 h-4" />
+                                                View in cart
+                                            </>
+                                        ) : (
+                                            <>
+                                                <PlusCircle className="w-4 h-4" />
+                                                Add to
+                                            </>
+                                        )}
+                                    </Button>
+                                </PopoverAnchor>
+                                <PopoverContent
+                                    className="flex w-auto max-w-5xl flex-col gap-0.5 p-2"
                                     align="end"
                                 >
-                                    <Cart
-                                        filterNames={filterNames}
-                                        cart={cart}
-                                        setCart={setCart}
-                                        setFilterNames={setFilterNames}
-                                    />
-                                </HoverCardContent>
-                            </HoverCard>
+                                    <Cart />
+                                </PopoverContent>
+                            </Popover>
 
                             <Button
                                 variant="outline"

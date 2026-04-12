@@ -10,7 +10,7 @@
  **************************************************************/
 
 "use client";
-import { useState, ReactNode } from "react";
+import { useState, useMemo, ReactNode } from "react";
 import { TrendingUp, TrendingDown, Minus, AlertCircle, X } from "lucide-react";
 import { standardize } from "@/lib/string-standardize";
 
@@ -91,6 +91,18 @@ export function SchoolsDataTable<TData, TValue>({
      * returns: A lucide react icon, either up arrow, down arrow, or dash, and a
      *          number corresponding to the percent change
      */
+    // Build a name→row map so trend lookup is O(1) and immune to sort order
+    const prevDataMap = useMemo(() => {
+        const map = new Map<string, Record<string, number>>();
+        for (const row of prevData) {
+            const r = row as Record<string, unknown>;
+            if (typeof r.name === "string") {
+                map.set(r.name, r as Record<string, number>);
+            }
+        }
+        return map;
+    }, [prevData]);
+
     function yoyChange(cell: Cell<TData, number>, row: Row<TData>): ReactNode {
         // Check if it is in students/teachers/projects column
         if (
@@ -100,15 +112,19 @@ export function SchoolsDataTable<TData, TValue>({
         ) {
             return <></>;
         }
-        const rowIndex: number = row.index;
-        const prevRow = prevData[rowIndex] as Record<string, number>;
+
+        const schoolName = (row.original as Record<string, unknown>)
+            .name as string;
+        const prevRow = prevDataMap.get(schoolName);
 
         if (!prevRow) return <></>;
-        const prevYearValue: number = prevRow[cell.column.id] ?? 0;
-        const diff = cell.getValue() - prevYearValue;
+        const prevYearValue: number = (prevRow[cell.column.id] as number) ?? 0;
+        const currValue: number = cell.getValue();
 
-        const percentChange =
-            prevYearValue !== 0 ? Math.abs(diff / prevYearValue) * 100 : 0;
+        if (currValue === 0 || prevYearValue === 0) return <></>;
+
+        const diff = currValue - prevYearValue;
+        const percentChange = Math.abs(diff / prevYearValue) * 100;
 
         const formattedPercent = percentChange.toFixed(0);
         if (percentChange < 0.5) {
