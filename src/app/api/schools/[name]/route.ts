@@ -230,7 +230,7 @@ export async function GET(
         const year = Number(searchParams.get("year"));
         const { name } = await params;
 
-        // Match on lowercase formatted name
+        // Match on standardized name
         const schoolResult = await db
             .select()
             .from(schools)
