@@ -508,20 +508,19 @@ export default function SpreadsheetState() {
             </div>
 
             <div className={`flex-1 ${tabIndex === 2 ? "w-full" : ""}`}>
-                {isSubmitting ? (
-                    <div className="flex flex-col items-center gap-4 mt-8 w-full max-w-md">
-                        <div className="w-full bg-gray-200 rounded-full h-4">
+                {tab}
+                {isSubmitting && tabIndex === 3 && (
+                    <div className="flex flex-col gap-2 mt-4 w-full max-w-lg">
+                        <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
                             <div
-                                className="bg-primary h-4 rounded-full transition-all duration-300"
+                                className="bg-primary h-2 rounded-full transition-all duration-300"
                                 style={{ width: `${progress}%` }}
                             />
                         </div>
                         <p className="text-sm text-muted-foreground">
-                            Progress: ({progress}%)
+                            Uploading... {progress}%
                         </p>
                     </div>
-                ) : (
-                    tab
                 )}
             </div>
 
