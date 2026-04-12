@@ -14,6 +14,7 @@
 "use client";
 
 import { type ReactElement, useEffect, useState, useCallback } from "react";
+import { CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import SpreadsheetStatusBar from "@/components/SpreadsheetStatusBar";
@@ -72,6 +73,8 @@ export default function SpreadsheetState() {
     >(new Map());
     const [currentSchoolIndex, setCurrentSchoolIndex] = useState(0);
     const [progress, setProgress] = useState<number>(0);
+    const [uploadSuccess, setUploadSuccess] = useState(false);
+    const [uploadedYear, setUploadedYear] = useState<number | null>(null);
 
     // Handler for when a school location is assigned via the map
     const handleSchoolLocationAssigned = useCallback(
@@ -230,10 +233,10 @@ export default function SpreadsheetState() {
         reader.readAsBinaryString(file);
     };
 
-    const handleSubmit = async () => {
+    const handleSubmit = async (): Promise<boolean> => {
         if (spreadsheetData.length === 0) {
             toast.warning("No data to upload.");
-            return;
+            return false;
         }
 
         setIsSubmitting(true);
@@ -286,10 +289,7 @@ export default function SpreadsheetState() {
             });
 
             if (response.ok) {
-                const data = await response.json();
-                toast.success(
-                    `Data uploaded successfully! Processed ${data.rowsProcessed || spreadsheetData.length - 1} rows.`,
-                );
+                return true;
             } else {
                 const errorData = await response.json();
                 throw new Error(errorData.message || "Failed to upload data");
@@ -300,9 +300,19 @@ export default function SpreadsheetState() {
                     ? `Error uploading data: ${error.message}`
                     : "Error uploading data. Please try again.",
             );
+            return false;
         } finally {
             setIsSubmitting(false);
         }
+    };
+
+    const resetToUpload = () => {
+        setUploadSuccess(false);
+        setUploadedYear(null);
+        setProgress(0);
+        setConfirmed(false);
+        setFile(undefined);
+        switchTab(0);
     };
 
     const next = async () => {
@@ -324,9 +334,14 @@ export default function SpreadsheetState() {
                 }
                 // All schools done, proceed to confirmation
             }
-            // If on confirmation page (index 3), submit data
+            // If on confirmation page (index 3), submit data and show success
             if (tabIndex === 3) {
-                await handleSubmit();
+                const success = await handleSubmit();
+                if (success) {
+                    setUploadedYear(year);
+                    setUploadSuccess(true);
+                }
+                return;
             }
             switchTab((tabIndex + 1) % 4);
         }
@@ -508,47 +523,75 @@ export default function SpreadsheetState() {
             </div>
 
             <div className={`flex-1 ${tabIndex === 2 ? "w-full" : ""}`}>
-                {tab}
-                {isSubmitting && tabIndex === 3 && (
-                    <div className="flex flex-col gap-2 mt-4 w-full max-w-lg">
-                        <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-                            <div
-                                className="bg-primary h-2 rounded-full transition-all duration-300"
-                                style={{ width: `${progress}%` }}
-                            />
+                {uploadSuccess ? (
+                    <div className="flex flex-col items-center gap-6 mt-8 max-w-lg text-center">
+                        <CheckCircle2 className="h-14 w-14 text-green-500" />
+                        <div className="flex flex-col gap-2">
+                            <h1 className="text-2xl font-bold">
+                                Upload complete
+                            </h1>
+                            <p className="text-muted-foreground">
+                                Data for{" "}
+                                <span className="font-medium text-foreground">
+                                    {uploadedYear}
+                                </span>{" "}
+                                was successfully uploaded.
+                            </p>
                         </div>
-                        <p className="text-sm text-muted-foreground">
-                            Uploading... {progress}%
-                        </p>
+                        <button
+                            className="mt-2 py-1 w-48 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer transition duration-300"
+                            onClick={resetToUpload}
+                        >
+                            Upload another year
+                        </button>
                     </div>
+                ) : (
+                    <>
+                        {tab}
+                        {isSubmitting && tabIndex === 3 && (
+                            <div className="flex flex-col gap-2 mt-4 w-full max-w-lg">
+                                <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                                    <div
+                                        className="bg-primary h-2 rounded-full transition-all duration-300"
+                                        style={{ width: `${progress}%` }}
+                                    />
+                                </div>
+                                <p className="text-sm text-muted-foreground">
+                                    Uploading... {progress}%
+                                </p>
+                            </div>
+                        )}
+                    </>
                 )}
             </div>
 
-            <div
-                className={`flex justify-between pb-4 ${tabIndex === 2 ? "w-full" : "w-full"}`}
-            >
-                {canPrevious && (
-                    <button
-                        className="py-1 w-40 rounded-lg bg-card text-foreground border border-border hover:bg-accent hover:cursor-pointer transition duration-300"
-                        onClick={previous}
-                        disabled={isSubmitting}
-                    >
-                        Previous
-                    </button>
-                )}
-
-                <button
-                    className={
-                        canNext
-                            ? "ml-auto py-1 w-40 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer transition duration-300 disabled:bg-muted disabled:cursor-not-allowed"
-                            : "ml-auto py-1 w-40 rounded-lg bg-gray-400 text-primary-foreground transition duration-300 cursor-not-allowed"
-                    }
-                    onClick={next}
-                    disabled={!canNext || isSubmitting}
+            {!uploadSuccess && (
+                <div
+                    className={`flex justify-between pb-4 ${tabIndex === 2 ? "w-full" : "w-full"}`}
                 >
-                    {isSubmitting ? "Uploading..." : nextText}
-                </button>
-            </div>
+                    {canPrevious && (
+                        <button
+                            className="py-1 w-40 rounded-lg bg-card text-foreground border border-border hover:bg-accent hover:cursor-pointer transition duration-300"
+                            onClick={previous}
+                            disabled={isSubmitting}
+                        >
+                            Previous
+                        </button>
+                    )}
+
+                    <button
+                        className={
+                            canNext
+                                ? "ml-auto py-1 w-40 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer transition duration-300 disabled:bg-muted disabled:cursor-not-allowed"
+                                : "ml-auto py-1 w-40 rounded-lg bg-gray-400 text-primary-foreground transition duration-300 cursor-not-allowed"
+                        }
+                        onClick={next}
+                        disabled={!canNext || isSubmitting}
+                    >
+                        {isSubmitting ? "Uploading..." : nextText}
+                    </button>
+                </div>
+            )}
         </div>
     );
 }
