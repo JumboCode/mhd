@@ -11,14 +11,7 @@
  **************************************************************/
 
 import { Map } from "@/components/ui/map";
-import {
-    Suspense,
-    useCallback,
-    useEffect,
-    useState,
-    useRef,
-    useMemo,
-} from "react";
+import { Suspense, useEffect, useState, useRef, useMemo } from "react";
 import { toast } from "sonner";
 import {
     Loader2,
