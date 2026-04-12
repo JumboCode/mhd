@@ -33,12 +33,31 @@ export default function StatusBar({
     const fillPercentage = (visualStep / 3) * 100;
     const barColor = hasError ? "bg-destructive" : "bg-primary";
 
+    const dotColor = hasError ? "bg-destructive" : "bg-primary";
+    const dots = [0, 1, 2, 3];
+
     return (
-        <div className="w-full h-1 bg-muted rounded-full">
-            <div
-                className={`h-1 ${barColor} rounded-full transition-all duration-300`}
-                style={{ width: `${fillPercentage}%` }}
-            />
+        <div className="relative w-full">
+            <div className="w-full h-0.5 bg-muted rounded-full">
+                <div
+                    className={`h-0.5 ${barColor} rounded-full transition-all duration-300`}
+                    style={{ width: `${fillPercentage}%` }}
+                />
+            </div>
+            {dots.map((step) => {
+                const filled = visualStep >= step;
+                return (
+                    <div
+                        key={step}
+                        className={`absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full border-2 transition-all duration-300 ${
+                            filled
+                                ? `${dotColor} border-transparent`
+                                : "bg-background border-muted"
+                        }`}
+                        style={{ left: `${(step / 3) * 100}%` }}
+                    />
+                );
+            })}
         </div>
     );
 }

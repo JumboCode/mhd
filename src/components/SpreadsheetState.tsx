@@ -548,7 +548,7 @@ export default function SpreadsheetState() {
         <div
             className={`flex flex-col items-center justify-between mx-auto py-8 gap-12 ${isWideTab ? "w-full max-w-[90vw] px-8" : "max-w-2xl"}`}
         >
-            <div className={`w-full ${isWideTab ? "max-w-xl" : "max-w-md"}`}>
+            <div className="w-full max-w-md">
                 <div className="mb-2">
                     <SpreadsheetStatusBar
                         tabIndex={tabIndex}
