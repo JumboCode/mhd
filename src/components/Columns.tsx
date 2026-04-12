@@ -101,6 +101,7 @@ export function createColumns(): ColumnDef<Schools>[] {
             header: ({ column }) => (
                 <SortableHeader column={column} label="Division" />
             ),
+            cell: ({ getValue }) => (getValue() as string[]).join(", "),
         },
         {
             accessorKey: "implementationModel",

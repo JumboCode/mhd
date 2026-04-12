@@ -21,12 +21,16 @@ export type Project = {
     teamProject: boolean;
     schoolId: number;
     schoolName: string;
+    standardizedSchoolName: string;
     schoolTown: string;
     schoolRegion: string;
     teacherId: number;
     teacherName: string;
     teacherEmail: string;
     numStudents: number;
+    schoolDivisions: string[] | null;
+    schoolImplementationModel: string | null;
+    schoolSchoolType: string | null;
 };
 
 export const measuredAsLabels: Record<string, string> = {

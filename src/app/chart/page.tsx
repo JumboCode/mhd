@@ -65,12 +65,49 @@ import { useCart } from "@/hooks/useCart";
 import { Cart } from "@/components/Cart";
 import { Kbd } from "@/components/ui/kbd";
 import { useHotkey } from "@/hooks/useHotkey";
-import {
-    type Project,
-    measuredAsLabels,
-    groupByLabels,
-    computeGraphDataset,
-} from "@/lib/compute-chart-data";
+
+type Project = {
+    id: number;
+    title: string;
+    division: string;
+    category: string;
+    gatewaySchool: string;
+    year: number;
+    teamProject: boolean;
+    schoolId: number;
+    schoolName: string;
+    standardizedSchoolName: string;
+    schoolTown: string;
+    schoolRegion: string;
+    teacherId: number;
+    teacherName: string;
+    teacherEmail: string;
+    numStudents: number;
+    schoolDivisions: string[] | null;
+    schoolImplementationModel: string | null;
+    schoolSchoolType: string | null;
+};
+
+// possible values for measured as filter
+const measuredAsLabels: Record<string, string> = {
+    "total-school-count": "Total Schools",
+    "total-student-count": "Total Students",
+    "total-city-count": "Total Cities",
+    "total-project-count": "Total Projects",
+    "total-teacher-count": "Total Teachers",
+    "school-return-rate": "School Return Rate",
+};
+
+// possible values for group by filter
+const groupByLabels: Record<string, string> = {
+    "none": "None",
+    "region": "Region",
+    "school-type": "School Type",
+    "division": "Division",
+    "implementation-model": "Implementation Model",
+    "project-type": "Project Type",
+    "gateway-school": "Schools Representing Gateway Cities",
+};
 
 // Helper function for generating dynamic titles
 const generateChartTitle = (
@@ -390,12 +427,245 @@ export default function ChartPage() {
     // Memoize graph dataset calculation to run only when data or filters change
     const graphDataset: ChartDataset[] = useMemo(() => {
         if (!allProjects.length) return [];
-        setMeasuredAs(filters?.measuredAs || "total-school-count");
-        return computeGraphDataset(allProjects, {
-            filters,
-            yearStart: yearRange.start,
-            yearEnd: yearRange.end,
+
+        // Pre-calculate teacher participation years if filter is active
+        const teacherYearsMap = new Map<number, number>();
+        if (filters?.teacherYearsValue) {
+            const tempMap: Record<number, Set<number>> = {};
+            allProjects.forEach((p) => {
+                if (!tempMap[p.teacherId]) tempMap[p.teacherId] = new Set();
+                tempMap[p.teacherId].add(p.year);
+            });
+            Object.entries(tempMap).forEach(([tId, yearsSet]) => {
+                teacherYearsMap.set(Number(tId), yearsSet.size);
+            });
+        }
+
+        // Filter projects based on the active filters
+        const filteredProjects = allProjects.filter((p) => {
+            if (!filters) return true;
+
+            // Year range filter
+            if (p.year < yearRange.start || p.year > yearRange.end) {
+                return false;
+            }
+
+            // Individual vs Group Projects
+            if (
+                filters.individualProjects &&
+                !filters.groupProjects &&
+                p.teamProject
+            )
+                return false;
+            if (
+                filters.groupProjects &&
+                !filters.individualProjects &&
+                !p.teamProject
+            )
+                return false;
+
+            // Selected Schools
+            if (
+                filters.selectedSchools.length > 0 &&
+                !filters.selectedSchools.includes(p.schoolName)
+            )
+                return false;
+
+            if (filters.onlyGatewaySchools && p.gatewaySchool !== "Gateway") {
+                return false;
+            }
+
+            // Selected Cities
+            if (
+                filters.selectedCities.length > 0 &&
+                !filters.selectedCities.includes(p.schoolTown)
+            )
+                return false;
+
+            // Selected Project Types
+            if (
+                filters.selectedProjectTypes.length > 0 &&
+                !filters.selectedProjectTypes.includes(p.category)
+            )
+                return false;
+
+            // Teacher Years Participation
+            if (filters.teacherYearsValue) {
+                const yearsActive = teacherYearsMap.get(p.teacherId) || 0;
+                const op = filters.teacherYearsOperator;
+
+                if (op === "=") {
+                    const target = parseInt(filters.teacherYearsValue, 10);
+                    if (yearsActive !== target) return false;
+                } else if (op === ">") {
+                    const target = parseInt(filters.teacherYearsValue, 10);
+                    if (yearsActive <= target) return false;
+                } else if (op === "<") {
+                    const target = parseInt(filters.teacherYearsValue, 10);
+                    if (yearsActive >= target) return false;
+                } else if (op === "between" && filters.teacherYearsValue2) {
+                    const min = parseInt(filters.teacherYearsValue, 10);
+                    const max = parseInt(filters.teacherYearsValue2, 10);
+                    if (yearsActive < min || yearsActive > max) return false;
+                }
+            }
+
+            return true;
         });
+
+        function computeMetric(projects: Project[], metric: string) {
+            switch (metric) {
+                case "total-school-count":
+                    return new Set(projects.map((p) => p.schoolId)).size;
+
+                case "total-project-count":
+                    return projects.length;
+
+                case "total-student-count":
+                    return projects.reduce(
+                        (sum, p) => sum + (p.numStudents || 0),
+                        0,
+                    );
+
+                case "total-teacher-count":
+                    return new Set(projects.map((p) => p.teacherId)).size;
+
+                case "total-city-count":
+                    return new Set(projects.map((p) => p.schoolTown)).size;
+
+                case "school-return-rate": {
+                    const schoolsThisYear = new Set(
+                        projects.map((p) => p.schoolId),
+                    );
+                    const year = projects[0].year;
+                    const priorParticipation = allProjects.filter(
+                        (x) => schoolsThisYear.has(x.schoolId) && x.year < year,
+                    );
+                    const returningSchools = new Set(
+                        priorParticipation.map((p) => p.schoolId),
+                    );
+                    return returningSchools.size / schoolsThisYear.size || 0;
+                }
+
+                default:
+                    return projects.length;
+            }
+        }
+
+        function buildDatasets(
+            groups: string[],
+            getProjectsInGroup: (groupName: string) => Project[],
+        ) {
+            const metric = filters?.measuredAs || "total-school-count";
+            setMeasuredAs(metric as MeasuredAs);
+            return groups.map((groupName) => {
+                const projectsInGroup = getProjectsInGroup(groupName);
+                const projectsByYear: Record<number, Project[]> = {};
+                projectsInGroup.forEach((p) => {
+                    if (!projectsByYear[p.year]) projectsByYear[p.year] = [];
+                    projectsByYear[p.year].push(p);
+                });
+                const dataPoints = Object.entries(projectsByYear)
+                    .map(([year, projs]) => ({
+                        x: Number(year),
+                        y: computeMetric(projs, metric),
+                    }))
+                    .sort((a, b) => a.x - b.x);
+                return { label: groupName, data: dataPoints };
+            });
+        }
+
+        // Division groupby: school-level array field, one project can belong to multiple groups
+        if (filters.groupBy === "division") {
+            const normalizeDivision = (d: string): string => {
+                const lower = d.toLowerCase();
+                if (lower.startsWith("junior")) return "Junior";
+                if (lower.startsWith("senior")) return "Senior";
+                if (lower.startsWith("young")) return "Young Historian";
+                return d;
+            };
+
+            const allDivisionGroups = new Set<string>();
+            filteredProjects.forEach((p) => {
+                const divs = p.schoolDivisions;
+                if (!divs || divs.length === 0) {
+                    allDivisionGroups.add("Unassigned");
+                } else {
+                    divs.forEach((d) =>
+                        allDivisionGroups.add(normalizeDivision(d)),
+                    );
+                }
+            });
+
+            const divisionGroups = Array.from(allDivisionGroups).sort((a, b) =>
+                a === "Unassigned"
+                    ? 1
+                    : b === "Unassigned"
+                      ? -1
+                      : a.localeCompare(b),
+            );
+
+            return buildDatasets(divisionGroups, (groupName) =>
+                filteredProjects.filter((p) => {
+                    const divs = p.schoolDivisions;
+                    if (groupName === "Unassigned")
+                        return !divs || divs.length === 0;
+                    return (
+                        divs?.some((d) => normalizeDivision(d) === groupName) ??
+                        false
+                    );
+                }),
+            );
+        }
+
+        // Determine the key to group data by for all other groupBys
+        let groupKey: keyof Project | null = null;
+
+        switch (filters.groupBy) {
+            case "none":
+                groupKey = null;
+                break;
+            case "project-type":
+                groupKey = "category";
+                break;
+            case "region":
+                groupKey = "schoolRegion";
+                break;
+            case "school-type":
+                groupKey = "schoolSchoolType";
+                break;
+            case "implementation-model":
+                groupKey = "schoolImplementationModel";
+                break;
+            case "gateway-school":
+                groupKey = "gatewaySchool";
+                break;
+        }
+
+        const uniqueGroups =
+            groupKey === null
+                ? ["All"]
+                : Array.from(
+                      new Set(
+                          filteredProjects.map((p) =>
+                              String(p[groupKey] || "Unassigned"),
+                          ),
+                      ),
+                  ).sort((a, b) =>
+                      a === "Unassigned"
+                          ? 1
+                          : b === "Unassigned"
+                            ? -1
+                            : a.localeCompare(b),
+                  );
+
+        return buildDatasets(uniqueGroups, (groupName) =>
+            groupKey === null
+                ? filteredProjects
+                : filteredProjects.filter(
+                      (p) => String(p[groupKey] || "Unassigned") === groupName,
+                  ),
+        );
     }, [
         allProjects,
         selectedSchools,
