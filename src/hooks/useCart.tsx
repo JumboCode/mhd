@@ -53,6 +53,7 @@ type CartContextValue = {
     addChartItem: (filterName: string, params: ChartCartParams) => void;
     addMapItem: (filterName: string, imageDataUrl: string) => void;
     removeItem: (index: number) => void;
+    removeByName: (filterName: string) => void;
     clearCart: () => void;
     exportAll: () => Promise<void>;
     isExporting: boolean;
@@ -201,6 +202,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
         setItems((prev) => prev.filter((_, i) => i !== index));
     }, []);
 
+    const removeByName = useCallback((filterName: string) => {
+        setItems((prev) => prev.filter((i) => i.filterName !== filterName));
+    }, []);
+
     const hasItem = useCallback(
         (filterName: string) => items.some((i) => i.filterName === filterName),
         [items],
@@ -309,6 +314,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
                 addChartItem,
                 addMapItem,
                 removeItem,
+                removeByName,
                 clearCart,
                 exportAll,
                 isExporting,

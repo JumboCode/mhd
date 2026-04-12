@@ -285,7 +285,7 @@ export default function ChartPage() {
         parseAsBoolean.withDefault(false),
     );
 
-    const { items, addChartItem, hasItem } = useCart();
+    const { items, addChartItem, hasItem, removeByName } = useCart();
 
     const filters: Filters = useMemo(
         () => ({
@@ -849,21 +849,26 @@ export default function ChartPage() {
                             <Button
                                 variant="outline"
                                 size="sm"
-                                disabled={chartInCart}
                                 className="flex items-center gap-2"
                                 onClick={() => {
-                                    addChartItem(filterName, {
-                                        chartType: chartType as "bar" | "line",
-                                        filters,
-                                        yearStart: yearRange.start,
-                                        yearEnd: yearRange.end,
-                                    });
+                                    if (chartInCart) {
+                                        removeByName(filterName);
+                                    } else {
+                                        addChartItem(filterName, {
+                                            chartType: chartType as
+                                                | "bar"
+                                                | "line",
+                                            filters,
+                                            yearStart: yearRange.start,
+                                            yearEnd: yearRange.end,
+                                        });
+                                    }
                                 }}
                             >
                                 {chartInCart ? (
                                     <>
                                         <CheckCircle2 className="w-4 h-4" />
-                                        Added
+                                        Remove
                                     </>
                                 ) : (
                                     <>

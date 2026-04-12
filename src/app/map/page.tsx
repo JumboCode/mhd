@@ -246,7 +246,7 @@ function HeatMapPage() {
         });
     }, [regionView]);
 
-    const { items, addMapItem, hasItem } = useCart();
+    const { items, addMapItem, hasItem, removeByName } = useCart();
 
     const filterName = `Heatmap - ${metric} ${onlyGatewaySchools ? " for Schools Representing Gateway Cities" : ""} in ${regionView === "Default" ? "MA" : regionView + ` Region `} (${year})`;
 
@@ -295,21 +295,24 @@ function HeatMapPage() {
                     <Button
                         variant="outline"
                         size="sm"
-                        disabled={mapInCart}
                         className="flex items-center gap-2"
                         onClick={() => {
-                            const map = mapRef.current;
-                            if (!map) return;
-                            const mapImageData = map
-                                .getCanvas()
-                                .toDataURL("image/jpeg", 0.5);
-                            addMapItem(filterName, mapImageData);
+                            if (mapInCart) {
+                                removeByName(filterName);
+                            } else {
+                                const map = mapRef.current;
+                                if (!map) return;
+                                const mapImageData = map
+                                    .getCanvas()
+                                    .toDataURL("image/jpeg", 0.5);
+                                addMapItem(filterName, mapImageData);
+                            }
                         }}
                     >
                         {mapInCart ? (
                             <>
                                 <CheckCircle2 className="w-4 h-4" />
-                                Added
+                                Remove
                             </>
                         ) : (
                             <>
