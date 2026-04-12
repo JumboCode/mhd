@@ -104,11 +104,21 @@ export default function SpreadsheetConfirmation({
     return (
         <div className="flex flex-col items-left justify-left max-w-lg">
             <h1 className="text-2xl font-bold mt-8">Confirmation</h1>
-            <p className="text-muted-foreground my-5">
-                You are about to {yearHasData ? "overwrite" : "add"} data for{" "}
-                {year} - are you sure you want to do this? This action cannot be
-                undone.
-            </p>
+            {yearHasData ? (
+                <div className="my-5 rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
+                    <p className="font-semibold">
+                        Warning: you are about to overwrite existing data for{" "}
+                        <span className="underline">{year}</span>.
+                    </p>
+                    <p className="mt-1">This action cannot be undone.</p>
+                </div>
+            ) : (
+                <p className="text-muted-foreground my-5">
+                    You are about to add data for{" "}
+                    <span className="font-semibold">{year}</span>. Please review
+                    the details below before confirming.
+                </p>
+            )}
             <div className="my-5 grid grid-cols-2 gap-4">
                 <div className="flex flex-col justify-center items-center gap-2 border rounded-lg py-4">
                     <School className="inline-block mr-2 mb-1" />
