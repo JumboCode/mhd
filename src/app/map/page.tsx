@@ -240,7 +240,7 @@ function HeatMapPage() {
         });
     }, [regionView]);
 
-    const { addMapItem, hasItem } = useCart();
+    const { items, addMapItem, hasItem } = useCart();
 
     const filterName = `Heatmap - ${metric} ${onlyGatewaySchools ? " for Schools Representing Gateway Cities" : ""} in ${regionView === "Default" ? "MA" : regionView + ` Region `} (${year})`;
 
@@ -310,6 +310,11 @@ function HeatMapPage() {
                             <>
                                 <CheckCircle2 className="w-4 h-4" />
                                 View in cart
+                                {items.length > 0 && (
+                                    <span className="ml-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+                                        {items.length}
+                                    </span>
+                                )}
                             </>
                         ) : (
                             <>

@@ -284,7 +284,7 @@ export default function ChartPage() {
         parseAsBoolean.withDefault(false),
     );
 
-    const { addChartItem, hasItem } = useCart();
+    const { items, addChartItem, hasItem } = useCart();
 
     const filters: Filters = useMemo(
         () => ({
@@ -382,7 +382,7 @@ export default function ChartPage() {
 
     const chartInCart = hasItem(filterName);
     useEffect(() => {
-        if (!chartInCart) setCartPopoverOpen(false);
+        if (!chartInCart) setCartOpen(false);
     }, [chartInCart]);
 
     // Sync tempYearRange with yearRange only when popover opens in custom mode
@@ -854,7 +854,7 @@ export default function ChartPage() {
                                 className="flex items-center gap-2"
                                 onClick={() => {
                                     if (chartInCart) {
-                                        setCartPopoverOpen((open) => !open);
+                                        setCartOpen((open) => !open);
                                     } else {
                                         addChartItem(filterName, {
                                             chartType: chartType as
@@ -871,6 +871,11 @@ export default function ChartPage() {
                                     <>
                                         <CheckCircle2 className="w-4 h-4" />
                                         View in cart
+                                        {items.length > 0 && (
+                                            <span className="ml-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+                                                {items.length}
+                                            </span>
+                                        )}
                                     </>
                                 ) : (
                                     <>
