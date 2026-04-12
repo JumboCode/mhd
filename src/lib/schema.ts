@@ -33,6 +33,9 @@ export const yearlySchoolParticipation = pgTable(
             .notNull()
             .references(() => schools.id),
         year: integer("year").notNull(),
+        division: text("division").array().notNull().default([]),
+        implementationModel: text("implementation_model").notNull().default(""),
+        schoolType: text("school_type").notNull().default(""),
     },
 );
 

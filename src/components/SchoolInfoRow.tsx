@@ -13,13 +13,13 @@ import { MapPin, BookOpen, Calendar } from "lucide-react";
 
 interface SchoolInfoRowProps {
     town: string;
-    instructionalModel: string;
+    implementationModel: string;
     firstYear: string;
 }
 
 export function SchoolInfoRow({
     town,
-    instructionalModel,
+    implementationModel,
     firstYear,
 }: SchoolInfoRowProps) {
     return (
@@ -37,16 +37,16 @@ export function SchoolInfoRow({
                 </span>
             </div>
 
-            {/* School Type */}
+            {/* Implementation Model */}
             <div className="flex flex-col gap-2 p-4 rounded-lg border border-border">
                 <div className="flex items-center gap-2">
                     <BookOpen className="w-5 h-5" />
                     <span className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                        School Type
+                        Implementation Model
                     </span>
                 </div>
                 <span className="text-lg font-semibold text-foreground">
-                    {instructionalModel}
+                    {implementationModel || "None"}
                 </span>
             </div>
 

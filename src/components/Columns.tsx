@@ -55,12 +55,13 @@ export type Schools = {
     name: string;
     city: string;
     region: string;
-    instructionModel: string;
+    division: string[];
     implementationModel: string;
+    schoolType: string;
     numStudents: number;
     numTeachers: number;
     numProjects: number;
-    trend: string; //TODO: calculate trend and change type if needed
+    trend: string; // TODO: calculate trend and change type if needed
 };
 
 export function createColumns(): ColumnDef<Schools>[] {
@@ -93,12 +94,12 @@ export function createColumns(): ColumnDef<Schools>[] {
             ),
         },
         {
-            accessorKey: "instructionModel",
-            size: 160,
+            accessorKey: "division",
+            size: 200,
             minSize: 160,
-            maxSize: 250,
+            maxSize: 350,
             header: ({ column }) => (
-                <SortableHeader column={column} label="School Type" />
+                <SortableHeader column={column} label="Division" />
             ),
         },
         {
@@ -108,6 +109,15 @@ export function createColumns(): ColumnDef<Schools>[] {
             maxSize: 350,
             header: ({ column }) => (
                 <SortableHeader column={column} label="Implementation Model" />
+            ),
+        },
+        {
+            accessorKey: "schoolType",
+            size: 210,
+            minSize: 180,
+            maxSize: 350,
+            header: ({ column }) => (
+                <SortableHeader column={column} label="School Type" />
             ),
         },
         {

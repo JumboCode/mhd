@@ -1,13 +1,9 @@
-export const requiredColumns = [
+/** Required columns from student spreadsheet */
+export const studentRequiredColumns = [
     // School table required info
     "schoolName",
     "city",
     "schoolId",
-    // "region", // Will need these columns eventually
-    // "instructionModel",
-    // "implementationType",
-    // "longitude",
-    // "latitude",
 
     // Teacher table required info
     "teacherName",
@@ -17,8 +13,16 @@ export const requiredColumns = [
     // Project table required info
     "projectId",
     "title",
-    // "division", // Will need this column eventually
     "categoryId",
     "categoryName",
     "teamProject",
+];
+
+/** Required columns from school spreadsheet */
+export const schoolRequiredColumns = [
+    "School name",
+    "School id",
+    "Division",
+    "Implementation Model",
+    "School Type",
 ];

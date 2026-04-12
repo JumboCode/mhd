@@ -17,9 +17,41 @@ import {
     projects,
     teachers,
     yearlyTeacherParticipation,
+    yearlySchoolParticipation,
 } from "@/lib/schema";
 import { eq, sql, and, sum } from "drizzle-orm";
 import { findRegionOf } from "@/lib/region-finder";
+
+type YearlySchoolFields = {
+    division?: string[];
+    implementationModel?: string;
+    schoolType?: string;
+};
+
+async function upsertYearlySchoolData(
+    schoolId: number,
+    year: number,
+    fields: YearlySchoolFields,
+) {
+    const existing = await db.query.yearlySchoolParticipation.findFirst({
+        where: and(
+            eq(yearlySchoolParticipation.schoolId, schoolId),
+            eq(yearlySchoolParticipation.year, year),
+        ),
+    });
+    if (existing) {
+        await db
+            .update(yearlySchoolParticipation)
+            .set(fields)
+            .where(eq(yearlySchoolParticipation.id, existing.id));
+    } else {
+        await db.insert(yearlySchoolParticipation).values({
+            schoolId,
+            year,
+            ...fields,
+        });
+    }
+}
 
 export async function PATCH(
     req: NextRequest,
@@ -29,7 +61,16 @@ export async function PATCH(
         const { name } = await params;
 
         const body = await req.json();
-        const { latitude, longitude, name: newName, city } = body;
+        const {
+            latitude,
+            longitude,
+            name: newName,
+            city,
+            implementationModel,
+            schoolType,
+            division,
+            year,
+        } = body;
 
         const schoolResult = await db
             .select({ id: schools.id })
@@ -78,6 +119,75 @@ export async function PATCH(
             });
         }
 
+        // Handle division update
+        if (division !== undefined) {
+            if (
+                !Array.isArray(division) ||
+                division.some((d: unknown) => typeof d !== "string")
+            ) {
+                return NextResponse.json(
+                    { error: "division must be an array of strings" },
+                    { status: 400 },
+                );
+            }
+            if (!year) {
+                return NextResponse.json(
+                    { error: "year is required for division updates" },
+                    { status: 400 },
+                );
+            }
+            await upsertYearlySchoolData(schoolId, year, { division });
+            return NextResponse.json({
+                message: "Division updated successfully",
+            });
+        }
+
+        // Handle implementation model update
+        if (implementationModel !== undefined) {
+            if (typeof implementationModel !== "string") {
+                return NextResponse.json(
+                    { error: "implementationModel must be a string" },
+                    { status: 400 },
+                );
+            }
+            if (!year) {
+                return NextResponse.json(
+                    {
+                        error: "year is required for implementationModel updates",
+                    },
+                    { status: 400 },
+                );
+            }
+            await upsertYearlySchoolData(schoolId, year, {
+                implementationModel: implementationModel.trim(),
+            });
+            return NextResponse.json({
+                message: "Implementation model updated successfully",
+            });
+        }
+
+        // Handle schoolType update
+        if (schoolType !== undefined) {
+            if (typeof schoolType !== "string") {
+                return NextResponse.json(
+                    { error: "schoolType must be a string" },
+                    { status: 400 },
+                );
+            }
+            if (!year) {
+                return NextResponse.json(
+                    { error: "year is required for schoolType updates" },
+                    { status: 400 },
+                );
+            }
+            await upsertYearlySchoolData(schoolId, year, {
+                schoolType: schoolType.trim(),
+            });
+            return NextResponse.json({
+                message: "School type updated successfully",
+            });
+        }
+
         // Handle location update
         if (
             typeof latitude !== "number" ||
@@ -120,7 +230,7 @@ export async function GET(
         const year = Number(searchParams.get("year"));
         const { name } = await params;
 
-        // Match on lowercase formatted name
+        // Match on standardized name
         const schoolResult = await db
             .select()
             .from(schools)
@@ -187,6 +297,13 @@ export async function GET(
             .from(projects)
             .where(eq(projects.schoolId, school.id));
 
+        const yearlyData = await db.query.yearlySchoolParticipation.findFirst({
+            where: and(
+                eq(yearlySchoolParticipation.schoolId, school.id),
+                eq(yearlySchoolParticipation.year, year),
+            ),
+        });
+
         return NextResponse.json({
             name: school.name,
             town: school.town,
@@ -200,9 +317,9 @@ export async function GET(
             projectCount: projectCount[0]?.count ?? 0,
             firstYear: firstYearData[0]?.year ?? null,
             projects: projectRows,
-            // TO DO: Not in database yet — replace with real values once DB columns exist
-            instructionalModel: "Dummy 1",
-            implementationModel: "Dummy 1",
+            division: yearlyData?.division ?? [],
+            implementationModel: yearlyData?.implementationModel ?? "",
+            schoolType: yearlyData?.schoolType ?? "",
         });
     } catch (error) {
         return NextResponse.json(

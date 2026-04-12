@@ -11,7 +11,10 @@
  *
  **************************************************************/
 
-import { requiredColumns } from "@/lib/required-spreadsheet-columns";
+import {
+    studentRequiredColumns,
+    schoolRequiredColumns,
+} from "@/lib/required-spreadsheet-columns";
 import type { SpreadsheetData } from "@/types/spreadsheet";
 
 /**
@@ -32,6 +35,7 @@ export type CellTypeError = {
     coord: string;
     value: string;
     expected: ColumnType;
+    allowedValues?: string[];
 };
 
 /**
@@ -51,18 +55,36 @@ export type ErrorReport = {
 
 /**
  * Supported column data types for validation.
+ * enum validates against a list of allowed values (case/whitespace-insensitive).
+ * If no valid values are configured, enum validation is skipped.
  */
 export type ColumnType =
     | "string"
     | "number"
     | "boolean"
     | "date"
-    | "string_or_number";
+    | "string_or_number"
+    | "enum";
 
 /**
- * Dictionary mapping required column names to their expected types.
+ * Options to override which columns and types are validated.
  */
-export const requiredColumnsDict: Record<string, ColumnType> = {
+export type ColumnSpec = {
+    /** Required column names (matched case/whitespace-insensitively). */
+    columns: string[];
+    /** Maps column name to expected type. */
+    columnsDict: Record<string, ColumnType>;
+    /**
+     * Maps column name to allowed enum values.
+     * An empty array means enum validation is skipped for that column.
+     */
+    enumValues?: Record<string, string[]>;
+};
+
+/**
+ * Dictionary mapping required student column names to their expected types.
+ */
+export const studentRequiredColumnsDict: Record<string, ColumnType> = {
     schoolName: "string",
     city: "string",
     schoolId: "number",
@@ -74,6 +96,55 @@ export const requiredColumnsDict: Record<string, ColumnType> = {
     categoryId: "number",
     categoryName: "string",
     teamProject: "boolean",
+};
+
+/** Default column spec used for the main student spreadsheet. */
+export const studentColumnSpec: ColumnSpec = {
+    columns: studentRequiredColumns,
+    columnsDict: studentRequiredColumnsDict,
+};
+
+/**
+ * Dictionary mapping required school column names to their expected types.
+ */
+export const schoolRequiredColumnsDict: Record<string, ColumnType> = {
+    "School name": "string",
+    "School id": "number",
+    "Division": "string",
+    "Implementation Model": "string",
+    "School Type": "string",
+};
+
+/** Column spec used for the school info spreadsheet. */
+export const schoolColumnSpec: ColumnSpec = {
+    columns: schoolRequiredColumns,
+    columnsDict: {
+        "School name": "string",
+        "School id": "number",
+        "Division": "enum",
+        "Implementation Model": "enum",
+        "School Type": "enum",
+    },
+    enumValues: {
+        "Division": [
+            "Junior Division (6-8)",
+            "Senior Division (9-12)",
+            "Young Historians (4-5)",
+        ],
+        "Implementation Model": [
+            "Student participate independently",
+            "Curricular requirement (class or grade level)",
+            "Co-curricular club",
+            "Other",
+        ],
+        "School Type": [
+            "Public School",
+            "Public Charter",
+            "Private/ Independent",
+            "Private/ Parochial/Religious",
+            "Other",
+        ],
+    },
 };
 
 /**
@@ -93,9 +164,13 @@ function pushError(
 /**
  * Main entry point to identify spreadsheet errors.
  * @param jsonData - The spreadsheet data as an array of rows.
+ * @param spec - Optional column spec override. Defaults to the main student spreadsheet columns.
  * @returns An ErrorReport containing all detected errors.
  */
-export function identifyErrors(jsonData: SpreadsheetData | null): ErrorReport {
+export function identifyErrors(
+    jsonData: SpreadsheetData | null,
+    spec: ColumnSpec = studentColumnSpec,
+): ErrorReport {
     const report: ErrorReport = {
         errors: [],
         calculatedNumRows: 0,
@@ -108,10 +183,19 @@ export function identifyErrors(jsonData: SpreadsheetData | null): ErrorReport {
 
     trimTrailingAndCheckEmptyRows(jsonData, report);
 
-    const validSheet: boolean = checkRequiredColumns(jsonData, report);
+    const validSheet: boolean = checkRequiredColumns(
+        jsonData,
+        report,
+        spec.columns,
+    );
     if (validSheet) {
         trimTownCommas(jsonData);
-        checkRequiredColumnTypes(jsonData, report);
+        checkRequiredColumnTypes(
+            jsonData,
+            report,
+            spec.columnsDict,
+            spec.enumValues,
+        );
     }
 
     return report;
@@ -184,9 +268,10 @@ function trimTownCommas(jsonData: SpreadsheetData) {
  * @param report - The report to push errors into.
  * @returns True if all required columns are present, false otherwise.
  */
-export function checkRequiredColumns(
+function checkRequiredColumns(
     jsonData: SpreadsheetData,
     report: ErrorReport,
+    columns: string[],
 ): boolean {
     const headers = jsonData[0] as string[];
 
@@ -203,7 +288,7 @@ export function checkRequiredColumns(
         header.toLowerCase().trim(),
     );
 
-    const missingColumns: string[] = requiredColumns.filter(
+    const missingColumns: string[] = columns.filter(
         (col) => !formattedHeaders.includes(col.toLowerCase()),
     );
 
@@ -220,9 +305,11 @@ export function checkRequiredColumns(
  * @param jsonData - The spreadsheet data.
  * @param report - The report to push errors into.
  */
-export function checkRequiredColumnTypes(
+function checkRequiredColumnTypes(
     jsonData: SpreadsheetData,
     report: ErrorReport,
+    columnsDict: Record<string, ColumnType>,
+    enumValues: Record<string, string[]> | undefined,
 ) {
     const headers = jsonData[0] as string[];
     const formattedHeaders = headers.map((header) =>
@@ -235,9 +322,10 @@ export function checkRequiredColumnTypes(
     for (let row = 1; row < jsonData.length; row++) {
         const currentRow = jsonData[row];
 
-        for (const [colName, expectedType] of Object.entries(
-            requiredColumnsDict,
-        )) {
+        for (const [colName, expectedType] of Object.entries(columnsDict) as [
+            string,
+            ColumnType,
+        ][]) {
             const colIdx = formattedHeaders.findIndex(
                 (h) => h === colName.toLowerCase(),
             );
@@ -270,6 +358,34 @@ export function checkRequiredColumnTypes(
                 case "string_or_number":
                     isValid = typeof cell === "string" || !isNaN(Number(cell));
                     break;
+                case "enum": {
+                    const allowed = enumValues?.[colName];
+                    if (allowed && allowed.length > 0) {
+                        const parts = String(cell)
+                            .split(",")
+                            .map((p) => p.trim())
+                            .filter(Boolean);
+                        isValid =
+                            parts.length > 0 &&
+                            parts.every((part) =>
+                                allowed.some(
+                                    (v) =>
+                                        v.toLowerCase().trim() ===
+                                        part.toLowerCase(),
+                                ),
+                            );
+                        if (!isValid) {
+                            typeErrorCoords.push({
+                                coord: coords,
+                                value: String(cell),
+                                expected: expectedType,
+                                allowedValues: allowed,
+                            });
+                            continue;
+                        }
+                    }
+                    break;
+                }
                 default:
                     isValid = true;
             }

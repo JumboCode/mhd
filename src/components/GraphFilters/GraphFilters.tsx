@@ -48,7 +48,7 @@ const groupByOptions = [
     { value: "region", label: "Region" },
     { value: "school-type", label: "School Type" },
     { value: "division", label: "Division (Junior/Senior)" },
-    { value: "implementation-type", label: "Implementation Type" },
+    { value: "implementation-model", label: "Implementation Model" },
     { value: "project-type", label: "Project Type" },
     { value: "gateway-school", label: "Gateway School" },
 ];
@@ -65,7 +65,7 @@ export type GroupBy =
     | "region"
     | "school-type"
     | "division"
-    | "implementation-type"
+    | "implementation-model"
     | "project-type"
     | "gateway-school";
 

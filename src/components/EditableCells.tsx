@@ -31,7 +31,19 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
+import { Check, ChevronsUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+    Command,
+    CommandGroup,
+    CommandItem,
+    CommandList,
+} from "@/components/ui/command";
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover";
 import {
     Select,
     SelectContent,
@@ -40,11 +52,8 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 
-// ---------------------------------------------------------------------------
-// EditableCell
 // A single table cell that toggles between read-only display and a text input.
 // Double-click activates edit mode; Enter or blur commits; Escape cancels.
-// ---------------------------------------------------------------------------
 export interface EditableCellProps {
     value: string | number | boolean;
     columnId: string;
@@ -111,10 +120,7 @@ export function EditableCell({
     );
 }
 
-// ---------------------------------------------------------------------------
-// StringSelectCell
-// Renders a <select> from a fixed list of string options; commits on change.
-// ---------------------------------------------------------------------------
+// StringSelectCell renders a <select> from a fixed list of string options; commits on change.
 export interface StringSelectCellProps {
     value: string;
     options: string[];
@@ -136,7 +142,7 @@ export function StringSelectCell({
             onValueChange={(val) => onCommit(rowId, columnId, val)}
         >
             <SelectTrigger className="h-full px-1 py-0.5 text-sm border-0 shadow-none bg-transparent hover:bg-muted focus:ring-1 focus:ring-neutral-400">
-                <SelectValue />
+                {value ? <SelectValue /> : "Select..."}
             </SelectTrigger>
             <SelectContent>
                 {options.map((opt) => (
@@ -146,6 +152,88 @@ export function StringSelectCell({
                 ))}
             </SelectContent>
         </Select>
+    );
+}
+
+/**
+ * StringMultiSelectCell renders a multi-select combobox from a fixed list of
+ * string options. Commits the full selected array on every change
+ */
+export interface StringMultiSelectCellProps {
+    value: string[];
+    options: string[];
+    rowId: string;
+    columnId: string;
+    onCommit: (rowId: string, columnId: string, value: string[]) => void;
+}
+
+export function StringMultiSelectCell({
+    value,
+    options,
+    rowId,
+    columnId,
+    onCommit,
+}: StringMultiSelectCellProps) {
+    const [open, setOpen] = useState(false);
+
+    const toggle = (opt: string) => {
+        const next = value.includes(opt)
+            ? value.filter((v) => v !== opt)
+            : [...value, opt];
+        onCommit(rowId, columnId, next);
+    };
+
+    const label =
+        value.length === 0
+            ? "Select..."
+            : value.length === 1
+              ? value[0]
+              : `${value.length} selected`;
+
+    return (
+        <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+                <button
+                    className="w-full flex items-center justify-between gap-1 px-1 py-0.5 text-sm rounded hover:bg-muted focus:outline-none focus:ring-1 focus:ring-neutral-400 text-left"
+                    title={value.join(", ") || undefined}
+                >
+                    <span
+                        className={cn(
+                            "truncate",
+                            value.length === 0 && "text-muted-foreground",
+                        )}
+                    >
+                        {label}
+                    </span>
+                    <ChevronsUpDown className="h-3 w-3 shrink-0 opacity-50" />
+                </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-56 p-0" align="start">
+                <Command>
+                    <CommandList>
+                        <CommandGroup>
+                            {options.map((opt) => (
+                                <CommandItem
+                                    key={opt}
+                                    onSelect={() => toggle(opt)}
+                                    className="cursor-pointer"
+                                >
+                                    <Check
+                                        className={cn(
+                                            "mr-2 h-4 w-4 shrink-0",
+                                            value.includes(opt)
+                                                ? "opacity-100"
+                                                : "opacity-0",
+                                        )}
+                                    />
+                                    {opt}
+                                </CommandItem>
+                            ))}
+                        </CommandGroup>
+                    </CommandList>
+                </Command>
+            </PopoverContent>
+        </Popover>
     );
 }
 
@@ -172,7 +260,7 @@ export function BooleanSelectCell({
             onValueChange={(val) => onCommit(rowId, columnId, val === "true")}
         >
             <SelectTrigger className="h-full px-1 py-0.5 text-sm border-0 shadow-none bg-transparent hover:bg-muted focus:ring-1 focus:ring-neutral-400">
-                <SelectValue />
+                {value ? <SelectValue /> : "Select..."}
             </SelectTrigger>
             <SelectContent>
                 <SelectItem value="true">Yes</SelectItem>
