@@ -246,18 +246,6 @@ export default function ChartPage() {
     useHotkey("b", () => handleChartTypeChange("bar"));
     useHotkey("l", () => handleChartTypeChange("line"));
 
-    // Cmd+S to open export dialog
-    useEffect(() => {
-        const handler = (e: KeyboardEvent) => {
-            if ((e.metaKey || e.ctrlKey) && e.key === "s") {
-                e.preventDefault();
-                if (!exportDialogOpen) setExportDialogOpen(true);
-            }
-        };
-        window.addEventListener("keydown", handler);
-        return () => window.removeEventListener("keydown", handler);
-    }, [exportDialogOpen]);
-
     // Filter hooks
     const [groupBy, setGroupBy] = useQueryState(
         "groupBy",
@@ -394,6 +382,22 @@ export default function ChartPage() {
     );
 
     const chartInCart = hasItem(filterName);
+
+    // Cmd+S to open export dialog, Cmd+P to print PDF
+    useHotkey(
+        "s",
+        () => {
+            if (!exportDialogOpen) setExportDialogOpen(true);
+        },
+        { meta: true },
+    );
+    useHotkey(
+        "p",
+        () => {
+            downloadSingleGraph(chartRef, filterName, true);
+        },
+        { meta: true },
+    );
 
     // Sync tempYearRange with yearRange only when popover opens in custom mode
     useEffect(() => {

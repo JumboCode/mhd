@@ -51,6 +51,7 @@ import {
     SheetTitle,
 } from "@/components/ui/sheet";
 import { exportMapToPDF } from "@/lib/heatmap-export";
+import { useHotkey } from "@/hooks/useHotkey";
 import { useHeatmapLayers } from "@/hooks/useHeatmapLayers";
 import { Cart } from "@/components/Cart";
 import { PlusCircle } from "lucide-react";
@@ -165,18 +166,6 @@ function HeatMapPage() {
     const [exportDialogOpen, setExportDialogOpen] = useState(false);
     const [schoolDataError, setSchoolDataError] = useState<string | null>(null);
 
-    // Cmd+S to open export dialog
-    useEffect(() => {
-        const handler = (e: KeyboardEvent) => {
-            if ((e.metaKey || e.ctrlKey) && e.key === "s") {
-                e.preventDefault();
-                if (!exportDialogOpen) setExportDialogOpen(true);
-            }
-        };
-        window.addEventListener("keydown", handler);
-        return () => window.removeEventListener("keydown", handler);
-    }, [exportDialogOpen]);
-
     const copyURLtoClipboard = async () => {
         try {
             await navigator.clipboard.writeText(window.location.href);
@@ -271,6 +260,24 @@ function HeatMapPage() {
     const filterName = `Heatmap - ${metric} ${onlyGatewaySchools ? " for Schools Representing Gateway Cities" : ""} in ${regionView === "Default" ? "MA" : regionView + ` Region `} (${year})`;
 
     const mapInCart = hasItem(filterName);
+
+    // Cmd+S to open export dialog, Cmd+P to print PDF
+    useHotkey(
+        "s",
+        () => {
+            if (!exportDialogOpen) setExportDialogOpen(true);
+        },
+        { meta: true },
+    );
+    useHotkey(
+        "p",
+        () => {
+            const map = mapRef.current;
+            if (!map) return;
+            exportMapToPDF(map, filterName, true);
+        },
+        { meta: true },
+    );
 
     return (
         <div className="flex p-8 flex-col h-screen w-full justify-center">

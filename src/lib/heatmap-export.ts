@@ -15,7 +15,11 @@ import { toast } from "sonner";
 import { Map } from "maplibre-gl";
 import "../app/fonts/DMSans-VariableFont_opsz,wght-normal";
 
-export async function exportMapToPDF(map: Map | null, title: string | null) {
+export async function exportMapToPDF(
+    map: Map | null,
+    title: string | null,
+    print = false,
+) {
     if (!map) {
         toast.error("Map instance not found");
         return;
@@ -66,7 +70,14 @@ export async function exportMapToPDF(map: Map | null, title: string | null) {
             imgHeight,
         );
 
-        pdf.save("heatmap.pdf");
+        if (print) {
+            const blob = pdf.output("blob");
+            const url = URL.createObjectURL(blob);
+            window.open(url, "_blank");
+        } else {
+            const filename = title || "heatmap";
+            pdf.save(`${filename}.pdf`);
+        }
     } catch (error) {
         toast.error("Failed to export heatmap");
     }

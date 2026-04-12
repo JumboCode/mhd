@@ -17,7 +17,11 @@ import logoImg from "../../public/images/mhd-logo-full.png";
 import { toast } from "sonner";
 import "../app/fonts/DMSans-VariableFont_opsz,wght-normal";
 
-export function downloadGraphs(cart: string[], filterNames: string[]) {
+export function downloadGraphs(
+    cart: string[],
+    filterNames: string[],
+    print = false,
+) {
     // Displays toast when there are no images to export
     if (cart.length === 0) {
         toast.error("Cart is empty");
@@ -74,7 +78,14 @@ export function downloadGraphs(cart: string[], filterNames: string[]) {
                 if (idx < cart.length - 1) pdf.addPage();
 
                 if (idx === cart.length - 1) {
-                    pdf.save("chart.pdf");
+                    if (print) {
+                        const blob = pdf.output("blob");
+                        const url = URL.createObjectURL(blob);
+                        window.open(url, "_blank");
+                    } else {
+                        const filename = filterNames[0] || "chart";
+                        pdf.save(`${filename}.pdf`);
+                    }
                     setTimeout(resolve, 1000);
                 }
             };
@@ -85,6 +96,7 @@ export function downloadGraphs(cart: string[], filterNames: string[]) {
 export async function downloadSingleGraph(
     chartRef: React.RefObject<HTMLDivElement | null>,
     filterName: string,
+    print = false,
 ) {
     const el = chartRef.current;
     if (!el) return;
@@ -94,5 +106,5 @@ export async function downloadSingleGraph(
         scale: 2,
     });
 
-    downloadGraphs([canvas.toDataURL()], [filterName]);
+    downloadGraphs([canvas.toDataURL()], [filterName], print);
 }
