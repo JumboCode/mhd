@@ -78,6 +78,7 @@ type Project = {
     teamProject: boolean;
     schoolId: number;
     schoolName: string;
+    standardizedSchoolName: string;
     schoolTown: string;
     schoolRegion: string;
     teacherId: number;
@@ -525,6 +526,9 @@ export default function ChartPage() {
 
         function computeMetric(projects: Project[], metric: string) {
             switch (metric) {
+                case "total-school-count":
+                    return new Set(projects.map((p) => p.schoolId)).size; // TO DO: Change to be something unique for a school (e.g. standardized name)
+
                 case "total-project-count":
                     return projects.length;
 

@@ -31,6 +31,7 @@ export async function GET() {
                 teamProject: projects.teamProject,
                 schoolId: projects.schoolId,
                 schoolName: schools.name,
+                standardizedSchoolName: schools.standardizedName,
                 schoolTown: schools.town,
                 schoolRegion: schools.region,
                 teacherId: projects.teacherId,
