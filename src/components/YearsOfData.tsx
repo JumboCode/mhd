@@ -282,7 +282,10 @@ const YearsOfData = forwardRef<
                 open={showSaveConfirm}
                 onOpenChange={(open) => !open && resolveDialog(false)}
             >
-                <DialogContent onInteractOutside={(e) => e.preventDefault()}>
+                <DialogContent
+                    showCloseButton={false}
+                    onInteractOutside={(e) => e.preventDefault()}
+                >
                     <DialogHeader>
                         <DialogTitle>
                             Permanently delete{" "}

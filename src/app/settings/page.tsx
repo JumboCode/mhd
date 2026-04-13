@@ -166,7 +166,10 @@ export default function Settings() {
             </div>
             {/* If user tries to leave page with unsaved changes */}
             <Dialog open={showUnsavedDialog} onOpenChange={handleDialogCancel}>
-                <DialogContent onInteractOutside={(e) => e.preventDefault()}>
+                <DialogContent
+                    showCloseButton={false}
+                    onInteractOutside={(e) => e.preventDefault()}
+                >
                     <DialogHeader>
                         <DialogTitle>Unsaved Changes</DialogTitle>
                         <DialogDescription>
