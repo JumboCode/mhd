@@ -4,7 +4,7 @@ import Dashboard from "@/components/Dashboard";
 import { DashboardSkeleton } from "@/components/skeletons/DashboardSkeleton";
 
 export const metadata: Metadata = {
-    title: "Dashboard",
+    title: "Dashboard | MHD",
 };
 
 export default function Home() {

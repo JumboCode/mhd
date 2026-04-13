@@ -242,6 +242,10 @@ export default function ChartPage() {
         [setChartType],
     );
 
+    useEffect(() => {
+        document.title = `${chartType === "bar" ? "Bar Chart" : "Line Chart"} | MHD`;
+    }, [chartType]);
+
     // Keyboard shortcuts for chart type
     useHotkey("b", () => handleChartTypeChange("bar"));
     useHotkey("l", () => handleChartTypeChange("line"));

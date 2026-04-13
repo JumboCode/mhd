@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-    title: "Chart",
+    title: "Bar Chart",
 };
 
 export default function ChartLayout({
