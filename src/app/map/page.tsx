@@ -285,7 +285,9 @@ function HeatMapPage() {
 
     const { items, addMapItem, hasItem, removeByName } = useCart();
 
-    const filterName = `Heatmap - ${metric} ${onlyGatewaySchools ? " for Schools Representing Gateway Cities" : ""} in ${regionView === "default" ? "MA" : capitalize(regionView) + ` Region `} (${year ?? ""})`;
+    const filterName = year
+        ? `Heatmap \u2013 ${metric}${onlyGatewaySchools ? " for Schools Representing Gateway Cities" : ""} in ${regionView === "default" ? "MA" : capitalize(regionView) + " Region"} (${year})`
+        : `Heatmap \u2013 ${metric}${onlyGatewaySchools ? " for Schools Representing Gateway Cities" : ""} in ${regionView === "default" ? "MA" : capitalize(regionView) + " Region"}`;
 
     const mapInCart = hasItem(filterName);
 
