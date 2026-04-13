@@ -817,7 +817,7 @@ export default function ChartPage() {
             <div className="flex-1 flex flex-col h-screen overflow-hidden">
                 <div className="flex flex-col gap-5 h-full overflow-hidden">
                     {/* Header - title and actions */}
-                    <div className="flex items-center justify-between px-8 pt-8 shrink-0">
+                    <div className="flex items-center justify-between px-8 pt-8 shrink-0 gap-4">
                         <div className="relative">
                             <AnimatePresence initial={false} mode="popLayout">
                                 <motion.h1
