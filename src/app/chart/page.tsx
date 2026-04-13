@@ -72,6 +72,7 @@ import {
 import { downloadSingleGraph } from "@/lib/export-to-pdf";
 import { useCart } from "@/hooks/useCart";
 import { Cart } from "@/components/Cart";
+import { CartIndicator } from "@/components/ui/cart-indicator";
 import { Kbd } from "@/components/ui/kbd";
 import { useHotkey } from "@/hooks/useHotkey";
 
@@ -950,11 +951,10 @@ export default function ChartPage() {
                             >
                                 <ShoppingBasket className="w-4 h-4" />
                                 Cart
-                                {items.length > 0 && (
-                                    <span className="absolute -top-2 -right-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
-                                        {items.length}
-                                    </span>
-                                )}
+                                <CartIndicator
+                                    count={items.length}
+                                    className="absolute -top-2 -right-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground"
+                                />
                             </Button>
                             <AnimatedToggleButton
                                 variant="outline"
@@ -1053,11 +1053,10 @@ export default function ChartPage() {
                                     >
                                         <ShoppingBasket className="w-4 h-4 mr-2" />
                                         View cart
-                                        {items.length > 0 && (
-                                            <span className="ml-auto inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
-                                                {items.length}
-                                            </span>
-                                        )}
+                                        <CartIndicator
+                                            count={items.length}
+                                            className="ml-auto inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground"
+                                        />
                                     </Button>
                                     <AnimatedToggleButton
                                         variant="ghost"

@@ -57,6 +57,7 @@ import { exportMapToPDF } from "@/lib/heatmap-export";
 import { useHotkey } from "@/hooks/useHotkey";
 import { useHeatmapLayers } from "@/hooks/useHeatmapLayers";
 import { Cart } from "@/components/Cart";
+import { CartIndicator } from "@/components/ui/cart-indicator";
 import { PlusCircle } from "lucide-react";
 import { useCart } from "@/hooks/useCart";
 import {
@@ -389,11 +390,10 @@ function HeatMapPage() {
                     >
                         <ShoppingBasket className="w-4 h-4" />
                         Cart
-                        {items.length > 0 && (
-                            <span className="absolute -top-2 -right-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
-                                {items.length}
-                            </span>
-                        )}
+                        <CartIndicator
+                            count={items.length}
+                            className="absolute -top-2 -right-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground"
+                        />
                     </Button>
                     <AnimatedToggleButton
                         variant="outline"
@@ -487,11 +487,10 @@ function HeatMapPage() {
                             >
                                 <ShoppingBasket className="w-4 h-4 mr-2" />
                                 View cart
-                                {items.length > 0 && (
-                                    <span className="ml-auto inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
-                                        {items.length}
-                                    </span>
-                                )}
+                                <CartIndicator
+                                    count={items.length}
+                                    className="ml-auto inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground"
+                                />
                             </Button>
                             <AnimatedToggleButton
                                 variant="ghost"
