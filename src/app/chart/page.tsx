@@ -1261,75 +1261,84 @@ export default function ChartPage() {
                                 )}
 
                                 {Math.round(filteredProjectCount) !== 0 ? (
-                                    <AnimatePresence initial={false}>
-                                        <motion.div
-                                            key={chartType}
-                                            className="flex h-full w-full items-center justify-center px-8 bg-background overflow-auto"
-                                            initial={{
-                                                opacity: 0,
-                                                x: slideDirection.current * -50,
-                                            }}
-                                            animate={{ opacity: 1, x: 0 }}
-                                            exit={{
-                                                opacity: 0,
-                                                x: slideDirection.current * -50,
-                                                position: "absolute",
-                                                inset: 0,
-                                            }}
-                                            transition={{
-                                                duration: 0.15,
-                                                ease: "easeInOut",
-                                            }}
-                                        >
-                                            {chartType === "bar" ? (
-                                                <BarGraph
-                                                    dataset={graphDataset}
-                                                    yAxisLabel={
-                                                        measuredAsLabels[
-                                                            filters.measuredAs
-                                                        ]
-                                                    }
-                                                    xAxisLabel="Year"
-                                                    legendTitle={
-                                                        filters.groupBy ===
-                                                        "none"
-                                                            ? undefined
-                                                            : groupByLabels[
-                                                                  filters
-                                                                      .groupBy
-                                                              ]
-                                                    }
-                                                    chartRef={chartRef}
-                                                    tooltipFormatter={
-                                                        tooltipFormatter
-                                                    }
-                                                />
-                                            ) : (
-                                                <LineGraph
-                                                    datasets={graphDataset}
-                                                    yAxisLabel={
-                                                        measuredAsLabels[
-                                                            filters.measuredAs
-                                                        ]
-                                                    }
-                                                    xAxisLabel="Year"
-                                                    legendTitle={
-                                                        filters.groupBy ===
-                                                        "none"
-                                                            ? undefined
-                                                            : groupByLabels[
-                                                                  filters
-                                                                      .groupBy
-                                                              ]
-                                                    }
-                                                    chartRef={chartRef}
-                                                    tooltipFormatter={
-                                                        tooltipFormatter
-                                                    }
-                                                />
-                                            )}
-                                        </motion.div>
-                                    </AnimatePresence>
+                                    <div
+                                        ref={chartRef}
+                                        className="h-full w-full"
+                                    >
+                                        <AnimatePresence initial={false}>
+                                            <motion.div
+                                                key={chartType}
+                                                className="flex h-full w-full items-center justify-center px-8 bg-background overflow-auto"
+                                                initial={{
+                                                    opacity: 0,
+                                                    x:
+                                                        slideDirection.current *
+                                                        -50,
+                                                }}
+                                                animate={{ opacity: 1, x: 0 }}
+                                                exit={{
+                                                    opacity: 0,
+                                                    x:
+                                                        slideDirection.current *
+                                                        -50,
+                                                    position: "absolute",
+                                                    inset: 0,
+                                                }}
+                                                transition={{
+                                                    duration: 0.15,
+                                                    ease: "easeInOut",
+                                                }}
+                                            >
+                                                {chartType === "bar" ? (
+                                                    <BarGraph
+                                                        dataset={graphDataset}
+                                                        yAxisLabel={
+                                                            measuredAsLabels[
+                                                                filters
+                                                                    .measuredAs
+                                                            ]
+                                                        }
+                                                        xAxisLabel="Year"
+                                                        legendTitle={
+                                                            filters.groupBy ===
+                                                            "none"
+                                                                ? undefined
+                                                                : groupByLabels[
+                                                                      filters
+                                                                          .groupBy
+                                                                  ]
+                                                        }
+                                                        tooltipFormatter={
+                                                            tooltipFormatter
+                                                        }
+                                                    />
+                                                ) : (
+                                                    <LineGraph
+                                                        datasets={graphDataset}
+                                                        yAxisLabel={
+                                                            measuredAsLabels[
+                                                                filters
+                                                                    .measuredAs
+                                                            ]
+                                                        }
+                                                        xAxisLabel="Year"
+                                                        legendTitle={
+                                                            filters.groupBy ===
+                                                            "none"
+                                                                ? undefined
+                                                                : groupByLabels[
+                                                                      filters
+                                                                          .groupBy
+                                                                  ]
+                                                        }
+                                                        tooltipFormatter={
+                                                            tooltipFormatter
+                                                        }
+                                                    />
+                                                )}
+                                            </motion.div>
+                                        </AnimatePresence>
+                                    </div>
                                 ) : (
                                     /*  No data found */
                                     <div className="flex h-full w-full items-center justify-center px-8 bg-background">
