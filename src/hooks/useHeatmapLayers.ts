@@ -36,6 +36,8 @@ interface UseHeatmapLayersOptions {
     filteredSchoolPoints: GeoJSON.FeatureCollection | null;
     metric: string;
     showSchools: boolean;
+    showHeatmap: boolean;
+    showRegions: boolean;
 }
 
 export function useHeatmapLayers({
@@ -43,6 +45,8 @@ export function useHeatmapLayers({
     filteredSchoolPoints,
     metric,
     showSchools,
+    showHeatmap,
+    showRegions,
 }: UseHeatmapLayersOptions) {
     const popupRef = useRef<maplibregl.Popup | null>(null);
     const pinnedRef = useRef(false);
@@ -228,6 +232,22 @@ export function useHeatmapLayers({
                     addSchoolIcons();
                 };
                 img.src = "/images/school-heatmap-icon.svg";
+            }
+
+            // Toggle layer visibility
+            if (map.getLayer("regions-layer")) {
+                map.setLayoutProperty(
+                    "regions-layer",
+                    "visibility",
+                    showRegions ? "visible" : "none",
+                );
+            }
+            if (map.getLayer("schoolHeatLayer")) {
+                map.setLayoutProperty(
+                    "schoolHeatLayer",
+                    "visibility",
+                    showHeatmap ? "visible" : "none",
+                );
             }
 
             // Fixed ordering for layers
@@ -488,7 +508,7 @@ export function useHeatmapLayers({
             cleanup?.();
             map.off("load", onLoad);
         };
-    }, [metric, filteredSchoolPoints, showSchools]);
+    }, [metric, filteredSchoolPoints, showSchools, showHeatmap, showRegions]);
 
     return { closePopup };
 }

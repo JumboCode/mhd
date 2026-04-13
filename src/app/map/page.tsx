@@ -19,6 +19,7 @@ import {
     Share,
     CheckCircle2,
     ShoppingBasket,
+    ListFilter,
 } from "lucide-react";
 import { LoadError } from "@/components/ui/load-error";
 import { capitalize } from "@/lib/utils";
@@ -37,6 +38,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 
 import YearDropdown from "@/components/YearDropdown";
 import CountDropdown from "@/components/CountDropdown";
+import { Checkbox } from "@/components/Checkbox";
 import { Button } from "@/components/ui/button";
 import {
     Sheet,
@@ -145,6 +147,16 @@ function HeatMapPage() {
         parseAsBoolean.withDefault(true),
     );
 
+    const [showHeatmap, setShowHeatmap] = useQueryState(
+        "showHeatmap",
+        parseAsBoolean.withDefault(true),
+    );
+
+    const [showRegions, setShowRegions] = useQueryState(
+        "showRegions",
+        parseAsBoolean.withDefault(true),
+    );
+
     // Validate query params during render
     const currentYear = new Date().getFullYear();
     const year =
@@ -241,11 +253,22 @@ function HeatMapPage() {
         filteredSchoolPoints,
         metric,
         showSchools,
+        showHeatmap,
+        showRegions,
     });
 
     useEffect(() => {
         closePopup?.();
-    }, [metric, year, regionView, onlyGatewaySchools, showSchools, closePopup]);
+    }, [
+        metric,
+        year,
+        regionView,
+        onlyGatewaySchools,
+        showSchools,
+        showHeatmap,
+        showRegions,
+        closePopup,
+    ]);
 
     useEffect(() => {
         if (!mapRef.current) {
@@ -287,7 +310,9 @@ function HeatMapPage() {
     return (
         <div className="flex p-8 flex-col h-screen w-full justify-center">
             <div className="flex justify-between items-center mb-5">
-                <h1 className="text-2xl font-semibold">{filterName}</h1>
+                <h1 className="text-lg xl:text-2xl font-semibold">
+                    {filterName}
+                </h1>
                 {/* Actions - hidden on smaller screens */}
                 <div className="hidden xl:flex gap-3">
                     <AlertDialog
@@ -475,66 +500,87 @@ function HeatMapPage() {
                     </SheetContent>
                 </Sheet>
             </div>
-            <div className="flex flex-row justify-between items-center gap-4 shrink-0 pb-5">
-                <div className="flex flex-row items-center gap-4">
-                    <div className="flex flex-col gap-1.5 w-48">
-                        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pl-1">
-                            Counts
-                        </label>
-                        <CountDropdown
-                            selectedCount={metric}
-                            onCountChange={setMetric}
-                            options={VALID_METRICS.map(capitalize)}
-                        />
-                    </div>
-                    <div className="flex flex-col gap-1.5 w-48">
-                        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pl-1">
-                            Year
-                        </label>
-                        <YearDropdown
-                            selectedYear={year}
-                            onYearChange={(y) => setYear(y)}
-                        />
-                    </div>
-                    <div className="flex flex-col gap-1.5 w-48">
-                        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pl-1">
-                            Region View
-                        </label>
-                        <CountDropdown
-                            selectedCount={capitalize(regionView)}
-                            onCountChange={(v) =>
-                                setRegionView(v.toLowerCase())
-                            }
-                            options={Object.keys(regions).map(capitalize)}
-                        />
-                    </div>
-                    <div className="flex flex-col gap-1.5 w-48">
-                        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pl-1">
+            <div className="flex flex-row flex-wrap shrink-0 pb-5 gap-1 items-end">
+                <div className="flex flex-col gap-1.5 w-48">
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pl-1">
+                        Counts
+                    </label>
+                    <CountDropdown
+                        selectedCount={metric}
+                        onCountChange={setMetric}
+                        options={VALID_METRICS.map(capitalize)}
+                    />
+                </div>
+                <div className="flex flex-col gap-1.5 w-48">
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pl-1">
+                        Year
+                    </label>
+                    <YearDropdown
+                        selectedYear={year}
+                        onYearChange={(y) => setYear(y)}
+                    />
+                </div>
+                <div className="flex flex-col gap-1.5 w-48">
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pl-1">
+                        Region View
+                    </label>
+                    <CountDropdown
+                        selectedCount={capitalize(regionView)}
+                        onCountChange={(v) => setRegionView(v.toLowerCase())}
+                        options={Object.keys(regions).map(capitalize)}
+                    />
+                </div>
+                <Popover>
+                    <PopoverTrigger asChild>
+                        <Button variant="outline" className="gap-2">
+                            <ListFilter className="w-4 h-4" />
                             Filters
-                        </label>
-                        <div className="flex items-center h-10 px-2">
-                            <input
-                                id="gateway-toggle"
-                                type="checkbox"
-                                className="w-4 h-4 cursor-pointer rounded border-slate-300"
-                                checked={onlyGatewaySchools}
-                                onChange={(e) =>
-                                    setOnlyGatewaySchools(e.target.checked)
-                                }
-                            />
-                            <label
-                                htmlFor="gateway-toggle"
-                                className="ml-2 text-sm cursor-pointer select-none"
-                            >
-                                Gateway Schools Only
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-56" align="start">
+                        <div className="flex flex-col gap-3">
+                            <label className="flex items-center gap-2 cursor-pointer">
+                                <Checkbox
+                                    checked={showSchools}
+                                    onCheckedChange={(v) =>
+                                        setShowSchools(v === true)
+                                    }
+                                />
+                                <span className="text-sm">Show Schools</span>
+                            </label>
+                            <label className="flex items-center gap-2 cursor-pointer">
+                                <Checkbox
+                                    checked={showHeatmap}
+                                    onCheckedChange={(v) =>
+                                        setShowHeatmap(v === true)
+                                    }
+                                />
+                                <span className="text-sm">Show Heatmap</span>
+                            </label>
+                            <label className="flex items-center gap-2 cursor-pointer">
+                                <Checkbox
+                                    checked={showRegions}
+                                    onCheckedChange={(v) =>
+                                        setShowRegions(v === true)
+                                    }
+                                />
+                                <span className="text-sm">Show Regions</span>
+                            </label>
+                            <hr className="border-slate-200" />
+                            <label className="flex items-center gap-2 cursor-pointer">
+                                <Checkbox
+                                    checked={onlyGatewaySchools}
+                                    onCheckedChange={(v) =>
+                                        setOnlyGatewaySchools(v === true)
+                                    }
+                                />
+                                <span className="text-sm">
+                                    Gateway Schools Only
+                                </span>
                             </label>
                         </div>
-                    </div>
-                </div>
-
-                <Button onClick={() => setShowSchools(!showSchools)}>
-                    {showSchools ? "Hide Schools" : "Show Schools"}
-                </Button>
+                    </PopoverContent>
+                </Popover>
             </div>
             <div className="flex-1 rounded-2xl overflow-hidden border border-slate-200 relative">
                 {schoolDataError ? (
