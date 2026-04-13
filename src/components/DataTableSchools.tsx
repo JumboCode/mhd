@@ -213,8 +213,18 @@ export function SchoolsDataTable<TData, TValue>({
                                                       )}
                                             </div>
                                             <div
-                                                onMouseDown={header.getResizeHandler()}
-                                                onTouchStart={header.getResizeHandler()}
+                                                onMouseDown={(e) => {
+                                                    e.stopPropagation();
+                                                    header.getResizeHandler()(
+                                                        e,
+                                                    );
+                                                }}
+                                                onTouchStart={(e) => {
+                                                    e.stopPropagation();
+                                                    header.getResizeHandler()(
+                                                        e,
+                                                    );
+                                                }}
                                                 className={`absolute right-0 top-0 h-full w-1 cursor-col-resize select-none touch-none hover:bg-blue-500 ${
                                                     header.column.getIsResizing()
                                                         ? "bg-blue-500"
