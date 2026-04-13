@@ -135,7 +135,7 @@ function HeatMapPage() {
     );
     const regionView = rawRegionView.toLowerCase();
 
-    const [showSchools, setShowSchools] = useQueryState(
+    const [showSchools] = useQueryState(
         "showSchools",
         parseAsBoolean.withDefault(true),
     );
@@ -440,13 +440,6 @@ function HeatMapPage() {
                         </div>
                     </div>
                 </div>
-
-                <Button
-                    onClick={() => setShowSchools(!showSchools)}
-                    className="w-32 py-2"
-                >
-                    {showSchools ? "Hide Schools" : "Show Schools"}
-                </Button>
             </div>
             <div className="flex-1 rounded-2xl overflow-hidden border border-slate-200 relative">
                 {schoolDataError ? (

@@ -383,15 +383,17 @@ export default function SchoolProfilePage() {
                 </Link>
 
                 {/* Project type distribution — same 3-col grid as stats; spans 2 cells */}
-                <div className="grid grid-cols-3 gap-8">
-                    <div className="col-span-2 min-w-0">
-                        <PieChart
-                            slices={projectCategoryDistribution(projects)}
-                            legendTitle="Project Type Distribution"
-                            emptyMessage="No project data"
-                        />
+                {projects.length !== 0 && (
+                    <div className="grid grid-cols-3 gap-8">
+                        <div className="col-span-2 min-w-0">
+                            <PieChart
+                                slices={projectCategoryDistribution(projects)}
+                                legendTitle="Project Type Distribution"
+                                emptyMessage="No project data"
+                            />
+                        </div>
                     </div>
-                </div>
+                )}
 
                 {/* School location map */}
                 <div className="rounded-lg space-y-4">
