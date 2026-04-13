@@ -427,11 +427,18 @@ function HeatMapPage() {
                                 variant="ghost"
                                 size="sm"
                                 className="justify-start"
-                                onClick={() => {
+                                onClick={async () => {
                                     const mapCurrent = mapRef.current;
                                     if (!mapCurrent) return;
-                                    exportMapToPDF(mapCurrent, filterName);
-                                    toast.success("Map exported successfully!");
+                                    const exported = await exportMapToPDF(
+                                        mapCurrent,
+                                        filterName,
+                                    );
+                                    if (exported) {
+                                        toast.success(
+                                            "Map exported successfully!",
+                                        );
+                                    }
                                 }}
                             >
                                 <Share className="w-4 h-4 mr-2" />

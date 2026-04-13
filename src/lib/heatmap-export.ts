@@ -22,7 +22,7 @@ export async function exportMapToPDF(
 ) {
     if (!map) {
         toast.error("Map instance not found");
-        return;
+        return false;
     }
 
     try {
@@ -78,8 +78,10 @@ export async function exportMapToPDF(
             const filename = title || "heatmap";
             pdf.save(`${filename}.pdf`);
         }
+        return true;
     } catch (error) {
         toast.error("Failed to export heatmap");
+        return false;
     }
 }
 
