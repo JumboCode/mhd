@@ -1,4 +1,3 @@
-"use client";
 /***************************************************************
  *
  * src/app/heat-map/page.tsx
@@ -9,6 +8,7 @@
  * Summary: Heatmap + Clusters within MA region
  *
  **************************************************************/
+"use client";
 
 import { Map } from "@/components/ui/map";
 import { Suspense, useEffect, useState, useRef, useMemo } from "react";
@@ -142,7 +142,7 @@ function HeatMapPage() {
     );
     const regionView = rawRegionView.toLowerCase();
 
-    const [showSchools] = useQueryState(
+    const [showSchools, setShowSchools] = useQueryState(
         "showSchools",
         parseAsBoolean.withDefault(true),
     );
