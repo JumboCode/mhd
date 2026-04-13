@@ -32,18 +32,15 @@ function SortableHeader<T>({
     };
 
     return (
-        <div className="flex items-center gap-1">
-            <span
-                className="text-sm font-medium cursor-pointer"
-                onClick={handleSort}
-            >
-                {label}
-            </span>
+        <div
+            className="flex items-center gap-1 cursor-pointer"
+            onClick={handleSort}
+        >
+            <span className="text-sm font-medium">{label}</span>
             <Button
                 variant="ghost"
                 size="icon"
-                className="h-6 w-6 hover:bg-transparent"
-                onClick={handleSort}
+                className="h-6 w-6 hover:bg-transparent pointer-events-none"
             >
                 <ChevronsUpDownSort sortDirection={column.getIsSorted()} />
             </Button>
