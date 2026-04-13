@@ -861,7 +861,7 @@ export default function ChartPage() {
                         </div>
 
                         {/* Actions - hidden when sidebar is collapsed */}
-                        <div className="hidden lg:flex gap-3">
+                        <div className="hidden xl:flex gap-3">
                             <AlertDialog
                                 open={exportDialogOpen}
                                 onOpenChange={setExportDialogOpen}
@@ -978,7 +978,7 @@ export default function ChartPage() {
                                 <Button
                                     variant="outline"
                                     size="sm"
-                                    className="lg:hidden flex items-center gap-2"
+                                    className="xl:hidden flex items-center gap-2"
                                 >
                                     <Share className="w-4 h-4" />
                                     Share

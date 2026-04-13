@@ -44,6 +44,11 @@ import {
     SheetHeader,
     SheetTitle,
 } from "@/components/ui/sheet";
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover";
 import { exportMapToPDF } from "@/lib/heatmap-export";
 import { useHotkey } from "@/hooks/useHotkey";
 import { useHeatmapLayers } from "@/hooks/useHeatmapLayers";
@@ -283,7 +288,8 @@ function HeatMapPage() {
         <div className="flex p-8 flex-col h-screen w-full justify-center">
             <div className="flex justify-between items-center mb-5">
                 <h1 className="text-2xl font-semibold">{filterName}</h1>
-                <div className="flex gap-3">
+                {/* Actions - hidden on smaller screens */}
+                <div className="hidden xl:flex gap-3">
                     <AlertDialog
                         open={exportDialogOpen}
                         onOpenChange={setExportDialogOpen}
@@ -365,14 +371,6 @@ function HeatMapPage() {
                             </span>
                         )}
                     </Button>
-                    <Sheet open={cartOpen} onOpenChange={setCartOpen}>
-                        <SheetContent>
-                            <SheetHeader>
-                                <SheetTitle>Cart</SheetTitle>
-                            </SheetHeader>
-                            <Cart />
-                        </SheetContent>
-                    </Sheet>
                     <Button
                         variant="outline"
                         size="sm"
@@ -383,6 +381,99 @@ function HeatMapPage() {
                         Share
                     </Button>
                 </div>
+
+                {/* Share popover - visible on smaller screens */}
+                <Popover>
+                    <PopoverTrigger asChild>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="xl:hidden flex items-center gap-2"
+                        >
+                            <Share className="w-4 h-4" />
+                            Share
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-56" align="end">
+                        <div className="flex flex-col gap-2">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="justify-start"
+                                onClick={() => {
+                                    const mapCurrent = mapRef.current;
+                                    if (!mapCurrent) return;
+                                    exportMapToPDF(mapCurrent, filterName);
+                                    toast.success("Map exported successfully!");
+                                }}
+                            >
+                                <Share className="w-4 h-4 mr-2" />
+                                Export to PDF
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="justify-start"
+                                onClick={() => {
+                                    if (mapInCart) {
+                                        removeByName(filterName);
+                                    } else {
+                                        const map = mapRef.current;
+                                        if (!map) return;
+                                        const mapImageData = map
+                                            .getCanvas()
+                                            .toDataURL("image/jpeg", 0.5);
+                                        addMapItem(filterName, mapImageData);
+                                    }
+                                }}
+                            >
+                                {mapInCart ? (
+                                    <>
+                                        <CheckCircle2 className="w-4 h-4 mr-2" />
+                                        Remove from cart
+                                    </>
+                                ) : (
+                                    <>
+                                        <PlusCircle className="w-4 h-4 mr-2" />
+                                        Add to cart
+                                    </>
+                                )}
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="justify-start relative"
+                                onClick={() => setCartOpen(true)}
+                            >
+                                <ShoppingBasket className="w-4 h-4 mr-2" />
+                                View cart
+                                {items.length > 0 && (
+                                    <span className="ml-auto inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+                                        {items.length}
+                                    </span>
+                                )}
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="justify-start"
+                                onClick={copyURLtoClipboard}
+                            >
+                                <Link className="w-4 h-4 mr-2" />
+                                Copy link
+                            </Button>
+                        </div>
+                    </PopoverContent>
+                </Popover>
+
+                <Sheet open={cartOpen} onOpenChange={setCartOpen}>
+                    <SheetContent>
+                        <SheetHeader>
+                            <SheetTitle>Cart</SheetTitle>
+                        </SheetHeader>
+                        <Cart />
+                    </SheetContent>
+                </Sheet>
             </div>
             <div className="flex flex-row justify-between items-center gap-4 shrink-0 pb-5">
                 <div className="flex flex-row items-center gap-4">
