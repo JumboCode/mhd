@@ -41,4 +41,4 @@
 
 <!-- Finally, tag your PR with the appropriate tags on the right sidebar -->
 <!-- Including selecting your Issue in the "Development" section -->
-<!-- And include you and your partner as "Asignees" -->
+<!-- And include you and your partner as "Assignees" -->
