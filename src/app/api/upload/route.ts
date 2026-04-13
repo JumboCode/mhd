@@ -1,6 +1,6 @@
 /***************************************************************
  *
- *                /api/import/route.ts
+ *                /api/upload/route.ts
  *
  *         Author: Anne Wu & Chiara Martello
  *           Date: 11/17/2025
@@ -19,23 +19,120 @@ import {
     projects,
     yearlyTeacherParticipation,
     yearlySchoolParticipation,
+    yearMetadata,
 } from "@/lib/schema";
-import { requiredColumns } from "@/lib/required-spreadsheet-columns";
-import { standardize } from "@/lib/school-name-standardize";
+import { standardize, toTitleCase } from "@/lib/string-standardize";
+import { studentRequiredColumns } from "@/lib/required-spreadsheet-columns";
 import { findRegionOf } from "@/lib/region-finder";
 
 type RowData = Array<string | number | boolean | null>;
 
-/**
- * School coordinates sent from frontend after matching
- */
 type SchoolCoordinateData = {
     schoolId: string;
     lat: number | null;
     long: number | null;
 };
 
+let currentProgress = {
+    progress: 0,
+    complete: false,
+};
+
+type SchoolInfoEntry = {
+    /** A school may participate in multiple divisions. */
+    division: string[];
+    implementationModel: string;
+    schoolType: string;
+};
+
+/**
+ * Removes extraneous whitespace around slashes, e.g. "Private/ Independent" → "Private/Independent".
+ */
+function normalizeSlashes(s: string): string {
+    return s.replace(/\s*\/\s*/g, "/").trim();
+}
+
+/**
+ * Parses a division cell value into one or more division strings.
+ * Handles both comma-separated values in a single cell and empty values.
+ */
+function parseDivisions(raw: string): string[] {
+    return raw
+        .split(",")
+        .map((d) => d.trim())
+        .filter(Boolean);
+}
+
+/**
+ * Builds a lookup map from schoolId → school info fields using the school info spreadsheet.
+ * If a school appears on multiple rows (one per division), divisions are accumulated.
+ * Comma-separated divisions within a single cell are also supported.
+ */
+function buildSchoolInfoMap(rawData: RowData[]): Map<string, SchoolInfoEntry> {
+    const map = new Map<string, SchoolInfoEntry>();
+    if (!rawData || rawData.length === 0) return map;
+
+    const normalize = (s: string) => s.toLowerCase().replace(/\s+/g, "");
+
+    const headers = rawData[0] as string[];
+    const headerMap = new Map<string, number>();
+    headers.forEach((h, i) => headerMap.set(normalize(h), i));
+
+    const schoolIdIdx =
+        headerMap.get(normalize("schoolId")) ??
+        headerMap.get(normalize("School id"));
+    const divisionIdx = headerMap.get(normalize("division"));
+    const implModelIdx =
+        headerMap.get(normalize("implementationModel")) ??
+        headerMap.get(normalize("Implementation Model"));
+    const schoolTypeIdx =
+        headerMap.get(normalize("schoolType")) ??
+        headerMap.get(normalize("School Type"));
+
+    if (schoolIdIdx === undefined) return map;
+
+    for (let i = 1; i < rawData.length; i++) {
+        const row = rawData[i];
+        const rawId = row[schoolIdIdx];
+        if (rawId === null || rawId === undefined || rawId === "") continue;
+
+        const schoolId = String(rawId).trim();
+
+        const divisions =
+            divisionIdx !== undefined
+                ? parseDivisions(String(row[divisionIdx] ?? ""))
+                : [];
+        const implementationModel =
+            implModelIdx !== undefined
+                ? normalizeSlashes(String(row[implModelIdx] ?? ""))
+                : "";
+        const schoolType =
+            schoolTypeIdx !== undefined
+                ? normalizeSlashes(String(row[schoolTypeIdx] ?? ""))
+                : "";
+
+        const existing = map.get(schoolId);
+        if (existing) {
+            // Accumulate divisions from additional rows for the same school
+            for (const div of divisions) {
+                if (!existing.division.includes(div)) {
+                    existing.division.push(div);
+                }
+            }
+        } else {
+            map.set(schoolId, {
+                division: divisions,
+                implementationModel,
+                schoolType,
+            });
+        }
+    }
+
+    return map;
+}
+
 export async function POST(req: NextRequest) {
+    currentProgress = { progress: 0, complete: false };
     try {
         const jsonReq = await req.json();
         const year: number = jsonReq.formYear;
@@ -43,7 +140,13 @@ export async function POST(req: NextRequest) {
         const schoolCoordinates: SchoolCoordinateData[] =
             jsonReq.schoolCoordinates || [];
 
-        // Create a map for quick lookup of school coordinates by schoolId
+        // Parse the school info spreadsheet if provided
+        const schoolInfoMap: Map<string, SchoolInfoEntry> =
+            jsonReq.schoolInfoData
+                ? buildSchoolInfoMap(JSON.parse(jsonReq.schoolInfoData))
+                : new Map();
+
+        // Build coordinates lookup
         const coordsMap = new Map<
             string,
             { lat: number | null; long: number | null }
@@ -61,32 +164,27 @@ export async function POST(req: NextRequest) {
 
         // Get header row and normalize column names for lookup
         const headers = rawData[0] as string[];
-        const normalizeColumnName = (name: string): string => {
-            return name.toLowerCase().replace(/\s+/g, "");
-        };
+        const normalizeColumnName = (name: string): string =>
+            name.toLowerCase().replace(/\s+/g, "");
 
-        // Create a map of normalized header names to their column indices
         const headerMap = new Map<string, number>();
         headers.forEach((header, index) => {
             headerMap.set(normalizeColumnName(header), index);
         });
 
-        // Helper function to find column index by name
-        const getColumnIndex = (columnName: string): number | undefined => {
-            return headerMap.get(normalizeColumnName(columnName));
-        };
+        const getColumnIndex = (columnName: string): number | undefined =>
+            headerMap.get(normalizeColumnName(columnName));
 
-        // Build column indices object dynamically
+        // Build column indices dynamically from student required columns
         const COLUMN_INDICES: Record<string, number> = {};
-        requiredColumns.forEach((col) => {
+        studentRequiredColumns.forEach((col) => {
             const index = getColumnIndex(col);
             if (index !== undefined) {
                 COLUMN_INDICES[col] = index;
             }
         });
 
-        // Validate all required columns exist
-        const missingColumns = requiredColumns.filter(
+        const missingColumns = studentRequiredColumns.filter(
             (col) => COLUMN_INDICES[col] === undefined,
         );
 
@@ -111,8 +209,9 @@ export async function POST(req: NextRequest) {
             .delete(yearlyTeacherParticipation)
             .where(eq(yearlyTeacherParticipation.year, year));
 
-        let insertedCount = 0;
-        for (const row of filteredRows) {
+        const total = filteredRows.length;
+        for (let i = 0; i < filteredRows.length; i++) {
+            const row = filteredRows[i];
             // Find or create school using schoolId
             const schoolIdValue = String(row[COLUMN_INDICES.schoolId]);
             let school = await db.query.schools.findFirst({
@@ -120,17 +219,17 @@ export async function POST(req: NextRequest) {
             });
 
             const schoolName = row[COLUMN_INDICES.schoolName] as string;
-            const schoolTown = row[COLUMN_INDICES.city] as string;
+            const schoolTown = toTitleCase(row[COLUMN_INDICES.city] as string);
+            const schoolInfo = schoolInfoMap.get(schoolIdValue);
 
             if (!school) {
-                // Get coordinates from frontend matching
                 const coords = coordsMap.get(schoolIdValue);
                 const region = findRegionOf(coords?.lat, coords?.long);
 
                 const [inserted] = await db
                     .insert(schools)
                     .values({
-                        schoolId: schoolIdValue,
+                        schoolId: schoolIdValue, // or "id: schoolIdValue" if table uses "id"
                         name: schoolName,
                         standardizedName: standardize(schoolName),
                         town: schoolTown,
@@ -140,15 +239,20 @@ export async function POST(req: NextRequest) {
                     })
                     .returning();
                 school = inserted;
-            } else if (!school.latitude || !school.longitude) {
-                // School exists but missing coordinates - update if we have them
+            } else {
+                // Update coordinates if missing, and always update school info fields
                 const coords = coordsMap.get(schoolIdValue);
-                if (coords?.lat && coords?.long) {
+                const needsCoordUpdate =
+                    (!school.latitude || !school.longitude) &&
+                    coords?.lat &&
+                    coords?.long;
+
+                if (needsCoordUpdate) {
                     const [updated] = await db
                         .update(schools)
                         .set({
-                            latitude: coords.lat,
-                            longitude: coords.long,
+                            latitude: coords!.lat,
+                            longitude: coords!.long,
                         })
                         .where(eq(schools.id, school.id))
                         .returning();
@@ -156,7 +260,7 @@ export async function POST(req: NextRequest) {
                 }
             }
 
-            // Find or create teacher using teacherId
+            // Find or create teacher
             const teacherIdValue = String(row[COLUMN_INDICES.teacherId]);
             let teacher = await db.query.teachers.findFirst({
                 where: eq(teachers.teacherId, teacherIdValue),
@@ -192,7 +296,7 @@ export async function POST(req: NextRequest) {
                         teacherId: teacher.id,
                         projectId: projectIdValue,
                         title: row[COLUMN_INDICES.title] as string,
-                        division: "General", // TODO: Update if division column is added
+                        division: (schoolInfo?.division ?? []).join(", "),
                         categoryId: String(row[COLUMN_INDICES.categoryId]),
                         category: row[COLUMN_INDICES.categoryName] as string,
                         year: year,
@@ -242,14 +346,43 @@ export async function POST(req: NextRequest) {
                 await db.insert(yearlySchoolParticipation).values({
                     year: year,
                     schoolId: school.id,
+                    division: schoolInfo?.division ?? [],
+                    implementationModel: schoolInfo?.implementationModel ?? "",
+                    schoolType: schoolInfo?.schoolType ?? "",
                 });
+            } else if (schoolInfo) {
+                await db
+                    .update(yearlySchoolParticipation)
+                    .set({
+                        division: schoolInfo.division,
+                        implementationModel: schoolInfo.implementationModel,
+                        schoolType: schoolInfo.schoolType,
+                    })
+                    .where(
+                        eq(
+                            yearlySchoolParticipation.id,
+                            existingYearlySchool.id,
+                        ),
+                    );
             }
 
-            insertedCount++;
+            currentProgress.progress = Math.round(((i + 1) / total) * 100);
+            currentProgress.complete = false;
         }
+        currentProgress.progress = 100;
+        currentProgress.complete = true;
+
+        const now = new Date();
+        await db
+            .insert(yearMetadata)
+            .values({ year, uploadedAt: now, lastUpdatedAt: now })
+            .onConflictDoUpdate({
+                target: yearMetadata.year,
+                set: { uploadedAt: now, lastUpdatedAt: now },
+            });
 
         return NextResponse.json(
-            { message: "Upload successful", rowsProcessed: insertedCount },
+            { message: "Upload started" },
             { status: 200 },
         );
     } catch (error) {
@@ -258,4 +391,43 @@ export async function POST(req: NextRequest) {
             { status: 500 },
         );
     }
+}
+
+export async function GET() {
+    let interval: NodeJS.Timeout;
+
+    const stream = new ReadableStream({
+        start(controller) {
+            interval = setInterval(() => {
+                try {
+                    // Only enqueue if not complete
+                    if (!currentProgress.complete) {
+                        controller.enqueue(
+                            `data: ${JSON.stringify(currentProgress)}\n\n`,
+                        );
+                    } else {
+                        controller.enqueue(
+                            `data: ${JSON.stringify(currentProgress)}\n\n`,
+                        );
+                        clearInterval(interval);
+                        controller.close();
+                    }
+                } catch (err) {
+                    clearInterval(interval);
+                    controller.close();
+                }
+            }, 500);
+        },
+        cancel() {
+            clearInterval(interval);
+        },
+    });
+
+    return new Response(stream, {
+        headers: {
+            "Content-Type": "text/event-stream",
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+        },
+    });
 }

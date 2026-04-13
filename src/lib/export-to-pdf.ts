@@ -10,14 +10,18 @@
  *        Summary: Export an svg graph as a pdf
  **************************************************************/
 
-import React, { Dispatch, SetStateAction } from "react";
+import React from "react";
 import html2canvas from "html2canvas-pro";
 import jsPDF from "jspdf";
 import logoImg from "../../public/images/mhd-logo-full.png";
 import { toast } from "sonner";
 import "../app/fonts/DMSans-VariableFont_opsz,wght-normal";
 
-export function downloadGraphs(cart: string[], filterNames: string[]) {
+export function downloadGraphs(
+    cart: string[],
+    filterNames: string[],
+    print = false,
+) {
     // Displays toast when there are no images to export
     if (cart.length === 0) {
         toast.error("Cart is empty");
@@ -74,7 +78,14 @@ export function downloadGraphs(cart: string[], filterNames: string[]) {
                 if (idx < cart.length - 1) pdf.addPage();
 
                 if (idx === cart.length - 1) {
-                    pdf.save("chart.pdf");
+                    if (print) {
+                        const blob = pdf.output("blob");
+                        const url = URL.createObjectURL(blob);
+                        window.open(url, "_blank");
+                    } else {
+                        const filename = filterNames[0] || "chart";
+                        pdf.save(`${filename}.pdf`);
+                    }
                     setTimeout(resolve, 1000);
                 }
             };
@@ -82,29 +93,10 @@ export function downloadGraphs(cart: string[], filterNames: string[]) {
     });
 }
 
-export async function addToCart(
-    chartRef: React.RefObject<HTMLDivElement | null>,
-    cart: string[],
-    setCart: Dispatch<SetStateAction<string[]>>,
-    filterNames: string[],
-    setFilterNames: Dispatch<SetStateAction<string[]>>,
-    filterName: string,
-): Promise<void> {
-    const el = chartRef.current;
-    if (!el) return;
-
-    const canvas = await html2canvas(el, {
-        backgroundColor: "#fff",
-        scale: 2,
-    });
-
-    setCart([...cart, canvas.toDataURL()]);
-    setFilterNames([...filterNames, filterName]);
-}
-
 export async function downloadSingleGraph(
     chartRef: React.RefObject<HTMLDivElement | null>,
     filterName: string,
+    print = false,
 ) {
     const el = chartRef.current;
     if (!el) return;
@@ -114,25 +106,5 @@ export async function downloadSingleGraph(
         scale: 2,
     });
 
-    downloadGraphs([canvas.toDataURL()], [filterName]);
-}
-
-export function clearCart(
-    setCart: Dispatch<SetStateAction<string[]>>,
-    setFilterNames: Dispatch<SetStateAction<string[]>>,
-) {
-    // Resets cart and filter names
-    setCart([]);
-    setFilterNames([]);
-}
-
-export function deleteFromCart(
-    cart: string[],
-    setCart: Dispatch<SetStateAction<string[]>>,
-    filterNames: string[],
-    setFilterNames: Dispatch<SetStateAction<string[]>>,
-    idx: number,
-) {
-    setCart(cart.filter((_, index) => index !== idx));
-    setFilterNames(filterNames.filter((_, index) => index !== idx));
+    downloadGraphs([canvas.toDataURL()], [filterName], print);
 }

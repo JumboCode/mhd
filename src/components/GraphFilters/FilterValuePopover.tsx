@@ -154,12 +154,22 @@ export function FilterValuePopover({
                         <div className="flex items-center gap-3">
                             <button
                                 type="button"
-                                onClick={handleSelectAll}
+                                onClick={
+                                    filteredOptions.every((o) =>
+                                        tempSelected.includes(o),
+                                    )
+                                        ? handleClearAll
+                                        : handleSelectAll
+                                }
                                 className="text-sm text-primary hover:underline"
                             >
-                                Select All
+                                {filteredOptions.every((o) =>
+                                    tempSelected.includes(o),
+                                )
+                                    ? "Deselect All"
+                                    : "Select All"}
                             </button>
-                            {filterType === "city" &&
+                            {filterType === "school" &&
                                 gatewayCities.length > 0 && (
                                     <>
                                         <span className="text-muted-foreground">
@@ -170,7 +180,7 @@ export function FilterValuePopover({
                                             onClick={handleSelectGatewayCities}
                                             className="text-sm text-primary hover:underline"
                                         >
-                                            Select Gateway Cities
+                                            Gateway Schools
                                         </button>
                                     </>
                                 )}

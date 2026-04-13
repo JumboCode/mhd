@@ -2,8 +2,8 @@
 
 import * as React from "react";
 import NextLink from "next/link";
-import { ArrowUp, ArrowDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 
 /**
  * Generates an SVG path string for a sparkline from data points.
@@ -81,21 +81,45 @@ function TrendIndicator({
     value,
     className,
 }: {
-    value: number;
+    value: number | null;
     className?: string;
 }) {
-    const isPositive = value >= 0;
-    const Icon = isPositive ? ArrowUp : ArrowDown;
+    // null = no data for previous year: show flat icon only, no percentage
+    if (value === null) {
+        return (
+            <span
+                className={cn(
+                    "inline-flex items-center gap-1 text-sm font-medium text-muted-foreground",
+                    className,
+                )}
+            >
+                <Minus className="h-5 w-5" />
+            </span>
+        );
+    }
+
+    const isFlat = value === 0;
+    const isPositive = value > 0;
 
     return (
         <span
             className={cn(
-                "inline-flex items-center gap-0.5 text-xs font-medium",
-                isPositive ? "text-green-600" : "text-red-600",
+                "inline-flex items-center gap-1 text-sm font-medium",
+                isFlat
+                    ? "text-muted-foreground"
+                    : isPositive
+                      ? "text-green-600"
+                      : "text-red-600",
                 className,
             )}
         >
-            <Icon className="h-3 w-3" />
+            {isFlat ? (
+                <Minus className="h-5 w-5" />
+            ) : isPositive ? (
+                <TrendingUp className="h-5 w-5" />
+            ) : (
+                <TrendingDown className="h-5 w-5" />
+            )}
             {Math.abs(value).toFixed(1)}%
         </span>
     );
@@ -116,8 +140,10 @@ export interface StatCardProps {
     sparklineStroke?: string;
     /** Sparkline fill color */
     sparklineFill?: string;
-    /** Percentage change to show with trend indicator (optional) */
-    percentChange?: number;
+    /** Percentage change to show with trend indicator (optional).
+     *  null = previous year exists but has no data (shows flat icon, no %).
+     *  undefined = no trend slot rendered (or invisible placeholder if showTrend=true). */
+    percentChange?: number | null;
     /** Whether to show the trend indicator (defaults to true if percentChange provided) */
     showTrend?: boolean;
     /** Layout variant */
@@ -159,8 +185,8 @@ export function StatCard({
         "relative flex flex-col items-center justify-center",
         "rounded-lg border border-border bg-card overflow-hidden",
         {
-            "py-6 gap-5": variant === "default",
-            "p-6 aspect-[247/138] gap-5": variant === "with-aspect",
+            "py-6": variant === "default",
+            "p-6 aspect-[247/138]": variant === "with-aspect",
         },
         href && "transition-colors hover:bg-accent/50 cursor-pointer",
         className,
@@ -178,6 +204,38 @@ export function StatCard({
 
     return (
         <Wrapper>
+            <div className="relative flex flex-col items-center gap-2">
+                {/* Label */}
+                <span
+                    className={cn(
+                        "flex items-center gap-1.5 text-muted-foreground",
+                        variant === "default" ? "text-xs" : "text-sm",
+                    )}
+                >
+                    {Icon && (
+                        <Icon
+                            className="h-4 w-4"
+                            style={iconColor ? { color: iconColor } : undefined}
+                        />
+                    )}
+                    {label}
+                </span>
+
+                {/* Value */}
+                <span className="tabular-nums text-5xl font-bold leading-none -mb-1.5">
+                    {formattedValue}
+                </span>
+
+                {showTrend &&
+                    (percentChange !== undefined ? (
+                        <TrendIndicator value={percentChange} />
+                    ) : (
+                        <span className="inline-flex items-center gap-1 text-sm font-medium text-muted-foreground/40">
+                            <Minus className="h-5 w-5" />
+                        </span>
+                    ))}
+            </div>
+
             {/* Sparkline background */}
             {sparklineData && sparklineData.length > 1 && (
                 <Sparkline
@@ -186,33 +244,6 @@ export function StatCard({
                     fillColor={sparklineFill}
                 />
             )}
-
-            {/* Label */}
-            <span
-                className={cn(
-                    "relative z-10 flex items-center gap-1.5 text-muted-foreground",
-                    variant === "default" ? "text-xs" : "text-sm",
-                )}
-            >
-                {Icon && (
-                    <Icon
-                        className="h-4 w-4"
-                        style={iconColor ? { color: iconColor } : undefined}
-                    />
-                )}
-                {label}
-            </span>
-
-            {/* Value with optional trend */}
-            <div className="relative z-10 flex items-baseline gap-2">
-                <span className="tabular-nums text-5xl font-bold leading-none">
-                    {formattedValue}
-                </span>
-
-                {showTrend && percentChange !== undefined && (
-                    <TrendIndicator value={percentChange} />
-                )}
-            </div>
         </Wrapper>
     );
 }

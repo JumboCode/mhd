@@ -40,7 +40,6 @@ export default function BarGraph({
     const mTop = config?.margin?.top ?? 6;
     const mRight = config?.margin?.right ?? 25;
     const mBottom = config?.margin?.bottom ?? 80;
-    const mLeft = config?.margin?.left ?? 50;
     const barPadding = config?.barPadding ?? 0.25;
     const cornerRadius = config?.cornerRadius ?? 3;
 
@@ -60,6 +59,14 @@ export default function BarGraph({
         .padding(dataset.length > 1 ? 0.05 : 0);
 
     const yScale = scaleLinear().domain([0, maxY]).range([100, 0]).nice();
+
+    const maxTickLen = yScale
+        .ticks(8)
+        .filter((t) => Number.isInteger(t))
+        .reduce((a, b) => Math.max(a, b), 0)
+        .toLocaleString().length;
+
+    const mLeft = config?.margin?.left ?? Math.max(54, 24 + maxTickLen * 8);
 
     const formatTooltip: TooltipFormatter =
         tooltipFormatter ?? ((d) => String(d.y));

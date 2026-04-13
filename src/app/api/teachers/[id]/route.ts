@@ -15,8 +15,8 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { teachers } from "@/lib/schema";
-import { eq } from "drizzle-orm";
+import { teachers, projects, yearMetadata } from "@/lib/schema";
+import { eq, inArray } from "drizzle-orm";
 
 export async function PATCH(
     req: NextRequest,
@@ -87,6 +87,19 @@ export async function PATCH(
                 { error: "Teacher not found" },
                 { status: 404 },
             );
+        }
+
+        // Bump lastUpdatedAt for all years this teacher has projects in
+        const teacherProjects = await db
+            .select({ year: projects.year })
+            .from(projects)
+            .where(eq(projects.teacherId, numericId));
+        const affectedYears = [...new Set(teacherProjects.map((p) => p.year))];
+        if (affectedYears.length > 0) {
+            await db
+                .update(yearMetadata)
+                .set({ lastUpdatedAt: new Date() })
+                .where(inArray(yearMetadata.year, affectedYears));
         }
 
         return NextResponse.json({ message: "Teacher updated successfully" });

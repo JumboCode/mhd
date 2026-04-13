@@ -212,20 +212,20 @@ export function EditableProjectsTable({
                 />
             ),
         },
-        {
-            accessorKey: "division",
-            header: "Division",
-            size: 120,
-            cell: ({ getValue, row, column }) => (
-                <StringSelectCell
-                    value={getValue() as string}
-                    options={["General", "Junior", "Senior"]}
-                    columnId={column.id}
-                    rowId={String(row.index)}
-                    onCommit={handleCommit}
-                />
-            ),
-        },
+        // { // TO DO: Re-insert into projects table if necessary
+        //     accessorKey: "division",
+        //     header: "Division",
+        //     size: 120,
+        //     cell: ({ getValue, row, column }) => (
+        //         <StringSelectCell
+        //             value={getValue() as string}
+        //             options={["General", "Junior", "Senior"]}
+        //             columnId={column.id}
+        //             rowId={String(row.index)}
+        //             onCommit={handleCommit}
+        //         />
+        //     ),
+        // },
         {
             accessorKey: "teamProject",
             header: "Team?",

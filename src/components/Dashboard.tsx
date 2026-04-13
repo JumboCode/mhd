@@ -12,13 +12,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { toast } from "sonner";
 import YearDropdown from "@/components/YearDropdown";
 import { StatCard } from "@/components/ui/stat-card";
 import { ENTITY_CONFIG } from "@/lib/entity-config";
-import MultiLineGraph from "./LineGraph";
-import type { GraphDataset } from "./LineGraph";
+import MultiLineGraph from "./charts/LineGraph";
+import type { GraphDataset } from "./charts/LineGraph";
 import Link from "next/link";
+import { DashboardSkeleton } from "@/components/skeletons/DashboardSkeleton";
+import { LoadError } from "@/components/ui/load-error";
+import { AlertCircle, X } from "lucide-react";
 
 type Stats = {
     totals: {
@@ -53,21 +55,29 @@ export default function Dashboard() {
     const [percentChanges, setPercentChanges] = useState<PercentChanges | null>(
         null,
     );
+    const [error, setError] = useState<string | null>(null);
+    const [showPrevYearWarning, setShowPrevYearWarning] = useState(true);
+
+    useEffect(() => {
+        setShowPrevYearWarning(true);
+    }, [year]);
 
     useEffect(() => {
         if (year === null) return;
         const fetchStats = async (selectedYear: number) => {
+            setError(null);
             try {
                 const res = await fetch(
                     `/api/yearly-totals?year=${selectedYear}`,
                 );
+                if (!res.ok) throw new Error("Failed to load dashboard data");
                 const data = await res.json();
 
                 setStats(data.yearlyStats);
                 setAllYearsStats(data.allYearsStats || []);
                 setPercentChanges(data.percentChanges || null);
             } catch {
-                toast.error("Failed to load dashboard data. Please try again.");
+                setError("Failed to load dashboard data");
             }
         };
 
@@ -88,12 +98,14 @@ export default function Dashboard() {
         if (year === null) return;
         const fetchData = async () => {
             const years = Array.from({ length: 6 }, (_, i) => year - (5 - i));
+            setError(null);
             try {
                 const results = await Promise.all(
                     years.map((y) =>
-                        fetch(`/api/yearly-totals?year=${y}`).then((r) =>
-                            r.json(),
-                        ),
+                        fetch(`/api/yearly-totals?year=${y}`).then((r) => {
+                            if (!r.ok) throw new Error("Failed to fetch data");
+                            return r.json();
+                        }),
                     ),
                 );
                 const projectsPoints = results.map((yearInfo, i) => ({
@@ -107,7 +119,7 @@ export default function Dashboard() {
                 setprojectsYearData(projectsPoints);
                 setschoolYearData(schoolsPoints);
             } catch {
-                toast.error("Failed to load dashboard data. Please try again.");
+                setError("Failed to load dashboard data");
             }
         };
         fetchData();
@@ -133,14 +145,40 @@ export default function Dashboard() {
             : "#";
 
     // Extract sparkline data arrays from allYearsStats (up to selected year)
-    const filteredStats =
-        year !== null
-            ? allYearsStats.filter((s) => s.year <= year)
-            : allYearsStats;
-    const projectsSparkline = filteredStats.map((s) => s.total_projects);
-    const teachersSparkline = filteredStats.map((s) => s.total_teachers);
-    const studentsSparkline = filteredStats.map((s) => s.total_students);
-    const schoolsSparkline = filteredStats.map((s) => s.total_schools);
+    // Include all years in the range, filling in 0 for missing years
+    const sparklineYears =
+        year !== null ? Array.from({ length: 6 }, (_, i) => year - 5 + i) : [];
+    const statsMap = new Map(allYearsStats.map((s) => [s.year, s]));
+    const projectsSparkline = sparklineYears.map(
+        (y) => statsMap.get(y)?.total_projects ?? 0,
+    );
+    const teachersSparkline = sparklineYears.map(
+        (y) => statsMap.get(y)?.total_teachers ?? 0,
+    );
+    const studentsSparkline = sparklineYears.map(
+        (y) => statsMap.get(y)?.total_students ?? 0,
+    );
+    const schoolsSparkline = sparklineYears.map(
+        (y) => statsMap.get(y)?.total_schools ?? 0,
+    );
+
+    const oldestYearWithData =
+        allYearsStats.length > 0
+            ? Math.min(...allYearsStats.map((s) => s.year))
+            : null;
+    const showFirstYearComparisonWarning =
+        year !== null &&
+        oldestYearWithData !== null &&
+        year === oldestYearWithData &&
+        percentChanges === null;
+
+    const handleRetry = () => {
+        setError(null);
+        setStats(null);
+        if (year !== null) {
+            setYear(year);
+        }
+    };
 
     return (
         <div className="flex flex-col gap-8 w-full px-8 py-10">
@@ -148,19 +186,41 @@ export default function Dashboard() {
                 <h1 className="text-2xl font-semibold">Overview Dashboard</h1>
                 <div className="ml-auto">
                     <YearDropdown
-                        showDataIndicator={true}
                         selectedYear={year}
                         onYearChange={(selectedYear) => {
                             if (selectedYear !== null) {
                                 setYear(selectedYear);
                             }
                         }}
+                        showDataIndicator={true}
                     />
                 </div>
             </div>
 
-            {stats ? (
+            {error ? (
+                <LoadError
+                    message={error}
+                    onRetry={handleRetry}
+                    className="h-96"
+                />
+            ) : stats ? (
                 <div className="">
+                    {showFirstYearComparisonWarning && showPrevYearWarning && (
+                        <div className="mb-5 flex items-center gap-2 px-4 py-2 bg-yellow-50 border border-yellow-200 text-yellow-900 text-sm rounded-md">
+                            <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                            <span className="flex-1">
+                                This is the earliest year of available data —
+                                year-over-year comparisons are not available.
+                            </span>
+                            <button
+                                onClick={() => setShowPrevYearWarning(false)}
+                                className="flex-shrink-0 hover:bg-yellow-100 rounded p-1"
+                                aria-label="Dismiss"
+                            >
+                                <X className="h-4 w-4" />
+                            </button>
+                        </div>
+                    )}
                     <div className="grid grid-cols-4 gap-5">
                         <StatCard
                             label={ENTITY_CONFIG.projects.label}
@@ -173,6 +233,7 @@ export default function Dashboard() {
                             percentChange={
                                 percentChanges?.projects ?? undefined
                             }
+                            showTrend={true}
                             href="/chart?measuredAs=total-project-count"
                         />
                         <StatCard
@@ -186,6 +247,7 @@ export default function Dashboard() {
                             percentChange={
                                 percentChanges?.teachers ?? undefined
                             }
+                            showTrend={true}
                             href="/chart?measuredAs=total-teacher-count"
                         />
                         <StatCard
@@ -199,6 +261,7 @@ export default function Dashboard() {
                             percentChange={
                                 percentChanges?.students ?? undefined
                             }
+                            showTrend={true}
                             href="/chart?measuredAs=total-student-count"
                         />
                         <StatCard
@@ -210,6 +273,7 @@ export default function Dashboard() {
                             sparklineStroke={ENTITY_CONFIG.schools.colorMid}
                             sparklineFill={ENTITY_CONFIG.schools.colorMuted}
                             percentChange={percentChanges?.schools ?? undefined}
+                            showTrend={true}
                             href="/chart?measuredAs=total-school-count"
                         />
                         {/* TODO: Once we store type of school, make this correct */}
@@ -243,7 +307,9 @@ export default function Dashboard() {
                         </Link>
                     </div>
                 </div>
-            ) : null}
+            ) : (
+                <DashboardSkeleton />
+            )}
         </div>
     );
 }

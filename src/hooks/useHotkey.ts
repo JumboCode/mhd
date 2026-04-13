@@ -5,6 +5,8 @@ type HotkeyOptions = {
     disabled?: boolean;
     /** Prevent default browser behavior */
     preventDefault?: boolean;
+    /** Require Cmd (Mac) / Ctrl (Windows/Linux) modifier */
+    meta?: boolean;
 };
 
 /**
@@ -16,14 +18,14 @@ type HotkeyOptions = {
  *
  * @example
  * useHotkey("b", () => setChartType("bar"));
- * useHotkey("l", () => setChartType("line"));
+ * useHotkey("s", () => openExportDialog(), { meta: true });
  */
 export function useHotkey(
     key: string,
     callback: () => void,
     options: HotkeyOptions = {},
 ) {
-    const { disabled = false, preventDefault = true } = options;
+    const { disabled = false, preventDefault = true, meta = false } = options;
 
     useEffect(() => {
         if (disabled) return;
@@ -40,9 +42,14 @@ export function useHotkey(
                 return;
             }
 
-            // Ignore if modifier keys are pressed (allow for other shortcuts)
-            if (event.metaKey || event.ctrlKey || event.altKey) {
-                return;
+            const hasModifier = event.metaKey || event.ctrlKey;
+
+            if (meta) {
+                // Require modifier for meta hotkeys
+                if (!hasModifier) return;
+            } else {
+                // Ignore modifier keys for plain hotkeys
+                if (event.metaKey || event.ctrlKey || event.altKey) return;
             }
 
             if (event.key.toLowerCase() === key.toLowerCase()) {
@@ -55,5 +62,5 @@ export function useHotkey(
 
         window.addEventListener("keydown", handler);
         return () => window.removeEventListener("keydown", handler);
-    }, [key, callback, disabled, preventDefault]);
+    }, [key, callback, disabled, preventDefault, meta]);
 }

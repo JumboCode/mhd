@@ -15,7 +15,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { projects } from "@/lib/schema";
+import { projects, yearMetadata } from "@/lib/schema";
 import { eq } from "drizzle-orm";
 
 export async function PATCH(
@@ -108,7 +108,7 @@ export async function PATCH(
             .update(projects)
             .set(updates)
             .where(eq(projects.id, numericId))
-            .returning({ id: projects.id });
+            .returning({ id: projects.id, year: projects.year });
 
         // If no rows were returned the ID didn't match any record
         if (result.length === 0) {
@@ -117,6 +117,12 @@ export async function PATCH(
                 { status: 404 },
             );
         }
+
+        // Bump lastUpdatedAt for this year
+        await db
+            .update(yearMetadata)
+            .set({ lastUpdatedAt: new Date() })
+            .where(eq(yearMetadata.year, result[0].year));
 
         return NextResponse.json({ message: "Project updated successfully" });
     } catch (error) {

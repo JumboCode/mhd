@@ -14,31 +14,39 @@
 import {
     CalendarDays,
     ChartColumn,
+    CheckCircle2,
     ChevronDown,
     LineChart,
     Link,
     Loader2,
     PlusCircle,
     Share,
+    ShoppingBasket,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { toast } from "sonner";
-import BarGraph from "@/components/BarGraph";
-import { type ChartDataset } from "@/components/chartTypes";
-import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { LoadError } from "@/components/ui/load-error";
+import BarGraph from "@/components/charts/BarGraph";
+import { type ChartDataset } from "@/components/charts/chartTypes";
 import GraphFilters, {
     type Filters,
     type GroupBy,
     type MeasuredAs,
 } from "@/components/GraphFilters/GraphFilters";
-import LineGraph from "@/components/LineGraph";
+import LineGraph from "@/components/charts/LineGraph";
 import { Button } from "@/components/ui/button";
 import {
     Popover,
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+    Sheet,
+    SheetContent,
+    SheetHeader,
+    SheetTitle,
+} from "@/components/ui/sheet";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
     useQueryState,
@@ -58,12 +66,8 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { addToCart, downloadSingleGraph } from "@/lib/export-to-pdf";
-import {
-    HoverCard,
-    HoverCardContent,
-    HoverCardTrigger,
-} from "@/components/ui/hover-card";
+import { downloadSingleGraph } from "@/lib/export-to-pdf";
+import { useCart } from "@/hooks/useCart";
 import { Cart } from "@/components/Cart";
 import { Kbd } from "@/components/ui/kbd";
 import { useHotkey } from "@/hooks/useHotkey";
@@ -78,12 +82,16 @@ type Project = {
     teamProject: boolean;
     schoolId: number;
     schoolName: string;
+    standardizedSchoolName: string;
     schoolTown: string;
     schoolRegion: string;
     teacherId: number;
     teacherName: string;
     teacherEmail: string;
     numStudents: number;
+    schoolDivisions: string[] | null;
+    schoolImplementationModel: string | null;
+    schoolSchoolType: string | null;
 };
 
 // possible values for measured as filter
@@ -102,7 +110,7 @@ const groupByLabels: Record<string, string> = {
     "region": "Region",
     "school-type": "School Type",
     "division": "Division",
-    "implementation-type": "Implementation Type",
+    "implementation-model": "Implementation Model",
     "project-type": "Project Type",
     "gateway-school": "Schools Representing Gateway Cities",
 };
@@ -189,6 +197,11 @@ export default function ChartPage() {
     const [gatewaySchools, setGatewaySchools] = useState<string[]>([]);
     const [isExporting, setIsExporting] = useState(false);
     const [exportDialogOpen, setExportDialogOpen] = useState(false);
+    const [cartOpen, setCartOpen] = useState(false);
+    const [isLoaded, setIsLoaded] = useState(false);
+    const [projectDataError, setProjectDataError] = useState<string | null>(
+        null,
+    );
 
     // Setting hooks
     const [timePeriod, setTimePeriod] = useQueryState(
@@ -272,9 +285,7 @@ export default function ChartPage() {
         parseAsBoolean.withDefault(false),
     );
 
-    const [cart, setCart] = useState<string[]>([]);
-
-    const [filterNames, setFilterNames] = useState<string[]>([]);
+    const { items, addChartItem, hasItem, removeByName } = useCart();
 
     const filters: Filters = useMemo(
         () => ({
@@ -309,31 +320,38 @@ export default function ChartPage() {
     const chartRef = useRef<HTMLDivElement | null>(null);
 
     // Fetch all project data
-    useEffect(() => {
-        const fetchProjects = async () => {
-            try {
-                const response = await fetch("/api/projects");
-                if (!response.ok) throw new Error("Failed to fetch");
+    const fetchProjects = useCallback(async () => {
+        setIsLoaded(false);
+        setProjectDataError(null);
+        try {
+            const response = await fetch("/api/projects");
+            if (!response.ok) throw new Error("Failed to load project data");
 
-                const data = await response.json();
+            const data = await response.json();
 
-                const updatedProjects = data.map((p: Project) => ({
-                    ...p,
-                    gatewaySchool: gatewaySchools.includes(p.schoolName)
-                        ? "Gateway"
-                        : "Non-Gateway",
-                }));
+            const updatedProjects = data.map((p: Project) => ({
+                ...p,
+                gatewaySchool: gatewaySchools.includes(p.schoolName)
+                    ? "Gateway"
+                    : "Non-Gateway",
+            }));
 
-                setAllProjects(updatedProjects);
-            } catch {
-                toast.error(
-                    "Failed to load project data. Please refresh the page.",
-                );
-            }
-        };
-
-        fetchProjects();
+            setAllProjects(updatedProjects);
+            setProjectDataError(null);
+        } catch (error) {
+            setProjectDataError(
+                error instanceof Error
+                    ? error.message
+                    : "Failed to load project data",
+            );
+        } finally {
+            setIsLoaded(true);
+        }
     }, [gatewaySchools]);
+
+    useEffect(() => {
+        fetchProjects();
+    }, [fetchProjects]);
 
     // Fetch gateway schools
     useEffect(() => {
@@ -345,11 +363,8 @@ export default function ChartPage() {
                 );
 
                 setGatewaySchools(schoolNames);
-            })
-            .catch(() => toast.error("Failed to load gateway schools"));
+            });
     }, []);
-
-    /* Fetch and set cart to and from session storage to persist between refreshes */
 
     const filterName = generateChartTitle(
         chartType,
@@ -366,36 +381,23 @@ export default function ChartPage() {
         },
     );
 
-    // Fetch all graphs from session storage on load
-    useEffect(() => {
-        const cartStorage = sessionStorage.getItem("cartStorage");
-        const cartNameStorage = sessionStorage.getItem("cartNameStorage");
+    const chartInCart = hasItem(filterName);
 
-        if (cartStorage) {
-            setCart(JSON.parse(cartStorage));
-        }
-
-        if (cartNameStorage) {
-            setFilterNames(JSON.parse(cartNameStorage));
-        }
-    }, []);
-
-    // Update cart in session storage when user changes cart
-    useEffect(() => {
-        if (cart.length !== 0) {
-            sessionStorage.setItem("cartStorage", JSON.stringify(cart));
-        }
-    }, [cart]);
-
-    // Update cart names when use changes the filters
-    useEffect(() => {
-        if (filterNames.length !== 0) {
-            sessionStorage.setItem(
-                "cartNameStorage",
-                JSON.stringify(filterNames),
-            );
-        }
-    }, [filterNames]);
+    // Cmd+S to open export dialog, Cmd+P to print PDF
+    useHotkey(
+        "s",
+        () => {
+            if (!exportDialogOpen) setExportDialogOpen(true);
+        },
+        { meta: true },
+    );
+    useHotkey(
+        "p",
+        () => {
+            downloadSingleGraph(chartRef, filterName, true);
+        },
+        { meta: true },
+    );
 
     // Sync tempYearRange with yearRange only when popover opens in custom mode
     useEffect(() => {
@@ -416,7 +418,7 @@ export default function ChartPage() {
 
     // Calculate the current year range based on time period selection
     useMemo(() => {
-        if (timePeriod === "custom") {
+        if (timePeriod === "custom" || allProjects.length === 0) {
             return;
         }
 
@@ -530,49 +532,11 @@ export default function ChartPage() {
             return true;
         });
 
-        // Determine the key to group data by for different lines on the graph
-        let groupKey: keyof Project | null = null;
-
-        switch (filters.groupBy) {
-            case "none":
-                groupKey = null;
-                break;
-            case "division":
-                groupKey = "division";
-                break;
-            case "project-type":
-                groupKey = "category";
-                break;
-            case "region":
-                groupKey = "schoolRegion"; // temp
-                break;
-            case "school-type":
-                groupKey = "category"; // temp
-                break;
-            case "implementation-type":
-                groupKey = "category"; // temp
-                break;
-            case "gateway-school":
-                groupKey = "gatewaySchool";
-                break;
-        }
-
-        // Get a sorted list of unique group names
-        // If groupKey is null (none grouping), use a single "All" group
-        const uniqueGroups =
-            groupKey === null
-                ? ["All"]
-                : Array.from(
-                      new Set(
-                          filteredProjects.map((p) =>
-                              String(p[groupKey] || "Unknown"),
-                          ),
-                      ),
-                  ).sort();
-
-        // added to handle measured by filter!
         function computeMetric(projects: Project[], metric: string) {
             switch (metric) {
+                case "total-school-count":
+                    return new Set(projects.map((p) => p.schoolId)).size;
+
                 case "total-project-count":
                     return projects.length;
 
@@ -589,21 +553,16 @@ export default function ChartPage() {
                     return new Set(projects.map((p) => p.schoolTown)).size;
 
                 case "school-return-rate": {
-                    // schools that have projects in this year for this group
                     const schoolsThisYear = new Set(
                         projects.map((p) => p.schoolId),
                     );
                     const year = projects[0].year;
-
-                    // all earlier participation by these same schools
                     const priorParticipation = allProjects.filter(
                         (x) => schoolsThisYear.has(x.schoolId) && x.year < year,
                     );
-
                     const returningSchools = new Set(
                         priorParticipation.map((p) => p.schoolId),
                     );
-
                     return returningSchools.size / schoolsThisYear.size || 0;
                 }
 
@@ -612,39 +571,120 @@ export default function ChartPage() {
             }
         }
 
-        // Format the filtered and grouped data for the graph components
-        return uniqueGroups.map((groupName) => {
-            // Isolate projects belonging to the current group
-            // If groupKey is null (none grouping), include all filtered projects
-            const projectsInGroup =
-                groupKey === null
-                    ? filteredProjects
-                    : filteredProjects.filter(
-                          (p) => String(p[groupKey] || "Unknown") === groupName,
-                      );
+        function buildDatasets(
+            groups: string[],
+            getProjectsInGroup: (groupName: string) => Project[],
+        ) {
+            const metric = filters?.measuredAs || "total-school-count";
+            setMeasuredAs(metric as MeasuredAs);
+            return groups.map((groupName) => {
+                const projectsInGroup = getProjectsInGroup(groupName);
+                const projectsByYear: Record<number, Project[]> = {};
+                projectsInGroup.forEach((p) => {
+                    if (!projectsByYear[p.year]) projectsByYear[p.year] = [];
+                    projectsByYear[p.year].push(p);
+                });
+                const dataPoints = Object.entries(projectsByYear)
+                    .map(([year, projs]) => ({
+                        x: Number(year),
+                        y: computeMetric(projs, metric),
+                    }))
+                    .sort((a, b) => a.x - b.x);
+                return { label: groupName, data: dataPoints };
+            });
+        }
 
-            const projectsByYear: Record<number, Project[]> = {};
+        // Division groupby: school-level array field, one project can belong to multiple groups
+        if (filters.groupBy === "division") {
+            const normalizeDivision = (d: string): string => {
+                const lower = d.toLowerCase();
+                if (lower.startsWith("junior")) return "Junior";
+                if (lower.startsWith("senior")) return "Senior";
+                if (lower.startsWith("young")) return "Young Historian";
+                return d;
+            };
 
-            projectsInGroup.forEach((p) => {
-                if (!projectsByYear[p.year]) projectsByYear[p.year] = [];
-                projectsByYear[p.year].push(p);
+            const allDivisionGroups = new Set<string>();
+            filteredProjects.forEach((p) => {
+                const divs = p.schoolDivisions;
+                if (!divs || divs.length === 0) {
+                    allDivisionGroups.add("Unassigned");
+                } else {
+                    divs.forEach((d) =>
+                        allDivisionGroups.add(normalizeDivision(d)),
+                    );
+                }
             });
 
-            setMeasuredAs(filters?.measuredAs || "total-school-count");
-            const metric = filters?.measuredAs || "total-school-count";
+            const divisionGroups = Array.from(allDivisionGroups).sort((a, b) =>
+                a === "Unassigned"
+                    ? 1
+                    : b === "Unassigned"
+                      ? -1
+                      : a.localeCompare(b),
+            );
 
-            const dataPoints = Object.entries(projectsByYear)
-                .map(([year, projs]) => ({
-                    x: Number(year),
-                    y: computeMetric(projs, metric),
-                }))
-                .sort((a, b) => a.x - b.x);
+            return buildDatasets(divisionGroups, (groupName) =>
+                filteredProjects.filter((p) => {
+                    const divs = p.schoolDivisions;
+                    if (groupName === "Unassigned")
+                        return !divs || divs.length === 0;
+                    return (
+                        divs?.some((d) => normalizeDivision(d) === groupName) ??
+                        false
+                    );
+                }),
+            );
+        }
 
-            return {
-                label: groupName,
-                data: dataPoints,
-            };
-        });
+        // Determine the key to group data by for all other groupBys
+        let groupKey: keyof Project | null = null;
+
+        switch (filters.groupBy) {
+            case "none":
+                groupKey = null;
+                break;
+            case "project-type":
+                groupKey = "category";
+                break;
+            case "region":
+                groupKey = "schoolRegion";
+                break;
+            case "school-type":
+                groupKey = "schoolSchoolType";
+                break;
+            case "implementation-model":
+                groupKey = "schoolImplementationModel";
+                break;
+            case "gateway-school":
+                groupKey = "gatewaySchool";
+                break;
+        }
+
+        const uniqueGroups =
+            groupKey === null
+                ? ["All"]
+                : Array.from(
+                      new Set(
+                          filteredProjects.map((p) =>
+                              String(p[groupKey] || "Unassigned"),
+                          ),
+                      ),
+                  ).sort((a, b) =>
+                      a === "Unassigned"
+                          ? 1
+                          : b === "Unassigned"
+                            ? -1
+                            : a.localeCompare(b),
+                  );
+
+        return buildDatasets(uniqueGroups, (groupName) =>
+            groupKey === null
+                ? filteredProjects
+                : filteredProjects.filter(
+                      (p) => String(p[groupKey] || "Unassigned") === groupName,
+                  ),
+        );
     }, [
         allProjects,
         selectedSchools,
@@ -703,7 +743,6 @@ export default function ChartPage() {
         <div className="w-full min-h-screen flex bg-background">
             {/* Left Sidebar - Filter Panel */}
             <div className="flex flex-col border-r border-border p-8 bg-card w-70 h-screen overflow-y-auto sticky top-0 gap-12">
-                <Breadcrumbs />
                 <GraphFilters
                     schools={schools}
                     cities={cities}
@@ -732,415 +771,436 @@ export default function ChartPage() {
 
             {/* Main Content Area */}
             <div className="flex-1 flex flex-col h-screen overflow-hidden">
-                {allProjects.length > 0 ? (
-                    <div className="flex flex-col gap-4 h-full overflow-hidden">
-                        {/* Header */}
-                        <div className="flex items-center justify-between px-8 pt-4 shrink-0">
-                            <div className="relative">
-                                <AnimatePresence
-                                    initial={false}
-                                    mode="popLayout"
+                <div className="flex flex-col gap-4 h-full overflow-hidden">
+                    {/* Header */}
+                    <div className="flex items-center justify-between px-8 pt-4 shrink-0">
+                        <div className="relative">
+                            <AnimatePresence initial={false} mode="popLayout">
+                                <motion.h1
+                                    key={chartType}
+                                    className="text-xl font-semibold text-foreground"
+                                    transition={{
+                                        duration: 0.15,
+                                        ease: "easeOut",
+                                    }}
+                                    initial={{
+                                        opacity: 0,
+                                        x: slideDirection.current * -20,
+                                    }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{
+                                        opacity: 0,
+                                        x: slideDirection.current * -20,
+                                    }}
                                 >
-                                    <motion.h1
-                                        key={chartType}
-                                        className="text-xl font-semibold text-foreground"
-                                        initial={{ opacity: 0, x: -20 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        exit={{ opacity: 0, x: 20 }}
-                                        transition={{
-                                            duration: 0.15,
-                                            ease: "easeOut",
-                                        }}
+                                    {generateChartTitle(
+                                        chartType,
+                                        measuredAs,
+                                        groupBy,
+                                        yearRange.start,
+                                        yearRange.end,
+                                        {
+                                            schools: selectedSchools.length,
+                                            cities: selectedCities.length,
+                                            projectTypes:
+                                                selectedProjectTypes.length,
+                                            hasTeacherYearsFilter:
+                                                teacherYearsValue !== "",
+                                            onlyGatewaySchools:
+                                                onlyGatewaySchools,
+                                        },
+                                    )}
+                                </motion.h1>
+                            </AnimatePresence>
+                        </div>
+                        <div className="flex gap-3">
+                            <AlertDialog
+                                open={exportDialogOpen}
+                                onOpenChange={setExportDialogOpen}
+                            >
+                                <AlertDialogTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="flex items-center gap-2"
+                                        disabled={isExporting}
                                     >
-                                        {generateChartTitle(
-                                            chartType,
-                                            measuredAs,
-                                            groupBy,
-                                            yearRange.start,
-                                            yearRange.end,
-                                            {
-                                                schools: selectedSchools.length,
-                                                cities: selectedCities.length,
-                                                projectTypes:
-                                                    selectedProjectTypes.length,
-                                                hasTeacherYearsFilter:
-                                                    teacherYearsValue !== "",
-                                                onlyGatewaySchools:
-                                                    onlyGatewaySchools,
-                                            },
+                                        {isExporting ? (
+                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                        ) : (
+                                            <>
+                                                <Share className="w-4 h-4" />
+                                                Export
+                                            </>
                                         )}
-                                    </motion.h1>
-                                </AnimatePresence>
-                            </div>
-                            <div className="flex gap-3">
-                                <AlertDialog
-                                    open={exportDialogOpen}
-                                    onOpenChange={setExportDialogOpen}
-                                >
-                                    <AlertDialogTrigger asChild>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            className="flex items-center gap-2"
-                                            disabled={isExporting}
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>
+                                            Export graph to PDF?
+                                        </AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            This will download a PDF of the
+                                            current graph to your computer.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>
+                                            Cancel
+                                        </AlertDialogCancel>
+                                        <AlertDialogAction
+                                            onClick={async () => {
+                                                setExportDialogOpen(false);
+                                                setIsExporting(true);
+                                                await downloadSingleGraph(
+                                                    chartRef,
+                                                    filterName,
+                                                );
+                                                setIsExporting(false);
+                                                toast.success(
+                                                    "Chart exported successfully!",
+                                                );
+                                            }}
                                         >
-                                            {isExporting ? (
-                                                <Loader2 className="h-4 w-4 animate-spin" />
-                                            ) : (
-                                                <>
-                                                    <Share className="w-4 h-4" />
-                                                    Export
-                                                </>
-                                            )}
-                                        </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                        <AlertDialogHeader>
-                                            <AlertDialogTitle>
-                                                Export graph to PDF?
-                                            </AlertDialogTitle>
-                                            <AlertDialogDescription>
-                                                This will download a PDF of the
-                                                current graph to your computer.
-                                            </AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                            <AlertDialogCancel>
-                                                Cancel
-                                            </AlertDialogCancel>
-                                            <AlertDialogAction
-                                                onClick={async () => {
-                                                    setExportDialogOpen(false);
-                                                    setIsExporting(true);
-                                                    await downloadSingleGraph(
-                                                        chartRef,
-                                                        filterName,
-                                                    );
-                                                    setIsExporting(false);
-                                                    toast.success(
-                                                        "Graph exported successfully!",
-                                                    );
-                                                }}
-                                            >
-                                                Download
-                                            </AlertDialogAction>
-                                        </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                </AlertDialog>
-                                <HoverCard>
-                                    <HoverCardTrigger
-                                        delay={10}
-                                        closeDelay={100}
-                                        render={
+                                            Download
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="flex items-center gap-2"
+                                onClick={() => {
+                                    if (chartInCart) {
+                                        removeByName(filterName);
+                                    } else {
+                                        addChartItem(filterName, {
+                                            chartType: chartType as
+                                                | "bar"
+                                                | "line",
+                                            filters,
+                                            yearStart: yearRange.start,
+                                            yearEnd: yearRange.end,
+                                        });
+                                    }
+                                }}
+                            >
+                                {chartInCart ? (
+                                    <>
+                                        <CheckCircle2 className="w-4 h-4" />
+                                        Remove
+                                    </>
+                                ) : (
+                                    <>
+                                        <PlusCircle className="w-4 h-4" />
+                                        Add to cart
+                                    </>
+                                )}
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="flex items-center gap-2 relative"
+                                onClick={() => setCartOpen(true)}
+                            >
+                                <ShoppingBasket className="w-4 h-4" />
+                                Cart
+                                {items.length > 0 && (
+                                    <span className="absolute -top-2 -right-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+                                        {items.length}
+                                    </span>
+                                )}
+                            </Button>
+                            <Sheet open={cartOpen} onOpenChange={setCartOpen}>
+                                <SheetContent>
+                                    <SheetHeader>
+                                        <SheetTitle>Cart</SheetTitle>
+                                    </SheetHeader>
+                                    <Cart />
+                                </SheetContent>
+                            </Sheet>
+
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="flex items-center gap-2"
+                                onClick={copyURLtoClipboard}
+                            >
+                                <Link className="w-4 h-4" />
+                                Share
+                            </Button>
+                        </div>
+                    </div>
+
+                    {/* Chart Controls */}
+                    <div className="flex items-center justify-between px-8 py-3 shrink-0">
+                        <div className="flex items-center">
+                            <Tabs
+                                value={chartType}
+                                onValueChange={handleChartTypeChange}
+                            >
+                                <TabsList>
+                                    <TabsTrigger value="bar" className="gap-2">
+                                        <ChartColumn className="w-4 h-4" />
+                                        Bar
+                                        <Kbd>B</Kbd>
+                                    </TabsTrigger>
+                                    <TabsTrigger value="line" className="gap-2">
+                                        <LineChart className="w-4 h-4" />
+                                        Line
+                                        <Kbd>L</Kbd>
+                                    </TabsTrigger>
+                                </TabsList>
+                            </Tabs>
+                        </div>
+
+                        <div className="flex items-center">
+                            <Button
+                                type="button"
+                                variant={
+                                    timePeriod === "3y" ? "default" : "outline"
+                                }
+                                size="sm"
+                                onClick={() => setTimePeriod("3y")}
+                                className="rounded-l-md rounded-r-none border-r-0"
+                            >
+                                3y
+                            </Button>
+                            <Button
+                                type="button"
+                                variant={
+                                    timePeriod === "5y" ? "default" : "outline"
+                                }
+                                size="sm"
+                                onClick={() => setTimePeriod("5y")}
+                                className="rounded-none border-l-0 border-r-0 -ml-px"
+                            >
+                                5y
+                            </Button>
+                            <Popover
+                                open={yearRangeOpen}
+                                onOpenChange={setYearRangeOpen}
+                            >
+                                <PopoverTrigger asChild>
+                                    <Button
+                                        type="button"
+                                        variant={
+                                            timePeriod === "custom"
+                                                ? "default"
+                                                : "outline"
+                                        }
+                                        size="sm"
+                                        onClick={() => {
+                                            if (timePeriod !== "custom") {
+                                                setTimePeriod("custom");
+                                            }
+                                        }}
+                                        className="rounded-r-md rounded-l-none border-l-0 -ml-px flex items-center gap-2"
+                                    >
+                                        <CalendarDays />
+                                        {yearRange.start} - {yearRange.end}
+                                        <ChevronDown />
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-80">
+                                    <div className="space-y-4">
+                                        <h4 className="font-semibold text-sm">
+                                            Select Year Range
+                                        </h4>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="text-xs text-muted-foreground mb-1 block">
+                                                    Start Year
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    value={tempYearRange.start}
+                                                    onChange={(e) =>
+                                                        setTempYearRange({
+                                                            ...tempYearRange,
+                                                            start:
+                                                                parseInt(
+                                                                    e.target
+                                                                        .value,
+                                                                ) || 2020,
+                                                        })
+                                                    }
+                                                    className="w-full px-3 py-2 border border-input rounded-md text-sm"
+                                                    min="2000"
+                                                    max={tempYearRange.end}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="text-xs text-muted-foreground mb-1 block">
+                                                    End Year
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    value={tempYearRange.end}
+                                                    onChange={(e) =>
+                                                        setTempYearRange({
+                                                            ...tempYearRange,
+                                                            end:
+                                                                parseInt(
+                                                                    e.target
+                                                                        .value,
+                                                                ) || 2025,
+                                                        })
+                                                    }
+                                                    className="w-full px-3 py-2 border border-input rounded-md text-sm"
+                                                    min={tempYearRange.start}
+                                                    max="2100"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="flex gap-2 justify-end">
                                             <Button
                                                 variant="outline"
                                                 size="sm"
-                                                className="flex items-center gap-2"
                                                 onClick={() =>
-                                                    addToCart(
-                                                        chartRef,
-                                                        cart,
-                                                        setCart,
-                                                        filterNames,
-                                                        setFilterNames,
-                                                        filterName,
-                                                    )
+                                                    setYearRangeOpen(false)
                                                 }
                                             >
-                                                <PlusCircle className="w-4 h-4" />
-                                                Add to
+                                                Cancel
                                             </Button>
-                                        }
-                                    />
-                                    <HoverCardContent
-                                        className="flex flex-col gap-0.5 mt-2"
-                                        align="end"
-                                    >
-                                        <Cart
-                                            filterNames={filterNames}
-                                            cart={cart}
-                                            setCart={setCart}
-                                            setFilterNames={setFilterNames}
-                                        />
-                                    </HoverCardContent>
-                                </HoverCard>
-
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="flex items-center gap-2"
-                                    onClick={copyURLtoClipboard}
-                                >
-                                    <Link className="w-4 h-4" />
-                                    Share
-                                </Button>
-                            </div>
-                        </div>
-
-                        {/* Chart Controls */}
-                        <div className="flex items-center justify-between px-8 py-3 shrink-0">
-                            <div className="flex items-center">
-                                <Tabs
-                                    value={chartType}
-                                    onValueChange={handleChartTypeChange}
-                                >
-                                    <TabsList>
-                                        <TabsTrigger
-                                            value="bar"
-                                            className="gap-2"
-                                        >
-                                            <ChartColumn className="w-4 h-4" />
-                                            Bar
-                                            <Kbd>B</Kbd>
-                                        </TabsTrigger>
-                                        <TabsTrigger
-                                            value="line"
-                                            className="gap-2"
-                                        >
-                                            <LineChart className="w-4 h-4" />
-                                            Line
-                                            <Kbd>L</Kbd>
-                                        </TabsTrigger>
-                                    </TabsList>
-                                </Tabs>
-                            </div>
-
-                            <div className="flex items-center">
-                                <Button
-                                    type="button"
-                                    variant={
-                                        timePeriod === "3y"
-                                            ? "default"
-                                            : "outline"
-                                    }
-                                    size="sm"
-                                    onClick={() => setTimePeriod("3y")}
-                                    className="rounded-l-md rounded-r-none border-r-0"
-                                >
-                                    3y
-                                </Button>
-                                <Button
-                                    type="button"
-                                    variant={
-                                        timePeriod === "5y"
-                                            ? "default"
-                                            : "outline"
-                                    }
-                                    size="sm"
-                                    onClick={() => setTimePeriod("5y")}
-                                    className="rounded-none border-l-0 border-r-0 -ml-px"
-                                >
-                                    5y
-                                </Button>
-                                <Popover
-                                    open={yearRangeOpen}
-                                    onOpenChange={setYearRangeOpen}
-                                >
-                                    <PopoverTrigger asChild>
-                                        <Button
-                                            type="button"
-                                            variant={
-                                                timePeriod === "custom"
-                                                    ? "default"
-                                                    : "outline"
-                                            }
-                                            size="sm"
-                                            onClick={() => {
-                                                if (timePeriod !== "custom") {
+                                            <Button
+                                                size="sm"
+                                                onClick={() => {
+                                                    setStartYear(
+                                                        tempYearRange.start,
+                                                    );
+                                                    setEndYear(
+                                                        tempYearRange.end,
+                                                    );
                                                     setTimePeriod("custom");
-                                                }
-                                            }}
-                                            className="rounded-r-md rounded-l-none border-l-0 -ml-px flex items-center gap-2"
-                                        >
-                                            <CalendarDays />
-                                            {yearRange.start} - {yearRange.end}
-                                            <ChevronDown />
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-80">
-                                        <div className="space-y-4">
-                                            <h4 className="font-semibold text-sm">
-                                                Select Year Range
-                                            </h4>
-                                            <div className="grid grid-cols-2 gap-4">
-                                                <div>
-                                                    <label className="text-xs text-muted-foreground mb-1 block">
-                                                        Start Year
-                                                    </label>
-                                                    <input
-                                                        type="number"
-                                                        value={
-                                                            tempYearRange.start
-                                                        }
-                                                        onChange={(e) =>
-                                                            setTempYearRange({
-                                                                ...tempYearRange,
-                                                                start:
-                                                                    parseInt(
-                                                                        e.target
-                                                                            .value,
-                                                                    ) || 2020,
-                                                            })
-                                                        }
-                                                        className="w-full px-3 py-2 border border-input rounded-md text-sm"
-                                                        min="2000"
-                                                        max={tempYearRange.end}
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <label className="text-xs text-muted-foreground mb-1 block">
-                                                        End Year
-                                                    </label>
-                                                    <input
-                                                        type="number"
-                                                        value={
-                                                            tempYearRange.end
-                                                        }
-                                                        onChange={(e) =>
-                                                            setTempYearRange({
-                                                                ...tempYearRange,
-                                                                end:
-                                                                    parseInt(
-                                                                        e.target
-                                                                            .value,
-                                                                    ) || 2025,
-                                                            })
-                                                        }
-                                                        className="w-full px-3 py-2 border border-input rounded-md text-sm"
-                                                        min={
-                                                            tempYearRange.start
-                                                        }
-                                                        max="2100"
-                                                    />
-                                                </div>
-                                            </div>
-                                            <div className="flex gap-2 justify-end">
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={() =>
-                                                        setYearRangeOpen(false)
-                                                    }
-                                                >
-                                                    Cancel
-                                                </Button>
-                                                <Button
-                                                    size="sm"
-                                                    onClick={() => {
-                                                        setStartYear(
-                                                            tempYearRange.start,
-                                                        );
-                                                        setEndYear(
-                                                            tempYearRange.end,
-                                                        );
-                                                        setTimePeriod("custom");
-                                                        setYearRangeOpen(false);
-                                                    }}
-                                                >
-                                                    Apply
-                                                </Button>
-                                            </div>
+                                                    setYearRangeOpen(false);
+                                                }}
+                                            >
+                                                Apply
+                                            </Button>
                                         </div>
-                                    </PopoverContent>
-                                </Popover>
-                            </div>
-                        </div>
-
-                        {/* Chart Area */}
-
-                        {Math.round(filteredProjectCount) !== 0 ? (
-                            <div className="relative flex-1 overflow-hidden">
-                                <AnimatePresence initial={false}>
-                                    <motion.div
-                                        key={chartType}
-                                        className="flex h-full w-full items-center justify-center px-8 bg-background overflow-auto"
-                                        initial={{
-                                            opacity: 0,
-                                            x: slideDirection.current * -50,
-                                        }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        exit={{
-                                            opacity: 0,
-                                            x: slideDirection.current * -50,
-                                            position: "absolute",
-                                            inset: 0,
-                                        }}
-                                        transition={{
-                                            duration: 0.15,
-                                            ease: "easeInOut",
-                                        }}
-                                    >
-                                        {chartType === "bar" ? (
-                                            <BarGraph
-                                                dataset={graphDataset}
-                                                yAxisLabel={
-                                                    measuredAsLabels[
-                                                        filters.measuredAs
-                                                    ]
-                                                }
-                                                xAxisLabel="Year"
-                                                legendTitle={
-                                                    filters.groupBy === "none"
-                                                        ? undefined
-                                                        : groupByLabels[
-                                                              filters.groupBy
-                                                          ]
-                                                }
-                                                chartRef={chartRef}
-                                                tooltipFormatter={
-                                                    tooltipFormatter
-                                                }
-                                            />
-                                        ) : (
-                                            <LineGraph
-                                                datasets={graphDataset}
-                                                yAxisLabel={
-                                                    measuredAsLabels[
-                                                        filters.measuredAs
-                                                    ]
-                                                }
-                                                xAxisLabel="Year"
-                                                legendTitle={
-                                                    filters.groupBy === "none"
-                                                        ? undefined
-                                                        : groupByLabels[
-                                                              filters.groupBy
-                                                          ]
-                                                }
-                                                chartRef={chartRef}
-                                                tooltipFormatter={
-                                                    tooltipFormatter
-                                                }
-                                            />
-                                        )}
-                                    </motion.div>
-                                </AnimatePresence>
-                            </div>
-                        ) : (
-                            /* If no data is found that fits the filters, display this */
-                            <div className="flex-1 flex items-center justify-center px-8 bg-background overflow-auto">
-                                No Data Found
-                            </div>
-                        )}
-
-                        {/* Footer */}
-                        <div className="flex flex-col justify-center items-end gap-3 px-8 pb-4 text-xs text-foreground shrink-0">
-                            <p className="font-medium">
-                                <span className="font-mono bg-gray/4 border rounded-sm border-gray/2 py-1 px-2">
-                                    {Math.round(filteredProjectCount)}
-                                </span>{" "}
-                                data rows total
-                            </p>
-                            {/* TO DO: get most recent date from db but requires storing date */}
-                            <p>
-                                <span className="font-mono bg-gray/4 border rounded-sm border-gray/2 py-1 px-2">
-                                    06/25/2025
-                                </span>{" "}
-                                data last updated
-                            </p>
+                                    </div>
+                                </PopoverContent>
+                            </Popover>
                         </div>
                     </div>
-                ) : null}
+
+                    {/* Chart Area */}
+                    <div className="relative flex-1 overflow-hidden">
+                        {projectDataError ? (
+                            <LoadError
+                                message={projectDataError}
+                                onRetry={fetchProjects}
+                                className="h-full"
+                            />
+                        ) : (
+                            <>
+                                {/* Loading overlay */}
+                                {!isLoaded && (
+                                    <div className="absolute inset-0 z-50 flex items-center justify-center bg-white backdrop-blur-sm">
+                                        <Loader2 className="h-12 w-12 animate-spin text-slate-800" />
+                                    </div>
+                                )}
+
+                                {Math.round(filteredProjectCount) !== 0 ? (
+                                    <AnimatePresence initial={false}>
+                                        <motion.div
+                                            key={chartType}
+                                            className="flex h-full w-full items-center justify-center px-8 bg-background overflow-auto"
+                                            initial={{
+                                                opacity: 0,
+                                                x: slideDirection.current * -50,
+                                            }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            exit={{
+                                                opacity: 0,
+                                                x: slideDirection.current * -50,
+                                                position: "absolute",
+                                                inset: 0,
+                                            }}
+                                            transition={{
+                                                duration: 0.15,
+                                                ease: "easeInOut",
+                                            }}
+                                        >
+                                            {chartType === "bar" ? (
+                                                <BarGraph
+                                                    dataset={graphDataset}
+                                                    yAxisLabel={
+                                                        measuredAsLabels[
+                                                            filters.measuredAs
+                                                        ]
+                                                    }
+                                                    xAxisLabel="Year"
+                                                    legendTitle={
+                                                        filters.groupBy ===
+                                                        "none"
+                                                            ? undefined
+                                                            : groupByLabels[
+                                                                  filters
+                                                                      .groupBy
+                                                              ]
+                                                    }
+                                                    chartRef={chartRef}
+                                                    tooltipFormatter={
+                                                        tooltipFormatter
+                                                    }
+                                                />
+                                            ) : (
+                                                <LineGraph
+                                                    datasets={graphDataset}
+                                                    yAxisLabel={
+                                                        measuredAsLabels[
+                                                            filters.measuredAs
+                                                        ]
+                                                    }
+                                                    xAxisLabel="Year"
+                                                    legendTitle={
+                                                        filters.groupBy ===
+                                                        "none"
+                                                            ? undefined
+                                                            : groupByLabels[
+                                                                  filters
+                                                                      .groupBy
+                                                              ]
+                                                    }
+                                                    chartRef={chartRef}
+                                                    tooltipFormatter={
+                                                        tooltipFormatter
+                                                    }
+                                                />
+                                            )}
+                                        </motion.div>
+                                    </AnimatePresence>
+                                ) : (
+                                    /*  No data found */
+                                    <div className="flex h-full w-full items-center justify-center px-8 bg-background">
+                                        {isLoaded ? "No Data Found" : ""}
+                                    </div>
+                                )}
+                            </>
+                        )}
+                    </div>
+
+                    {/* Footer */}
+                    <div className="flex flex-col justify-center items-end gap-3 px-8 pb-4 text-xs text-foreground shrink-0">
+                        <p className="font-medium">
+                            <span className="font-mono bg-gray/4 border rounded-sm border-gray/2 py-1 px-2">
+                                {Math.round(filteredProjectCount)}
+                            </span>{" "}
+                            data rows total
+                        </p>
+                        {/* TO DO: get most recent date from db but requires storing date */}
+                        <p>
+                            <span className="font-mono bg-gray/4 border rounded-sm border-gray/2 py-1 px-2">
+                                06/25/2025
+                            </span>{" "}
+                            data last updated
+                        </p>
+                    </div>
+                </div>
             </div>
         </div>
     );

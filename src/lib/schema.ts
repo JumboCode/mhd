@@ -33,6 +33,9 @@ export const yearlySchoolParticipation = pgTable(
             .notNull()
             .references(() => schools.id),
         year: integer("year").notNull(),
+        division: text("division").array().notNull().default([]),
+        implementationModel: text("implementation_model").notNull().default(""),
+        schoolType: text("school_type").notNull().default(""),
     },
 );
 
@@ -61,6 +64,13 @@ export const projects = pgTable("projects", {
     year: integer("year").notNull(),
     teamProject: boolean("team_project").notNull(), // True if team project, false if individual
     numStudents: integer("num_students").notNull().default(1),
+});
+
+// Tracks upload and edit timestamps for each year's dataset
+export const yearMetadata = pgTable("year_metadata", {
+    year: integer("year").primaryKey(),
+    uploadedAt: timestamp("uploaded_at").notNull(),
+    lastUpdatedAt: timestamp("last_updated_at").notNull(),
 });
 
 // Ties a teacher to a school for a given year

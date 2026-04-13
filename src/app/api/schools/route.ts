@@ -11,8 +11,13 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { projects, schools, yearlyTeacherParticipation } from "@/lib/schema";
-import { count, eq, sum } from "drizzle-orm";
+import {
+    projects,
+    schools,
+    yearlySchoolParticipation,
+    yearlyTeacherParticipation,
+} from "@/lib/schema";
+import { and, count, eq, sum } from "drizzle-orm";
 
 function percentageChange(curr: number, past: number) {
     return past !== 0 ? Math.round(((curr - past) / past) * 100) : undefined;
@@ -22,12 +27,12 @@ export async function GET(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url);
 
-        // Lightweight list mode: returns id, name, lat, lng for all schools
+        // Lightweight list mode: school info for all schools
         if (searchParams.get("list") === "true") {
             const gatewayParam = searchParams.get("gateway");
-            const isGateway = gatewayParam === "true"; // boolean
+            const isGateway = gatewayParam === "true";
 
-            const query = db
+            const baseQuery = db
                 .select({
                     id: schools.id,
                     name: schools.name,
@@ -39,11 +44,9 @@ export async function GET(req: NextRequest) {
                 .from(schools);
 
             // Only filter if gateway=true is explicitly passed
-            if (isGateway) {
-                query.where(eq(schools.gateway, true));
-            }
-
-            const allSchools = await query;
+            const allSchools = await (isGateway
+                ? baseQuery.where(eq(schools.gateway, true))
+                : baseQuery);
             return NextResponse.json(allSchools);
         }
 
@@ -57,15 +60,29 @@ export async function GET(req: NextRequest) {
             );
         }
 
-        // Fetch all schools
+        // Fetch all schools with yearly data for the requested year
         const allSchools = await db
             .select({
                 id: schools.id,
                 name: schools.name,
                 city: schools.town,
+                latitude: schools.latitude,
+                longitude: schools.longitude,
                 region: schools.region,
+                gateway: schools.gateway,
+                division: yearlySchoolParticipation.division,
+                implementationModel:
+                    yearlySchoolParticipation.implementationModel,
+                schoolType: yearlySchoolParticipation.schoolType,
             })
-            .from(schools);
+            .from(schools)
+            .leftJoin(
+                yearlySchoolParticipation,
+                and(
+                    eq(yearlySchoolParticipation.schoolId, schools.id),
+                    eq(yearlySchoolParticipation.year, currentYear),
+                ),
+            );
 
         // Fetch project counts for current year grouped by school
         const currYearProjects = await db
@@ -153,7 +170,7 @@ export async function GET(req: NextRequest) {
             lastYearTeachers.map((t) => [t.schoolId, t.count]),
         );
 
-        // Combine data for each school, excluding schools with no participation in the current year
+        // Combine data for each school excluding schools with no participation in the current year
         const schoolsToReturn = allSchools.flatMap((school) => {
             const currProjects = currProjectsMap.get(school.id) ?? 0;
             const lastProjects = lastProjectsMap.get(school.id) ?? 0;
@@ -170,21 +187,20 @@ export async function GET(req: NextRequest) {
                 return [];
             }
 
-            return [
-                {
-                    name: school.name,
-                    city: school.city,
-                    region: school.region,
-                    instructionModel: "Dummy 1", // TODO: Not in schema yet
-                    implementationModel: "Dummy 1", // TODO: Not in schema yet
-                    numStudents: currStudents,
-                    studentChange: percentageChange(currStudents, lastStudents),
-                    numTeachers: currTeachers,
-                    teacherChange: percentageChange(currTeachers, lastTeachers),
-                    numProjects: currProjects,
-                    projectChange: percentageChange(currProjects, lastProjects),
-                },
-            ];
+            return {
+                name: school.name,
+                city: school.city,
+                region: school.region,
+                division: school.division ?? [],
+                implementationModel: school.implementationModel ?? "",
+                schoolType: school.schoolType ?? "",
+                numStudents: currStudents,
+                studentChange: percentageChange(currStudents, lastStudents),
+                numTeachers: currTeachers,
+                teacherChange: percentageChange(currTeachers, lastTeachers),
+                numProjects: currProjects,
+                projectChange: percentageChange(currProjects, lastProjects),
+            };
         });
 
         return NextResponse.json(schoolsToReturn);

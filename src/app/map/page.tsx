@@ -13,7 +13,15 @@
 import { Map } from "@/components/ui/map";
 import { Suspense, useEffect, useState, useRef, useMemo } from "react";
 import { toast } from "sonner";
-import { Loader2, Link, Share } from "lucide-react";
+import {
+    Loader2,
+    Link,
+    Share,
+    CheckCircle2,
+    ShoppingBasket,
+} from "lucide-react";
+import { LoadError } from "@/components/ui/load-error";
+import { capitalize } from "@/lib/utils";
 
 // queryStates required for URL sharing with nuqs
 import {
@@ -23,7 +31,7 @@ import {
     parseAsBoolean,
 } from "nuqs";
 
-const VALID_METRICS = ["Students", "Projects", "Teachers"];
+const VALID_METRICS = ["students", "projects", "teachers"];
 
 import "maplibre-gl/dist/maplibre-gl.css";
 
@@ -31,15 +39,18 @@ import YearDropdown from "@/components/YearDropdown";
 import CountDropdown from "@/components/CountDropdown";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import {
+    Sheet,
+    SheetContent,
+    SheetHeader,
+    SheetTitle,
+} from "@/components/ui/sheet";
 import { exportMapToPDF } from "@/lib/heatmap-export";
+import { useHotkey } from "@/hooks/useHotkey";
 import { useHeatmapLayers } from "@/hooks/useHeatmapLayers";
 import { Cart } from "@/components/Cart";
-import {
-    HoverCard,
-    HoverCardContent,
-    HoverCardTrigger,
-} from "@/components/ui/hover-card";
 import { PlusCircle } from "lucide-react";
+import { useCart } from "@/hooks/useCart";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -61,41 +72,37 @@ type Region = {
 };
 
 const regions: Record<string, Region> = {
-    Default: {
+    default: {
         center: [-71.7, 42.2],
         zoom: 7,
         maxZoom: 24,
         minZoom: 7,
     },
-    Western: {
+    western: {
         center: [-72.75, 42.35],
         zoom: 8.3,
         maxZoom: 24,
         minZoom: 7,
     },
-
-    Central: {
+    central: {
         center: [-71.8, 42.35],
         zoom: 8.5,
         maxZoom: 24,
         minZoom: 7,
     },
-
-    Boston: {
+    boston: {
         center: [-71.06, 42.33],
         zoom: 10,
         maxZoom: 24,
         minZoom: 8,
     },
-
-    Northeast: {
+    northeast: {
         center: [-71.2053, 42.4973],
         zoom: 8.6,
         maxZoom: 24,
         minZoom: 8,
     },
-
-    Southeast: {
+    southeast: {
         center: [-70.7313, 41.7842],
         zoom: 8,
         maxZoom: 24,
@@ -108,16 +115,13 @@ function HeatMapPage() {
         useState<GeoJSON.FeatureCollection | null>(null);
 
     // Controlled by dropdowns, parameterized for link sharing
-    // Year dropdown, set to range of our data
-    const [rawYear, setYear] = useQueryState(
-        "year",
-        parseAsInteger.withDefault(2025),
-    );
+    // Year dropdown — null default lets YearDropdown pick the most recent year with data
+    const [rawYear, setYear] = useQueryState("year", parseAsInteger);
 
-    // totalStudents | totalProjects |totalTeachers
-    const [rawMetric, setMetric] = useQueryState(
+    // totalStudents | totalProjects | totalTeachers (lowercase in URL)
+    const [rawMetric, setRawMetric] = useQueryState(
         "metric",
-        parseAsString.withDefault("Projects"),
+        parseAsString.withDefault("projects"),
     );
 
     // gateway school toggle variable
@@ -126,10 +130,11 @@ function HeatMapPage() {
         parseAsBoolean.withDefault(false),
     );
 
-    const [regionView, setregionView] = useQueryState(
+    const [rawRegionView, setRegionView] = useQueryState(
         "regionView",
-        parseAsString.withDefault("Default"),
+        parseAsString.withDefault("default"),
     );
+    const regionView = rawRegionView.toLowerCase();
 
     const [showSchools, setShowSchools] = useQueryState(
         "showSchools",
@@ -138,14 +143,27 @@ function HeatMapPage() {
 
     // Validate query params during render
     const currentYear = new Date().getFullYear();
-    const year = rawYear > currentYear || rawYear < 1990 ? 2025 : rawYear;
-    const metric = VALID_METRICS.includes(rawMetric) ? rawMetric : "Projects";
+    const year =
+        rawYear !== null && rawYear >= 1990 && rawYear <= currentYear
+            ? rawYear
+            : null;
+    const metric = capitalize(
+        VALID_METRICS.includes(rawMetric.toLowerCase())
+            ? rawMetric.toLowerCase()
+            : "projects",
+    );
+
+    /** Wrapper so CountDropdown can set lowercase metric in URL */
+    const setMetric = (value: string) => setRawMetric(value.toLowerCase());
 
     // Reference to the map, needed for updating the heat layer
     const mapRef = useRef<import("maplibre-gl").Map | null>(null);
 
     // Loading state
     const [isLoaded, setIsLoaded] = useState(false);
+    const [cartOpen, setCartOpen] = useState(false);
+    const [exportDialogOpen, setExportDialogOpen] = useState(false);
+    const [schoolDataError, setSchoolDataError] = useState<string | null>(null);
 
     const copyURLtoClipboard = async () => {
         try {
@@ -168,31 +186,36 @@ function HeatMapPage() {
                 );
 
                 setGatewaySchools(schoolNames);
-            })
-            .catch(() => toast.error("Failed to load gateway schools"));
+            });
     }, []);
 
     // Fetch school point data for heat layer
-    useEffect(() => {
-        const controller = new AbortController();
+    const fetchSchoolData = () => {
+        if (year === null) return;
         setIsLoaded(false);
-        fetch(`/api/heat-layer?year=${year}`, { signal: controller.signal })
+        setSchoolDataError(null);
+        fetch(`/api/heat-layer?year=${year}`)
             .then((response) => {
                 if (!response.ok) {
-                    throw new Error(`Failed to fetch school data`);
+                    throw new Error(`Failed to load school data`);
                 }
                 return response.json();
             })
             .then((data) => {
                 setSchoolPoints(data);
+                setSchoolDataError(null);
                 setIsLoaded(true);
             })
             .catch((error) => {
-                if (error.name === "AbortError") return;
-                toast.error(error.message || "Failed to load school data");
+                setSchoolDataError(
+                    error.message || "Failed to load school data",
+                );
                 setIsLoaded(true);
             });
-        return () => controller.abort();
+    };
+
+    useEffect(() => {
+        fetchSchoolData();
     }, [year]);
 
     // Filter school points based on the gateway toggle
@@ -224,56 +247,48 @@ function HeatMapPage() {
         if (!mapRef.current) {
             return;
         }
+        const region = regions[regionView] ?? regions.default;
         const map = mapRef.current;
         map?.flyTo({
-            center: regions[regionView].center,
-            zoom: regions[regionView].zoom,
+            center: region.center,
+            zoom: region.zoom,
             essential: true,
         });
     }, [regionView]);
 
-    const [cart, setCart] = useState<string[]>([]);
+    const { items, addMapItem, hasItem, removeByName } = useCart();
 
-    const [filterNames, setFilterNames] = useState<string[]>([]);
+    const filterName = `Heatmap - ${metric} ${onlyGatewaySchools ? " for Schools Representing Gateway Cities" : ""} in ${regionView === "default" ? "MA" : capitalize(regionView) + ` Region `} (${year ?? ""})`;
 
-    useEffect(() => {
-        const cartStorage = sessionStorage.getItem("cartStorage");
-        const cartNameStorage = sessionStorage.getItem("cartNameStorage");
+    const mapInCart = hasItem(filterName);
 
-        if (cartStorage) {
-            setCart(JSON.parse(cartStorage));
-        }
-
-        if (cartNameStorage) {
-            setFilterNames(JSON.parse(cartNameStorage));
-        }
-    }, []);
-
-    // Update cart in session storage when user changes cart
-    useEffect(() => {
-        if (cart.length !== 0) {
-            sessionStorage.setItem("cartStorage", JSON.stringify(cart));
-        }
-    }, [cart]);
-
-    // Update cart names when use changes the filters
-    useEffect(() => {
-        if (filterNames.length !== 0) {
-            sessionStorage.setItem(
-                "cartNameStorage",
-                JSON.stringify(filterNames),
-            );
-        }
-    }, [filterNames]);
-
-    const filterName = `Heatmap - ${metric} ${onlyGatewaySchools ? " for Schools Representing Gateway Cities" : ""} in ${regionView === "Default" ? "MA" : regionView + ` Region `} (${year})`;
+    // Cmd+S to open export dialog, Cmd+P to print PDF
+    useHotkey(
+        "s",
+        () => {
+            if (!exportDialogOpen) setExportDialogOpen(true);
+        },
+        { meta: true },
+    );
+    useHotkey(
+        "p",
+        () => {
+            const map = mapRef.current;
+            if (!map) return;
+            exportMapToPDF(map, filterName, true);
+        },
+        { meta: true },
+    );
 
     return (
         <div className="flex p-8 flex-col h-screen w-full justify-center">
             <div className="flex justify-between items-center mb-4">
                 <h1 className="text-2xl py-4 font-semibold">{filterName}</h1>
                 <div className="flex gap-3">
-                    <AlertDialog>
+                    <AlertDialog
+                        open={exportDialogOpen}
+                        onOpenChange={setExportDialogOpen}
+                    >
                         <AlertDialogTrigger asChild>
                             <Button
                                 variant="outline"
@@ -308,45 +323,57 @@ function HeatMapPage() {
                             </AlertDialogFooter>
                         </AlertDialogContent>
                     </AlertDialog>
-                    <HoverCard>
-                        <HoverCardTrigger
-                            delay={10}
-                            closeDelay={100}
-                            render={
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="flex items-center gap-2"
-                                    onClick={() => {
-                                        const map = mapRef.current;
-                                        if (!map) return;
-                                        const mapImageData = map
-                                            .getCanvas()
-                                            .toDataURL("image/jpeg", 0.5);
-                                        setCart([...cart, mapImageData]);
-                                        setFilterNames([
-                                            ...filterNames,
-                                            filterName,
-                                        ]);
-                                    }}
-                                >
-                                    <PlusCircle className="w-4 h-4" />
-                                    Add to
-                                </Button>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex items-center gap-2"
+                        onClick={() => {
+                            if (mapInCart) {
+                                removeByName(filterName);
+                            } else {
+                                const map = mapRef.current;
+                                if (!map) return;
+                                const mapImageData = map
+                                    .getCanvas()
+                                    .toDataURL("image/jpeg", 0.5);
+                                addMapItem(filterName, mapImageData);
                             }
-                        />
-                        <HoverCardContent
-                            className="flex flex-col gap-0.5 mt-2"
-                            align="end"
-                        >
-                            <Cart
-                                filterNames={filterNames}
-                                cart={cart}
-                                setCart={setCart}
-                                setFilterNames={setFilterNames}
-                            />
-                        </HoverCardContent>
-                    </HoverCard>
+                        }}
+                    >
+                        {mapInCart ? (
+                            <>
+                                <CheckCircle2 className="w-4 h-4" />
+                                Remove
+                            </>
+                        ) : (
+                            <>
+                                <PlusCircle className="w-4 h-4" />
+                                Add to cart
+                            </>
+                        )}
+                    </Button>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex items-center gap-2 relative"
+                        onClick={() => setCartOpen(true)}
+                    >
+                        <ShoppingBasket className="w-4 h-4" />
+                        Cart
+                        {items.length > 0 && (
+                            <span className="absolute -top-2 -right-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+                                {items.length}
+                            </span>
+                        )}
+                    </Button>
+                    <Sheet open={cartOpen} onOpenChange={setCartOpen}>
+                        <SheetContent>
+                            <SheetHeader>
+                                <SheetTitle>Cart</SheetTitle>
+                            </SheetHeader>
+                            <Cart />
+                        </SheetContent>
+                    </Sheet>
                     <Button
                         variant="outline"
                         size="sm"
@@ -367,7 +394,7 @@ function HeatMapPage() {
                         <CountDropdown
                             selectedCount={metric}
                             onCountChange={setMetric}
-                            options={["Students", "Projects", "Teachers"]}
+                            options={VALID_METRICS.map(capitalize)}
                         />
                     </div>
                     <div className="flex flex-col gap-1.5 w-48">
@@ -375,9 +402,8 @@ function HeatMapPage() {
                             Year
                         </label>
                         <YearDropdown
-                            showDataIndicator={true}
                             selectedYear={year}
-                            onYearChange={setYear}
+                            onYearChange={(y) => setYear(y)}
                         />
                     </div>
                     <div className="flex flex-col gap-1.5 w-48">
@@ -385,9 +411,11 @@ function HeatMapPage() {
                             Region View
                         </label>
                         <CountDropdown
-                            selectedCount={regionView}
-                            onCountChange={setregionView}
-                            options={Object.keys(regions)}
+                            selectedCount={capitalize(regionView)}
+                            onCountChange={(v) =>
+                                setRegionView(v.toLowerCase())
+                            }
+                            options={Object.keys(regions).map(capitalize)}
                         />
                     </div>
                     <div className="flex flex-col gap-1.5 w-48">
@@ -429,25 +457,41 @@ function HeatMapPage() {
                 </div>
             </div>
             <div className="flex-1 rounded-2xl overflow-hidden border border-slate-200 relative">
-                <Map
-                    center={regions[regionView].center}
-                    zoom={regions[regionView].zoom}
-                    // Restrict zoom to stay on MA approximately
-                    maxZoom={regions[regionView].maxZoom}
-                    minZoom={regions[regionView].minZoom}
-                    // Restrict canvas to stay on MA approximately
-                    maxBounds={[
-                        [-74.5, 40.2],
-                        [-68.9, 43.9],
-                    ]}
-                    // Allows layers to be added
-                    ref={mapRef}
-                />
-                {!isLoaded && (
-                    // Gray overlay + loading wheel
-                    <div className="absolute inset-0 z-50 flex items-center justify-center bg-slate-500/20 backdrop-blur-sm">
-                        <Loader2 className="h-12 w-12 animate-spin text-slate-800" />
-                    </div>
+                {schoolDataError ? (
+                    <LoadError
+                        message={schoolDataError}
+                        onRetry={fetchSchoolData}
+                        className="h-full"
+                    />
+                ) : (
+                    <>
+                        <Map
+                            center={
+                                (regions[regionView] ?? regions.default).center
+                            }
+                            zoom={(regions[regionView] ?? regions.default).zoom}
+                            // Restrict zoom to stay on MA approximately
+                            maxZoom={
+                                (regions[regionView] ?? regions.default).maxZoom
+                            }
+                            minZoom={
+                                (regions[regionView] ?? regions.default).minZoom
+                            }
+                            // Restrict canvas to stay on MA approximately
+                            maxBounds={[
+                                [-74.5, 40.2],
+                                [-68.9, 43.9],
+                            ]}
+                            // Allows layers to be added
+                            ref={mapRef}
+                        />
+                        {!isLoaded && (
+                            // Gray overlay + loading wheel
+                            <div className="absolute inset-0 z-50 flex items-center justify-center bg-slate-500/20 backdrop-blur-sm">
+                                <Loader2 className="h-12 w-12 animate-spin text-slate-800" />
+                            </div>
+                        )}
+                    </>
                 )}
             </div>
         </div>

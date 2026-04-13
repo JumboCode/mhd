@@ -16,7 +16,8 @@ import { useEffect, useState, useImperativeHandle, forwardRef } from "react";
 import { Combobox } from "@/components/Combobox";
 import { Trash } from "lucide-react";
 import { toast } from "sonner";
-import { standardize } from "@/lib/school-name-standardize";
+import { LoadError } from "@/components/ui/load-error";
+import { standardize } from "@/lib/string-standardize";
 
 /**
  * Represents a single school entry in the system.
@@ -53,21 +54,29 @@ const GatewaySchools = forwardRef<
     const [selectedSchoolId, setSelectedSchoolId] = useState("");
     const [pendingAdditions, setPendingAdditions] = useState<SchoolEntry[]>([]);
     const [pendingRemovals, setPendingRemovals] = useState<SchoolEntry[]>([]);
+    const [error, setError] = useState<string | null>(null);
 
-    // Load all schools for dropdown
-    useEffect(() => {
-        fetch("/api/schools?list=true")
-            .then((res) => res.json())
-            .then((data) => setSchools(data))
-            .catch(() => toast.error("Failed to load schools"));
-    }, []);
+    // Load all schools for dropdown and gateway schools
+    const fetchData = () => {
+        setError(null);
+        Promise.all([
+            fetch("/api/schools?list=true").then((res) => res.json()),
+            fetch("/api/schools?gateway=true&list=true").then((res) =>
+                res.json(),
+            ),
+        ])
+            .then(([allSchools, gatewaySchoolsData]) => {
+                setSchools(allSchools);
+                setGatewaySchools(gatewaySchoolsData);
+                setError(null);
+            })
+            .catch(() => {
+                setError("Failed to load schools data");
+            });
+    };
 
-    // Load only gateway schools on mount
     useEffect(() => {
-        fetch("/api/schools?gateway=true&list=true")
-            .then((res) => res.json())
-            .then((data) => setGatewaySchools(data))
-            .catch(() => toast.error("Failed to load gateway schools"));
+        fetchData();
     }, []);
 
     const schoolOptions = schools.map((s) => ({
@@ -158,63 +167,75 @@ const GatewaySchools = forwardRef<
 
     return (
         <div className="space-y-3">
-            <div className="w-72 w-fit">
-                <Combobox
-                    options={schoolOptions}
-                    value={selectedSchoolId}
-                    onChange={handleAddSchool}
-                    placeholder="Search for a school..."
+            {error ? (
+                <LoadError
+                    message={error}
+                    onRetry={fetchData}
+                    className="py-8"
                 />
-            </div>
+            ) : (
+                <>
+                    <div className="w-72 w-fit">
+                        <Combobox
+                            options={schoolOptions}
+                            value={selectedSchoolId}
+                            onChange={handleAddSchool}
+                            placeholder="Search for a school..."
+                        />
+                    </div>
 
-            <div className="border-2 border-gray-200 rounded-lg overflow-hidden">
-                <table className="w-full">
-                    <thead className="bg-gray-50 border-b-2 border-gray-200">
-                        <tr className="divide-x-2 divide-gray-200">
-                            <th className="text-center px-4 py-3 text-sm font-medium text-gray-500 w-[80%]">
-                                School
-                            </th>
-                            <th className="text-center px-4 py-3 text-sm font-medium text-gray-500">
-                                Actions
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200 bg-white">
-                        {gatewaySchools.length > 0 ? (
-                            gatewaySchools.map((school) => (
-                                <tr
-                                    key={school.id}
-                                    className="hover:bg-gray-50"
-                                >
-                                    <td className="px-4 py-3 text-sm w-[80%]">
-                                        {school.name}
-                                    </td>
-                                    <td className="px-4 py-3 text-sm text-center">
-                                        <button
-                                            onClick={() =>
-                                                handleRemoveSchool(school.id)
-                                            }
-                                            className="text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
-                                            aria-label={`Remove ${school.name}`}
-                                        >
-                                            <Trash className="w-4 h-4" />
-                                        </button>
-                                    </td>
+                    <div className="border-2 border-gray-200 rounded-lg overflow-hidden">
+                        <table className="w-full">
+                            <thead className="bg-gray-50 border-b-2 border-gray-200">
+                                <tr className="divide-x-2 divide-gray-200">
+                                    <th className="text-center px-4 py-3 text-sm font-medium text-gray-500 w-[80%]">
+                                        School
+                                    </th>
+                                    <th className="text-center px-4 py-3 text-sm font-medium text-gray-500">
+                                        Actions
+                                    </th>
                                 </tr>
-                            ))
-                        ) : (
-                            <tr>
-                                <td
-                                    colSpan={2}
-                                    className="px-4 py-3 text-sm text-gray-500 text-center"
-                                >
-                                    No gateway schools
-                                </td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
-            </div>
+                            </thead>
+                            <tbody className="divide-y divide-gray-200 bg-white">
+                                {gatewaySchools.length > 0 ? (
+                                    gatewaySchools.map((school) => (
+                                        <tr
+                                            key={school.id}
+                                            className="hover:bg-gray-50"
+                                        >
+                                            <td className="px-4 py-3 text-sm w-[80%]">
+                                                {school.name}
+                                            </td>
+                                            <td className="px-4 py-3 text-sm text-center">
+                                                <button
+                                                    onClick={() =>
+                                                        handleRemoveSchool(
+                                                            school.id,
+                                                        )
+                                                    }
+                                                    className="text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
+                                                    aria-label={`Remove ${school.name}`}
+                                                >
+                                                    <Trash className="w-4 h-4" />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td
+                                            colSpan={2}
+                                            className="px-4 py-3 text-sm text-gray-500 text-center"
+                                        >
+                                            No gateway schools
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </>
+            )}
         </div>
     );
 });

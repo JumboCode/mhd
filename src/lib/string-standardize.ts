@@ -45,3 +45,12 @@ export function standardize(name: string): string {
         .replace(/-+/g, "-") // collapse multiple hyphens
         .replace(/^-|-$/g, ""); // trim leading/trailing hyphens
 }
+
+// Normalize school name formatting in table
+export function toTitleCase(str: string) {
+    return str
+        .toLowerCase()
+        .split(" ")
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" ");
+}

@@ -91,7 +91,11 @@ export default function SpreadsheetPreviewFail({
                                                             <span className="font-semibold">
                                                                 Expected:{" "}
                                                             </span>
-                                                            {cellErr.expected}
+                                                            {cellErr.allowedValues
+                                                                ? cellErr.allowedValues.join(
+                                                                      ", ",
+                                                                  )
+                                                                : cellErr.expected}
                                                         </span>
                                                     </span>
                                                 </span>

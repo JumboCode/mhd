@@ -11,8 +11,14 @@
 
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Pencil } from "lucide-react";
+import {
+    forwardRef,
+    useCallback,
+    useEffect,
+    useImperativeHandle,
+    useRef,
+    useState,
+} from "react";
 import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/Combobox";
 import YearsOfData, { YearsOfDataHandle } from "@/components/YearsOfData";
@@ -21,9 +27,7 @@ import { toast } from "sonner";
 import GatewaySchools, {
     GatewaySchoolsHandle,
 } from "@/components/GatewaySchools";
-import { standardize } from "@/lib/school-name-standardize";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import PermittedUsers from "@/components/PermittedUsers";
+import { standardize } from "@/lib/string-standardize";
 import { useRouter } from "next/navigation";
 import { useUnsavedChanges } from "@/components/UnsavedChangesContext";
 import {
@@ -46,17 +50,25 @@ export default function Settings() {
         null,
     );
 
+    const schoolLocationRef = useRef<SchoolLocationEditorHandle>(null);
+
     const handleSave = async () => {
-        await Promise.all([
-            gatewaySchoolsRef.current?.save(),
-            yearsOfDataRef.current?.save(),
-        ]);
-        setHasUnsavedChanges(false);
+        try {
+            await Promise.all([
+                gatewaySchoolsRef.current?.save(),
+                yearsOfDataRef.current?.save(),
+                schoolLocationRef.current?.save(),
+            ]);
+            setHasUnsavedChanges(false);
+        } catch {
+            // save was cancelled (e.g. user dismissed a confirmation dialog)
+        }
     };
 
     const handleDiscard = () => {
         gatewaySchoolsRef.current?.discard();
         yearsOfDataRef.current?.discard();
+        schoolLocationRef.current?.discard();
         setHasUnsavedChanges(false);
     };
 
@@ -111,64 +123,30 @@ export default function Settings() {
             <div>
                 <h1 className="text-3xl font-bold">Settings</h1>
             </div>
-            <Tabs defaultValue="data-management">
-                <TabsList>
-                    <TabsTrigger value="data-management">
-                        Data Management
-                    </TabsTrigger>
-                    <TabsTrigger value="team-access">Team & Access</TabsTrigger>
-                </TabsList>
-                {/* Data management tab */}
-                <TabsContent value="data-management" className="mt-6 space-y-6">
-                    <div>
-                        <h2 className="text-xl font-semibold">Preferences</h2>
-                        <p className="text-gray-600">
-                            How would you like to view charts...
-                        </p>
-                    </div>
-                    <div>
-                        <h2 className="text-xl font-semibold">Configuration</h2>
-                        <p className="text-gray-600">
-                            These settings configure how data is calculated.
-                            Only edit these settings if you really mean to.
-                        </p>
-                    </div>
-                    <div className="space-y-6">
-                        <div>
-                            <h3 className="font-bold">
-                                Schools in Gateway Cities
-                            </h3>
-                            <h4 className="mb-2">
-                                Select schools that represent students from
-                                gateway cities.
-                            </h4>
-                            <GatewaySchools
-                                ref={gatewaySchoolsRef}
-                                onUnsavedChange={() =>
-                                    setHasUnsavedChanges(true)
-                                }
-                            />
-                        </div>
-                        <SchoolLocationEditor />
-                        <div className="space-y-3">
-                            <h3 className="font-bold">Available Data</h3>
-                            <YearsOfData
-                                ref={yearsOfDataRef}
-                                onUnsavedChange={() =>
-                                    setHasUnsavedChanges(true)
-                                }
-                            />
-                        </div>
-                    </div>
-                </TabsContent>
-
-                {/* Team and access tab */}
-                <TabsContent value="team-access" className="mt-6 space-y-5">
-                    <PermittedUsers
+            <div className="space-y-6">
+                <div>
+                    <h3 className="font-bold">Schools in Gateway Cities</h3>
+                    <h4 className="mb-2">
+                        Select schools that represent students from gateway
+                        cities.
+                    </h4>
+                    <GatewaySchools
+                        ref={gatewaySchoolsRef}
                         onUnsavedChange={() => setHasUnsavedChanges(true)}
                     />
-                </TabsContent>
-            </Tabs>
+                </div>
+                <SchoolLocationEditor
+                    ref={schoolLocationRef}
+                    onUnsavedChange={() => setHasUnsavedChanges(true)}
+                />
+                <div className="space-y-3">
+                    <h3 className="font-bold">Available Data</h3>
+                    <YearsOfData
+                        ref={yearsOfDataRef}
+                        onUnsavedChange={() => setHasUnsavedChanges(true)}
+                    />
+                </div>
+            </div>
 
             <div
                 className={`fixed bottom-0 left-56 right-0 z-50 flex items-center justify-between px-8 py-4 bg-white/20 backdrop-blur-md shadow-lg transition-transform duration-200 ease-in-out ${hasUnsavedChanges ? "translate-y-0" : "translate-y-full"}`}
@@ -244,7 +222,15 @@ interface SchoolEntry {
     longitude: number | null;
 }
 
-function SchoolLocationEditor() {
+export interface SchoolLocationEditorHandle {
+    save: () => Promise<void>;
+    discard: () => void;
+}
+
+const SchoolLocationEditor = forwardRef<
+    SchoolLocationEditorHandle,
+    { onUnsavedChange: () => void }
+>(function SchoolLocationEditor({ onUnsavedChange }, ref) {
     const [schools, setSchools] = useState<SchoolEntry[]>([]);
     const [selectedSchoolId, setSelectedSchoolId] = useState("");
     const [editing, setEditing] = useState(false);
@@ -252,7 +238,7 @@ function SchoolLocationEditor() {
         latitude: number;
         longitude: number;
     } | null>(null);
-    const [saving, setSaving] = useState(false);
+
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
@@ -262,8 +248,7 @@ function SchoolLocationEditor() {
     useEffect(() => {
         fetch("/api/schools?list=true")
             .then((res) => res.json())
-            .then((data) => setSchools(data))
-            .catch(() => toast.error("Failed to load schools"));
+            .then((data) => setSchools(data));
     }, []);
 
     const selectedSchool = schools.find(
@@ -277,40 +262,43 @@ function SchoolLocationEditor() {
 
     const handleSchoolChange = (value: string) => {
         setSelectedSchoolId(value);
-        setEditing(false);
+        setEditing(true);
         setNewPin(null);
     };
 
-    const handleMapClick = useCallback(async (long: number, lat: number) => {
-        let validLocation: boolean = false;
+    const handleMapClick = useCallback(
+        async (long: number, lat: number) => {
+            let validLocation: boolean = false;
 
-        try {
-            const res = await fetch(
-                `/api/coordinate-to-region/?lat=${lat}&long=${long}`,
-            );
-            const data = await res.json();
-
-            // Location is only in MA if it has a region
-            if (res.ok && data.region) {
-                validLocation = true;
-            } else {
-                toast.error(
-                    "A school's location must fall within Massachusetts.",
+            try {
+                const res = await fetch(
+                    `/api/coordinate-to-region/?lat=${lat}&long=${long}`,
                 );
-            }
-        } catch {
-            toast.error("Error validating school location");
-        }
+                const data = await res.json();
 
-        if (validLocation) {
-            setNewPin({ latitude: lat, longitude: long });
-        }
-    }, []);
+                // Location is only in MA if it has a region
+                if (res.ok && data.region) {
+                    validLocation = true;
+                } else {
+                    toast.error(
+                        "A school's location must fall within Massachusetts.",
+                    );
+                }
+            } catch {
+                toast.error("Error validating school location");
+            }
+
+            if (validLocation) {
+                setNewPin({ latitude: lat, longitude: long });
+                onUnsavedChange();
+            }
+        },
+        [onUnsavedChange],
+    );
 
     const handleSave = async () => {
         if (!newPin || !selectedSchool) return;
 
-        setSaving(true);
         try {
             const slugName = standardize(selectedSchool.name);
             const response = await fetch(`/api/schools/${slugName}`, {
@@ -341,22 +329,23 @@ function SchoolLocationEditor() {
                         : s,
                 ),
             );
-            setEditing(false);
             setNewPin(null);
             toast.success(`Location updated for ${selectedSchool.name}`);
         } catch (err) {
             const errorMsg =
                 err instanceof Error ? err.message : "Failed to save location";
             toast.error(errorMsg);
-        } finally {
-            setSaving(false);
         }
     };
 
     const handleCancel = () => {
-        setEditing(false);
         setNewPin(null);
     };
+
+    useImperativeHandle(ref, () => ({
+        save: handleSave,
+        discard: handleCancel,
+    }));
 
     const mapCenter: [number, number] =
         selectedSchool?.longitude && selectedSchool?.latitude
@@ -419,46 +408,17 @@ function SchoolLocationEditor() {
                                 />
                             )}
                         </Map>
-                        {!editing && (
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setEditing(true)}
-                                className="absolute top-3 right-3 z-10 shadow-sm"
-                            >
-                                <Pencil className="h-3.5 w-3.5" />
-                                Edit Location
-                            </Button>
-                        )}
                     </div>
 
-                    {editing && (
-                        <div className="flex items-center justify-between">
-                            <div className="text-sm">
-                                {newPin ? (
-                                    <div className="bg-muted text-black px-2 rounded border">{`New location: ${newPin.latitude.toFixed(4)}, ${newPin.longitude.toFixed(4)}`}</div>
-                                ) : (
-                                    "Click on the map to set a new location"
-                                )}
-                            </div>
-                            <div className="flex gap-2">
-                                <Button
-                                    variant="outline"
-                                    onClick={handleCancel}
-                                >
-                                    Cancel
-                                </Button>
-                                <Button
-                                    onClick={handleSave}
-                                    disabled={!newPin || saving}
-                                >
-                                    {saving ? "Saving..." : "Save"}
-                                </Button>
-                            </div>
-                        </div>
-                    )}
+                    <div className="text-sm">
+                        {newPin ? (
+                            <div className="bg-muted text-black px-2 rounded border">{`New location: ${newPin.latitude.toFixed(4)}, ${newPin.longitude.toFixed(4)}`}</div>
+                        ) : (
+                            "Click on the map to set a new location"
+                        )}
+                    </div>
                 </div>
             )}
         </div>
     );
-}
+});

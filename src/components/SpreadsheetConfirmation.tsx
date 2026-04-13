@@ -21,6 +21,7 @@ type ConfirmationProps = {
     spreadsheetData: SpreadsheetData;
     setConfirmed: (confirmed: boolean | null) => void;
     yearHasData: boolean;
+    disabled?: boolean;
 };
 
 export default function SpreadsheetConfirmation({
@@ -28,6 +29,7 @@ export default function SpreadsheetConfirmation({
     spreadsheetData,
     setConfirmed,
     yearHasData,
+    disabled = false,
 }: ConfirmationProps) {
     const [uniqueSchools, setUniqueSchools] = useState<number>(0);
     const [students, setStudents] = useState<number>(0);
@@ -104,11 +106,21 @@ export default function SpreadsheetConfirmation({
     return (
         <div className="flex flex-col items-left justify-left max-w-lg">
             <h1 className="text-2xl font-bold mt-8">Confirmation</h1>
-            <p className="text-muted-foreground my-5">
-                You are about to {yearHasData ? "overwrite" : "add"} data for{" "}
-                {year} - are you sure you want to do this? This action cannot be
-                undone.
-            </p>
+            {yearHasData ? (
+                <div className="my-5 rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
+                    <p className="font-semibold">
+                        Warning: you are about to overwrite existing data for{" "}
+                        <span className="underline">{year}</span>.
+                    </p>
+                    <p className="mt-1">This action cannot be undone.</p>
+                </div>
+            ) : (
+                <p className="text-muted-foreground my-5">
+                    You are about to add data for{" "}
+                    <span className="font-semibold">{year}</span>. Please review
+                    the details below before confirming.
+                </p>
+            )}
             <div className="my-5 grid grid-cols-2 gap-4">
                 <div className="flex flex-col justify-center items-center gap-2 border rounded-lg py-4">
                     <School className="inline-block mr-2 mb-1" />
@@ -132,6 +144,7 @@ export default function SpreadsheetConfirmation({
                     onCheckedChange={(checked: boolean) =>
                         setConfirmed(checked)
                     }
+                    disabled={disabled}
                 />
                 <label htmlFor="confirmation-checkbox">
                     I understand this action may affect existing data

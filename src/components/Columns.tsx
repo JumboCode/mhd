@@ -12,98 +12,76 @@
 
 "use client";
 
-import type { ColumnDef } from "@tanstack/react-table";
+import type { Column, ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { ChevronsUpDownSort } from "@/components/icons/ChevronsUpDownSort";
-import { EditableCell, StringSelectCell } from "@/components/EditableCells";
 
-// Placeholder options — replace with real values once DB columns exist
-const MODEL_OPTIONS = ["Dummy 1", "Dummy 2", "Dummy 3"];
+function SortableHeader<T>({
+    column,
+    label,
+}: {
+    column: Column<T>;
+    label: string;
+}) {
+    const handleSort = () => {
+        if (column.getIsSorted() === "desc") {
+            column.clearSorting();
+        } else {
+            column.toggleSorting(column.getIsSorted() === "asc");
+        }
+    };
+
+    return (
+        <div className="flex items-center gap-1">
+            <span
+                className="text-sm font-medium cursor-pointer"
+                onClick={handleSort}
+            >
+                {label}
+            </span>
+            <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 hover:bg-transparent"
+                onClick={handleSort}
+            >
+                <ChevronsUpDownSort sortDirection={column.getIsSorted()} />
+            </Button>
+        </div>
+    );
+}
 
 export type Schools = {
     name: string;
     city: string;
     region: string;
-    instructionModel: string;
+    division: string[];
     implementationModel: string;
+    schoolType: string;
     numStudents: number;
     numTeachers: number;
     numProjects: number;
-    trend: string; //TODO: calculate trend and change type if needed
+    trend: string; // TODO: calculate trend and change type if needed
 };
 
-export function createColumns(
-    onCommit: (
-        rowName: string,
-        columnId: string,
-        value: string | number | boolean,
-    ) => void,
-): ColumnDef<Schools>[] {
+export function createColumns(): ColumnDef<Schools>[] {
     return [
         {
             accessorKey: "name",
             size: 200,
             minSize: 100,
             maxSize: 400,
-            header: ({ column }) => {
-                return (
-                    <Button
-                        variant="ghost"
-                        className="hover:bg-transparent"
-                        onClick={() => {
-                            if (column.getIsSorted() === "desc") {
-                                column.clearSorting();
-                            } else {
-                                column.toggleSorting(
-                                    column.getIsSorted() === "asc",
-                                );
-                            }
-                        }}
-                    >
-                        Name
-                        <ChevronsUpDownSort
-                            sortDirection={column.getIsSorted()}
-                            className="ml-2"
-                        />
-                    </Button>
-                );
-            },
+            header: ({ column }) => (
+                <SortableHeader column={column} label="Name" />
+            ),
         },
         {
             accessorKey: "city",
             size: 150,
             minSize: 95,
             maxSize: 300,
-            header: ({ column }) => {
-                return (
-                    <Button
-                        variant="ghost"
-                        className="hover:bg-transparent"
-                        onClick={() => {
-                            if (column.getIsSorted() === "desc") {
-                                column.clearSorting();
-                            } else {
-                                column.toggleSorting(
-                                    column.getIsSorted() === "asc",
-                                );
-                            }
-                        }}
-                    >
-                        City
-                        <ChevronsUpDownSort
-                            sortDirection={column.getIsSorted()}
-                            className="ml-2"
-                        />
-                    </Button>
-                );
-            },
-            cell: ({ getValue, row, column }) => (
-                <EditableCell
-                    value={getValue() as string}
-                    columnId={column.id}
-                    rowId={String(row.original.name)}
-                    onCommit={onCommit}
-                />
+            header: ({ column }) => (
+                <SortableHeader column={column} label="City" />
             ),
         },
         {
@@ -111,192 +89,64 @@ export function createColumns(
             size: 150,
             minSize: 115,
             maxSize: 300,
-            header: ({ column }) => {
-                return (
-                    <Button
-                        variant="ghost"
-                        className="hover:bg-transparent"
-                        onClick={() => {
-                            if (column.getIsSorted() === "desc") {
-                                column.clearSorting();
-                            } else {
-                                column.toggleSorting(
-                                    column.getIsSorted() === "asc",
-                                );
-                            }
-                        }}
-                    >
-                        Region
-                        <ChevronsUpDownSort
-                            sortDirection={column.getIsSorted()}
-                            className="ml-2"
-                        />
-                    </Button>
-                );
-            },
-        },
-        {
-            accessorKey: "instructionModel",
-            size: 185,
-            minSize: 185,
-            maxSize: 350,
-            header: ({ column }) => {
-                return (
-                    <Button
-                        variant="ghost"
-                        className="hover:bg-transparent"
-                        onClick={() => {
-                            if (column.getIsSorted() === "desc") {
-                                column.clearSorting();
-                            } else {
-                                column.toggleSorting(
-                                    column.getIsSorted() === "asc",
-                                );
-                            }
-                        }}
-                    >
-                        Instruction Model
-                        <ChevronsUpDownSort
-                            sortDirection={column.getIsSorted()}
-                            className="ml-2"
-                        />
-                    </Button>
-                );
-            },
-            cell: ({ getValue, row, column }) => (
-                <StringSelectCell
-                    value={getValue() as string}
-                    options={MODEL_OPTIONS}
-                    rowId={String(row.index)}
-                    columnId={column.id}
-                    onCommit={() => {}} // TODO: wire up once DB column exists
-                />
+            header: ({ column }) => (
+                <SortableHeader column={column} label="Region" />
             ),
         },
         {
-            accessorKey: "implementationModel",
-            size: 210,
-            minSize: 210,
+            accessorKey: "division",
+            size: 200,
+            minSize: 160,
             maxSize: 350,
-            header: ({ column }) => {
-                return (
-                    <Button
-                        variant="ghost"
-                        className="hover:bg-transparent"
-                        onClick={() => {
-                            if (column.getIsSorted() === "desc") {
-                                column.clearSorting();
-                            } else {
-                                column.toggleSorting(
-                                    column.getIsSorted() === "asc",
-                                );
-                            }
-                        }}
-                    >
-                        Implementation Model
-                        <ChevronsUpDownSort
-                            sortDirection={column.getIsSorted()}
-                            className="ml-2"
-                        />
-                    </Button>
-                );
-            },
-            cell: ({ getValue, row, column }) => (
-                <StringSelectCell
-                    value={getValue() as string}
-                    options={MODEL_OPTIONS}
-                    rowId={String(row.index)}
-                    columnId={column.id}
-                    onCommit={() => {}} // TODO: wire up once DB column exists
-                />
+            header: ({ column }) => (
+                <SortableHeader column={column} label="Division" />
+            ),
+            cell: ({ getValue }) => (getValue() as string[]).join(", "),
+        },
+        {
+            accessorKey: "implementationModel",
+            size: 220,
+            minSize: 220,
+            maxSize: 350,
+            header: ({ column }) => (
+                <SortableHeader column={column} label="Implementation Model" />
+            ),
+        },
+        {
+            accessorKey: "schoolType",
+            size: 210,
+            minSize: 180,
+            maxSize: 350,
+            header: ({ column }) => (
+                <SortableHeader column={column} label="School Type" />
             ),
         },
         {
             accessorKey: "numStudents",
-            size: 135,
-            minSize: 135,
+            size: 145,
+            minSize: 145,
             maxSize: 250,
-            header: ({ column }) => {
-                return (
-                    <Button
-                        variant="ghost"
-                        className="hover:bg-transparent"
-                        onClick={() => {
-                            if (column.getIsSorted() === "desc") {
-                                column.clearSorting();
-                            } else {
-                                column.toggleSorting(
-                                    column.getIsSorted() === "asc",
-                                );
-                            }
-                        }}
-                    >
-                        # Students
-                        <ChevronsUpDownSort
-                            sortDirection={column.getIsSorted()}
-                            className="ml-2"
-                        />
-                    </Button>
-                );
-            },
+            header: ({ column }) => (
+                <SortableHeader column={column} label="# Students" />
+            ),
         },
         {
             accessorKey: "numTeachers",
-            size: 135,
-            minSize: 135,
+            size: 140,
+            minSize: 140,
             maxSize: 250,
-            header: ({ column }) => {
-                return (
-                    <Button
-                        variant="ghost"
-                        className="hover:bg-transparent"
-                        onClick={() => {
-                            if (column.getIsSorted() === "desc") {
-                                column.clearSorting();
-                            } else {
-                                column.toggleSorting(
-                                    column.getIsSorted() === "asc",
-                                );
-                            }
-                        }}
-                    >
-                        # Teachers
-                        <ChevronsUpDownSort
-                            sortDirection={column.getIsSorted()}
-                            className="ml-2"
-                        />
-                    </Button>
-                );
-            },
+            header: ({ column }) => (
+                <SortableHeader column={column} label="# Teachers" />
+            ),
         },
         {
             accessorKey: "numProjects",
-            size: 130,
-            minSize: 130,
+            size: 140,
+            minSize: 140,
             maxSize: 250,
-            header: ({ column }) => {
-                return (
-                    <Button
-                        variant="ghost"
-                        className="hover:bg-transparent"
-                        onClick={() => {
-                            if (column.getIsSorted() === "desc") {
-                                column.clearSorting();
-                            } else {
-                                column.toggleSorting(
-                                    column.getIsSorted() === "asc",
-                                );
-                            }
-                        }}
-                    >
-                        # Projects
-                        <ChevronsUpDownSort
-                            sortDirection={column.getIsSorted()}
-                            className="ml-2"
-                        />
-                    </Button>
-                );
-            },
+            header: ({ column }) => (
+                <SortableHeader column={column} label="# Projects" />
+            ),
         },
     ];
 }
