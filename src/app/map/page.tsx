@@ -135,7 +135,7 @@ function HeatMapPage() {
     );
     const regionView = rawRegionView.toLowerCase();
 
-    const [showSchools, setShowSchools] = useQueryState(
+    const [showSchools] = useQueryState(
         "showSchools",
         parseAsBoolean.withDefault(true),
     );
