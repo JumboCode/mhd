@@ -17,6 +17,7 @@ import {
     Loader2,
     Link,
     Share,
+    Check,
     CheckCircle2,
     ShoppingBasket,
     ListFilter,
@@ -40,6 +41,7 @@ import YearDropdown from "@/components/YearDropdown";
 import CountDropdown from "@/components/CountDropdown";
 import { Checkbox } from "@/components/Checkbox";
 import { Button } from "@/components/ui/button";
+import { AnimatedToggleButton } from "@/components/ui/animated-toggle-button";
 import {
     Sheet,
     SheetContent,
@@ -182,12 +184,7 @@ function HeatMapPage() {
     const [schoolDataError, setSchoolDataError] = useState<string | null>(null);
 
     const copyURLtoClipboard = async () => {
-        try {
-            await navigator.clipboard.writeText(window.location.href);
-            toast.success("URL copied to clipboard!");
-        } catch {
-            toast.error("Failed to copy URL to clipboard.");
-        }
+        await navigator.clipboard.writeText(window.location.href);
     };
 
     const [gatewaySchools, setGatewaySchools] = useState<string[]>([]);
@@ -398,15 +395,24 @@ function HeatMapPage() {
                             </span>
                         )}
                     </Button>
-                    <Button
+                    <AnimatedToggleButton
                         variant="outline"
                         size="sm"
                         className="flex items-center gap-2"
                         onClick={copyURLtoClipboard}
-                    >
-                        <Link className="w-4 h-4" />
-                        Share
-                    </Button>
+                        defaultContent={
+                            <>
+                                <Link className="w-4 h-4" />
+                                Copy link
+                            </>
+                        }
+                        activeContent={
+                            <>
+                                <Check className="w-4 h-4" />
+                                Copy link
+                            </>
+                        }
+                    />
                 </div>
 
                 {/* Share popover - visible on smaller screens */}
@@ -487,15 +493,24 @@ function HeatMapPage() {
                                     </span>
                                 )}
                             </Button>
-                            <Button
+                            <AnimatedToggleButton
                                 variant="ghost"
                                 size="sm"
                                 className="justify-start"
                                 onClick={copyURLtoClipboard}
-                            >
-                                <Link className="w-4 h-4 mr-2" />
-                                Copy link
-                            </Button>
+                                defaultContent={
+                                    <>
+                                        <Link className="w-4 h-4 mr-2" />
+                                        Copy link
+                                    </>
+                                }
+                                activeContent={
+                                    <>
+                                        <Check className="w-4 h-4 mr-2" />
+                                        Copy link
+                                    </>
+                                }
+                            />
                         </div>
                     </PopoverContent>
                 </Popover>

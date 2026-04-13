@@ -14,6 +14,7 @@
 import {
     CalendarDays,
     ChartColumn,
+    Check,
     CheckCircle2,
     ChevronDown,
     LineChart,
@@ -37,6 +38,7 @@ import GraphFilters, {
 } from "@/components/GraphFilters/GraphFilters";
 import LineGraph from "@/components/charts/LineGraph";
 import { Button } from "@/components/ui/button";
+import { AnimatedToggleButton } from "@/components/ui/animated-toggle-button";
 import {
     Popover,
     PopoverContent,
@@ -413,13 +415,8 @@ export default function ChartPage() {
     }, [yearRangeOpen, timePeriod, yearRange]);
 
     const copyURLtoClipboard = async () => {
-        try {
-            const url = window.location.href;
-            await navigator.clipboard.writeText(url);
-            toast.success("URL copied to clipboard!");
-        } catch {
-            toast.error("Failed to copy URL to clipboard");
-        }
+        const url = window.location.href;
+        await navigator.clipboard.writeText(url);
     };
 
     // Calculate the current year range based on time period selection
@@ -959,15 +956,24 @@ export default function ChartPage() {
                                     </span>
                                 )}
                             </Button>
-                            <Button
+                            <AnimatedToggleButton
                                 variant="outline"
                                 size="sm"
                                 className="flex items-center gap-2"
                                 onClick={copyURLtoClipboard}
-                            >
-                                <Link className="w-4 h-4" />
-                                Share
-                            </Button>
+                                defaultContent={
+                                    <>
+                                        <Link className="w-4 h-4" />
+                                        Copy link
+                                    </>
+                                }
+                                activeContent={
+                                    <>
+                                        <Check className="w-4 h-4" />
+                                        Copy link
+                                    </>
+                                }
+                            />
                         </div>
 
                         {/* Share popover - visible when sidebar is collapsed */}
@@ -1053,15 +1059,24 @@ export default function ChartPage() {
                                             </span>
                                         )}
                                     </Button>
-                                    <Button
+                                    <AnimatedToggleButton
                                         variant="ghost"
                                         size="sm"
                                         className="justify-start"
                                         onClick={copyURLtoClipboard}
-                                    >
-                                        <Link className="w-4 h-4 mr-2" />
-                                        Copy link
-                                    </Button>
+                                        defaultContent={
+                                            <>
+                                                <Link className="w-4 h-4 mr-2" />
+                                                Copy link
+                                            </>
+                                        }
+                                        activeContent={
+                                            <>
+                                                <Check className="w-4 h-4 mr-2" />
+                                                Copy link
+                                            </>
+                                        }
+                                    />
                                 </div>
                             </PopoverContent>
                         </Popover>
