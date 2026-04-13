@@ -38,7 +38,6 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import YearDropdown from "@/components/YearDropdown";
 import CountDropdown from "@/components/CountDropdown";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import {
     Sheet,
     SheetContent,
@@ -440,20 +439,6 @@ function HeatMapPage() {
                             </label>
                         </div>
                     </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                    <label
-                        htmlFor="show-schools-toggle"
-                        className="text-sm cursor-pointer select-none"
-                    >
-                        Show Schools
-                    </label>
-                    <Switch
-                        id="show-schools-toggle"
-                        checked={showSchools}
-                        onCheckedChange={setShowSchools}
-                    />
                 </div>
             </div>
             <div className="flex-1 rounded-2xl overflow-hidden border border-slate-200 relative">
