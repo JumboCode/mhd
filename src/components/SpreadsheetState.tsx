@@ -16,6 +16,8 @@
 import { type ReactElement, useEffect, useState, useCallback } from "react";
 import { CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
 import * as XLSX from "xlsx";
 import SpreadsheetStatusBar from "@/components/SpreadsheetStatusBar";
 import type { SpreadsheetData } from "@/types/spreadsheet";
@@ -122,6 +124,7 @@ export default function SpreadsheetState() {
     >(new Map());
     const [currentSchoolIndex, setCurrentSchoolIndex] = useState(0);
     const [progress, setProgress] = useState<number>(0);
+    const router = useRouter();
     const [uploadSuccess, setUploadSuccess] = useState(false);
     const [uploadedYear, setUploadedYear] = useState<number | null>(null);
 
@@ -552,15 +555,7 @@ export default function SpreadsheetState() {
             setCanPrevious(true);
         } else if (index === STEP_CONFIRM) {
             setTabIndex(STEP_CONFIRM);
-            setTab(
-                <SpreadsheetConfirmation
-                    spreadsheetData={spreadsheetData}
-                    year={year}
-                    setConfirmed={setConfirmed}
-                    yearHasData={yearHasData}
-                />,
-            );
-            setNextText("Finish");
+            setNextText("Finish Upload");
             setCanNext(confirmed);
             setCanPrevious(true);
         }
@@ -624,16 +619,28 @@ export default function SpreadsheetState() {
                                 was successfully uploaded.
                             </p>
                         </div>
-                        <button
-                            className="mt-2 py-1 w-48 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer transition duration-300"
-                            onClick={resetToUpload}
-                        >
-                            Upload another year
-                        </button>
+                        <div className="flex gap-3 mt-2">
+                            <Button onClick={() => router.push("/")}>
+                                View data
+                            </Button>
+                            <Button variant="outline" onClick={resetToUpload}>
+                                Upload another year
+                            </Button>
+                        </div>
                     </div>
                 ) : (
                     <>
-                        {tab}
+                        {tabIndex === STEP_CONFIRM ? (
+                            <SpreadsheetConfirmation
+                                spreadsheetData={spreadsheetData}
+                                year={year}
+                                setConfirmed={setConfirmed}
+                                yearHasData={yearHasData}
+                                disabled={isSubmitting}
+                            />
+                        ) : (
+                            tab
+                        )}
                         {isSubmitting && tabIndex === STEP_CONFIRM && (
                             <div className="flex flex-col gap-2 mt-4 w-full max-w-lg">
                                 <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
@@ -654,26 +661,22 @@ export default function SpreadsheetState() {
             {!uploadSuccess && (
                 <div className={`flex justify-between pb-4 w-full`}>
                     {canPrevious && (
-                        <button
-                            className="py-1 w-40 rounded-lg bg-card text-foreground border border-border hover:bg-accent hover:cursor-pointer transition duration-300"
+                        <Button
+                            variant="outline"
                             onClick={previous}
                             disabled={isSubmitting}
                         >
                             Previous
-                        </button>
+                        </Button>
                     )}
 
-                    <button
-                        className={
-                            canNext
-                                ? "ml-auto py-1 w-40 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer transition duration-300 disabled:bg-muted disabled:cursor-not-allowed"
-                                : "ml-auto py-1 w-40 rounded-lg bg-gray-400 text-primary-foreground transition duration-300 cursor-not-allowed"
-                        }
+                    <Button
+                        className="ml-auto"
                         onClick={next}
                         disabled={!canNext || isSubmitting}
                     >
                         {isSubmitting ? "Uploading..." : nextText}
-                    </button>
+                    </Button>
                 </div>
             )}
         </div>

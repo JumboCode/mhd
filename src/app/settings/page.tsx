@@ -53,12 +53,16 @@ export default function Settings() {
     const schoolLocationRef = useRef<SchoolLocationEditorHandle>(null);
 
     const handleSave = async () => {
-        await Promise.all([
-            gatewaySchoolsRef.current?.save(),
-            yearsOfDataRef.current?.save(),
-            schoolLocationRef.current?.save(),
-        ]);
-        setHasUnsavedChanges(false);
+        try {
+            await Promise.all([
+                gatewaySchoolsRef.current?.save(),
+                yearsOfDataRef.current?.save(),
+                schoolLocationRef.current?.save(),
+            ]);
+            setHasUnsavedChanges(false);
+        } catch {
+            // save was cancelled (e.g. user dismissed a confirmation dialog)
+        }
     };
 
     const handleDiscard = () => {
