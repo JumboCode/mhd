@@ -7,6 +7,7 @@ import {
     ChartConfig,
     TooltipFormatter,
     CHART_COLORS,
+    getEntityColorByLabel,
 } from "./chartTypes";
 
 export type { ChartDataset as BarDataset };
@@ -72,6 +73,15 @@ export default function BarGraph({
         tooltipFormatter ?? ((d) => String(d.y));
     const yTicks = yScale.ticks(6).filter((t) => Number.isInteger(t));
     const hasLegend = dataset.length > 1 || !!legendTitle;
+
+    // For single-series charts, use entity color based on yAxisLabel (the metric being measured)
+    const getColor = (index: number): string => {
+        if (dataset.length === 1) {
+            const entityColors = getEntityColorByLabel(yAxisLabel);
+            if (entityColors) return entityColors.color;
+        }
+        return CHART_COLORS[index % CHART_COLORS.length];
+    };
 
     const chartTop = mTop;
     const chartBottom = height - mBottom;
@@ -192,9 +202,7 @@ export default function BarGraph({
                                 <path
                                     key={`${si}-${pi}`}
                                     d={d}
-                                    fill={
-                                        CHART_COLORS[si % CHART_COLORS.length]
-                                    }
+                                    fill={getColor(si)}
                                     style={{ cursor: "pointer" }}
                                     onMouseEnter={(e) =>
                                         setTooltip({
@@ -284,8 +292,7 @@ export default function BarGraph({
                             <div
                                 className="w-2.5 h-2.5 rounded-sm flex-shrink-0"
                                 style={{
-                                    backgroundColor:
-                                        CHART_COLORS[i % CHART_COLORS.length],
+                                    backgroundColor: getColor(i),
                                 }}
                             />
                             <span className="text-xs text-muted-foreground">
