@@ -261,8 +261,6 @@ export default function ChartPage() {
             type: "bar",
             groupBy: "none",
             measuredAs: "total-school-count",
-            teacherYearsOperator: "=",
-            onlyGatewaySchools: "false",
         };
         let changed = false;
         for (const [key, val] of Object.entries(defaults)) {
