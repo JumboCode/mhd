@@ -375,6 +375,34 @@ export default function ChartPage() {
             });
     }, []);
 
+    // Fetch year metadata to derive "data last updated" date
+    const [yearsMetadata, setYearsMetadata] = useState<
+        { year: number; lastUpdatedAt: string | null }[]
+    >([]);
+    useEffect(() => {
+        fetch("/api/years-with-data")
+            .then((res) => res.json())
+            .then((data) => {
+                if (Array.isArray(data.years)) {
+                    setYearsMetadata(data.years);
+                }
+            })
+            .catch(() => {});
+    }, []);
+
+    const dataLastUpdated = useMemo(() => {
+        const dates = yearsMetadata
+            .filter(
+                (m) =>
+                    m.year >= yearRange.start &&
+                    m.year <= yearRange.end &&
+                    m.lastUpdatedAt != null,
+            )
+            .map((m) => new Date(m.lastUpdatedAt!).getTime());
+        if (dates.length === 0) return null;
+        return new Date(Math.max(...dates));
+    }, [yearsMetadata, yearRange]);
+
     const filterName = generateChartTitle(
         chartType,
         measuredAs,
@@ -1369,13 +1397,21 @@ export default function ChartPage() {
                             </span>{" "}
                             data rows total
                         </p>
-                        {/* TO DO: get most recent date from db but requires storing date */}
-                        <p>
-                            <span className="font-mono bg-gray/4 border rounded-sm border-gray/2 py-1 px-2">
-                                06/25/2025
-                            </span>{" "}
-                            data last updated
-                        </p>
+                        {dataLastUpdated && (
+                            <p>
+                                <span className="font-mono bg-gray/4 border rounded-sm border-gray/2 py-1 px-2">
+                                    {dataLastUpdated.toLocaleDateString(
+                                        "en-US",
+                                        {
+                                            month: "2-digit",
+                                            day: "2-digit",
+                                            year: "numeric",
+                                        },
+                                    )}
+                                </span>{" "}
+                                data last updated
+                            </p>
+                        )}
                     </div>
                 </div>
             </div>
