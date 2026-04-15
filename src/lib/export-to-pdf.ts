@@ -65,13 +65,10 @@ export async function downloadGraphs(
 
                 const margin = 15;
 
-                // Chart title
                 const wrappedTitle = pdf.splitTextToSize(
                     filterNames[idx],
                     pageWidth - margin * 2,
                 );
-                pdf.setFontSize(14);
-                // pdf.setFont("DMSans-VariableFont_opsz,wght", "bold");
                 pdf.text(wrappedTitle, margin, 50);
                 const titleHeight = wrappedTitle.length * 7;
 
@@ -84,10 +81,6 @@ export async function downloadGraphs(
                     imgWidth * 0.8,
                     imgHeight * 0.8,
                 );
-
-                // Reset font for filter details
-                pdf.setFontSize(11);
-                pdf.setFont("DMSans-VariableFont_opsz,wght", "normal");
 
                 const details = filterDetails[idx];
                 if (details && details.length > 0) {
@@ -129,9 +122,9 @@ export async function addToCart(
     filterNames: string[],
     setFilterNames: Dispatch<SetStateAction<string[]>>,
     filterName: string,
-    filterDetails: FilterDetail[],
-    allFilterDetails: FilterDetail[][],
-    setAllFilterDetails: Dispatch<SetStateAction<FilterDetail[][]>>,
+    filterDetails: FilterDetail[], // NEW
+    allFilterDetails: FilterDetail[][], // NEW
+    setAllFilterDetails: Dispatch<SetStateAction<FilterDetail[][]>>, // NEW
 ): Promise<void> {
     const el = chartRef.current;
     if (!el) return;
@@ -145,7 +138,7 @@ export async function addToCart(
 
     setCart([...cart, canvas.toDataURL()]);
     setFilterNames([...filterNames, filterName]);
-    setAllFilterDetails([...allFilterDetails, filterDetails]);
+    setAllFilterDetails([...allFilterDetails, filterDetails]); // NEW
 }
 
 export async function downloadSingleGraph(
@@ -163,13 +156,13 @@ export async function downloadSingleGraph(
         windowHeight: el.scrollHeight,
     });
 
-    await downloadGraphs([canvas.toDataURL()], [filterName], [filterDetails]);
+    await downloadGraphs([canvas.toDataURL()], [filterName], [filterDetails]); // NEW
 }
 
 export function clearCart(
     setCart: Dispatch<SetStateAction<string[]>>,
     setFilterNames: Dispatch<SetStateAction<string[]>>,
-    setAllFilterDetails: Dispatch<SetStateAction<FilterDetail[][]>>,
+    setAllFilterDetails: Dispatch<SetStateAction<FilterDetail[][]>>, // NEW
 ) {
     setCart([]);
     setFilterNames([]);
@@ -185,9 +178,9 @@ export function deleteFromCart(
     setFilterNames: Dispatch<SetStateAction<string[]>>,
     idx: number,
     allFilterDetails: FilterDetail[][], // NEW
-    setAllFilterDetails: Dispatch<SetStateAction<FilterDetail[][]>>,
+    setAllFilterDetails: Dispatch<SetStateAction<FilterDetail[][]>>, // NEW
 ) {
     setCart(cart.filter((_, index) => index !== idx));
     setFilterNames(filterNames.filter((_, index) => index !== idx));
-    setAllFilterDetails(allFilterDetails.filter((_, index) => index !== idx));
+    setAllFilterDetails(allFilterDetails.filter((_, index) => index !== idx)); // NEW
 }
