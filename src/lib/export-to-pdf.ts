@@ -42,6 +42,8 @@ export async function downloadGraphs(
             const img = new Image();
             img.src = canvas;
             img.onload = () => {
+                pdf.setFontSize(11);
+                pdf.setFont("DMSans-VariableFont_opsz,wght", "normal");
                 const time = new Date();
                 const year = String(time.getFullYear());
                 const month = String(time.getMonth() + 1);
@@ -50,8 +52,6 @@ export async function downloadGraphs(
                 const pageWidth = pdf.internal.pageSize.getWidth();
                 const imgWidth = pageWidth;
                 const imgHeight = (img.height / img.width) * imgWidth;
-
-                pdf.setFont("DMSans-VariableFont_opsz,wght", "normal");
 
                 pdf.text(`${month}/${day}/${year}`, 170, 15);
                 pdf.addImage(
@@ -65,11 +65,21 @@ export async function downloadGraphs(
 
                 const margin = 15;
 
+                // title formatting
+                pdf.setFont("DMSans-VariableFont_opsz,wght", "normal");
+                pdf.setFontSize(14);
+
                 const wrappedTitle = pdf.splitTextToSize(
                     filterNames[idx],
                     pageWidth - margin * 2,
                 );
-                pdf.text(wrappedTitle, margin, 50);
+
+                const titleY = 50;
+
+                pdf.text(wrappedTitle, pageWidth / 2, titleY, {
+                    align: "center",
+                });
+
                 const titleHeight = wrappedTitle.length * 7;
 
                 const chartY = 50 + titleHeight;
