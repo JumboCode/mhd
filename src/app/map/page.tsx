@@ -51,6 +51,8 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
+import type { FilterDetail } from "@/lib/export-to-pdf";
+
 type Region = {
     center: [number, number];
     zoom: number;
@@ -145,6 +147,10 @@ function HeatMapPage() {
 
     // Loading state
     const [isLoaded, setIsLoaded] = useState(false);
+
+    const [allFilterDetails, setAllFilterDetails] = useState<FilterDetail[][]>(
+        [],
+    );
 
     const copyURLtoClipboard = async () => {
         try {
@@ -347,6 +353,8 @@ function HeatMapPage() {
                                 cart={cart}
                                 setCart={setCart}
                                 setFilterNames={setFilterNames}
+                                allFilterDetails={allFilterDetails}
+                                setAllFilterDetails={setAllFilterDetails}
                             />
                         </HoverCardContent>
                     </HoverCard>
