@@ -130,34 +130,40 @@ function HeatMapPage() {
     // totalStudents | totalProjects | totalTeachers (lowercase in URL)
     const [rawMetric, setRawMetric] = useQueryState(
         "metric",
-        parseAsString.withDefault("projects"),
+        parseAsString
+            .withDefault("projects")
+            .withOptions({ clearOnDefault: false }),
     );
 
     // gateway school toggle variable
     const [onlyGatewaySchools, setOnlyGatewaySchools] = useQueryState(
         "onlyGatewaySchools",
-        parseAsBoolean.withDefault(false),
+        parseAsBoolean
+            .withDefault(false)
+            .withOptions({ clearOnDefault: false }),
     );
 
     const [rawRegionView, setRegionView] = useQueryState(
         "regionView",
-        parseAsString.withDefault("default"),
+        parseAsString
+            .withDefault("default")
+            .withOptions({ clearOnDefault: false }),
     );
     const regionView = rawRegionView.toLowerCase();
 
     const [showSchools, setShowSchools] = useQueryState(
         "showSchools",
-        parseAsBoolean.withDefault(true),
+        parseAsBoolean.withDefault(true).withOptions({ clearOnDefault: false }),
     );
 
     const [showHeatmap, setShowHeatmap] = useQueryState(
         "showHeatmap",
-        parseAsBoolean.withDefault(true),
+        parseAsBoolean.withDefault(true).withOptions({ clearOnDefault: false }),
     );
 
     const [showRegions, setShowRegions] = useQueryState(
         "showRegions",
-        parseAsBoolean.withDefault(true),
+        parseAsBoolean.withDefault(true).withOptions({ clearOnDefault: false }),
     );
 
     // Validate query params during render
@@ -189,6 +195,29 @@ function HeatMapPage() {
     };
 
     const [gatewaySchools, setGatewaySchools] = useState<string[]>([]);
+
+    // Add default params to URL
+    // Use history.replaceState directly to avoid a race with Next.js router
+    useEffect(() => {
+        const url = new URL(window.location.href);
+        const p = url.searchParams;
+        const defaults: Record<string, string> = {
+            metric: "projects",
+            onlyGatewaySchools: "false",
+            regionView: "default",
+            showSchools: "true",
+            showHeatmap: "true",
+            showRegions: "true",
+        };
+        let changed = false;
+        for (const [key, val] of Object.entries(defaults)) {
+            if (!p.has(key)) {
+                p.set(key, val);
+                changed = true;
+            }
+        }
+        if (changed) window.history.replaceState(null, "", url.toString());
+    }, []);
 
     // Fetch gateway schools
     useEffect(() => {

@@ -211,15 +211,17 @@ export default function ChartPage() {
     // Setting hooks
     const [timePeriod, setTimePeriod] = useQueryState(
         "period",
-        parseAsString.withDefault("custom"),
+        parseAsString
+            .withDefault("custom")
+            .withOptions({ clearOnDefault: false }),
     );
     const [startYear, setStartYear] = useQueryState(
         "startYear",
-        parseAsInteger.withDefault(2020),
+        parseAsInteger.withDefault(2020).withOptions({ clearOnDefault: false }),
     );
     const [endYear, setEndYear] = useQueryState(
         "endYear",
-        parseAsInteger.withDefault(2025),
+        parseAsInteger.withDefault(2025).withOptions({ clearOnDefault: false }),
     );
     const yearRange = useMemo(
         () => ({
@@ -236,7 +238,7 @@ export default function ChartPage() {
 
     const [chartType, setChartType] = useQueryState(
         "type",
-        parseAsString.withDefault("bar"),
+        parseAsString.withDefault("bar").withOptions({ clearOnDefault: false }),
     );
     const slideDirection = useRef(0);
     const handleChartTypeChange = useCallback(
@@ -246,6 +248,31 @@ export default function ChartPage() {
         },
         [setChartType],
     );
+
+    // Add default params to URL
+    // Use history.replaceState directly to avoid a race with Next.js router
+    useEffect(() => {
+        const url = new URL(window.location.href);
+        const p = url.searchParams;
+        const defaults: Record<string, string> = {
+            period: "custom",
+            startYear: "2020",
+            endYear: "2025",
+            type: "bar",
+            groupBy: "none",
+            measuredAs: "total-school-count",
+            teacherYearsOperator: "=",
+            onlyGatewaySchools: "false",
+        };
+        let changed = false;
+        for (const [key, val] of Object.entries(defaults)) {
+            if (!p.has(key)) {
+                p.set(key, val);
+                changed = true;
+            }
+        }
+        if (changed) window.history.replaceState(null, "", url.toString());
+    }, []);
 
     useEffect(() => {
         document.title = `${chartType === "bar" ? "Bar Chart" : "Line Chart"} | MHD`;
@@ -258,11 +285,15 @@ export default function ChartPage() {
     // Filter hooks
     const [groupBy, setGroupBy] = useQueryState(
         "groupBy",
-        parseAsString.withDefault("none"),
+        parseAsString
+            .withDefault("none")
+            .withOptions({ clearOnDefault: false }),
     );
     const [measuredAs, setMeasuredAs] = useQueryState(
         "measuredAs",
-        parseAsString.withDefault("total-school-count"),
+        parseAsString
+            .withDefault("total-school-count")
+            .withOptions({ clearOnDefault: false }),
     );
     const [selectedSchools, setSelectedSchools] = useQueryState(
         "schools",
@@ -282,7 +313,7 @@ export default function ChartPage() {
     );
     const [teacherYearsOperator, setTeacherYearsOperator] = useQueryState(
         "teacherYearsOperator",
-        parseAsString.withDefault("="),
+        parseAsString.withDefault("=").withOptions({ clearOnDefault: false }),
     );
     const [teacherYearsValue2, setTeacherYearsValue2] = useQueryState(
         "teacherYearsValue2",
@@ -291,7 +322,9 @@ export default function ChartPage() {
 
     const [onlyGatewaySchools, setOnlyGatewaySchools] = useQueryState(
         "onlyGatewaySchools",
-        parseAsBoolean.withDefault(false),
+        parseAsBoolean
+            .withDefault(false)
+            .withOptions({ clearOnDefault: false }),
     );
 
     const { items, addChartItem, hasItem, removeByName } = useCart();
