@@ -396,7 +396,7 @@ export default function ChartPage() {
                 (m) =>
                     m.year >= yearRange.start &&
                     m.year <= yearRange.end &&
-                    m.lastUpdatedAt != null,
+                    m.lastUpdatedAt !== null,
             )
             .map((m) => new Date(m.lastUpdatedAt!).getTime());
         if (dates.length === 0) return null;
