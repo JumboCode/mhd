@@ -161,7 +161,7 @@ export function FilterValuePopover({
                                         ? handleClearAll
                                         : handleSelectAll
                                 }
-                                className="text-sm text-primary hover:underline"
+                                className="text-sm text-primary hover:underline hover:cursor-pointer"
                             >
                                 {filteredOptions.every((o) =>
                                     tempSelected.includes(o),
@@ -178,7 +178,7 @@ export function FilterValuePopover({
                                         <button
                                             type="button"
                                             onClick={handleSelectGatewayCities}
-                                            className="text-sm text-primary hover:underline"
+                                            className="text-sm text-primary hover:underline hover:cursor-pointer"
                                         >
                                             Gateway Schools
                                         </button>
@@ -188,7 +188,7 @@ export function FilterValuePopover({
                         <button
                             type="button"
                             onClick={handleClearAll}
-                            className="text-sm text-primary hover:underline"
+                            className="text-sm text-primary hover:underline hover:cursor-pointer"
                         >
                             Clear All
                         </button>
