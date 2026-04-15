@@ -13,7 +13,12 @@
 
 import { Loader2, Trash2 } from "lucide-react";
 import { Button } from "./ui/button";
-import { clearCart, deleteFromCart, downloadGraphs } from "@/lib/export-to-pdf";
+import {
+    clearCart,
+    deleteFromCart,
+    downloadGraphs,
+    type FilterDetail,
+} from "@/lib/export-to-pdf";
 import { Dispatch, SetStateAction, useState } from "react";
 import { toast } from "sonner";
 
@@ -34,6 +39,8 @@ type CartProps = {
     cart: string[];
     setCart: Dispatch<SetStateAction<string[]>>;
     setFilterNames: Dispatch<SetStateAction<string[]>>;
+    allFilterDetails: FilterDetail[][];
+    setAllFilterDetails: Dispatch<SetStateAction<FilterDetail[][]>>;
 };
 
 export function Cart({
@@ -41,6 +48,8 @@ export function Cart({
     cart,
     setCart,
     setFilterNames,
+    allFilterDetails,
+    setAllFilterDetails,
 }: CartProps) {
     const [isExporting, setIsExporting] = useState(false);
     return (
@@ -60,6 +69,8 @@ export function Cart({
                                     filterNames,
                                     setFilterNames,
                                     index,
+                                    allFilterDetails,
+                                    setAllFilterDetails,
                                 )
                             }
                             className="text-gray-400 hover:text-red-500 p-1 pr-2 transition-colors duration-150 ease-in-out"
@@ -73,7 +84,9 @@ export function Cart({
                 className={`flex flex-row justify-between ${cart.length > 0 && "border-t pt-2"}`}
             >
                 <button
-                    onClick={() => clearCart(setCart, setFilterNames)}
+                    onClick={() =>
+                        clearCart(setCart, setFilterNames, setAllFilterDetails)
+                    }
                     className="hover:cursor-pointer pl-2"
                 >
                     Clear All
@@ -114,7 +127,11 @@ export function Cart({
                                 <AlertDialogAction
                                     onClick={async () => {
                                         setIsExporting(true);
-                                        await downloadGraphs(cart, filterNames);
+                                        await downloadGraphs(
+                                            cart,
+                                            filterNames,
+                                            allFilterDetails,
+                                        );
                                         setIsExporting(false);
                                         toast.success(
                                             "Graphs exported successfully!",

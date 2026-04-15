@@ -58,7 +58,6 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { addToCart, downloadSingleGraph } from "@/lib/export-to-pdf";
 import {
     HoverCard,
     HoverCardContent,
@@ -67,6 +66,11 @@ import {
 import { Cart } from "@/components/Cart";
 import { Kbd } from "@/components/ui/kbd";
 import { useHotkey } from "@/hooks/useHotkey";
+import {
+    addToCart,
+    downloadSingleGraph,
+    type FilterDetail,
+} from "@/lib/export-to-pdf";
 
 type Project = {
     id: number;
@@ -276,6 +280,10 @@ export default function ChartPage() {
 
     const [filterNames, setFilterNames] = useState<string[]>([]);
 
+    const [allFilterDetails, setAllFilterDetails] = useState<FilterDetail[][]>(
+        [],
+    );
+
     const filters: Filters = useMemo(
         () => ({
             individualProjects: true,
@@ -366,6 +374,42 @@ export default function ChartPage() {
         },
     );
 
+    const filterDetails: FilterDetail[] = [
+        ...(selectedSchools.length > 0
+            ? [{ label: "Schools", values: selectedSchools }]
+            : []),
+        ...(selectedCities.length > 0
+            ? [{ label: "Cities", values: selectedCities }]
+            : []),
+        ...(selectedProjectTypes.length > 0
+            ? [{ label: "Project Types", values: selectedProjectTypes }]
+            : []),
+        ...(onlyGatewaySchools
+            ? [{ label: "Gateway Schools", values: ["Only Gateway Schools"] }]
+            : []),
+        ...(teacherYearsValue !== ""
+            ? [
+                  {
+                      label: "Teacher Years",
+                      values: [
+                          teacherYearsOperator === "between"
+                              ? `between ${teacherYearsValue} and ${teacherYearsValue2}`
+                              : `${teacherYearsOperator} ${teacherYearsValue}`,
+                      ],
+                  },
+              ]
+            : []),
+        {
+            label: "Measured As",
+            values: [measuredAsLabels[measuredAs] ?? measuredAs],
+        },
+        { label: "Grouped By", values: [groupByLabels[groupBy] ?? groupBy] },
+        {
+            label: "Year Range",
+            values: [`${yearRange.start} – ${yearRange.end}`],
+        },
+    ];
+
     // Fetch all graphs from session storage on load
     useEffect(() => {
         const cartStorage = sessionStorage.getItem("cartStorage");
@@ -407,6 +451,24 @@ export default function ChartPage() {
             setTempYearRange(yearRange);
         }
     }, [yearRangeOpen, timePeriod, yearRange]);
+
+    // Load on mount
+    useEffect(() => {
+        const stored = sessionStorage.getItem("cartFilterDetailsStorage");
+        if (stored) setAllFilterDetails(JSON.parse(stored));
+    }, []);
+
+    // Save on change
+    useEffect(() => {
+        if (allFilterDetails.length !== 0) {
+            sessionStorage.setItem(
+                "cartFilterDetailsStorage",
+                JSON.stringify(allFilterDetails),
+            );
+        } else {
+            sessionStorage.removeItem("cartFilterDetailsStorage");
+        }
+    }, [allFilterDetails]);
 
     const copyURLtoClipboard = async () => {
         try {
@@ -569,7 +631,7 @@ export default function ChartPage() {
                 : Array.from(
                       new Set(
                           filteredProjects.map((p) =>
-                              String(p[groupKey] || "Unknown"),
+                              String(p[groupKey!] || "Unknown"),
                           ),
                       ),
                   ).sort();
@@ -627,7 +689,8 @@ export default function ChartPage() {
                 groupKey === null
                     ? filteredProjects
                     : filteredProjects.filter(
-                          (p) => String(p[groupKey] || "Unknown") === groupName,
+                          (p) =>
+                              String(p[groupKey!] || "Unknown") === groupName,
                       );
 
             const projectsByYear: Record<number, Project[]> = {};
@@ -822,6 +885,7 @@ export default function ChartPage() {
                                                     await downloadSingleGraph(
                                                         chartRef,
                                                         filterName,
+                                                        filterDetails,
                                                     );
                                                     setIsExporting(false);
                                                     toast.success(
@@ -851,6 +915,9 @@ export default function ChartPage() {
                                                         filterNames,
                                                         setFilterNames,
                                                         filterName,
+                                                        filterDetails,
+                                                        allFilterDetails,
+                                                        setAllFilterDetails,
                                                     )
                                                 }
                                             >
@@ -868,6 +935,10 @@ export default function ChartPage() {
                                             cart={cart}
                                             setCart={setCart}
                                             setFilterNames={setFilterNames}
+                                            allFilterDetails={allFilterDetails}
+                                            setAllFilterDetails={
+                                                setAllFilterDetails
+                                            }
                                         />
                                     </HoverCardContent>
                                 </HoverCard>

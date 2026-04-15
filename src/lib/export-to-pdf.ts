@@ -17,29 +17,38 @@ import logoImg from "../../public/images/mhd-logo-full.png";
 import { toast } from "sonner";
 import "../app/fonts/DMSans-VariableFont_opsz,wght-normal";
 
-export function downloadGraphs(cart: string[], filterNames: string[]) {
-    // Displays toast when there are no images to export
+// New type to hold structured filter data
+export type FilterDetail = {
+    label: string; // e.g. "School"
+    values: string[]; // e.g. ["Lincoln High", "Washington Middle"]
+};
+
+export async function downloadGraphs(
+    cart: string[],
+    filterNames: string[],
+    filterDetails: FilterDetail[][] = [],
+) {
     if (cart.length === 0) {
         toast.error("Cart is empty");
-        return Promise.resolve();
+        return;
     }
 
-    return new Promise((resolve) => {
-        const pdf = new jsPDF();
+    const pdf = new jsPDF();
 
-        // Does process for each graph in the cart
-        cart.forEach((canvas: string, idx: number) => {
+    for (let idx = 0; idx < cart.length; idx++) {
+        const canvas = cart[idx];
+
+        await new Promise<void>((resolve) => {
             const img = new Image();
             img.src = canvas;
-
-            // Date data for image
-            const time = new Date();
-            const year = String(time.getFullYear());
-            const month = String(time.getMonth() + 1);
-            const day = String(time.getDate());
-
             img.onload = () => {
-                const imgWidth = pdf.internal.pageSize.getWidth();
+                const time = new Date();
+                const year = String(time.getFullYear());
+                const month = String(time.getMonth() + 1);
+                const day = String(time.getDate());
+
+                const pageWidth = pdf.internal.pageSize.getWidth();
+                const imgWidth = pageWidth;
                 const imgHeight = (img.height / img.width) * imgWidth;
 
                 pdf.setFont("DMSans-VariableFont_opsz,wght", "normal");
@@ -55,31 +64,62 @@ export function downloadGraphs(cart: string[], filterNames: string[]) {
                 );
 
                 const margin = 15;
+
+                // Chart title
                 const wrappedTitle = pdf.splitTextToSize(
                     filterNames[idx],
-                    pdf.internal.pageSize.getWidth() - margin * 2,
+                    pageWidth - margin * 2,
                 );
+                pdf.setFontSize(14);
+                // pdf.setFont("DMSans-VariableFont_opsz,wght", "bold");
                 pdf.text(wrappedTitle, margin, 50);
-
                 const titleHeight = wrappedTitle.length * 7;
+
+                const chartY = 50 + titleHeight;
                 pdf.addImage(
                     canvas,
                     "JPEG",
-                    15,
-                    50 + titleHeight,
-                    imgWidth * 0.9,
-                    imgHeight * 0.9,
+                    margin,
+                    chartY,
+                    imgWidth * 0.8,
+                    imgHeight * 0.8,
                 );
 
-                if (idx < cart.length - 1) pdf.addPage();
+                // Reset font for filter details
+                pdf.setFontSize(11);
+                pdf.setFont("DMSans-VariableFont_opsz,wght", "normal");
 
-                if (idx === cart.length - 1) {
-                    pdf.save("chart.pdf");
-                    setTimeout(resolve, 1000);
+                const details = filterDetails[idx];
+                if (details && details.length > 0) {
+                    let cursorY = chartY + imgHeight * 0.8 + 10;
+
+                    pdf.setFontSize(11);
+                    pdf.text("Applied Filters:", margin, cursorY);
+                    cursorY += 6;
+                    pdf.setFontSize(10);
+
+                    details.forEach(({ label, values }) => {
+                        if (cursorY > pdf.internal.pageSize.getHeight() - 20) {
+                            pdf.addPage();
+                            cursorY = 20;
+                        }
+                        const line = `${label}: ${values.join(", ")}`;
+                        const wrapped = pdf.splitTextToSize(
+                            line,
+                            pageWidth - margin * 2,
+                        );
+                        pdf.text(wrapped, margin, cursorY);
+                        cursorY += wrapped.length * 5 + 3;
+                    });
                 }
+
+                if (idx < cart.length - 1) pdf.addPage();
+                resolve();
             };
         });
-    });
+    }
+
+    pdf.save("chart.pdf");
 }
 
 export async function addToCart(
@@ -89,6 +129,9 @@ export async function addToCart(
     filterNames: string[],
     setFilterNames: Dispatch<SetStateAction<string[]>>,
     filterName: string,
+    filterDetails: FilterDetail[],
+    allFilterDetails: FilterDetail[][],
+    setAllFilterDetails: Dispatch<SetStateAction<FilterDetail[][]>>,
 ): Promise<void> {
     const el = chartRef.current;
     if (!el) return;
@@ -96,15 +139,19 @@ export async function addToCart(
     const canvas = await html2canvas(el, {
         backgroundColor: "#fff",
         scale: 2,
+        height: el.scrollHeight,
+        windowHeight: el.scrollHeight,
     });
 
     setCart([...cart, canvas.toDataURL()]);
     setFilterNames([...filterNames, filterName]);
+    setAllFilterDetails([...allFilterDetails, filterDetails]);
 }
 
 export async function downloadSingleGraph(
     chartRef: React.RefObject<HTMLDivElement | null>,
     filterName: string,
+    filterDetails: FilterDetail[] = [], // NEW
 ) {
     const el = chartRef.current;
     if (!el) return;
@@ -112,17 +159,21 @@ export async function downloadSingleGraph(
     const canvas = await html2canvas(el, {
         backgroundColor: "#fff",
         scale: 2,
+        height: el.scrollHeight,
+        windowHeight: el.scrollHeight,
     });
 
-    downloadGraphs([canvas.toDataURL()], [filterName]);
+    await downloadGraphs([canvas.toDataURL()], [filterName], [filterDetails]);
 }
 
 export function clearCart(
     setCart: Dispatch<SetStateAction<string[]>>,
     setFilterNames: Dispatch<SetStateAction<string[]>>,
+    setAllFilterDetails: Dispatch<SetStateAction<FilterDetail[][]>>,
 ) {
     setCart([]);
     setFilterNames([]);
+    setAllFilterDetails([]); // NEW
     sessionStorage.removeItem("cartStorage");
     sessionStorage.removeItem("cartNameStorage");
 }
@@ -133,7 +184,10 @@ export function deleteFromCart(
     filterNames: string[],
     setFilterNames: Dispatch<SetStateAction<string[]>>,
     idx: number,
+    allFilterDetails: FilterDetail[][], // NEW
+    setAllFilterDetails: Dispatch<SetStateAction<FilterDetail[][]>>,
 ) {
     setCart(cart.filter((_, index) => index !== idx));
     setFilterNames(filterNames.filter((_, index) => index !== idx));
+    setAllFilterDetails(allFilterDetails.filter((_, index) => index !== idx));
 }
