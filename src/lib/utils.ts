@@ -11,7 +11,10 @@ export function projectCategoryDistribution(
 ): PieSlice[] {
     const counts: Record<string, number> = {};
     for (const p of projects) {
-        counts[p.category] = (counts[p.category] || 0) + 1;
+        const normalized = p.category
+            .replace(/^(Individual|Group)\s+/i, "")
+            .trim();
+        counts[normalized] = (counts[normalized] || 0) + 1;
     }
     return Object.entries(counts)
         .sort((a, b) => b[1] - a[1])
