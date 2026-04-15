@@ -338,7 +338,7 @@ function HeatMapPage() {
 
     return (
         <div className="flex p-8 flex-col h-screen w-full justify-center">
-            <div className="flex justify-between items-center mb-5">
+            <div className="flex justify-between items-center mb-5 gap-4">
                 <h1 className="text-lg xl:text-2xl font-semibold">
                     {filterName}
                 </h1>
