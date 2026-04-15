@@ -1,6 +1,45 @@
+import { ENTITY_CONFIG } from "@/lib/entity-config";
+
 /**
  * Shared types and constants for BarGraph, LineGraph, and PieChart components.
  */
+
+/**
+ * Maps dataset labels (like "Total Projects" or "Total # Projects") to entity colors from ENTITY_CONFIG.
+ * Matches against multiple label patterns since chart page and entity config may use different formats.
+ * Returns undefined if label doesn't match any entity.
+ */
+export function getEntityColorByLabel(label: string):
+    | {
+          color: string;
+          colorMuted: string;
+          colorMid: string;
+      }
+    | undefined {
+    const normalizedLabel = label.toLowerCase();
+
+    // Map of keywords to entity types
+    const labelPatterns: Record<string, keyof typeof ENTITY_CONFIG> = {
+        project: "projects",
+        school: "schools",
+        student: "students",
+        teacher: "teachers",
+        cities: "schools", // Cities use schools color
+        city: "schools",
+    };
+
+    for (const [pattern, entityType] of Object.entries(labelPatterns)) {
+        if (normalizedLabel.includes(pattern)) {
+            const config = ENTITY_CONFIG[entityType];
+            return {
+                color: config.color,
+                colorMuted: config.colorMuted,
+                colorMid: config.colorMid,
+            };
+        }
+    }
+    return undefined;
+}
 
 export const CHART_COLORS = [
     "#3b82f6", // blue-500

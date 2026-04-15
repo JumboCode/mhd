@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useId } from "react";
 import { scaleLinear, max, extent, line as d3Line, area as d3Area } from "d3";
 import {
     ChartDataset,
     ChartConfig,
     TooltipFormatter,
     CHART_COLORS,
+    getEntityColorByLabel,
 } from "./chartTypes";
 
 export type { ChartDataset as GraphDataset };
@@ -35,6 +36,7 @@ export default function MultiLineGraph({
         y: number;
         content: string;
     } | null>(null);
+    const instanceId = useId();
 
     const height = config?.height ?? 400;
     const mTop = config?.margin?.top ?? 6;
@@ -80,6 +82,15 @@ export default function MultiLineGraph({
     const yTicks = yScale.ticks(8).filter((t) => Number.isInteger(t));
     const xTicks = xScale.ticks().filter((t) => Number.isInteger(t));
     const hasLegend = datasets.length > 1 || !!legendTitle;
+
+    // For single-series charts, use entity color based on yAxisLabel (the metric being measured)
+    const getColor = (index: number): string => {
+        if (datasets.length === 1) {
+            const entityColors = getEntityColorByLabel(yAxisLabel);
+            if (entityColors) return entityColors.color;
+        }
+        return CHART_COLORS[index % CHART_COLORS.length];
+    };
 
     // Derived pixel positions for explicit placement
     const chartTop = mTop;
@@ -191,7 +202,7 @@ export default function MultiLineGraph({
                             datasets.map((ds, i) => (
                                 <linearGradient
                                     key={ds.label}
-                                    id={`area-gradient-${i}`}
+                                    id={`area-gradient-${instanceId}-${i}`}
                                     x1="0"
                                     y1="0"
                                     x2="0"
@@ -199,20 +210,12 @@ export default function MultiLineGraph({
                                 >
                                     <stop
                                         offset="0%"
-                                        stopColor={
-                                            CHART_COLORS[
-                                                i % CHART_COLORS.length
-                                            ]
-                                        }
+                                        stopColor={getColor(i)}
                                         stopOpacity={0.2}
                                     />
                                     <stop
                                         offset="100%"
-                                        stopColor={
-                                            CHART_COLORS[
-                                                i % CHART_COLORS.length
-                                            ]
-                                        }
+                                        stopColor={getColor(i)}
                                         stopOpacity={0}
                                     />
                                 </linearGradient>
@@ -227,7 +230,7 @@ export default function MultiLineGraph({
                             <path
                                 key={ds.label}
                                 d={a}
-                                fill={`url(#area-gradient-${i})`}
+                                fill={`url(#area-gradient-${instanceId}-${i})`}
                                 stroke="none"
                             />
                         );
@@ -242,7 +245,7 @@ export default function MultiLineGraph({
                                 key={ds.label}
                                 d={d}
                                 fill="none"
-                                stroke={CHART_COLORS[i % CHART_COLORS.length]}
+                                stroke={getColor(i)}
                                 strokeWidth={strokeWidth}
                                 vectorEffect="non-scaling-stroke"
                             />
@@ -256,9 +259,7 @@ export default function MultiLineGraph({
                                 ds.data.map((point) => ({
                                     cx: xScale(Number(point.x)),
                                     cy: yScale(point.y),
-                                    color: CHART_COLORS[
-                                        si % CHART_COLORS.length
-                                    ],
+                                    color: getColor(si),
                                     content: formatTooltip(point, ds.label),
                                     key: `${si}-${String(point.x)}`,
                                 })),
@@ -367,8 +368,7 @@ export default function MultiLineGraph({
                             <div
                                 className="w-2.5 h-2.5 rounded-full flex-shrink-0"
                                 style={{
-                                    backgroundColor:
-                                        CHART_COLORS[i % CHART_COLORS.length],
+                                    backgroundColor: getColor(i),
                                 }}
                             />
                             <span className="text-xs text-muted-foreground">
