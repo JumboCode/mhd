@@ -329,6 +329,7 @@ export async function GET(
         });
 
         return NextResponse.json({
+            id: school.id,
             name: school.name,
             town: school.town,
             region: school.region,
