@@ -27,6 +27,7 @@ import { toast } from "sonner";
 import GatewaySchools, {
     GatewaySchoolsHandle,
 } from "@/components/GatewaySchools";
+import MergeSchools from "@/components/MergeSchools";
 import { standardize } from "@/lib/string-standardize";
 import { useRouter } from "next/navigation";
 import { useUnsavedChanges } from "@/components/UnsavedChangesContext";
@@ -139,6 +140,14 @@ export default function Settings() {
                     ref={schoolLocationRef}
                     onUnsavedChange={() => setHasUnsavedChanges(true)}
                 />
+                <div className="space-y-3">
+                    <h3 className="font-bold">Merge Schools</h3>
+                    <h4 className="mb-2">
+                        Move all data from one school into another. The merged
+                        school will be permanently removed.
+                    </h4>
+                    <MergeSchools />
+                </div>
                 <div className="space-y-3">
                     <h3 className="font-bold">Available Data</h3>
                     <YearsOfData
