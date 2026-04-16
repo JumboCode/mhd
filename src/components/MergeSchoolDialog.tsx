@@ -1,9 +1,22 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowRight, ArrowLeft } from "lucide-react";
-import { Combobox } from "@/components/Combobox";
+import { ArrowRight, ArrowLeft, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+} from "@/components/ui/command";
+import { cn } from "@/lib/utils";
 import {
     Dialog,
     DialogContent,
@@ -12,6 +25,7 @@ import {
     DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { Checkbox } from "./Checkbox";
 
 interface SchoolOption {
     id: number;
@@ -42,6 +56,7 @@ export default function MergeSchoolDialog({
     const [direction, setDirection] = useState<Direction>("outward");
     const [confirmed, setConfirmed] = useState(false);
     const [merging, setMerging] = useState(false);
+    const [popoverOpen, setPopoverOpen] = useState(false);
 
     useEffect(() => {
         if (!open) return;
@@ -94,11 +109,6 @@ export default function MergeSchoolDialog({
         }
     };
 
-    const schoolOptions = schools.map((s) => ({
-        value: String(s.id),
-        label: s.name,
-    }));
-
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-lg">
@@ -106,21 +116,8 @@ export default function MergeSchoolDialog({
                     <DialogTitle>Merge Schools</DialogTitle>
                 </DialogHeader>
 
-                {/* School picker */}
+                {/* Direction visualiser */}
                 <div className="space-y-4">
-                    <div className="space-y-1">
-                        <p className="text-sm text-muted-foreground">
-                            Other school
-                        </p>
-                        <Combobox
-                            options={schoolOptions}
-                            value={otherSchoolId}
-                            onChange={setOtherSchoolId}
-                            placeholder="Search for a school..."
-                        />
-                    </div>
-
-                    {/* Direction visualiser */}
                     <div className="space-y-1">
                         <div className="flex items-center gap-3">
                             {/* Current school */}
@@ -152,27 +149,81 @@ export default function MergeSchoolDialog({
                                 )}
                             </Button>
 
-                            {/* Other school */}
-                            <div
-                                className={`flex-1 rounded-md border px-3 py-2 text-sm font-medium text-center transition-colors ${
-                                    direction === "inward" && otherSchool?.name
-                                        ? "border-destructive/50 bg-destructive/5"
-                                        : otherSchool
-                                          ? "border-green-500/40 bg-green-50"
-                                          : "bg-muted/40 text-muted-foreground"
-                                }`}
+                            {/* Other school - clickable to select */}
+                            <Popover
+                                open={popoverOpen}
+                                onOpenChange={setPopoverOpen}
                             >
-                                {otherSchool?.name ?? (
-                                    <span className="italic font-normal">
-                                        Select a school
-                                    </span>
-                                )}
-                            </div>
+                                <PopoverTrigger asChild>
+                                    <button
+                                        type="button"
+                                        className={cn(
+                                            "flex-1 rounded-md border px-3 py-2 text-sm font-medium text-center transition-colors cursor-pointer",
+                                            direction === "inward" &&
+                                                otherSchool?.name
+                                                ? "border-destructive/50 bg-destructive/5"
+                                                : otherSchool
+                                                  ? "border-green-500/40 bg-green-50"
+                                                  : "border-dashed border-muted-foreground/50 text-muted-foreground hover:border-muted-foreground hover:bg-muted/30",
+                                        )}
+                                    >
+                                        {otherSchool?.name ?? (
+                                            <span className="italic font-normal">
+                                                Click to select
+                                            </span>
+                                        )}
+                                    </button>
+                                </PopoverTrigger>
+                                <PopoverContent
+                                    className="w-[250px] p-0"
+                                    align="end"
+                                >
+                                    <Command>
+                                        <CommandInput placeholder="Search schools..." />
+                                        <CommandList>
+                                            <CommandEmpty>
+                                                No school found.
+                                            </CommandEmpty>
+                                            <CommandGroup>
+                                                {schools.map((school) => (
+                                                    <CommandItem
+                                                        key={school.id}
+                                                        value={school.name}
+                                                        onSelect={() => {
+                                                            setOtherSchoolId(
+                                                                String(
+                                                                    school.id,
+                                                                ),
+                                                            );
+                                                            setPopoverOpen(
+                                                                false,
+                                                            );
+                                                        }}
+                                                    >
+                                                        <Check
+                                                            className={cn(
+                                                                "mr-2 h-4 w-4",
+                                                                otherSchoolId ===
+                                                                    String(
+                                                                        school.id,
+                                                                    )
+                                                                    ? "opacity-100"
+                                                                    : "opacity-0",
+                                                            )}
+                                                        />
+                                                        {school.name}
+                                                    </CommandItem>
+                                                ))}
+                                            </CommandGroup>
+                                        </CommandList>
+                                    </Command>
+                                </PopoverContent>
+                            </Popover>
                         </div>
 
                         <p className="text-xs text-muted-foreground text-center pt-1">
                             The arrow points toward the school that survives.
-                            Click the arrow button to reverse the direction.
+                            Click the arrow to reverse direction.
                         </p>
                     </div>
 
@@ -205,10 +256,11 @@ export default function MergeSchoolDialog({
                     {/* Confirmation checkbox */}
                     {otherSchool && (
                         <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
-                            <input
-                                type="checkbox"
+                            <Checkbox
                                 checked={confirmed}
-                                onChange={(e) => setConfirmed(e.target.checked)}
+                                onCheckedChange={(v) =>
+                                    setConfirmed(v === true)
+                                }
                             />
                             I understand this is permanent and cannot be undone
                         </label>
@@ -224,7 +276,7 @@ export default function MergeSchoolDialog({
                         Cancel
                     </Button>
                     <Button
-                        variant="default"
+                        variant="destructive"
                         onClick={handleMerge}
                         disabled={!otherSchool || !confirmed || merging}
                     >

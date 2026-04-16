@@ -337,7 +337,7 @@ export default function SchoolProfilePage() {
                                 >
                                     <div className="flex items-center gap-2">
                                         <Merge className="h-4 w-4" />
-                                        <p>Merge school</p>
+                                        Merge school
                                     </div>
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
