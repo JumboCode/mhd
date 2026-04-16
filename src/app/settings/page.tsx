@@ -27,7 +27,6 @@ import { toast } from "sonner";
 import GatewaySchools, {
     GatewaySchoolsHandle,
 } from "@/components/GatewaySchools";
-import MergeSchools from "@/components/MergeSchools";
 import { standardize } from "@/lib/string-standardize";
 import { useRouter } from "next/navigation";
 import { useUnsavedChanges } from "@/components/UnsavedChangesContext";

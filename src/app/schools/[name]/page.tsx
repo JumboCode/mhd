@@ -36,9 +36,12 @@ import {
 import PieChart from "@/components/charts/PieChart";
 import { projectCategoryDistribution } from "@/lib/utils";
 import { AlertCircle, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import MergeSchoolDialog from "@/components/MergeSchoolDialog";
 
 // interface such that data can be blank if API is loading
 type SchoolData = {
+    id: number;
     name: string;
     town: string;
     studentCount: string;
@@ -77,6 +80,7 @@ export default function SchoolProfilePage() {
     >([]);
     const [allYearsData, setAllYearsData] = useState<SchoolData[]>([]);
     const [showPrevYearWarning, setShowPrevYearWarning] = useState(true);
+    const [mergeOpen, setMergeOpen] = useState(false);
 
     useEffect(() => {
         setShowPrevYearWarning(true);
@@ -298,7 +302,14 @@ export default function SchoolProfilePage() {
                             {schoolData.name}
                         </h1>
                     )}
-                    <div className="ml-auto">
+                    <div className="ml-auto flex items-center gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setMergeOpen(true)}
+                        >
+                            Merge
+                        </Button>
                         <YearDropdown
                             selectedYear={year}
                             onYearChange={(selectedYear) => {
@@ -311,6 +322,14 @@ export default function SchoolProfilePage() {
                         />
                     </div>
                 </div>
+
+                <MergeSchoolDialog
+                    open={mergeOpen}
+                    onOpenChange={setMergeOpen}
+                    currentSchoolId={schoolData.id}
+                    currentSchoolName={schoolData.name}
+                    onMergeComplete={() => router.push("/schools")}
+                />
 
                 {/* Stats cards */}
                 {showComparisonWarning && showPrevYearWarning && (
