@@ -14,6 +14,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import {
     schools,
+    schoolHistoricNames,
     projects,
     teachers,
     yearlyTeacherParticipation,
@@ -237,8 +238,31 @@ export async function GET(
             .where(eq(schools.standardizedName, name))
             .limit(1);
 
-        // Check if school exists
+        // Check if school exists; if not, check if it's a historic name (merged away)
         if (!schoolResult || schoolResult.length === 0) {
+            const historic = await db
+                .select({
+                    absorbingSchoolId: schoolHistoricNames.absorbingSchoolId,
+                })
+                .from(schoolHistoricNames)
+                .where(eq(schoolHistoricNames.mergedStandardizedName, name))
+                .limit(1);
+
+            if (historic.length > 0) {
+                const absorbing = await db
+                    .select({ standardizedName: schools.standardizedName })
+                    .from(schools)
+                    .where(eq(schools.id, historic[0].absorbingSchoolId))
+                    .limit(1);
+
+                if (absorbing.length > 0) {
+                    return NextResponse.json(
+                        { redirectTo: absorbing[0].standardizedName },
+                        { status: 301 },
+                    );
+                }
+            }
+
             return NextResponse.json(
                 { error: "School not found" },
                 { status: 404 },
