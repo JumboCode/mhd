@@ -92,6 +92,20 @@ export default function SchoolProfilePage() {
         setShowPrevYearWarning(true);
     }, [year]);
 
+    // Check on mount whether this school has been merged away
+    useEffect(() => {
+        fetch(`/api/schools/${schoolName}`)
+            .then(async (r) => {
+                if (r.status === 301) {
+                    const data = await r.json();
+                    if (data.redirectTo) {
+                        router.replace(`/schools/${data.redirectTo}`);
+                    }
+                }
+            })
+            .catch(() => {});
+    }, [schoolName, router]);
+
     useEffect(() => {
         if (!year) return;
         const controller = new AbortController();
