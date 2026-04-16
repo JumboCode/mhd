@@ -221,10 +221,23 @@ export default function ChartPage() {
         "endYear",
         parseAsInteger.withDefault(2025),
     );
+    const normalizeYearRange = useCallback(
+        (range: { start: number; end: number }) => {
+            if (range.start <= range.end) {
+                return { range, wasSwapped: false };
+            }
+
+            return {
+                range: { start: range.end, end: range.start },
+                wasSwapped: true,
+            };
+        },
+        [],
+    );
     const yearRange = useMemo(
         () => ({
-            start: startYear,
-            end: endYear,
+            start: Math.min(startYear, endYear),
+            end: Math.max(startYear, endYear),
         }),
         [startYear, endYear],
     );
@@ -442,6 +455,21 @@ export default function ChartPage() {
             setTempYearRange(yearRange);
         }
     }, [yearRangeOpen, timePeriod, yearRange]);
+
+    // Keep query params normalized if an invalid range is loaded from URL.
+    useEffect(() => {
+        const { range: normalizedRange, wasSwapped } = normalizeYearRange({
+            start: startYear,
+            end: endYear,
+        });
+
+        if (!wasSwapped) {
+            return;
+        }
+
+        setStartYear(normalizedRange.start);
+        setEndYear(normalizedRange.end);
+    }, [startYear, endYear, normalizeYearRange, setStartYear, setEndYear]);
 
     const copyURLtoClipboard = async () => {
         const url = window.location.href;
@@ -1264,11 +1292,27 @@ export default function ChartPage() {
                                             <Button
                                                 size="sm"
                                                 onClick={() => {
+                                                    const {
+                                                        range:
+                                                            normalizedTempYearRange,
+                                                        wasSwapped,
+                                                    } = normalizeYearRange(
+                                                        tempYearRange,
+                                                    );
+                                                    if (wasSwapped) {
+                                                        toast.warning(
+                                                            "Start year cannot be after end year. Years were swapped.",
+                                                        );
+                                                    }
+
                                                     setStartYear(
-                                                        tempYearRange.start,
+                                                        normalizedTempYearRange.start,
                                                     );
                                                     setEndYear(
-                                                        tempYearRange.end,
+                                                        normalizedTempYearRange.end,
+                                                    );
+                                                    setTempYearRange(
+                                                        normalizedTempYearRange,
                                                     );
                                                     setTimePeriod("custom");
                                                     setYearRangeOpen(false);
