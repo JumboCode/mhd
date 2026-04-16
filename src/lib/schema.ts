@@ -88,6 +88,17 @@ export const yearlyTeacherParticipation = pgTable(
     },
 );
 
+// Stores historic names for schools that have been merged into another school
+export const schoolHistoricNames = pgTable("school_historic_names", {
+    id: serial("id").primaryKey(),
+    absorbingSchoolId: integer("absorbing_school_id")
+        .notNull()
+        .references(() => schools.id, { onDelete: "cascade" }),
+    mergedName: text("merged_name").notNull(),
+    mergedStandardizedName: text("merged_standardized_name").notNull().unique(),
+    mergedExternalSchoolId: text("merged_external_school_id"),
+});
+
 // Better-Auth generated Schema below
 export const user = pgTable("user", {
     id: text("id").primaryKey(),
