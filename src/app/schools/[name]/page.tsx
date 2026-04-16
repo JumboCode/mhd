@@ -35,8 +35,14 @@ import {
 } from "@/components/EditableProjectsTable";
 import PieChart from "@/components/charts/PieChart";
 import { projectCategoryDistribution } from "@/lib/utils";
-import { AlertCircle, X } from "lucide-react";
+import { AlertCircle, X, EllipsisVertical, Merge } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import MergeSchoolDialog from "@/components/MergeSchoolDialog";
 
 // interface such that data can be blank if API is loading
@@ -253,7 +259,7 @@ export default function SchoolProfilePage() {
                 <div className="w-full flex flex-col gap-6 py-8 max-w-5xl px-6">
                     <div className="flex flex-row items-center w-full">
                         <Skeleton className="h-8 w-64" />
-                        <div className="ml-auto">
+                        <div className="ml-auto flex flex-row items-center gap-2">
                             <YearDropdown
                                 selectedYear={year}
                                 onYearChange={(selectedYear) => {
@@ -264,6 +270,9 @@ export default function SchoolProfilePage() {
                                 showDataIndicator={true}
                                 school={schoolName}
                             />
+                            <Button variant="ghost" size="icon">
+                                <EllipsisVertical className="h-4 w-4" />
+                            </Button>
                         </div>
                     </div>
                     <SchoolProfileSkeleton skipHeader contentOnly />
@@ -302,14 +311,7 @@ export default function SchoolProfilePage() {
                             {schoolData.name}
                         </h1>
                     )}
-                    <div className="ml-auto flex items-center gap-2">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setMergeOpen(true)}
-                        >
-                            Merge
-                        </Button>
+                    <div className="ml-auto flex flex-row items-center gap-2">
                         <YearDropdown
                             selectedYear={year}
                             onYearChange={(selectedYear) => {
@@ -320,6 +322,26 @@ export default function SchoolProfilePage() {
                             showDataIndicator={true}
                             school={schoolName}
                         />
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon">
+                                    <EllipsisVertical className="h-4 w-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent
+                                align="end"
+                                className="mt-2 min-w-48"
+                            >
+                                <DropdownMenuItem
+                                    onClick={() => setMergeOpen(true)}
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <Merge className="h-4 w-4" />
+                                        <p>Merge school</p>
+                                    </div>
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                     </div>
                 </div>
 
