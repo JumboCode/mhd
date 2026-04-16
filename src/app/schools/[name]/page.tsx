@@ -106,7 +106,8 @@ export default function SchoolProfilePage() {
                     fetchYears.map((y) =>
                         fetch(`/api/schools/${schoolName}?year=${y}`, {
                             signal,
-                        }).then((r) => {
+                        }).then(async (r) => {
+                            if (r.status === 301) return r.json();
                             if (!r.ok)
                                 throw new Error(`Failed to fetch year ${y}`);
                             return r.json();
@@ -115,6 +116,12 @@ export default function SchoolProfilePage() {
                 );
 
                 if (signal.aborted) return;
+
+                // If the school has been merged away, redirect to the absorbing school
+                if (responses[5]?.redirectTo) {
+                    router.replace(`/schools/${responses[5].redirectTo}`);
+                    return;
+                }
 
                 const curr = responses[5]; // current year
                 const sparklineResults = responses.slice(1); // year-4..year (5 items)
