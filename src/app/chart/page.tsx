@@ -108,6 +108,31 @@ const measuredAsLabels: Record<string, string> = {
     "school-return-rate": "School Return Rate",
 };
 
+const MIN_ALLOWED_YEAR = 1900;
+
+const clampNumber = (value: number, min: number, max: number) =>
+    Math.min(Math.max(value, min), max);
+
+const normalizeYearRange = (
+    start: number,
+    end: number,
+    min: number,
+    max: number,
+) => {
+    const normalizedMin = Math.min(min, max);
+    const normalizedMax = Math.max(min, max);
+    const safeStart = clampNumber(start, normalizedMin, normalizedMax);
+    const safeEnd = clampNumber(end, normalizedMin, normalizedMax);
+    return safeStart <= safeEnd
+        ? { start: safeStart, end: safeEnd }
+        : { start: safeEnd, end: safeStart };
+};
+
+const parseInputYear = (value: string, fallback: number) => {
+    const parsed = Number.parseInt(value, 10);
+    return Number.isFinite(parsed) ? parsed : fallback;
+};
+
 // possible values for group by filter
 const groupByLabels: Record<string, string> = {
     "none": "None",
@@ -221,18 +246,41 @@ export default function ChartPage() {
         "endYear",
         parseAsInteger.withDefault(2025),
     );
-    const yearRange = useMemo(
-        () => ({
-            start: startYear,
-            end: endYear,
-        }),
-        [startYear, endYear],
+    const currentYear = new Date().getFullYear();
+    const [tempYearRange, setTempYearRange] = useState(() =>
+        normalizeYearRange(startYear, endYear, MIN_ALLOWED_YEAR, currentYear),
     );
-    const [tempYearRange, setTempYearRange] = useState({
-        start: startYear,
-        end: endYear,
-    });
     const [yearRangeOpen, setYearRangeOpen] = useState(false);
+
+    const availableYearBounds = useMemo(() => {
+        if (allProjects.length === 0) {
+            return null;
+        }
+        const years = allProjects.map((project) => project.year);
+        const min = Math.min(...years);
+        const max = Math.max(...years, currentYear) - 1;
+        return {
+            min: Math.max(min, MIN_ALLOWED_YEAR),
+            max: Math.max(max, MIN_ALLOWED_YEAR),
+        };
+    }, [allProjects, currentYear]);
+
+    const yearBounds = useMemo(
+        () =>
+            availableYearBounds ?? { min: MIN_ALLOWED_YEAR, max: currentYear },
+        [availableYearBounds, currentYear],
+    );
+
+    const yearRange = useMemo(
+        () =>
+            normalizeYearRange(
+                startYear,
+                endYear,
+                yearBounds.min,
+                yearBounds.max,
+            ),
+        [startYear, endYear, yearBounds],
+    );
 
     const [chartType, setChartType] = useQueryState(
         "type",
@@ -443,6 +491,17 @@ export default function ChartPage() {
         }
     }, [yearRangeOpen, timePeriod, yearRange]);
 
+    // Keep URL/query years normalized so invalid values (e.g. negatives)
+    // can't remain selected or displayed.
+    useEffect(() => {
+        if (startYear !== yearRange.start) {
+            void setStartYear(yearRange.start);
+        }
+        if (endYear !== yearRange.end) {
+            void setEndYear(yearRange.end);
+        }
+    }, [startYear, endYear, yearRange, setStartYear, setEndYear]);
+
     const copyURLtoClipboard = async () => {
         const url = window.location.href;
         await navigator.clipboard.writeText(url);
@@ -455,25 +514,38 @@ export default function ChartPage() {
         }
 
         const allYears = allProjects.map((p) => p.year);
-        const maxYear = Math.max(...allYears, new Date().getFullYear()) - 1;
+        const maxYear = Math.max(...allYears, currentYear) - 1;
 
         if (timePeriod === "3y") {
-            //return { start: maxYear - 2, end: maxYear };
-            setStartYear(maxYear - 2);
-            setEndYear(maxYear);
+            void setStartYear(
+                clampNumber(maxYear - 2, yearBounds.min, yearBounds.max),
+            );
+            void setEndYear(
+                clampNumber(maxYear, yearBounds.min, yearBounds.max),
+            );
             return;
         } else if (timePeriod === "5y") {
-            //return { start: maxYear - 4, end: maxYear };
-            setStartYear(maxYear - 4);
-            setEndYear(maxYear);
+            void setStartYear(
+                clampNumber(maxYear - 4, yearBounds.min, yearBounds.max),
+            );
+            void setEndYear(
+                clampNumber(maxYear, yearBounds.min, yearBounds.max),
+            );
             return;
         }
 
         // "all" - use full range
         const minYear = Math.min(...allYears);
-        setStartYear(minYear);
-        setEndYear(maxYear);
-    }, [timePeriod, allProjects]);
+        void setStartYear(clampNumber(minYear, yearBounds.min, yearBounds.max));
+        void setEndYear(clampNumber(maxYear, yearBounds.min, yearBounds.max));
+    }, [
+        timePeriod,
+        allProjects,
+        yearBounds,
+        currentYear,
+        setStartYear,
+        setEndYear,
+    ]);
 
     // Memoize graph dataset calculation to run only when data or filters change
     const graphDataset: ChartDataset[] = useMemo(() => {
@@ -1213,18 +1285,26 @@ export default function ChartPage() {
                                                 <input
                                                     type="number"
                                                     value={tempYearRange.start}
-                                                    onChange={(e) =>
-                                                        setTempYearRange({
-                                                            ...tempYearRange,
-                                                            start:
-                                                                parseInt(
+                                                    onChange={(e) => {
+                                                        const nextStart =
+                                                            clampNumber(
+                                                                parseInputYear(
                                                                     e.target
                                                                         .value,
-                                                                ) || 2020,
-                                                        })
-                                                    }
+                                                                    tempYearRange.start,
+                                                                ),
+                                                                yearBounds.min,
+                                                                tempYearRange.end,
+                                                            );
+                                                        setTempYearRange(
+                                                            (prev) => ({
+                                                                ...prev,
+                                                                start: nextStart,
+                                                            }),
+                                                        );
+                                                    }}
                                                     className="w-full px-3 py-2 border border-input rounded-md text-sm"
-                                                    min="2000"
+                                                    min={yearBounds.min}
                                                     max={tempYearRange.end}
                                                 />
                                             </div>
@@ -1235,19 +1315,27 @@ export default function ChartPage() {
                                                 <input
                                                     type="number"
                                                     value={tempYearRange.end}
-                                                    onChange={(e) =>
-                                                        setTempYearRange({
-                                                            ...tempYearRange,
-                                                            end:
-                                                                parseInt(
+                                                    onChange={(e) => {
+                                                        const nextEnd =
+                                                            clampNumber(
+                                                                parseInputYear(
                                                                     e.target
                                                                         .value,
-                                                                ) || 2025,
-                                                        })
-                                                    }
+                                                                    tempYearRange.end,
+                                                                ),
+                                                                tempYearRange.start,
+                                                                yearBounds.max,
+                                                            );
+                                                        setTempYearRange(
+                                                            (prev) => ({
+                                                                ...prev,
+                                                                end: nextEnd,
+                                                            }),
+                                                        );
+                                                    }}
                                                     className="w-full px-3 py-2 border border-input rounded-md text-sm"
                                                     min={tempYearRange.start}
-                                                    max="2100"
+                                                    max={yearBounds.max}
                                                 />
                                             </div>
                                         </div>
@@ -1264,13 +1352,22 @@ export default function ChartPage() {
                                             <Button
                                                 size="sm"
                                                 onClick={() => {
-                                                    setStartYear(
-                                                        tempYearRange.start,
+                                                    const normalizedTempRange =
+                                                        normalizeYearRange(
+                                                            tempYearRange.start,
+                                                            tempYearRange.end,
+                                                            yearBounds.min,
+                                                            yearBounds.max,
+                                                        );
+                                                    void setStartYear(
+                                                        normalizedTempRange.start,
                                                     );
-                                                    setEndYear(
-                                                        tempYearRange.end,
+                                                    void setEndYear(
+                                                        normalizedTempRange.end,
                                                     );
-                                                    setTimePeriod("custom");
+                                                    void setTimePeriod(
+                                                        "custom",
+                                                    );
                                                     setYearRangeOpen(false);
                                                 }}
                                             >
