@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { ChevronLeft, ChevronRight, TriangleAlert } from "lucide-react";
+import { isYearInRange, MAX_YEAR, MIN_YEAR } from "@/lib/year-validation";
 
 type YearInputProps = {
     year?: number | null;
@@ -17,9 +18,6 @@ export default function YearInput({ year, setYear }: YearInputProps) {
         null,
     );
     const currYear = Number(yearStr);
-
-    const MIN_YEAR = 1900;
-    const MAX_YEAR = 2100;
 
     useEffect(() => {
         async function fetchYearsWithData() {
@@ -34,7 +32,7 @@ export default function YearInput({ year, setYear }: YearInputProps) {
     }, []);
 
     useEffect(() => {
-        setYearStr(String(year));
+        setYearStr(year === null || year === undefined ? "" : String(year));
     }, [year]);
 
     const hasData = !!currYear && !!yearsWithData?.has(currYear);
@@ -43,15 +41,35 @@ export default function YearInput({ year, setYear }: YearInputProps) {
         const value = e.target.value.replace(/\D/g, "");
         if (value.length > 4) return;
         setYearStr(value);
-        if (value.length === 4) setYear(Number(value));
+        if (value.length === 4) {
+            const parsedYear = Number(value);
+            setYear(isYearInRange(parsedYear) ? parsedYear : null);
+        } else {
+            setYear(null);
+        }
     };
 
     const handleYearBlur = () => {
-        if (yearStr.length > 0 && yearStr.length < 4) {
-            const padded = yearStr.padStart(4, "0");
-            setYearStr(padded);
-            setYear(Number(padded));
+        if (!yearStr) {
+            setYear(null);
+            return;
         }
+
+        const normalizedYear = yearStr.length < 4 ? yearStr.padStart(4, "0") : yearStr;
+        setYearStr(normalizedYear);
+
+        const parsedYear = Number(normalizedYear);
+        if (!isYearInRange(parsedYear)) {
+            setYear(null);
+            return;
+        }
+
+        if (yearStr.length > 0 && yearStr.length < 4) {
+            setYear(parsedYear);
+            return;
+        }
+
+        setYear(parsedYear);
     };
 
     const incrementYear = () => {
@@ -90,6 +108,7 @@ export default function YearInput({ year, setYear }: YearInputProps) {
                     <Input
                         type="text"
                         inputMode="numeric"
+                        maxLength={4}
                         id="year"
                         name="Year"
                         value={yearStr}
