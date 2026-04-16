@@ -221,12 +221,35 @@ export default function ChartPage() {
         "endYear",
         parseAsInteger.withDefault(2025),
     );
+    const normalizeYearRange = useCallback((start: number, end: number) => {
+        if (start <= end) {
+            return { start, end };
+        }
+
+        return { start: end, end: start };
+    }, []);
+    const updateYearRange = useCallback(
+        (
+            start: number,
+            end: number,
+            options?: { notifyIfSwapped?: boolean },
+        ) => {
+            const normalizedRange = normalizeYearRange(start, end);
+
+            if (options?.notifyIfSwapped && start > end) {
+                toast.info(
+                    "Year range was swapped to keep start year before end year.",
+                );
+            }
+
+            setStartYear(normalizedRange.start);
+            setEndYear(normalizedRange.end);
+        },
+        [normalizeYearRange, setStartYear, setEndYear],
+    );
     const yearRange = useMemo(
-        () => ({
-            start: startYear,
-            end: endYear,
-        }),
-        [startYear, endYear],
+        () => normalizeYearRange(startYear, endYear),
+        [startYear, endYear, normalizeYearRange],
     );
     const [tempYearRange, setTempYearRange] = useState({
         start: startYear,
@@ -459,21 +482,18 @@ export default function ChartPage() {
 
         if (timePeriod === "3y") {
             //return { start: maxYear - 2, end: maxYear };
-            setStartYear(maxYear - 2);
-            setEndYear(maxYear);
+            updateYearRange(maxYear - 2, maxYear);
             return;
         } else if (timePeriod === "5y") {
             //return { start: maxYear - 4, end: maxYear };
-            setStartYear(maxYear - 4);
-            setEndYear(maxYear);
+            updateYearRange(maxYear - 4, maxYear);
             return;
         }
 
         // "all" - use full range
         const minYear = Math.min(...allYears);
-        setStartYear(minYear);
-        setEndYear(maxYear);
-    }, [timePeriod, allProjects]);
+        updateYearRange(minYear, maxYear);
+    }, [timePeriod, allProjects, updateYearRange]);
 
     // Memoize graph dataset calculation to run only when data or filters change
     const graphDataset: ChartDataset[] = useMemo(() => {
@@ -1264,11 +1284,12 @@ export default function ChartPage() {
                                             <Button
                                                 size="sm"
                                                 onClick={() => {
-                                                    setStartYear(
+                                                    updateYearRange(
                                                         tempYearRange.start,
-                                                    );
-                                                    setEndYear(
                                                         tempYearRange.end,
+                                                        {
+                                                            notifyIfSwapped: true,
+                                                        },
                                                     );
                                                     setTimePeriod("custom");
                                                     setYearRangeOpen(false);
