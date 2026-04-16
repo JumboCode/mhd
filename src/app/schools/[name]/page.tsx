@@ -365,6 +365,7 @@ export default function SchoolProfilePage() {
                 {/* Info Row */}
                 <SchoolInfoRow
                     town={schoolData.town}
+                    region={schoolData.region}
                     implementationModel={schoolData.implementationModel}
                     firstYear={schoolData.firstYear}
                 />
