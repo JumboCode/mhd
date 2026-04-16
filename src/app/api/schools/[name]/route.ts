@@ -21,12 +21,34 @@ import {
 } from "@/lib/schema";
 import { eq, sql, and, sum } from "drizzle-orm";
 import { findRegionOf } from "@/lib/region-finder";
+import { z } from "zod";
 
 type YearlySchoolFields = {
     division?: string[];
     implementationModel?: string;
     schoolType?: string;
 };
+
+const schoolNameParamsSchema = z.object({
+    name: z.string().trim().min(1),
+});
+
+const schoolGetQuerySchema = z.object({
+    year: z.coerce.number().int().positive(),
+});
+
+const schoolPatchBodySchema = z
+    .object({
+        latitude: z.number().finite().optional(),
+        longitude: z.number().finite().optional(),
+        name: z.string().trim().min(1).optional(),
+        city: z.string().trim().min(1).optional(),
+        implementationModel: z.string().optional(),
+        schoolType: z.string().optional(),
+        division: z.array(z.string()).optional(),
+        year: z.coerce.number().int().positive().optional(),
+    })
+    .strict();
 
 async function upsertYearlySchoolData(
     schoolId: number,
@@ -58,9 +80,27 @@ export async function PATCH(
     { params }: { params: Promise<{ name: string }> },
 ) {
     try {
-        const { name } = await params;
+        const parsedParams = schoolNameParamsSchema.safeParse(await params);
+        if (!parsedParams.success) {
+            return NextResponse.json(
+                { error: "Invalid school name" },
+                { status: 400 },
+            );
+        }
+        const name = parsedParams.data.name;
 
-        const body = await req.json();
+        const parsedBody = schoolPatchBodySchema.safeParse(await req.json());
+        if (!parsedBody.success) {
+            return NextResponse.json(
+                {
+                    error:
+                        parsedBody.error.issues[0]?.message ??
+                        "Invalid request body",
+                },
+                { status: 400 },
+            );
+        }
+        const body = parsedBody.data;
         const {
             latitude,
             longitude,
@@ -121,15 +161,6 @@ export async function PATCH(
 
         // Handle division update
         if (division !== undefined) {
-            if (
-                !Array.isArray(division) ||
-                division.some((d: unknown) => typeof d !== "string")
-            ) {
-                return NextResponse.json(
-                    { error: "division must be an array of strings" },
-                    { status: 400 },
-                );
-            }
             if (!year) {
                 return NextResponse.json(
                     { error: "year is required for division updates" },
@@ -144,12 +175,6 @@ export async function PATCH(
 
         // Handle implementation model update
         if (implementationModel !== undefined) {
-            if (typeof implementationModel !== "string") {
-                return NextResponse.json(
-                    { error: "implementationModel must be a string" },
-                    { status: 400 },
-                );
-            }
             if (!year) {
                 return NextResponse.json(
                     {
@@ -168,12 +193,6 @@ export async function PATCH(
 
         // Handle schoolType update
         if (schoolType !== undefined) {
-            if (typeof schoolType !== "string") {
-                return NextResponse.json(
-                    { error: "schoolType must be a string" },
-                    { status: 400 },
-                );
-            }
             if (!year) {
                 return NextResponse.json(
                     { error: "year is required for schoolType updates" },
@@ -227,8 +246,24 @@ export async function GET(
 ) {
     try {
         const { searchParams } = new URL(req.url);
-        const year = Number(searchParams.get("year"));
-        const { name } = await params;
+        const parsedQuery = schoolGetQuerySchema.safeParse({
+            year: searchParams.get("year"),
+        });
+        if (!parsedQuery.success) {
+            return NextResponse.json(
+                { error: "Invalid year query parameter" },
+                { status: 400 },
+            );
+        }
+        const year = parsedQuery.data.year;
+        const parsedParams = schoolNameParamsSchema.safeParse(await params);
+        if (!parsedParams.success) {
+            return NextResponse.json(
+                { error: "Invalid school name" },
+                { status: 400 },
+            );
+        }
+        const name = parsedParams.data.name;
 
         // Match on standardized name
         const schoolResult = await db

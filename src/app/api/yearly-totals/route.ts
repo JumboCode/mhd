@@ -1,19 +1,25 @@
 import { NextResponse } from "next/server";
 import { getYearlyStats, getAllYearsStats } from "@/lib/yearlyTotals";
+import { z } from "zod";
+
+const yearlyTotalsQuerySchema = z.object({
+    year: z.coerce.number().int().positive(),
+});
 
 export async function GET(req: Request) {
     try {
         const { searchParams } = new URL(req.url);
-        const year: string | null = searchParams.get("year");
-
-        if (year === null) {
+        const parsedQuery = yearlyTotalsQuerySchema.safeParse({
+            year: searchParams.get("year"),
+        });
+        if (!parsedQuery.success) {
             return NextResponse.json(
-                { error: "Expected year but received null" },
+                { error: "Invalid year query parameter" },
                 { status: 400 },
             );
         }
 
-        const yearNum: number = parseInt(year);
+        const yearNum = parsedQuery.data.year;
         const [yearlyStats, allYearsStats] = await Promise.all([
             getYearlyStats(yearNum),
             getAllYearsStats(),

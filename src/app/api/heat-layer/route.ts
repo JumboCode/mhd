@@ -13,19 +13,25 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { schools, projects, yearlyTeacherParticipation } from "@/lib/schema";
 import { eq, isNotNull } from "drizzle-orm";
+import { z } from "zod";
+
+const heatLayerQuerySchema = z.object({
+    year: z.coerce.number().int().positive(),
+});
 
 export async function GET(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url);
-        const yearString = searchParams.get("year");
-        const currentYear = Number(yearString);
-
-        if (!currentYear || isNaN(currentYear)) {
+        const parsedQuery = heatLayerQuerySchema.safeParse({
+            year: searchParams.get("year"),
+        });
+        if (!parsedQuery.success) {
             return NextResponse.json(
                 { message: "Invalid year parameter" },
                 { status: 400 },
             );
         }
+        const currentYear = parsedQuery.data.year;
 
         // Fetch all schools with latitude and longitude
         const schoolsPerYear = await db

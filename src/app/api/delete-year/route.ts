@@ -18,6 +18,11 @@ import {
     yearMetadata,
 } from "@/lib/schema";
 import { eq } from "drizzle-orm";
+import { z } from "zod";
+
+const deleteYearQuerySchema = z.object({
+    year: z.coerce.number().int().positive(),
+});
 
 /**
  * Deletes all data for the specified year.
@@ -28,15 +33,16 @@ import { eq } from "drizzle-orm";
 export async function DELETE(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url);
-        const yearString = searchParams.get("year");
-        const currentYear = Number(yearString);
-
-        if (!currentYear || isNaN(currentYear)) {
+        const parsedQuery = deleteYearQuerySchema.safeParse({
+            year: searchParams.get("year"),
+        });
+        if (!parsedQuery.success) {
             return NextResponse.json(
                 { message: "Invalid year parameter" },
                 { status: 400 },
             );
         }
+        const currentYear = parsedQuery.data.year;
 
         // Delete rows for the specified year
         await db.delete(projects).where(eq(projects.year, currentYear));

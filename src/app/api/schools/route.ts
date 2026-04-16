@@ -18,6 +18,23 @@ import {
     yearlyTeacherParticipation,
 } from "@/lib/schema";
 import { and, count, eq, sum } from "drizzle-orm";
+import { z } from "zod";
+
+const schoolsQuerySchema = z
+    .object({
+        list: z.enum(["true", "false"]).optional(),
+        gateway: z.enum(["true", "false"]).optional(),
+        year: z.coerce.number().int().positive().optional(),
+    })
+    .superRefine((data, ctx) => {
+        if (data.list !== "true" && data.year === undefined) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "year is required when list is not true",
+                path: ["year"],
+            });
+        }
+    });
 
 function percentageChange(curr: number, past: number) {
     return past !== 0 ? Math.round(((curr - past) / past) * 100) : undefined;
@@ -26,11 +43,22 @@ function percentageChange(curr: number, past: number) {
 export async function GET(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url);
+        const parsedQuery = schoolsQuerySchema.safeParse({
+            list: searchParams.get("list") ?? undefined,
+            gateway: searchParams.get("gateway") ?? undefined,
+            year: searchParams.get("year") ?? undefined,
+        });
+        if (!parsedQuery.success) {
+            return NextResponse.json(
+                { message: "Invalid query parameters" },
+                { status: 400 },
+            );
+        }
+        const query = parsedQuery.data;
 
         // Lightweight list mode: school info for all schools
-        if (searchParams.get("list") === "true") {
-            const gatewayParam = searchParams.get("gateway");
-            const isGateway = gatewayParam === "true";
+        if (query.list === "true") {
+            const isGateway = query.gateway === "true";
 
             const baseQuery = db
                 .select({
@@ -50,15 +78,7 @@ export async function GET(req: NextRequest) {
             return NextResponse.json(allSchools);
         }
 
-        const yearString = searchParams.get("year");
-        const currentYear = Number(yearString);
-
-        if (!currentYear || isNaN(currentYear)) {
-            return NextResponse.json(
-                { message: "Invalid year parameter" },
-                { status: 400 },
-            );
-        }
+        const currentYear = query.year!;
 
         // Fetch all schools with yearly data for the requested year
         const allSchools = await db

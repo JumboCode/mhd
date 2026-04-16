@@ -17,54 +17,53 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { teachers, projects, yearMetadata } from "@/lib/schema";
 import { eq, inArray } from "drizzle-orm";
+import { z } from "zod";
+
+const teacherParamsSchema = z.object({
+    id: z.coerce.number().int().positive(),
+});
+
+const teacherPatchBodySchema = z
+    .object({
+        name: z.string().trim().min(1).optional(),
+        email: z.string().trim().email().min(1).optional(),
+    })
+    .strict();
+
+type TeacherUpdates = Partial<{ name: string; email: string }>;
 
 export async function PATCH(
     req: NextRequest,
     { params }: { params: Promise<{ id: string }> },
 ) {
     try {
-        const { id } = await params;
-        // Parse and validate the teacher ID from the URL
-        const numericId = Number(id);
-
-        if (isNaN(numericId) || !Number.isInteger(numericId)) {
+        const parsedParams = teacherParamsSchema.safeParse(await params);
+        if (!parsedParams.success) {
             return NextResponse.json(
                 { error: "Invalid teacher ID" },
                 { status: 400 },
             );
         }
+        const numericId = parsedParams.data.id;
 
-        const body = await req.json();
+        const parsedBody = teacherPatchBodySchema.safeParse(await req.json());
+        if (!parsedBody.success) {
+            return NextResponse.json(
+                {
+                    error:
+                        parsedBody.error.issues[0]?.message ??
+                        "Invalid request body",
+                },
+                { status: 400 },
+            );
+        }
 
         // Build updates object with only the fields present in the request body
-        const updates: Partial<{ name: string; email: string }> = {};
-
-        if ("name" in body) {
-            const val = String(body.name).trim();
-            if (!val)
-                return NextResponse.json(
-                    { error: "name cannot be empty" },
-                    { status: 400 },
-                );
-            updates.name = val;
-        }
-        if ("email" in body) {
-            const val = String(body.email).trim();
-            if (!val)
-                return NextResponse.json(
-                    { error: "email cannot be empty" },
-                    { status: 400 },
-                );
-            // Validate basic email format before writing to the database
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(val)) {
-                return NextResponse.json(
-                    { error: "Invalid email format" },
-                    { status: 400 },
-                );
-            }
-            updates.email = val;
-        }
+        const updates = Object.fromEntries(
+            Object.entries(parsedBody.data).filter(
+                ([, value]) => value !== undefined,
+            ),
+        ) as TeacherUpdates;
 
         // Reject the request if the body contained no recognized fields
         if (Object.keys(updates).length === 0) {

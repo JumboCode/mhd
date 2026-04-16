@@ -13,11 +13,27 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { yearlySchoolParticipation, yearMetadata, schools } from "@/lib/schema";
 import { eq } from "drizzle-orm";
+import { z } from "zod";
+
+const yearsWithDataQuerySchema = z.object({
+    school: z.string().trim().min(1).optional(),
+    simple: z.enum(["true", "false"]).optional(),
+});
 
 export async function GET(req: Request) {
     try {
         const { searchParams } = new URL(req.url);
-        const schoolParam = searchParams.get("school");
+        const parsedQuery = yearsWithDataQuerySchema.safeParse({
+            school: searchParams.get("school") ?? undefined,
+            simple: searchParams.get("simple") ?? undefined,
+        });
+        if (!parsedQuery.success) {
+            return NextResponse.json(
+                { error: "Invalid query parameters" },
+                { status: 400 },
+            );
+        }
+        const schoolParam = parsedQuery.data.school;
 
         // If a school standardized name is provided, return only years that
         // school participated in (used by the school profile page).

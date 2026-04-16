@@ -24,6 +24,7 @@ import {
 import { standardize, toTitleCase } from "@/lib/string-standardize";
 import { studentRequiredColumns } from "@/lib/required-spreadsheet-columns";
 import { findRegionOf } from "@/lib/region-finder";
+import { z } from "zod";
 
 type RowData = Array<string | number | boolean | null>;
 
@@ -32,6 +33,30 @@ type SchoolCoordinateData = {
     lat: number | null;
     long: number | null;
 };
+
+const spreadsheetCellSchema = z.union([
+    z.string(),
+    z.number(),
+    z.boolean(),
+    z.null(),
+]);
+
+const rowDataSchema = z.array(spreadsheetCellSchema);
+
+const uploadSchoolCoordinateSchema = z.object({
+    schoolId: z.string().trim().min(1),
+    lat: z.number().nullable(),
+    long: z.number().nullable(),
+});
+
+const uploadRequestSchema = z
+    .object({
+        formYear: z.coerce.number().int().positive(),
+        formData: z.string().min(1),
+        schoolCoordinates: z.array(uploadSchoolCoordinateSchema).optional(),
+        schoolInfoData: z.string().optional(),
+    })
+    .strict();
 
 let currentProgress = {
     progress: 0,
@@ -134,16 +159,72 @@ function buildSchoolInfoMap(rawData: RowData[]): Map<string, SchoolInfoEntry> {
 export async function POST(req: NextRequest) {
     currentProgress = { progress: 0, complete: false };
     try {
-        const jsonReq = await req.json();
-        const year: number = jsonReq.formYear;
-        const rawData: RowData[] = JSON.parse(jsonReq.formData);
+        const parsedRequest = uploadRequestSchema.safeParse(await req.json());
+        if (!parsedRequest.success) {
+            return NextResponse.json(
+                {
+                    message:
+                        parsedRequest.error.issues[0]?.message ??
+                        "Invalid upload payload",
+                },
+                { status: 400 },
+            );
+        }
+        const requestBody = parsedRequest.data;
+        const year: number = requestBody.formYear;
+
+        const parsedFormData = z
+            .string()
+            .transform((value, ctx) => {
+                try {
+                    return JSON.parse(value);
+                } catch {
+                    ctx.addIssue({
+                        code: z.ZodIssueCode.custom,
+                        message: "formData must be valid JSON",
+                    });
+                    return z.NEVER;
+                }
+            })
+            .pipe(z.array(rowDataSchema))
+            .safeParse(requestBody.formData);
+        if (!parsedFormData.success) {
+            return NextResponse.json(
+                { message: parsedFormData.error.issues[0]?.message },
+                { status: 400 },
+            );
+        }
+        const rawData: RowData[] = parsedFormData.data;
         const schoolCoordinates: SchoolCoordinateData[] =
-            jsonReq.schoolCoordinates || [];
+            requestBody.schoolCoordinates || [];
 
         // Parse the school info spreadsheet if provided
+        const parsedSchoolInfoData = requestBody.schoolInfoData
+            ? z
+                  .string()
+                  .transform((value, ctx) => {
+                      try {
+                          return JSON.parse(value);
+                      } catch {
+                          ctx.addIssue({
+                              code: z.ZodIssueCode.custom,
+                              message: "schoolInfoData must be valid JSON",
+                          });
+                          return z.NEVER;
+                      }
+                  })
+                  .pipe(z.array(rowDataSchema))
+                  .safeParse(requestBody.schoolInfoData)
+            : null;
+        if (parsedSchoolInfoData && !parsedSchoolInfoData.success) {
+            return NextResponse.json(
+                { message: parsedSchoolInfoData.error.issues[0]?.message },
+                { status: 400 },
+            );
+        }
         const schoolInfoMap: Map<string, SchoolInfoEntry> =
-            jsonReq.schoolInfoData
-                ? buildSchoolInfoMap(JSON.parse(jsonReq.schoolInfoData))
+            parsedSchoolInfoData?.success
+                ? buildSchoolInfoMap(parsedSchoolInfoData.data)
                 : new Map();
 
         // Build coordinates lookup
