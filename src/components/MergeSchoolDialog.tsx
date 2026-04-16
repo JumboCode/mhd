@@ -121,39 +121,59 @@ export default function MergeSchoolDialog({
                     </div>
 
                     {/* Direction visualiser */}
-                    <div className="flex items-center gap-3">
-                        {/* Current school */}
-                        <div className="flex-1 rounded-md border bg-muted/40 px-3 py-2 text-sm font-medium text-center">
-                            {currentSchoolName}
-                        </div>
-
-                        {/* Arrow + flip button */}
-                        <div className="flex flex-col items-center gap-1">
-                            <div className="flex items-center justify-center w-8 h-8">
-                                {direction === "outward" ? (
-                                    <ArrowRight className="h-5 w-5 text-destructive" />
-                                ) : (
-                                    <ArrowLeft className="h-5 w-5 text-destructive" />
-                                )}
+                    <div className="space-y-1">
+                        <div className="flex items-center gap-3">
+                            {/* Current school */}
+                            <div
+                                className={`flex-1 rounded-md border px-3 py-2 text-sm font-medium text-center transition-colors ${
+                                    direction === "outward"
+                                        ? "border-destructive/50 bg-destructive/5"
+                                        : "border-green-500/40 bg-green-50"
+                                }`}
+                            >
+                                {currentSchoolName}
                             </div>
-                            <button
+
+                            {/* Arrow button — click to flip direction */}
+                            <Button
+                                variant="outline"
+                                size="icon"
                                 onClick={() =>
                                     setDirection((d) =>
                                         d === "outward" ? "inward" : "outward",
                                     )
                                 }
-                                className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground transition-colors cursor-pointer"
+                                title="Click to reverse direction"
                             >
-                                flip
-                            </button>
+                                {direction === "outward" ? (
+                                    <ArrowRight className="h-5 w-5" />
+                                ) : (
+                                    <ArrowLeft className="h-5 w-5" />
+                                )}
+                            </Button>
+
+                            {/* Other school */}
+                            <div
+                                className={`flex-1 rounded-md border px-3 py-2 text-sm font-medium text-center transition-colors ${
+                                    direction === "inward"
+                                        ? "border-destructive/50 bg-destructive/5"
+                                        : otherSchool
+                                          ? "border-green-500/40 bg-green-50"
+                                          : "bg-muted/40 text-muted-foreground"
+                                }`}
+                            >
+                                {otherSchool?.name ?? (
+                                    <span className="italic font-normal">
+                                        select a school
+                                    </span>
+                                )}
+                            </div>
                         </div>
 
-                        {/* Other school */}
-                        <div className="flex-1 rounded-md border bg-muted/40 px-3 py-2 text-sm font-medium text-center text-muted-foreground">
-                            {otherSchool?.name ?? (
-                                <span className="italic">select a school</span>
-                            )}
-                        </div>
+                        <p className="text-xs text-muted-foreground text-center pt-1">
+                            The arrow points toward the school that survives.
+                            Click the arrow button to reverse the direction.
+                        </p>
                     </div>
 
                     {/* Explanation */}
@@ -189,7 +209,6 @@ export default function MergeSchoolDialog({
                                 type="checkbox"
                                 checked={confirmed}
                                 onChange={(e) => setConfirmed(e.target.checked)}
-                                className="accent-destructive"
                             />
                             I understand this is permanent and cannot be undone
                         </label>
@@ -205,7 +224,7 @@ export default function MergeSchoolDialog({
                         Cancel
                     </Button>
                     <Button
-                        variant="destructive"
+                        variant="default"
                         onClick={handleMerge}
                         disabled={!otherSchool || !confirmed || merging}
                     >
