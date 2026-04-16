@@ -136,7 +136,7 @@ export default function MergeSchools() {
                     </div>
 
                     <Button
-                        variant="destructive"
+                        variant="default"
                         disabled={!canMerge}
                         onClick={() => setShowConfirm(true)}
                     >
@@ -174,7 +174,7 @@ export default function MergeSchools() {
                             Cancel
                         </Button>
                         <Button
-                            variant="destructive"
+                            variant="default"
                             onClick={handleConfirm}
                             disabled={merging}
                         >
