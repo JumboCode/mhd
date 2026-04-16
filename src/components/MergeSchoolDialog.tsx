@@ -155,7 +155,7 @@ export default function MergeSchoolDialog({
                             {/* Other school */}
                             <div
                                 className={`flex-1 rounded-md border px-3 py-2 text-sm font-medium text-center transition-colors ${
-                                    direction === "inward"
+                                    direction === "inward" && otherSchool?.name
                                         ? "border-destructive/50 bg-destructive/5"
                                         : otherSchool
                                           ? "border-green-500/40 bg-green-50"
@@ -164,7 +164,7 @@ export default function MergeSchoolDialog({
                             >
                                 {otherSchool?.name ?? (
                                     <span className="italic font-normal">
-                                        select a school
+                                        Select a school
                                     </span>
                                 )}
                             </div>
