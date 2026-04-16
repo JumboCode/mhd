@@ -7,7 +7,7 @@ import {
     yearlySchoolParticipation,
     yearlyTeacherParticipation,
 } from "@/lib/schema";
-import { and, eq, inArray } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 
 export async function POST(req: NextRequest) {
     try {
