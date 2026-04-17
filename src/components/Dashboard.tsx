@@ -192,7 +192,7 @@ export default function Dashboard() {
                                 setYear(selectedYear);
                             }
                         }}
-                        showDataIndicator={false}
+                        showDataIndicator={true}
                     />
                 </div>
             </div>
