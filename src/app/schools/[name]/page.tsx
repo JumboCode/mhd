@@ -35,10 +35,19 @@ import {
 } from "@/components/EditableProjectsTable";
 import PieChart from "@/components/charts/PieChart";
 import { projectCategoryDistribution } from "@/lib/utils";
-import { AlertCircle, X } from "lucide-react";
+import { AlertCircle, X, EllipsisVertical, Merge } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import MergeSchoolDialog from "@/components/MergeSchoolDialog";
 
 // interface such that data can be blank if API is loading
 type SchoolData = {
+    id: number;
     name: string;
     town: string;
     studentCount: string;
@@ -77,10 +86,25 @@ export default function SchoolProfilePage() {
     >([]);
     const [allYearsData, setAllYearsData] = useState<SchoolData[]>([]);
     const [showPrevYearWarning, setShowPrevYearWarning] = useState(true);
+    const [mergeOpen, setMergeOpen] = useState(false);
 
     useEffect(() => {
         setShowPrevYearWarning(true);
     }, [year]);
+
+    // Check on mount whether this school has been merged away
+    useEffect(() => {
+        fetch(`/api/schools/${schoolName}`)
+            .then(async (r) => {
+                if (r.status === 301) {
+                    const data = await r.json();
+                    if (data.redirectTo) {
+                        router.replace(`/schools/${data.redirectTo}`);
+                    }
+                }
+            })
+            .catch(() => {});
+    }, [schoolName, router]);
 
     useEffect(() => {
         if (!year) return;
@@ -106,7 +130,8 @@ export default function SchoolProfilePage() {
                     fetchYears.map((y) =>
                         fetch(`/api/schools/${schoolName}?year=${y}`, {
                             signal,
-                        }).then((r) => {
+                        }).then(async (r) => {
+                            if (r.status === 301) return r.json();
                             if (!r.ok)
                                 throw new Error(`Failed to fetch year ${y}`);
                             return r.json();
@@ -115,6 +140,12 @@ export default function SchoolProfilePage() {
                 );
 
                 if (signal.aborted) return;
+
+                // If the school has been merged away, redirect to the absorbing school
+                if (responses[5]?.redirectTo) {
+                    router.replace(`/schools/${responses[5].redirectTo}`);
+                    return;
+                }
 
                 const curr = responses[5]; // current year
                 const sparklineResults = responses.slice(1); // year-4..year (5 items)
@@ -242,7 +273,7 @@ export default function SchoolProfilePage() {
                 <div className="w-full flex flex-col gap-6 py-8 max-w-5xl px-6">
                     <div className="flex flex-row items-center w-full">
                         <Skeleton className="h-8 w-64" />
-                        <div className="ml-auto">
+                        <div className="ml-auto flex flex-row items-center gap-2">
                             <YearDropdown
                                 selectedYear={year}
                                 onYearChange={(selectedYear) => {
@@ -253,6 +284,9 @@ export default function SchoolProfilePage() {
                                 showDataIndicator={true}
                                 school={schoolName}
                             />
+                            <Button variant="ghost" size="icon">
+                                <EllipsisVertical className="h-4 w-4" />
+                            </Button>
                         </div>
                     </div>
                     <SchoolProfileSkeleton skipHeader contentOnly />
@@ -291,7 +325,7 @@ export default function SchoolProfilePage() {
                             {schoolData.name}
                         </h1>
                     )}
-                    <div className="ml-auto">
+                    <div className="ml-auto flex flex-row items-center gap-2">
                         <YearDropdown
                             selectedYear={year}
                             onYearChange={(selectedYear) => {
@@ -302,8 +336,36 @@ export default function SchoolProfilePage() {
                             showDataIndicator={true}
                             school={schoolName}
                         />
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon">
+                                    <EllipsisVertical className="h-4 w-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent
+                                align="end"
+                                className="mt-2 min-w-48"
+                            >
+                                <DropdownMenuItem
+                                    onClick={() => setMergeOpen(true)}
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <Merge className="h-4 w-4" />
+                                        Merge school
+                                    </div>
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                     </div>
                 </div>
+
+                <MergeSchoolDialog
+                    open={mergeOpen}
+                    onOpenChange={setMergeOpen}
+                    currentSchoolId={schoolData.id}
+                    currentSchoolName={schoolData.name}
+                    onMergeComplete={() => router.push("/schools")}
+                />
 
                 {/* Stats cards */}
                 {showComparisonWarning && showPrevYearWarning && (

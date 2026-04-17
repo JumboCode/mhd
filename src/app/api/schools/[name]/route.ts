@@ -14,6 +14,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import {
     schools,
+    schoolHistoricNames,
     projects,
     teachers,
     yearlyTeacherParticipation,
@@ -237,8 +238,31 @@ export async function GET(
             .where(eq(schools.standardizedName, name))
             .limit(1);
 
-        // Check if school exists
+        // Check if school exists; if not, check if it's a historic name (merged away)
         if (!schoolResult || schoolResult.length === 0) {
+            const historic = await db
+                .select({
+                    absorbingSchoolId: schoolHistoricNames.absorbingSchoolId,
+                })
+                .from(schoolHistoricNames)
+                .where(eq(schoolHistoricNames.mergedStandardizedName, name))
+                .limit(1);
+
+            if (historic.length > 0) {
+                const absorbing = await db
+                    .select({ standardizedName: schools.standardizedName })
+                    .from(schools)
+                    .where(eq(schools.id, historic[0].absorbingSchoolId))
+                    .limit(1);
+
+                if (absorbing.length > 0) {
+                    return NextResponse.json(
+                        { redirectTo: absorbing[0].standardizedName },
+                        { status: 301 },
+                    );
+                }
+            }
+
             return NextResponse.json(
                 { error: "School not found" },
                 { status: 404 },
@@ -291,11 +315,28 @@ export async function GET(
                 and(eq(projects.schoolId, school.id), eq(projects.year, year)),
             );
 
-        // First year would be minimum year found in a school's projects
-        const firstYearData = await db
+        // First year would be minimum of first time there are projects, school info, or teachers
+        const firstYearProjects = await db
             .select({ year: sql<number>`min(${projects.year})` })
             .from(projects)
             .where(eq(projects.schoolId, school.id));
+        const firstYearTeachers = await db
+            .select({
+                year: sql<number>`min(${yearlyTeacherParticipation.year})`,
+            })
+            .from(yearlyTeacherParticipation)
+            .where(eq(yearlyTeacherParticipation.schoolId, school.id));
+        const firstYearSchools = await db
+            .select({
+                year: sql<number>`min(${yearlySchoolParticipation.year})`,
+            })
+            .from(yearlySchoolParticipation)
+            .where(eq(yearlySchoolParticipation.schoolId, school.id));
+        const firstYearData = Math.min(
+            firstYearProjects[0].year,
+            firstYearTeachers[0].year,
+            firstYearSchools[0].year,
+        );
 
         const yearlyData = await db.query.yearlySchoolParticipation.findFirst({
             where: and(
@@ -305,6 +346,7 @@ export async function GET(
         });
 
         return NextResponse.json({
+            id: school.id,
             name: school.name,
             town: school.town,
             region: school.region,
@@ -315,7 +357,7 @@ export async function GET(
                 : 0,
             teacherCount: teacherCount[0]?.count ?? 0,
             projectCount: projectCount[0]?.count ?? 0,
-            firstYear: firstYearData[0]?.year ?? null,
+            firstYear: firstYearData ?? null,
             projects: projectRows,
             division: yearlyData?.division ?? [],
             implementationModel: yearlyData?.implementationModel ?? "",
