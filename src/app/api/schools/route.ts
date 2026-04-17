@@ -41,7 +41,8 @@ export async function GET(req: NextRequest) {
                     region: schools.region,
                     gateway: schools.gateway,
                 })
-                .from(schools);
+                .from(schools)
+                .orderBy(schools.name);
 
             // Only filter if gateway=true is explicitly passed
             const allSchools = await (isGateway

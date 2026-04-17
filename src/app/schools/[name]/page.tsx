@@ -17,7 +17,7 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { SchoolProfileSkeleton } from "@/components/skeletons/SchoolProfileSkeleton";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MapPlacer } from "@/components/ui/mapPlacer";
+import { SchoolLocationEditor } from "@/components/SchoolLocationEditor";
 import { SchoolInfoRow } from "@/components/SchoolInfoRow";
 import { StatCard } from "@/components/ui/stat-card";
 import { ENTITY_CONFIG } from "@/lib/entity-config";
@@ -61,11 +61,6 @@ type SchoolData = {
     schoolType: string;
 };
 
-type MapCoordinates = {
-    latitude: number | null;
-    longitude: number | null;
-};
-
 type ProjectRow = EditableProjectRow;
 
 export default function SchoolProfilePage() {
@@ -75,7 +70,7 @@ export default function SchoolProfilePage() {
 
     const [schoolData, setSchoolData] = useState<SchoolData | null>(null);
     const [prevYearData, setPrevYearData] = useState<SchoolData | null>(null);
-    const [coordinates, setCoordinates] = useState<MapCoordinates | null>(null);
+
     const [year, setYear] = useState<number | null>(null);
     const [projects, setProjects] = useState<ProjectRow[]>([]);
     const [editingName, setEditingName] = useState(false);
@@ -459,40 +454,12 @@ export default function SchoolProfilePage() {
 
                 {/* School location map */}
                 <div className="rounded-lg space-y-4">
-                    <h2 className="text-xl font-semibold mb-4 text-foreground">
+                    <h2 className="text-xl font-semibold text-foreground">
                         School Location
                     </h2>
-                    <div className="h-80 rounded-lg overflow-hidden border border-border">
-                        <MapPlacer
-                            schoolId={schoolName}
-                            schoolName={schoolData.name}
-                            onCoordinatesLoaded={setCoordinates}
-                        />
-                    </div>
-                    <div className="mt-3 text-sm text-muted-foreground flex justify-between items-center">
-                        <div className="flex items-center gap-1.5">
-                            {coordinates &&
-                                coordinates.latitude !== null &&
-                                coordinates.longitude !== null && (
-                                    <div className="bg-muted text-black px-2 rounded border">
-                                        <span>
-                                            Coordinates:{" "}
-                                            {coordinates.latitude.toFixed(6)},{" "}
-                                            {coordinates.longitude.toFixed(6)}
-                                        </span>
-                                    </div>
-                                )}
-                        </div>
-                        <div>
-                            {/* TO DO: Replace with actual dates from db */}
-                            Last Updated:{" "}
-                            {new Date().toLocaleDateString("en-US", {
-                                month: "2-digit",
-                                day: "2-digit",
-                                year: "numeric",
-                            })}
-                        </div>
-                    </div>
+                    <SchoolLocationEditor
+                        fixedSchool={{ name: schoolData.name }}
+                    />
                 </div>
 
                 {/* Editable project data table */}
