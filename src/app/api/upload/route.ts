@@ -24,7 +24,7 @@ import {
 import { standardize, toTitleCase } from "@/lib/string-standardize";
 import { studentRequiredColumns } from "@/lib/required-spreadsheet-columns";
 import { findRegionOf } from "@/lib/region-finder";
-import { yearSchema } from "@/lib/year-validation";
+import { yearSchema, MIN_YEAR, MAX_YEAR } from "@/lib/year-validation";
 
 type RowData = Array<string | number | boolean | null>;
 
@@ -139,7 +139,9 @@ export async function POST(req: NextRequest) {
         const yearResult = yearSchema.safeParse(jsonReq.formYear);
         if (!yearResult.success) {
             return NextResponse.json(
-                { message: "Year must be between 1900 and 2100." },
+                {
+                    message: `Year must be between ${MIN_YEAR} and ${MAX_YEAR}.`,
+                },
                 { status: 400 },
             );
         }
