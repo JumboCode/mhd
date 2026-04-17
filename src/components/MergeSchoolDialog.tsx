@@ -180,7 +180,13 @@ export default function MergeSchoolDialog({
                                 >
                                     <Command>
                                         <CommandInput placeholder="Search schools..." />
-                                        <CommandList>
+                                        <CommandList
+                                            style={{
+                                                maxHeight: "250px",
+                                                overflowY: "auto",
+                                            }}
+                                            onWheel={(e) => e.stopPropagation()}
+                                        >
                                             <CommandEmpty>
                                                 No school found.
                                             </CommandEmpty>
