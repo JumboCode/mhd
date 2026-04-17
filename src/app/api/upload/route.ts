@@ -24,7 +24,7 @@ import {
 import { standardize, toTitleCase } from "@/lib/string-standardize";
 import { studentRequiredColumns } from "@/lib/required-spreadsheet-columns";
 import { findRegionOf } from "@/lib/region-finder";
-import { parseYear } from "@/lib/year-validation";
+import { yearSchema } from "@/lib/year-validation";
 
 type RowData = Array<string | number | boolean | null>;
 
@@ -136,13 +136,14 @@ export async function POST(req: NextRequest) {
     currentProgress = { progress: 0, complete: false };
     try {
         const jsonReq = await req.json();
-        const year = parseYear(jsonReq.formYear);
-        if (year === null) {
+        const yearResult = yearSchema.safeParse(jsonReq.formYear);
+        if (!yearResult.success) {
             return NextResponse.json(
                 { message: "Year must be between 1900 and 2100." },
                 { status: 400 },
             );
         }
+        const year = yearResult.data;
         const rawData: RowData[] = JSON.parse(jsonReq.formData);
         const schoolCoordinates: SchoolCoordinateData[] =
             jsonReq.schoolCoordinates || [];
