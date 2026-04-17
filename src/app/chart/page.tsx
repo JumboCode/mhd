@@ -28,6 +28,11 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { toast } from "sonner";
+import {
+    MIN_YEAR,
+    safeParseYear,
+    normalizeYearRange,
+} from "@/lib/year-validation";
 import { LoadError } from "@/components/ui/load-error";
 import BarGraph from "@/components/charts/BarGraph";
 import { type ChartDataset } from "@/components/charts/chartTypes";
@@ -106,31 +111,6 @@ const measuredAsLabels: Record<string, string> = {
     "total-project-count": "Total Projects",
     "total-teacher-count": "Total Teachers",
     "school-return-rate": "School Return Rate",
-};
-
-const MIN_ALLOWED_YEAR = 1900;
-
-const clampNumber = (value: number, min: number, max: number) =>
-    Math.min(Math.max(value, min), max);
-
-const normalizeYearRange = (
-    start: number,
-    end: number,
-    min: number,
-    max: number,
-) => {
-    const normalizedMin = Math.min(min, max);
-    const normalizedMax = Math.max(min, max);
-    const safeStart = clampNumber(start, normalizedMin, normalizedMax);
-    const safeEnd = clampNumber(end, normalizedMin, normalizedMax);
-    return safeStart <= safeEnd
-        ? { start: safeStart, end: safeEnd }
-        : { start: safeEnd, end: safeStart };
-};
-
-const parseInputYear = (value: string, fallback: number) => {
-    const parsed = Number.parseInt(value, 10);
-    return Number.isFinite(parsed) ? parsed : fallback;
 };
 
 // possible values for group by filter
@@ -248,7 +228,7 @@ export default function ChartPage() {
     );
     const currentYear = new Date().getFullYear();
     const [tempYearRange, setTempYearRange] = useState(() =>
-        normalizeYearRange(startYear, endYear, MIN_ALLOWED_YEAR, currentYear),
+        normalizeYearRange(startYear, endYear, MIN_YEAR, currentYear),
     );
     const [yearRangeOpen, setYearRangeOpen] = useState(false);
 
@@ -260,14 +240,13 @@ export default function ChartPage() {
         const min = Math.min(...years);
         const max = Math.max(...years, currentYear) - 1;
         return {
-            min: Math.max(min, MIN_ALLOWED_YEAR),
-            max: Math.max(max, MIN_ALLOWED_YEAR),
+            min: Math.max(min, MIN_YEAR),
+            max: Math.max(max, MIN_YEAR),
         };
     }, [allProjects, currentYear]);
 
     const yearBounds = useMemo(
-        () =>
-            availableYearBounds ?? { min: MIN_ALLOWED_YEAR, max: currentYear },
+        () => availableYearBounds ?? { min: MIN_YEAR, max: currentYear },
         [availableYearBounds, currentYear],
     );
 
@@ -518,26 +497,60 @@ export default function ChartPage() {
 
         if (timePeriod === "3y") {
             void setStartYear(
-                clampNumber(maxYear - 2, yearBounds.min, yearBounds.max),
+                safeParseYear(
+                    maxYear - 2,
+                    yearBounds.min,
+                    yearBounds.max,
+                    yearBounds.min,
+                ),
             );
             void setEndYear(
-                clampNumber(maxYear, yearBounds.min, yearBounds.max),
+                safeParseYear(
+                    maxYear,
+                    yearBounds.min,
+                    yearBounds.max,
+                    yearBounds.max,
+                ),
             );
             return;
         } else if (timePeriod === "5y") {
             void setStartYear(
-                clampNumber(maxYear - 4, yearBounds.min, yearBounds.max),
+                safeParseYear(
+                    maxYear - 4,
+                    yearBounds.min,
+                    yearBounds.max,
+                    yearBounds.min,
+                ),
             );
             void setEndYear(
-                clampNumber(maxYear, yearBounds.min, yearBounds.max),
+                safeParseYear(
+                    maxYear,
+                    yearBounds.min,
+                    yearBounds.max,
+                    yearBounds.max,
+                ),
             );
             return;
         }
 
         // "all" - use full range
         const minYear = Math.min(...allYears);
-        void setStartYear(clampNumber(minYear, yearBounds.min, yearBounds.max));
-        void setEndYear(clampNumber(maxYear, yearBounds.min, yearBounds.max));
+        void setStartYear(
+            safeParseYear(
+                minYear,
+                yearBounds.min,
+                yearBounds.max,
+                yearBounds.min,
+            ),
+        );
+        void setEndYear(
+            safeParseYear(
+                maxYear,
+                yearBounds.min,
+                yearBounds.max,
+                yearBounds.max,
+            ),
+        );
     }, [
         timePeriod,
         allProjects,
@@ -1287,14 +1300,11 @@ export default function ChartPage() {
                                                     value={tempYearRange.start}
                                                     onChange={(e) => {
                                                         const nextStart =
-                                                            clampNumber(
-                                                                parseInputYear(
-                                                                    e.target
-                                                                        .value,
-                                                                    tempYearRange.start,
-                                                                ),
+                                                            safeParseYear(
+                                                                e.target.value,
                                                                 yearBounds.min,
                                                                 tempYearRange.end,
+                                                                tempYearRange.start,
                                                             );
                                                         setTempYearRange(
                                                             (prev) => ({
@@ -1317,14 +1327,11 @@ export default function ChartPage() {
                                                     value={tempYearRange.end}
                                                     onChange={(e) => {
                                                         const nextEnd =
-                                                            clampNumber(
-                                                                parseInputYear(
-                                                                    e.target
-                                                                        .value,
-                                                                    tempYearRange.end,
-                                                                ),
+                                                            safeParseYear(
+                                                                e.target.value,
                                                                 tempYearRange.start,
                                                                 yearBounds.max,
+                                                                tempYearRange.end,
                                                             );
                                                         setTempYearRange(
                                                             (prev) => ({
