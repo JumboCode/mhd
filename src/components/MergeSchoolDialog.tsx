@@ -111,7 +111,7 @@ export default function MergeSchoolDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-lg">
+            <DialogContent className="max-w-lg" showCloseButton={false}>
                 <DialogHeader>
                     <DialogTitle>Merge Schools</DialogTitle>
                 </DialogHeader>
