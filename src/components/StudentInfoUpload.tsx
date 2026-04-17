@@ -46,7 +46,7 @@ export default function SpreadsheetUpload({
 
             <div className="flex flex-col gap-2">
                 <h2 className="text-base font-medium">Year</h2>
-                <YearInput year={year} setYear={setYear} />
+                <YearInput year={year} onYearChange={setYear} />
             </div>
 
             <div className="flex flex-col gap-2">
