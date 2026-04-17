@@ -315,11 +315,28 @@ export async function GET(
                 and(eq(projects.schoolId, school.id), eq(projects.year, year)),
             );
 
-        // First year would be minimum year found in a school's projects
-        const firstYearData = await db
+        // First year would be minimum of first time there are projects, school info, or teachers
+        const firstYearProjects = await db
             .select({ year: sql<number>`min(${projects.year})` })
             .from(projects)
             .where(eq(projects.schoolId, school.id));
+        const firstYearTeachers = await db
+            .select({
+                year: sql<number>`min(${yearlyTeacherParticipation.year})`,
+            })
+            .from(yearlyTeacherParticipation)
+            .where(eq(yearlyTeacherParticipation.schoolId, school.id));
+        const firstYearSchools = await db
+            .select({
+                year: sql<number>`min(${yearlySchoolParticipation.year})`,
+            })
+            .from(yearlySchoolParticipation)
+            .where(eq(yearlySchoolParticipation.schoolId, school.id));
+        const firstYearData = Math.min(
+            firstYearProjects[0].year,
+            firstYearTeachers[0].year,
+            firstYearSchools[0].year,
+        );
 
         const yearlyData = await db.query.yearlySchoolParticipation.findFirst({
             where: and(
@@ -340,7 +357,7 @@ export async function GET(
                 : 0,
             teacherCount: teacherCount[0]?.count ?? 0,
             projectCount: projectCount[0]?.count ?? 0,
-            firstYear: firstYearData[0]?.year ?? null,
+            firstYear: firstYearData ?? null,
             projects: projectRows,
             division: yearlyData?.division ?? [],
             implementationModel: yearlyData?.implementationModel ?? "",

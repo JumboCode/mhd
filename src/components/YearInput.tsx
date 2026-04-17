@@ -5,21 +5,18 @@ import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { ChevronLeft, ChevronRight, TriangleAlert } from "lucide-react";
+import { isYearInRange, MAX_YEAR, MIN_YEAR } from "@/lib/year-validation";
 
 type YearInputProps = {
     year?: number | null;
-    setYear: (year: number | null) => void;
+    onYearChange: (year: number | null) => void;
 };
 
-export default function YearInput({ year, setYear }: YearInputProps) {
-    const [yearStr, setYearStr] = useState("");
+export default function YearInput({ year, onYearChange }: YearInputProps) {
+    const [draft, setDraft] = useState<string | null>(null);
     const [yearsWithData, setYearsWithData] = useState<Set<number> | null>(
         null,
     );
-    const currYear = Number(yearStr);
-
-    const MIN_YEAR = 1900;
-    const MAX_YEAR = 2100;
 
     useEffect(() => {
         async function fetchYearsWithData() {
@@ -33,41 +30,44 @@ export default function YearInput({ year, setYear }: YearInputProps) {
         fetchYearsWithData();
     }, []);
 
-    useEffect(() => {
-        setYearStr(String(year));
-    }, [year]);
-
-    const hasData = !!currYear && !!yearsWithData?.has(currYear);
+    // Derive display value: use draft while typing, otherwise derive from prop
+    const displayValue = draft ?? (year ? String(year) : "");
+    const displayYear = Number(displayValue);
+    const hasData = !!displayYear && !!yearsWithData?.has(displayYear);
 
     const handleYearInput = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value.replace(/\D/g, "");
         if (value.length > 4) return;
-        setYearStr(value);
-        if (value.length === 4) setYear(Number(value));
+        setDraft(value);
+        if (value.length === 4) {
+            const parsedYear = Number(value);
+            onYearChange(isYearInRange(parsedYear) ? parsedYear : null);
+            setDraft(null);
+        } else {
+            onYearChange(null);
+        }
     };
 
     const handleYearBlur = () => {
-        if (yearStr.length > 0 && yearStr.length < 4) {
-            const padded = yearStr.padStart(4, "0");
-            setYearStr(padded);
-            setYear(Number(padded));
+        if (draft === null) return;
+        if (!draft) {
+            onYearChange(null);
+            setDraft(null);
+            return;
         }
+
+        const normalized = draft.padStart(4, "0");
+        const parsedYear = Number(normalized);
+        onYearChange(isYearInRange(parsedYear) ? parsedYear : null);
+        setDraft(null);
     };
 
     const incrementYear = () => {
-        if (year && currYear < MAX_YEAR) {
-            const newYear = currYear + 1;
-            setYear(newYear);
-            setYearStr(String(newYear));
-        }
+        if (year && year < MAX_YEAR) onYearChange(year + 1);
     };
 
     const decrementYear = () => {
-        if (year && currYear > MIN_YEAR) {
-            const newYear = currYear - 1;
-            setYear(newYear);
-            setYearStr(String(newYear));
-        }
+        if (year && year > MIN_YEAR) onYearChange(year - 1);
     };
 
     return (
@@ -82,7 +82,7 @@ export default function YearInput({ year, setYear }: YearInputProps) {
                 </Button>
 
                 <div className="flex items-center justify-center gap-1.5 px-2 w-[100px]">
-                    {yearsWithData && yearStr && (
+                    {yearsWithData && displayValue && (
                         <div
                             className={`h-2 w-2 rounded-full shrink-0 ${hasData ? "bg-green-500" : "bg-red-500"}`}
                         />
@@ -90,9 +90,10 @@ export default function YearInput({ year, setYear }: YearInputProps) {
                     <Input
                         type="text"
                         inputMode="numeric"
+                        maxLength={4}
                         id="year"
                         name="Year"
-                        value={yearStr}
+                        value={displayValue}
                         onChange={handleYearInput}
                         onBlur={handleYearBlur}
                         className="h-9 w-[52px] p-0 text-center rounded-none border-0 shadow-none focus-visible:ring-0 bg-background [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
@@ -110,8 +111,8 @@ export default function YearInput({ year, setYear }: YearInputProps) {
             {hasData && (
                 <p className="flex items-center gap-1.5 text-sm text-amber-600 dark:text-amber-400">
                     <TriangleAlert className="h-4 w-4 shrink-0" />
-                    Data already exists for {currYear}. Uploading will overwrite
-                    it.
+                    Data already exists for {displayYear}. Uploading will
+                    overwrite it.
                 </p>
             )}
         </div>
