@@ -93,6 +93,15 @@ export function downloadGraphs(
     });
 }
 
+/**
+ * Helper to download a single React component (like a graph or page wrapper) as a PDF.
+ * Uses html2canvas to take a DOM snapshot.
+ *
+ * Note on formatting: We utilize the `onclone` callback to modify the DOM of the
+ * cloned, off-screen snapshot right before html2canvas captures it. This allows us
+ * to do things like reposition the school map next to the pie chart specifically
+ * for the PDF without impacting the live, visible page layout.
+ */
 export async function downloadSingleGraph(
     chartRef: React.RefObject<HTMLDivElement | null>,
     filterName: string,
@@ -104,6 +113,48 @@ export async function downloadSingleGraph(
     const canvas = await html2canvas(el, {
         backgroundColor: "#fff",
         scale: 2,
+        /*
+        onclone essentially screenshots the DOM and returns it, this is used
+        to modify the profile page so it formats well in the PDF
+        */
+        onclone: (doc) => {
+            // have pie chart and map side by side
+            const mapTitle = Array.from(doc.querySelectorAll("h2")).find((h) =>
+                h.textContent?.includes("School Location"),
+            );
+            if (!mapTitle) return;
+
+            const mapContainer = mapTitle.parentElement;
+            const pieGrid = mapContainer?.previousElementSibling;
+
+            if (mapContainer && pieGrid && pieGrid.classList.contains("grid")) {
+                mapTitle.remove();
+
+                pieGrid.className = "flex flex-row items-stretch gap-8 w-full";
+
+                const pieWrapper = pieGrid.firstElementChild as HTMLElement;
+                if (pieWrapper) pieWrapper.className = "flex-1 min-w-0";
+
+                pieGrid.appendChild(mapContainer);
+
+                mapContainer.className = "flex-1 min-w-0 flex flex-col";
+
+                const mapInnerDiv = mapContainer.querySelector(".h-80");
+                if (mapInnerDiv) {
+                    mapInnerDiv.className = mapInnerDiv.className.replace(
+                        "h-80",
+                        "h-[272px] w-full",
+                    );
+
+                    // draw the school dot (original dot layer doesn't get captured)
+                    const dot = doc.createElement("div");
+                    dot.className =
+                        "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-4 w-4 rounded-full bg-red-500/60 border-2 border-red-500 shadow-lg";
+                    dot.style.zIndex = "50";
+                    mapInnerDiv.appendChild(dot);
+                }
+            }
+        },
     });
 
     downloadGraphs([canvas.toDataURL()], [filterName], print);

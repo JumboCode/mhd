@@ -13,12 +13,14 @@
 
 "use client";
 
+import MapLibreGL from "maplibre-gl";
 import {
     forwardRef,
     useCallback,
     useEffect,
     useImperativeHandle,
     useState,
+    useRef,
 } from "react";
 import { Map, MapMarker, MarkerContent, useMap } from "@/components/ui/map";
 import { Combobox } from "@/components/Combobox";
@@ -60,6 +62,7 @@ interface SchoolEntry {
 export interface SchoolLocationEditorHandle {
     save: () => Promise<void>;
     discard: () => void;
+    resetView: () => void;
 }
 
 type SchoolLocationEditorProps = {
@@ -86,6 +89,7 @@ export const SchoolLocationEditor = forwardRef<
         longitude: number;
     } | null>(null);
     const [mounted, setMounted] = useState(false);
+    const mapInstanceRef = useRef<MapLibreGL.Map>(null);
 
     useEffect(() => {
         setMounted(true);
@@ -192,15 +196,21 @@ export const SchoolLocationEditor = forwardRef<
         setNewPin(null);
     };
 
-    useImperativeHandle(ref, () => ({
-        save: handleSave,
-        discard: handleCancel,
-    }));
-
     const mapCenter: [number, number] =
         selectedSchool?.longitude && selectedSchool?.latitude
             ? [selectedSchool.longitude, selectedSchool.latitude]
             : [-72, 42.272];
+
+    useImperativeHandle(ref, () => ({
+        save: handleSave,
+        discard: handleCancel,
+        // resets map view before export so it always exports with default zoom
+        resetView: () => {
+            if (mapInstanceRef.current) {
+                mapInstanceRef.current.jumpTo({ center: mapCenter, zoom: 12 });
+            }
+        },
+    }));
 
     return (
         <div className="space-y-3">
@@ -224,6 +234,7 @@ export const SchoolLocationEditor = forwardRef<
                 <div className="space-y-3">
                     <div className="h-80 rounded-lg overflow-hidden border border-gray-200 relative">
                         <Map
+                            ref={mapInstanceRef}
                             key={selectedSchool.id}
                             center={mapCenter}
                             zoom={12}
@@ -262,7 +273,10 @@ export const SchoolLocationEditor = forwardRef<
                         </Map>
                     </div>
 
-                    <div className="flex items-center justify-between text-sm">
+                    <div
+                        className="flex items-center justify-between text-sm"
+                        data-html2canvas-ignore="true"
+                    >
                         <div>
                             {newPin ? (
                                 <div className="bg-muted text-black px-2 rounded border">{`New location: ${newPin.latitude.toFixed(4)}, ${newPin.longitude.toFixed(4)}`}</div>

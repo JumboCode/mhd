@@ -17,7 +17,10 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { SchoolProfileSkeleton } from "@/components/skeletons/SchoolProfileSkeleton";
 import { Skeleton } from "@/components/ui/skeleton";
-import { SchoolLocationEditor } from "@/components/SchoolLocationEditor";
+import {
+    SchoolLocationEditor,
+    SchoolLocationEditorHandle,
+} from "@/components/SchoolLocationEditor";
 import { SchoolInfoRow } from "@/components/SchoolInfoRow";
 import { StatCard } from "@/components/ui/stat-card";
 import { ENTITY_CONFIG } from "@/lib/entity-config";
@@ -90,17 +93,22 @@ export default function SchoolProfilePage() {
     const [showPrevYearWarning, setShowPrevYearWarning] = useState(true);
     const [mergeOpen, setMergeOpen] = useState(false);
     const profileRef = useRef<HTMLDivElement>(null);
+    const mapEditorRef = useRef<SchoolLocationEditorHandle>(null);
 
     const handleExportPdf = async () => {
         if (!schoolData) return;
-        toast.promise(
-            downloadSingleGraph(profileRef, `${schoolData.name} Profile`),
-            {
-                loading: "Exporting PDF...",
-                success: "School profile exported successfully!",
-                error: "Failed to export",
-            },
-        );
+
+        // reset map view when exporting
+        mapEditorRef.current?.resetView();
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        const title = year
+            ? `${schoolData.name} (${year})`
+            : `${schoolData.name} Profile`;
+        toast.promise(downloadSingleGraph(profileRef, title), {
+            loading: "Exporting PDF...",
+            success: "School profile exported successfully!",
+            error: "Failed to export",
+        });
     };
 
     useEffect(() => {
@@ -311,10 +319,7 @@ export default function SchoolProfilePage() {
     }
 
     return (
-        <div
-            className="w-full bg-background overflow-y-auto flex justify-center"
-            ref={profileRef}
-        >
+        <div className="w-full bg-background overflow-y-auto flex justify-center">
             <div className="w-full flex flex-col gap-6 py-8 max-w-5xl px-6">
                 {/* Header with school name — double-click to edit */}
                 <div className="flex flex-row items-center w-full">
@@ -409,108 +414,114 @@ export default function SchoolProfilePage() {
                         </button>
                     </div>
                 )}
-                <div className="grid grid-cols-3 gap-8">
-                    <StatCard
-                        label={ENTITY_CONFIG.projects.label}
-                        value={schoolData.projectCount}
-                        icon={ENTITY_CONFIG.projects.icon}
-                        iconColor={ENTITY_CONFIG.projects.color}
-                        sparklineData={projectsSparkline}
-                        sparklineStroke={ENTITY_CONFIG.projects.colorMid}
-                        sparklineFill={ENTITY_CONFIG.projects.colorMuted}
-                        percentChange={projectsPercentChange}
-                        showTrend={true}
-                        variant="with-aspect"
-                    />
-                    <StatCard
-                        label={ENTITY_CONFIG.teachers.label}
-                        value={schoolData.teacherCount}
-                        icon={ENTITY_CONFIG.teachers.icon}
-                        iconColor={ENTITY_CONFIG.teachers.color}
-                        sparklineData={teachersSparkline}
-                        sparklineStroke={ENTITY_CONFIG.teachers.colorMid}
-                        sparklineFill={ENTITY_CONFIG.teachers.colorMuted}
-                        percentChange={teachersPercentChange}
-                        showTrend={true}
-                        variant="with-aspect"
-                    />
-                    <StatCard
-                        label={ENTITY_CONFIG.students.label}
-                        value={schoolData.studentCount}
-                        icon={ENTITY_CONFIG.students.icon}
-                        iconColor={ENTITY_CONFIG.students.color}
-                        sparklineData={studentsSparkline}
-                        sparklineStroke={ENTITY_CONFIG.students.colorMid}
-                        sparklineFill={ENTITY_CONFIG.students.colorMuted}
-                        percentChange={studentsPercentChange}
-                        showTrend={true}
-                        variant="with-aspect"
-                    />
-                </div>
 
-                {/* Info Row */}
-                <SchoolInfoRow
-                    town={schoolData.town}
-                    implementationModel={schoolData.implementationModel}
-                    firstYear={schoolData.firstYear}
-                />
-                <Link
-                    href={studentsHref}
-                    className="block rounded-lg border border-border px-6 pt-4 pb-2 hover:bg-muted/40 transition-colors"
-                >
-                    <p className="text-sm font-medium text-center mb-2">
-                        Total # Students
-                    </p>
-                    <MultiLineGraph
-                        datasets={[studentData]}
-                        yAxisLabel={"Total # Students"}
-                        xAxisLabel="Year"
-                    />
-                </Link>
-
-                {/* Project type distribution — same 3-col grid as stats; spans 2 cells */}
-                {projects.length !== 0 && (
+                <div ref={profileRef} className="flex flex-col gap-6 w-full">
                     <div className="grid grid-cols-3 gap-8">
-                        <div className="col-span-2 min-w-0">
-                            <PieChart
-                                slices={projectCategoryDistribution(projects)}
-                                legendTitle="Project Type Distribution"
-                                emptyMessage="No project data"
-                            />
+                        <StatCard
+                            label={ENTITY_CONFIG.projects.label}
+                            value={schoolData.projectCount}
+                            icon={ENTITY_CONFIG.projects.icon}
+                            iconColor={ENTITY_CONFIG.projects.color}
+                            sparklineData={projectsSparkline}
+                            sparklineStroke={ENTITY_CONFIG.projects.colorMid}
+                            sparklineFill={ENTITY_CONFIG.projects.colorMuted}
+                            percentChange={projectsPercentChange}
+                            showTrend={true}
+                            variant="with-aspect"
+                        />
+                        <StatCard
+                            label={ENTITY_CONFIG.teachers.label}
+                            value={schoolData.teacherCount}
+                            icon={ENTITY_CONFIG.teachers.icon}
+                            iconColor={ENTITY_CONFIG.teachers.color}
+                            sparklineData={teachersSparkline}
+                            sparklineStroke={ENTITY_CONFIG.teachers.colorMid}
+                            sparklineFill={ENTITY_CONFIG.teachers.colorMuted}
+                            percentChange={teachersPercentChange}
+                            showTrend={true}
+                            variant="with-aspect"
+                        />
+                        <StatCard
+                            label={ENTITY_CONFIG.students.label}
+                            value={schoolData.studentCount}
+                            icon={ENTITY_CONFIG.students.icon}
+                            iconColor={ENTITY_CONFIG.students.color}
+                            sparklineData={studentsSparkline}
+                            sparklineStroke={ENTITY_CONFIG.students.colorMid}
+                            sparklineFill={ENTITY_CONFIG.students.colorMuted}
+                            percentChange={studentsPercentChange}
+                            showTrend={true}
+                            variant="with-aspect"
+                        />
+                    </div>
+
+                    {/* Info Row */}
+                    <SchoolInfoRow
+                        town={schoolData.town}
+                        implementationModel={schoolData.implementationModel}
+                        firstYear={schoolData.firstYear}
+                    />
+                    <Link
+                        href={studentsHref}
+                        className="block rounded-lg border border-border px-6 pt-4 pb-2 hover:bg-muted/40 transition-colors"
+                    >
+                        <p className="text-sm font-medium text-center mb-2">
+                            Total # Students
+                        </p>
+                        <MultiLineGraph
+                            datasets={[studentData]}
+                            yAxisLabel={"Total # Students"}
+                            xAxisLabel="Year"
+                        />
+                    </Link>
+
+                    {/* Project type distribution — same 3-col grid as stats; spans 2 cells */}
+                    {projects.length !== 0 && (
+                        <div className="grid grid-cols-3 gap-8">
+                            <div className="col-span-2 min-w-0">
+                                <PieChart
+                                    slices={projectCategoryDistribution(
+                                        projects,
+                                    )}
+                                    legendTitle="Project Type Distribution"
+                                    emptyMessage="No project data"
+                                />
+                            </div>
                         </div>
-                    </div>
-                )}
+                    )}
 
-                {/* School location map */}
-                <div className="rounded-lg space-y-4">
-                    <h2 className="text-xl font-semibold text-foreground">
-                        School Location
-                    </h2>
-                    <SchoolLocationEditor
-                        fixedSchool={{ name: schoolData.name }}
-                    />
-                </div>
-
-                {/* Editable project data table */}
-                <div>
-                    <div className="flex items-center gap-2 mb-4">
+                    {/* School location map */}
+                    <div className="rounded-lg space-y-4">
                         <h2 className="text-xl font-semibold text-foreground">
-                            View and Edit Data
+                            School Location
                         </h2>
-                        <Tooltip>
-                            <TooltipTrigger>
-                                <Info className="h-4 w-4 text-muted-foreground" />
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                Double-click any cell to edit. Teacher changes
-                                apply globally across all projects.
-                            </TooltipContent>
-                        </Tooltip>
+                        <SchoolLocationEditor
+                            ref={mapEditorRef}
+                            fixedSchool={{ name: schoolData.name }}
+                        />
                     </div>
-                    <EditableProjectsTable
-                        key={`${schoolName}-${year}`}
-                        initialData={projects}
-                    />
+
+                    {/* Editable project data table */}
+                    <div data-html2canvas-ignore="true">
+                        <div className="flex items-center gap-2 mb-4">
+                            <h2 className="text-xl font-semibold text-foreground">
+                                View and Edit Data
+                            </h2>
+                            <Tooltip>
+                                <TooltipTrigger>
+                                    <Info className="h-4 w-4 text-muted-foreground" />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    Double-click any cell to edit. Teacher
+                                    changes apply globally across all projects.
+                                </TooltipContent>
+                            </Tooltip>
+                        </div>
+                        <EditableProjectsTable
+                            key={`${schoolName}-${year}`}
+                            initialData={projects}
+                        />
+                    </div>
                 </div>
             </div>
         </div>

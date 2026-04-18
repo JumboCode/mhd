@@ -340,6 +340,8 @@ export function SaveDiscardBar({
 }: SaveDiscardBarProps) {
     return (
         <div
+            // prevent save bar from being included in exports
+            data-html2canvas-ignore="true"
             className={cn(
                 "fixed bottom-0 left-56 right-0 z-50 flex items-center justify-between px-8 py-4 bg-white/20 backdrop-blur-md shadow-lg transition-transform duration-200 ease-in-out",
                 hasChanges ? "translate-y-0" : "translate-y-full",
