@@ -14,8 +14,13 @@ import logoImg from "../../public/images/mhd-logo-full.png";
 import { toast } from "sonner";
 import { Map } from "maplibre-gl";
 import "../app/fonts/DMSans-VariableFont_opsz,wght-normal";
+import type { FilterDetail } from "./export-to-pdf";
 
-export async function exportMapToPDF(map: Map | null, title: string | null) {
+export async function exportMapToPDF(
+    map: Map | null,
+    title: string | null,
+    filterDetails: FilterDetail[] = [],
+) {
     if (!map) {
         toast.error("Map instance not found");
         return;

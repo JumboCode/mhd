@@ -17,10 +17,9 @@ import logoImg from "../../public/images/mhd-logo-full.png";
 import { toast } from "sonner";
 import "../app/fonts/DMSans-VariableFont_opsz,wght-normal";
 
-// New type to hold structured filter data
 export type FilterDetail = {
-    label: string; // e.g. "School"
-    values: string[]; // e.g. ["Lincoln High", "Washington Middle"]
+    label: string;
+    values: string[];
 };
 
 export async function downloadGraphs(
@@ -46,14 +45,14 @@ export async function downloadGraphs(
                 pdf.setFont("DMSans-VariableFont_opsz,wght", "normal");
                 const time = new Date();
                 const year = String(time.getFullYear());
-                const month = String(time.getMonth() + 1);
-                const day = String(time.getDate());
+                const month = String(time.getMonth() + 1).padStart(2, "0");
+                const day = String(time.getDate()).padStart(2, "0");
 
                 const pageWidth = pdf.internal.pageSize.getWidth();
                 const imgWidth = pageWidth;
                 const imgHeight = (img.height / img.width) * imgWidth;
 
-                pdf.text(`${month}/${day}/${year}`, 170, 15);
+                pdf.text(`${month}/${day}/${year}`, 155, 15);
                 pdf.addImage(
                     logoImg.src,
                     "PNG",
@@ -132,9 +131,9 @@ export async function addToCart(
     filterNames: string[],
     setFilterNames: Dispatch<SetStateAction<string[]>>,
     filterName: string,
-    filterDetails: FilterDetail[], // NEW
-    allFilterDetails: FilterDetail[][], // NEW
-    setAllFilterDetails: Dispatch<SetStateAction<FilterDetail[][]>>, // NEW
+    filterDetails: FilterDetail[],
+    allFilterDetails: FilterDetail[][],
+    setAllFilterDetails: Dispatch<SetStateAction<FilterDetail[][]>>,
 ): Promise<void> {
     const el = chartRef.current;
     if (!el) return;
@@ -148,13 +147,13 @@ export async function addToCart(
 
     setCart([...cart, canvas.toDataURL()]);
     setFilterNames([...filterNames, filterName]);
-    setAllFilterDetails([...allFilterDetails, filterDetails]); // NEW
+    setAllFilterDetails([...allFilterDetails, filterDetails]);
 }
 
 export async function downloadSingleGraph(
     chartRef: React.RefObject<HTMLDivElement | null>,
     filterName: string,
-    filterDetails: FilterDetail[] = [], // NEW
+    filterDetails: FilterDetail[] = [],
 ) {
     const el = chartRef.current;
     if (!el) return;
@@ -166,17 +165,17 @@ export async function downloadSingleGraph(
         windowHeight: el.scrollHeight,
     });
 
-    await downloadGraphs([canvas.toDataURL()], [filterName], [filterDetails]); // NEW
+    await downloadGraphs([canvas.toDataURL()], [filterName], [filterDetails]);
 }
 
 export function clearCart(
     setCart: Dispatch<SetStateAction<string[]>>,
     setFilterNames: Dispatch<SetStateAction<string[]>>,
-    setAllFilterDetails: Dispatch<SetStateAction<FilterDetail[][]>>, // NEW
+    setAllFilterDetails: Dispatch<SetStateAction<FilterDetail[][]>>,
 ) {
     setCart([]);
     setFilterNames([]);
-    setAllFilterDetails([]); // NEW
+    setAllFilterDetails([]);
     sessionStorage.removeItem("cartStorage");
     sessionStorage.removeItem("cartNameStorage");
 }
@@ -187,10 +186,10 @@ export function deleteFromCart(
     filterNames: string[],
     setFilterNames: Dispatch<SetStateAction<string[]>>,
     idx: number,
-    allFilterDetails: FilterDetail[][], // NEW
-    setAllFilterDetails: Dispatch<SetStateAction<FilterDetail[][]>>, // NEW
+    allFilterDetails: FilterDetail[][],
+    setAllFilterDetails: Dispatch<SetStateAction<FilterDetail[][]>>,
 ) {
     setCart(cart.filter((_, index) => index !== idx));
     setFilterNames(filterNames.filter((_, index) => index !== idx));
-    setAllFilterDetails(allFilterDetails.filter((_, index) => index !== idx)); // NEW
+    setAllFilterDetails(allFilterDetails.filter((_, index) => index !== idx));
 }
