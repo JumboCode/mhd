@@ -35,7 +35,13 @@ import {
 } from "@/components/EditableProjectsTable";
 import PieChart from "@/components/charts/PieChart";
 import { projectCategoryDistribution } from "@/lib/utils";
-import { AlertCircle, X, EllipsisVertical, Merge } from "lucide-react";
+import {
+    AlertCircle,
+    X,
+    EllipsisVertical,
+    Merge,
+    Download,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
     DropdownMenu,
@@ -44,6 +50,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import MergeSchoolDialog from "@/components/MergeSchoolDialog";
+import { downloadSingleGraph } from "@/lib/export-to-pdf";
 
 // interface such that data can be blank if API is loading
 type SchoolData = {
@@ -82,6 +89,19 @@ export default function SchoolProfilePage() {
     const [allYearsData, setAllYearsData] = useState<SchoolData[]>([]);
     const [showPrevYearWarning, setShowPrevYearWarning] = useState(true);
     const [mergeOpen, setMergeOpen] = useState(false);
+    const profileRef = useRef<HTMLDivElement>(null);
+
+    const handleExportPdf = async () => {
+        if (!schoolData) return;
+        toast.promise(
+            downloadSingleGraph(profileRef, `${schoolData.name} Profile`),
+            {
+                loading: "Exporting PDF...",
+                success: "School profile exported successfully!",
+                error: "Failed to export",
+            },
+        );
+    };
 
     useEffect(() => {
         setShowPrevYearWarning(true);
@@ -291,7 +311,10 @@ export default function SchoolProfilePage() {
     }
 
     return (
-        <div className="w-full bg-background overflow-y-auto flex justify-center">
+        <div
+            className="w-full bg-background overflow-y-auto flex justify-center"
+            ref={profileRef}
+        >
             <div className="w-full flex flex-col gap-6 py-8 max-w-5xl px-6">
                 {/* Header with school name — double-click to edit */}
                 <div className="flex flex-row items-center w-full">
@@ -341,6 +364,12 @@ export default function SchoolProfilePage() {
                                 align="end"
                                 className="mt-2 min-w-48"
                             >
+                                <DropdownMenuItem onClick={handleExportPdf}>
+                                    <div className="flex items-center gap-2">
+                                        <Download className="h-4 w-4" />
+                                        Export to PDF
+                                    </div>
+                                </DropdownMenuItem>
                                 <DropdownMenuItem
                                     onClick={() => setMergeOpen(true)}
                                 >
