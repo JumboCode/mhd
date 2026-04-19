@@ -75,6 +75,7 @@ import { Cart } from "@/components/Cart";
 import { CartIndicator } from "@/components/ui/cart-indicator";
 import { Kbd } from "@/components/ui/kbd";
 import { useHotkey } from "@/hooks/useHotkey";
+import { MIN_YEAR } from "@/lib/year-validation";
 
 type Project = {
     id: number;
@@ -252,8 +253,8 @@ export default function ChartPage() {
         [startYear, endYear, normalizeYearRange],
     );
     const [tempYearRange, setTempYearRange] = useState({
-        start: startYear,
-        end: endYear,
+        start: String(startYear),
+        end: String(endYear),
     });
     const [yearRangeOpen, setYearRangeOpen] = useState(false);
 
@@ -520,7 +521,10 @@ export default function ChartPage() {
     // Sync tempYearRange with yearRange only when popover opens in custom mode
     useEffect(() => {
         if (yearRangeOpen && timePeriod === "custom") {
-            setTempYearRange(yearRange);
+            setTempYearRange({
+                start: String(yearRange.start),
+                end: String(yearRange.end),
+            });
         }
     }, [yearRangeOpen, timePeriod, yearRange]);
 
@@ -778,13 +782,15 @@ export default function ChartPage() {
                 break;
         }
 
+        const resolvedGroupKey = groupKey;
+
         const uniqueGroups =
-            groupKey === null
+            resolvedGroupKey === null
                 ? ["All"]
                 : Array.from(
                       new Set(
                           filteredProjects.map((p) =>
-                              String(p[groupKey] || "Unassigned"),
+                              String(p[resolvedGroupKey] || "Unassigned"),
                           ),
                       ),
                   ).sort((a, b) =>
@@ -796,10 +802,12 @@ export default function ChartPage() {
                   );
 
         return buildDatasets(uniqueGroups, (groupName) =>
-            groupKey === null
+            resolvedGroupKey === null
                 ? filteredProjects
                 : filteredProjects.filter(
-                      (p) => String(p[groupKey] || "Unassigned") === groupName,
+                      (p) =>
+                          String(p[resolvedGroupKey] || "Unassigned") ===
+                          groupName,
                   ),
         );
     }, [
@@ -855,6 +863,15 @@ export default function ChartPage() {
     const projectTypes = Array.from(
         new Set(allProjects.map((p) => p.category)),
     ).sort();
+
+    const maxYear = new Date().getFullYear();
+    const parsedStart = parseInt(tempYearRange.start, 10);
+    const parsedEnd = parseInt(tempYearRange.end, 10);
+    const startInvalid =
+        isNaN(parsedStart) || parsedStart < MIN_YEAR || parsedStart > maxYear;
+    const endInvalid =
+        isNaN(parsedEnd) || parsedEnd < MIN_YEAR || parsedEnd > maxYear;
+    const rangeInvalid = startInvalid || endInvalid;
 
     return (
         <div className="w-full min-h-screen flex bg-background">
@@ -1307,21 +1324,23 @@ export default function ChartPage() {
                                                     Start Year
                                                 </label>
                                                 <input
-                                                    type="number"
+                                                    type="text"
+                                                    inputMode="numeric"
                                                     value={tempYearRange.start}
                                                     onChange={(e) =>
                                                         setTempYearRange({
                                                             ...tempYearRange,
-                                                            start:
-                                                                parseInt(
-                                                                    e.target
-                                                                        .value,
-                                                                ) || 2020,
+                                                            start: e.target
+                                                                .value,
                                                         })
                                                     }
-                                                    className="w-full px-3 py-2 border border-input rounded-md text-sm"
-                                                    min="2000"
-                                                    max={tempYearRange.end}
+                                                    className={`w-full px-3 py-2 border rounded-md text-sm ${
+                                                        startInvalid &&
+                                                        tempYearRange.start !==
+                                                            ""
+                                                            ? "border-red-500"
+                                                            : "border-input"
+                                                    }`}
                                                 />
                                             </div>
                                             <div>
@@ -1329,51 +1348,50 @@ export default function ChartPage() {
                                                     End Year
                                                 </label>
                                                 <input
-                                                    type="number"
+                                                    type="text"
+                                                    inputMode="numeric"
                                                     value={tempYearRange.end}
                                                     onChange={(e) =>
                                                         setTempYearRange({
                                                             ...tempYearRange,
-                                                            end:
-                                                                parseInt(
-                                                                    e.target
-                                                                        .value,
-                                                                ) || 2025,
+                                                            end: e.target.value,
                                                         })
                                                     }
-                                                    className="w-full px-3 py-2 border border-input rounded-md text-sm"
-                                                    min={tempYearRange.start}
-                                                    max="2100"
+                                                    className={`w-full px-3 py-2 border rounded-md text-sm ${
+                                                        endInvalid &&
+                                                        tempYearRange.end !== ""
+                                                            ? "border-red-500"
+                                                            : "border-input"
+                                                    }`}
                                                 />
                                             </div>
                                         </div>
-                                        <div className="flex gap-2 justify-end">
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() =>
-                                                    setYearRangeOpen(false)
-                                                }
-                                            >
-                                                Cancel
-                                            </Button>
-                                            <Button
-                                                size="sm"
-                                                onClick={() => {
-                                                    updateYearRange(
-                                                        tempYearRange.start,
-                                                        tempYearRange.end,
-                                                        {
-                                                            notifyIfSwapped: true,
-                                                        },
-                                                    );
-                                                    setTimePeriod("custom");
-                                                    setYearRangeOpen(false);
-                                                }}
-                                            >
-                                                Apply
-                                            </Button>
-                                        </div>
+                                    </div>
+                                    <div className="flex gap-2 justify-end mt-2">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() =>
+                                                setYearRangeOpen(false)
+                                            }
+                                        >
+                                            Cancel
+                                        </Button>
+                                        <Button
+                                            size="sm"
+                                            disabled={rangeInvalid}
+                                            onClick={() => {
+                                                updateYearRange(
+                                                    parsedStart,
+                                                    parsedEnd,
+                                                    { notifyIfSwapped: true },
+                                                );
+                                                setTimePeriod("custom");
+                                                setYearRangeOpen(false);
+                                            }}
+                                        >
+                                            Apply
+                                        </Button>
                                     </div>
                                 </PopoverContent>
                             </Popover>
