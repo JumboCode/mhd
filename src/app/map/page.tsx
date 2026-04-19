@@ -277,6 +277,26 @@ function HeatMapPage() {
 
     const filterName = `Heatmap - ${metric} ${onlyGatewaySchools ? " for Schools Representing Gateway Cities" : ""} in ${regionView === "Default" ? "MA" : regionView + ` Region `} (${year})`;
 
+    const currentFilterDetails = useMemo<FilterDetail[]>(
+        () => [
+            { label: "Metric", values: [metric] },
+            { label: "Year", values: [String(year)] },
+            {
+                label: "Region",
+                values: [regionView === "Default" ? "All of MA" : regionView],
+            },
+            ...(onlyGatewaySchools
+                ? [
+                      {
+                          label: "Gateway Schools",
+                          values: ["Only Gateway Schools"],
+                      },
+                  ]
+                : []),
+        ],
+        [metric, year, regionView, onlyGatewaySchools],
+    );
+
     return (
         <div className="flex p-8 flex-col h-screen w-full justify-center">
             <div className="flex justify-between items-center mb-4">
@@ -309,7 +329,11 @@ function HeatMapPage() {
                                     onClick={() => {
                                         const mapCurrent = mapRef.current;
                                         if (!mapCurrent) return;
-                                        exportMapToPDF(mapCurrent, filterName);
+                                        exportMapToPDF(
+                                            mapCurrent,
+                                            filterName,
+                                            currentFilterDetails,
+                                        );
                                     }}
                                 >
                                     Download
@@ -336,6 +360,10 @@ function HeatMapPage() {
                                         setFilterNames([
                                             ...filterNames,
                                             filterName,
+                                        ]);
+                                        setAllFilterDetails([
+                                            ...allFilterDetails,
+                                            currentFilterDetails,
                                         ]);
                                     }}
                                 >
