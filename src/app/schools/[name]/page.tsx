@@ -38,13 +38,7 @@ import {
 } from "@/components/EditableProjectsTable";
 import PieChart from "@/components/charts/PieChart";
 import { projectCategoryDistribution } from "@/lib/utils";
-import {
-    AlertCircle,
-    X,
-    EllipsisVertical,
-    Merge,
-    Download,
-} from "lucide-react";
+import { AlertCircle, X, EllipsisVertical, Merge, Share } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
     DropdownMenu,
@@ -398,7 +392,7 @@ export default function SchoolProfilePage() {
                             >
                                 <DropdownMenuItem onClick={handleExportPdf}>
                                     <div className="flex items-center gap-2">
-                                        <Download className="h-4 w-4" />
+                                        <Share className="h-4 w-4" />
                                         Export to PDF
                                     </div>
                                 </DropdownMenuItem>
