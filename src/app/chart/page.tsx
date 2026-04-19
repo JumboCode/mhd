@@ -208,6 +208,8 @@ export default function ChartPage() {
         null,
     );
 
+    const currentYear: number = new Date().getFullYear();
+
     // Setting hooks
     const [timePeriod, setTimePeriod] = useQueryState(
         "period",
@@ -215,12 +217,20 @@ export default function ChartPage() {
     );
     const [startYear, setStartYear] = useQueryState(
         "startYear",
-        parseAsInteger.withDefault(2020),
+        parseAsInteger
+            .withDefault(currentYear - 5)
+            .withOptions({ clearOnDefault: false }),
     );
     const [endYear, setEndYear] = useQueryState(
         "endYear",
-        parseAsInteger.withDefault(2025),
+        parseAsInteger
+            .withDefault(currentYear)
+            .withOptions({ clearOnDefault: false }),
     );
+    useEffect(() => {
+        setStartYear((v) => v);
+        setEndYear((v) => v);
+    }, []);
     const normalizeYearRange = useCallback((start: number, end: number) => {
         if (start <= end) {
             return { start, end };
@@ -259,7 +269,7 @@ export default function ChartPage() {
 
     const [chartType, setChartType] = useQueryState(
         "type",
-        parseAsString.withDefault("bar"),
+        parseAsString.withDefault("bar").withOptions({ clearOnDefault: false }),
     );
     const slideDirection = useRef(0);
     const handleChartTypeChange = useCallback(
