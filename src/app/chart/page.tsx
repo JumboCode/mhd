@@ -77,7 +77,6 @@ import { Kbd } from "@/components/ui/kbd";
 import { useHotkey } from "@/hooks/useHotkey";
 import { DataTable } from "@/components/DataTable";
 import { CellValue } from "@/types/spreadsheet";
-import { ColumnDef } from "@tanstack/react-table";
 
 type Project = {
     id: number;
