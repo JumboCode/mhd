@@ -15,12 +15,16 @@ interface SchoolInfoRowProps {
     town: string;
     implementationModel: string;
     firstYear: string;
+    latitude?: number;
+    longitude?: number;
 }
 
 export function SchoolInfoRow({
     town,
     implementationModel,
     firstYear,
+    latitude,
+    longitude,
 }: SchoolInfoRowProps) {
     return (
         <div className="grid grid-cols-3 gap-6">
@@ -32,9 +36,16 @@ export function SchoolInfoRow({
                         Town
                     </span>
                 </div>
-                <span className="text-lg font-semibold text-foreground">
-                    {town}, MA
-                </span>
+                <div className="flex flex-col">
+                    <span className="text-lg font-semibold text-foreground">
+                        {town}, MA
+                    </span>
+                    {latitude !== undefined && longitude !== undefined && (
+                        <span className="pdf-coords-reveal hidden text-sm font-medium text-muted-foreground">
+                            {latitude.toFixed(4)}°, {longitude.toFixed(4)}°
+                        </span>
+                    )}
+                </div>
             </div>
 
             {/* Implementation Model */}

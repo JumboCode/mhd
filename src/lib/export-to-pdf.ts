@@ -120,6 +120,11 @@ export async function downloadSingleGraph(
         const canvas = await html2canvas(el, {
             backgroundColor: "#fff",
             scale: 2,
+            onclone: (doc) => {
+                // for coordinates which are originally hidden on the page
+                const coords = doc.querySelectorAll(".pdf-coords-reveal");
+                coords.forEach((c) => c.classList.remove("hidden"));
+            },
         });
 
         dataUrls.push(canvas.toDataURL());

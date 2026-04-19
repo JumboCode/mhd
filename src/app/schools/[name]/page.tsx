@@ -63,6 +63,8 @@ type SchoolData = {
     division: string[];
     implementationModel: string;
     schoolType: string;
+    latitude?: number;
+    longitude?: number;
 };
 
 type ProjectRow = EditableProjectRow;
@@ -481,6 +483,8 @@ export default function SchoolProfilePage() {
                         town={schoolData.town}
                         implementationModel={schoolData.implementationModel}
                         firstYear={schoolData.firstYear}
+                        latitude={schoolData.latitude}
+                        longitude={schoolData.longitude}
                     />
                     <Link
                         href={studentsHref}
