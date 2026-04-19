@@ -38,6 +38,9 @@ export default function SpreadsheetPreview({
     const [rows, setRows] = useState<CellValue[][]>([]);
     const [numCols, setNumCols] = useState<number>(0);
 
+    const isStudentSpreadsheet =
+        columns.includes("projectId") || columns.includes("teacherId");
+
     useEffect(() => {
         if (!spreadsheetData || spreadsheetData.length === 0) return;
 
@@ -66,9 +69,7 @@ export default function SpreadsheetPreview({
         const projectIdIdx = getColumnIndex("projectId");
         const projectTitleIdx = getColumnIndex("title");
 
-        // Student spreadsheets include schoolName and can be aggregated into
-        // top participating schools. Fall back to plain preview for others.
-        if (schoolNameIdx !== undefined) {
+        if (isStudentSpreadsheet && schoolNameIdx !== undefined) {
             type SchoolStats = {
                 schoolName: string;
                 studentCount: number;
@@ -219,11 +220,14 @@ export default function SpreadsheetPreview({
                     </div>
                     <div className="flex flex-col gap-2">
                         <h2 className="text-xl font-bold mt-5 ">
-                            Top Participating Schools
+                            {isStudentSpreadsheet
+                                ? "Top Participating Schools"
+                                : "Data Preview"}
                         </h2>
                         <p className="text-muted-foreground">
-                            Here are the top 5 highest participating schools
-                            from your file
+                            {isStudentSpreadsheet
+                                ? "Here are the top 5 highest participating schools from your file"
+                                : "Here are the first 5 rows from your file"}
                         </p>
                     </div>
                 </div>
