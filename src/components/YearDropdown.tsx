@@ -121,6 +121,18 @@ export default function YearDropdown({
         setYear(selectedYear ?? null);
     }, [selectedYear]);
 
+    // Keep internal display year aligned with a controlled parent year.
+    // This prevents async year list loading from snapping UI to latest year.
+    useEffect(() => {
+        if (
+            selectedYear !== null &&
+            selectedYear !== undefined &&
+            year !== selectedYear
+        ) {
+            setYear(selectedYear);
+        }
+    }, [selectedYear, year]);
+
     const handleValueChange = (value: string) => {
         const selected = value ? Number(value) : null;
         setYear(selected);
