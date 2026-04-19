@@ -48,6 +48,7 @@ import {
 } from "@/components/ui/sheet";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useChartFilters } from "@/hooks/useChartFilters";
+import { useChartData } from "@/hooks/useChartData";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -65,7 +66,6 @@ import { Cart } from "@/components/Cart";
 import { CartIndicator } from "@/components/ui/cart-indicator";
 import { Kbd } from "@/components/ui/kbd";
 import { useHotkey } from "@/hooks/useHotkey";
-import { type Project } from "@/lib/compute-chart-data";
 import { computeChartDatasets } from "@/lib/chart-data-pipeline";
 import {
     generateChartTitle,
@@ -74,16 +74,10 @@ import {
 } from "@/lib/chart-title";
 
 export default function ChartPage() {
-    const [allProjects, setAllProjects] = useState<Project[]>([]);
-    const [gatewaySchools, setGatewaySchools] = useState<string[]>([]);
     const [isExporting, setIsExporting] = useState(false);
     const [exportDialogOpen, setExportDialogOpen] = useState(false);
     const [cartOpen, setCartOpen] = useState(false);
     const [filterOpen, setFilterOpen] = useState(false);
-    const [isLoaded, setIsLoaded] = useState(false);
-    const [projectDataError, setProjectDataError] = useState<string | null>(
-        null,
-    );
 
     // All chart filters and URL state from single hook
     const {
@@ -148,80 +142,15 @@ export default function ChartPage() {
 
     const chartRef = useRef<HTMLDivElement | null>(null);
 
-    // Fetch all project data
-    const fetchProjects = useCallback(async () => {
-        setIsLoaded(false);
-        setProjectDataError(null);
-        try {
-            const response = await fetch("/api/projects");
-            if (!response.ok) throw new Error("Failed to load project data");
-
-            const data = await response.json();
-
-            const updatedProjects = data.map((p: Project) => ({
-                ...p,
-                gatewaySchool: gatewaySchools.includes(p.schoolName)
-                    ? "Gateway"
-                    : "Non-Gateway",
-            }));
-
-            setAllProjects(updatedProjects);
-            setProjectDataError(null);
-        } catch (error) {
-            setProjectDataError(
-                error instanceof Error
-                    ? error.message
-                    : "Failed to load project data",
-            );
-        } finally {
-            setIsLoaded(true);
-        }
-    }, [gatewaySchools]);
-
-    useEffect(() => {
-        fetchProjects();
-    }, [fetchProjects]);
-
-    // Fetch gateway schools
-    useEffect(() => {
-        fetch("/api/schools?gateway=true&list=true")
-            .then((res) => res.json())
-            .then((data) => {
-                const schoolNames: string[] = data.map(
-                    (school: { name: string }) => school.name,
-                );
-
-                setGatewaySchools(schoolNames);
-            });
-    }, []);
-
-    // Fetch year metadata to derive "data last updated" date
-    const [yearsMetadata, setYearsMetadata] = useState<
-        { year: number; lastUpdatedAt: string | null }[]
-    >([]);
-    useEffect(() => {
-        fetch("/api/years-with-data")
-            .then((res) => res.json())
-            .then((data) => {
-                if (Array.isArray(data.years)) {
-                    setYearsMetadata(data.years);
-                }
-            })
-            .catch(() => {});
-    }, []);
-
-    const dataLastUpdated = useMemo(() => {
-        const dates = yearsMetadata
-            .filter(
-                (m) =>
-                    m.year >= yearRange.start &&
-                    m.year <= yearRange.end &&
-                    m.lastUpdatedAt !== null,
-            )
-            .map((m) => new Date(m.lastUpdatedAt!).getTime());
-        if (dates.length === 0) return null;
-        return new Date(Math.max(...dates));
-    }, [yearsMetadata, yearRange]);
+    // All data fetching from single hook
+    const {
+        allProjects,
+        gatewaySchools,
+        isLoaded,
+        projectDataError,
+        fetchProjects,
+        dataLastUpdated,
+    } = useChartData(yearRange);
 
     const filterName = generateChartTitle(
         chartType,
