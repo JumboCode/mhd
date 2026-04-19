@@ -33,14 +33,9 @@ export async function PATCH(
         const parsed = parseOrError(teacherPatchBodySchema, body);
         if (!parsed.success) return parsed.response;
 
-        const updates: Partial<{ name: string; email: string }> = {};
-
-        if (parsed.data.name !== undefined) updates.name = parsed.data.name;
-        if (parsed.data.email !== undefined) updates.email = parsed.data.email;
-
         const result = await db
             .update(teachers)
-            .set(updates)
+            .set(parsed.data)
             .where(eq(teachers.id, idParsed.data))
             .returning({ id: teachers.id });
 

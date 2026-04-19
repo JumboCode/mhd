@@ -33,30 +33,9 @@ export async function PATCH(
         const parsed = parseOrError(projectPatchBodySchema, body);
         if (!parsed.success) return parsed.response;
 
-        const updates: Partial<{
-            title: string;
-            category: string;
-            categoryId: string;
-            division: string;
-            teamProject: boolean;
-            numStudents: number;
-        }> = {};
-
-        if (parsed.data.title !== undefined) updates.title = parsed.data.title;
-        if (parsed.data.category !== undefined)
-            updates.category = parsed.data.category;
-        if (parsed.data.categoryId !== undefined)
-            updates.categoryId = parsed.data.categoryId;
-        if (parsed.data.division !== undefined)
-            updates.division = parsed.data.division;
-        if (parsed.data.teamProject !== undefined)
-            updates.teamProject = parsed.data.teamProject;
-        if (parsed.data.numStudents !== undefined)
-            updates.numStudents = parsed.data.numStudents;
-
         const result = await db
             .update(projects)
-            .set(updates)
+            .set(parsed.data)
             .where(eq(projects.id, idParsed.data))
             .returning({ id: projects.id, year: projects.year });
 
