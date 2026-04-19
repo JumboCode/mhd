@@ -75,6 +75,7 @@ import { Cart } from "@/components/Cart";
 import { CartIndicator } from "@/components/ui/cart-indicator";
 import { Kbd } from "@/components/ui/kbd";
 import { useHotkey } from "@/hooks/useHotkey";
+import { MIN_YEAR } from "@/lib/year-validation";
 
 type Project = {
     id: number;
@@ -777,14 +778,15 @@ export default function ChartPage() {
                 groupKey = "gatewaySchool";
                 break;
         }
+        const resolvedGroupKey = groupKey; // captures narrowed type for callbacks
 
         const uniqueGroups =
-            groupKey === null
+            resolvedGroupKey === null
                 ? ["All"]
                 : Array.from(
                       new Set(
                           filteredProjects.map((p) =>
-                              String(p[groupKey] || "Unassigned"),
+                              String(p[resolvedGroupKey] || "Unassigned"),
                           ),
                       ),
                   ).sort((a, b) =>
@@ -796,10 +798,12 @@ export default function ChartPage() {
                   );
 
         return buildDatasets(uniqueGroups, (groupName) =>
-            groupKey === null
+            resolvedGroupKey === null
                 ? filteredProjects
                 : filteredProjects.filter(
-                      (p) => String(p[groupKey] || "Unassigned") === groupName,
+                      (p) =>
+                          String(p[resolvedGroupKey] || "Unassigned") ===
+                          groupName,
                   ),
         );
     }, [
@@ -1307,21 +1311,53 @@ export default function ChartPage() {
                                                     Start Year
                                                 </label>
                                                 <input
-                                                    type="number"
+                                                    type="text"
+                                                    inputMode="numeric"
                                                     value={tempYearRange.start}
-                                                    onChange={(e) =>
+                                                    onChange={(e) => {
+                                                        const raw =
+                                                            e.target.value.replace(
+                                                                /\D/g,
+                                                                "",
+                                                            );
+                                                        if (raw.length > 4)
+                                                            return;
+                                                        const parsed = parseInt(
+                                                            raw,
+                                                            10,
+                                                        );
+                                                        if (!isNaN(parsed)) {
+                                                            setTempYearRange({
+                                                                ...tempYearRange,
+                                                                start: parsed,
+                                                            });
+                                                        }
+                                                    }}
+                                                    onBlur={(e) => {
+                                                        const parsed = parseInt(
+                                                            e.target.value,
+                                                            10,
+                                                        );
+                                                        const maxYear =
+                                                            new Date().getFullYear();
+                                                        const clamped = isNaN(
+                                                            parsed,
+                                                        )
+                                                            ? MIN_YEAR
+                                                            : Math.min(
+                                                                  Math.max(
+                                                                      parsed,
+                                                                      MIN_YEAR,
+                                                                  ),
+                                                                  maxYear,
+                                                              );
                                                         setTempYearRange({
                                                             ...tempYearRange,
-                                                            start:
-                                                                parseInt(
-                                                                    e.target
-                                                                        .value,
-                                                                ) || 2020,
-                                                        })
-                                                    }
+                                                            start: clamped,
+                                                        });
+                                                    }}
                                                     className="w-full px-3 py-2 border border-input rounded-md text-sm"
-                                                    min="2000"
-                                                    max={tempYearRange.end}
+                                                    maxLength={4}
                                                 />
                                             </div>
                                             <div>
@@ -1329,21 +1365,53 @@ export default function ChartPage() {
                                                     End Year
                                                 </label>
                                                 <input
-                                                    type="number"
+                                                    type="text"
+                                                    inputMode="numeric"
                                                     value={tempYearRange.end}
-                                                    onChange={(e) =>
+                                                    onChange={(e) => {
+                                                        const raw =
+                                                            e.target.value.replace(
+                                                                /\D/g,
+                                                                "",
+                                                            );
+                                                        if (raw.length > 4)
+                                                            return;
+                                                        const parsed = parseInt(
+                                                            raw,
+                                                            10,
+                                                        );
+                                                        if (!isNaN(parsed)) {
+                                                            setTempYearRange({
+                                                                ...tempYearRange,
+                                                                end: parsed,
+                                                            });
+                                                        }
+                                                    }}
+                                                    onBlur={(e) => {
+                                                        const parsed = parseInt(
+                                                            e.target.value,
+                                                            10,
+                                                        );
+                                                        const maxYear =
+                                                            new Date().getFullYear();
+                                                        const clamped = isNaN(
+                                                            parsed,
+                                                        )
+                                                            ? maxYear
+                                                            : Math.min(
+                                                                  Math.max(
+                                                                      parsed,
+                                                                      MIN_YEAR,
+                                                                  ),
+                                                                  maxYear,
+                                                              );
                                                         setTempYearRange({
                                                             ...tempYearRange,
-                                                            end:
-                                                                parseInt(
-                                                                    e.target
-                                                                        .value,
-                                                                ) || 2025,
-                                                        })
-                                                    }
+                                                            end: clamped,
+                                                        });
+                                                    }}
                                                     className="w-full px-3 py-2 border border-input rounded-md text-sm"
-                                                    min={tempYearRange.start}
-                                                    max="2100"
+                                                    maxLength={4}
                                                 />
                                             </div>
                                         </div>

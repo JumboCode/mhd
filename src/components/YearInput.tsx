@@ -50,7 +50,7 @@ export default function YearInput({ year, onYearChange }: YearInputProps) {
 
     const handleYearBlur = () => {
         if (draft === null) return;
-        if (!draft) {
+        if (!draft || draft.length > 4) {
             onYearChange(null);
             setDraft(null);
             return;
