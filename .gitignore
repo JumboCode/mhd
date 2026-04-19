@@ -46,3 +46,6 @@ next-env.d.ts
 .github/instructions/snyk_rules.instructions.md
 
 .vscode
+
+# Drizzle
+/drizzle*
