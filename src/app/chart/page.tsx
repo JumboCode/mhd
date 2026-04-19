@@ -107,6 +107,14 @@ export default function ChartPage() {
         setSelectedCities,
         selectedProjectTypes,
         setSelectedProjectTypes,
+        selectedDivisions,
+        setSelectedDivisions,
+        selectedSchoolTypes,
+        setSelectedSchoolTypes,
+        selectedRegions,
+        setSelectedRegions,
+        selectedImplementationTypes,
+        setSelectedImplementationTypes,
         teacherYearsValue,
         setTeacherYearsValue,
         teacherYearsOperator,
@@ -164,6 +172,10 @@ export default function ChartPage() {
             schools: selectedSchools.length,
             cities: selectedCities.length,
             projectTypes: selectedProjectTypes.length,
+            divisions: selectedDivisions.length,
+            schoolTypes: selectedSchoolTypes.length,
+            regions: selectedRegions.length,
+            implementationTypes: selectedImplementationTypes.length,
             hasTeacherYearsFilter: teacherYearsValue !== "",
             onlyGatewaySchools: onlyGatewaySchools,
         },
@@ -181,6 +193,23 @@ export default function ChartPage() {
                 : []),
             ...(selectedProjectTypes.length > 0
                 ? [{ label: "Project Types", values: selectedProjectTypes }]
+                : []),
+            ...(selectedDivisions.length > 0
+                ? [{ label: "Divisions", values: selectedDivisions }]
+                : []),
+            ...(selectedSchoolTypes.length > 0
+                ? [{ label: "School Types", values: selectedSchoolTypes }]
+                : []),
+            ...(selectedRegions.length > 0
+                ? [{ label: "Regions", values: selectedRegions }]
+                : []),
+            ...(selectedImplementationTypes.length > 0
+                ? [
+                      {
+                          label: "Implementation Types",
+                          values: selectedImplementationTypes,
+                      },
+                  ]
                 : []),
             ...(onlyGatewaySchools
                 ? [
@@ -219,6 +248,10 @@ export default function ChartPage() {
             selectedSchools,
             selectedCities,
             selectedProjectTypes,
+            selectedDivisions,
+            selectedSchoolTypes,
+            selectedRegions,
+            selectedImplementationTypes,
             onlyGatewaySchools,
             teacherYearsValue,
             teacherYearsOperator,
@@ -340,6 +373,45 @@ export default function ChartPage() {
         new Set(allProjects.map((p) => p.category)),
     ).sort();
 
+    const normalizeDivision = (d: string): string => {
+        const lower = d.toLowerCase();
+        if (lower.startsWith("junior")) return "Junior";
+        if (lower.startsWith("senior")) return "Senior";
+        if (lower.startsWith("young")) return "Young Historian";
+        return d;
+    };
+    const divisions = (() => {
+        const set = new Set<string>();
+        let hasMissing = false;
+        for (const p of allProjects) {
+            if (!p.schoolDivisions || p.schoolDivisions.length === 0) {
+                hasMissing = true;
+                continue;
+            }
+            for (const d of p.schoolDivisions) set.add(normalizeDivision(d));
+        }
+        const list = Array.from(set).sort();
+        if (hasMissing) list.push("Unassigned");
+        return list;
+    })();
+    const withUnassigned = (values: (string | null | undefined)[]) => {
+        const set = new Set<string>();
+        let hasMissing = false;
+        for (const v of values) {
+            if (v === null || v === undefined || v === "") hasMissing = true;
+            else set.add(v);
+        }
+        const list = Array.from(set).sort();
+        if (hasMissing) list.push("Unassigned");
+        return list;
+    };
+    const schoolTypes = withUnassigned(
+        allProjects.map((p) => p.schoolSchoolType),
+    );
+    const regions = withUnassigned(allProjects.map((p) => p.schoolRegion));
+    const implementationTypes = withUnassigned(
+        allProjects.map((p) => p.schoolImplementationModel),
+    );
     const parsedStart = parseInt(startDraft, 10);
     const parsedEnd = parseInt(endDraft, 10);
     const startInvalid = startDraft.length === 4 && !isYearInRange(parsedStart);
@@ -359,6 +431,10 @@ export default function ChartPage() {
                             schools={schools}
                             cities={cities}
                             projectTypes={projectTypes}
+                            divisions={divisions}
+                            schoolTypes={schoolTypes}
+                            regions={regions}
+                            implementationTypes={implementationTypes}
                             gatewaySchools={gatewaySchools}
                             filters={filters}
                             onFiltersChange={(newFilters) => {
@@ -366,6 +442,16 @@ export default function ChartPage() {
                                 setSelectedCities(newFilters.selectedCities);
                                 setSelectedProjectTypes(
                                     newFilters.selectedProjectTypes,
+                                );
+                                setSelectedDivisions(
+                                    newFilters.selectedDivisions,
+                                );
+                                setSelectedSchoolTypes(
+                                    newFilters.selectedSchoolTypes,
+                                );
+                                setSelectedRegions(newFilters.selectedRegions);
+                                setSelectedImplementationTypes(
+                                    newFilters.selectedImplementationTypes,
                                 );
                                 setGroupBy(newFilters.groupBy);
                                 setMeasuredAs(newFilters.measuredAs);
@@ -393,6 +479,10 @@ export default function ChartPage() {
                     schools={schools}
                     cities={cities}
                     projectTypes={projectTypes}
+                    divisions={divisions}
+                    schoolTypes={schoolTypes}
+                    regions={regions}
+                    implementationTypes={implementationTypes}
                     gatewaySchools={gatewaySchools}
                     filters={filters}
                     onFiltersChange={(newFilters) => {
@@ -400,6 +490,12 @@ export default function ChartPage() {
                         setSelectedCities(newFilters.selectedCities);
                         setSelectedProjectTypes(
                             newFilters.selectedProjectTypes,
+                        );
+                        setSelectedDivisions(newFilters.selectedDivisions);
+                        setSelectedSchoolTypes(newFilters.selectedSchoolTypes);
+                        setSelectedRegions(newFilters.selectedRegions);
+                        setSelectedImplementationTypes(
+                            newFilters.selectedImplementationTypes,
                         );
                         setGroupBy(newFilters.groupBy);
                         setMeasuredAs(newFilters.measuredAs);
@@ -467,6 +563,12 @@ export default function ChartPage() {
                                             cities: selectedCities.length,
                                             projectTypes:
                                                 selectedProjectTypes.length,
+                                            divisions: selectedDivisions.length,
+                                            schoolTypes:
+                                                selectedSchoolTypes.length,
+                                            regions: selectedRegions.length,
+                                            implementationTypes:
+                                                selectedImplementationTypes.length,
                                             hasTeacherYearsFilter:
                                                 teacherYearsValue !== "",
                                             onlyGatewaySchools:

@@ -26,7 +26,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Filter, filterOptions } from "./constants";
+import { Filter, filterOptions, MultiSelectFilterType } from "./constants";
 import {
     Tooltip,
     TooltipContent,
@@ -77,6 +77,10 @@ export type Filters = {
     selectedSchools: string[];
     selectedCities: string[];
     selectedProjectTypes: string[];
+    selectedDivisions: string[];
+    selectedSchoolTypes: string[];
+    selectedRegions: string[];
+    selectedImplementationTypes: string[];
     teacherYearsOperator: string;
     teacherYearsValue: string;
     teacherYearsValue2?: string; // For range filtering (between)
@@ -87,6 +91,10 @@ type GraphFiltersProps = {
     schools: string[];
     cities: string[];
     projectTypes?: string[]; // List of project type options
+    divisions?: string[];
+    schoolTypes?: string[];
+    regions?: string[];
+    implementationTypes?: string[];
     gatewaySchools?: string[]; // List of gateway city names
     filters?: Filters;
     onFiltersChange: (filters: Filters) => void;
@@ -96,6 +104,10 @@ export default function GraphFilters({
     schools,
     cities,
     projectTypes = [],
+    divisions = [],
+    schoolTypes = [],
+    regions = [],
+    implementationTypes = [],
     gatewaySchools = [],
     onFiltersChange,
     filters,
@@ -111,6 +123,13 @@ export default function GraphFilters({
     const [selectedProjectTypes, setSelectedProjectTypes] = useState<string[]>(
         [],
     );
+    const [selectedDivisions, setSelectedDivisions] = useState<string[]>([]);
+    const [selectedSchoolTypes, setSelectedSchoolTypes] = useState<string[]>(
+        [],
+    );
+    const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
+    const [selectedImplementationTypes, setSelectedImplementationTypes] =
+        useState<string[]>([]);
     const [teacherYearsOperator, setTeacherYearsOperator] = useState("=");
     const [teacherYearsValue, setTeacherYearsValue] = useState("");
     const [teacherYearsValue2, setTeacherYearsValue2] = useState<string>("");
@@ -128,6 +147,12 @@ export default function GraphFilters({
         setSelectedSchools(filters.selectedSchools || []);
         setSelectedCities(filters.selectedCities || []);
         setSelectedProjectTypes(filters.selectedProjectTypes || []);
+        setSelectedDivisions(filters.selectedDivisions || []);
+        setSelectedSchoolTypes(filters.selectedSchoolTypes || []);
+        setSelectedRegions(filters.selectedRegions || []);
+        setSelectedImplementationTypes(
+            filters.selectedImplementationTypes || [],
+        );
         setTeacherYearsOperator(filters.teacherYearsOperator || "=");
         setTeacherYearsValue(filters.teacherYearsValue || "");
         setTeacherYearsValue2(filters.teacherYearsValue2 ?? "");
@@ -147,6 +172,12 @@ export default function GraphFilters({
             if ((filters.selectedCities || []).length) maybeAdd("city");
             if ((filters.selectedProjectTypes || []).length)
                 maybeAdd("project-type");
+            if ((filters.selectedDivisions || []).length) maybeAdd("division");
+            if ((filters.selectedSchoolTypes || []).length)
+                maybeAdd("school-type");
+            if ((filters.selectedRegions || []).length) maybeAdd("region");
+            if ((filters.selectedImplementationTypes || []).length)
+                maybeAdd("implementation-type");
             if (filters.onlyGatewaySchools) maybeAdd("only-gateway-school");
             if (filters.teacherYearsValue) maybeAdd("teacher-participation");
 
@@ -163,6 +194,10 @@ export default function GraphFilters({
             selectedSchools,
             selectedCities,
             selectedProjectTypes,
+            selectedDivisions,
+            selectedSchoolTypes,
+            selectedRegions,
+            selectedImplementationTypes,
             teacherYearsOperator,
             teacherYearsValue:
                 teacherYearsValue !== ""
@@ -188,14 +223,20 @@ export default function GraphFilters({
         updateFilters({ groupBy: value });
     };
 
+    const multiSelectFilterValues: string[] = [
+        "school",
+        "city",
+        "project-type",
+        "division",
+        "school-type",
+        "region",
+        "implementation-type",
+    ];
+
     const handleFilterSelect = (value: Filter) => {
         setSelectedFilters((prev) => [...prev, value]);
-        // Auto-open the filter options for school, city, and project-type filters
-        if (
-            value.value === "school" ||
-            value.value === "city" ||
-            value.value === "project-type"
-        ) {
+        // Auto-open the filter options for multi-select filters
+        if (multiSelectFilterValues.includes(value.value)) {
             // Delay to let AddFilterPopover's dismiss events finish
             setTimeout(() => setOpenFilterPopover(value.value), 100);
         }
@@ -232,6 +273,18 @@ export default function GraphFilters({
         } else if (value.value === "city") {
             setSelectedCities([]);
             updateFilters({ selectedCities: [] });
+        } else if (value.value === "division") {
+            setSelectedDivisions([]);
+            updateFilters({ selectedDivisions: [] });
+        } else if (value.value === "school-type") {
+            setSelectedSchoolTypes([]);
+            updateFilters({ selectedSchoolTypes: [] });
+        } else if (value.value === "region") {
+            setSelectedRegions([]);
+            updateFilters({ selectedRegions: [] });
+        } else if (value.value === "implementation-type") {
+            setSelectedImplementationTypes([]);
+            updateFilters({ selectedImplementationTypes: [] });
         } else if (value.value === "only-gateway-school") {
             setOnlyGatewaySchools(false);
             updateFilters({ onlyGatewaySchools: false });
@@ -239,7 +292,7 @@ export default function GraphFilters({
     };
 
     const handleFilterValueFinish = (
-        filterType: "school" | "city" | "project-type",
+        filterType: MultiSelectFilterType,
         values: string[],
     ) => {
         if (filterType === "school") {
@@ -251,6 +304,18 @@ export default function GraphFilters({
         } else if (filterType === "project-type") {
             setSelectedProjectTypes(values);
             updateFilters({ selectedProjectTypes: values });
+        } else if (filterType === "division") {
+            setSelectedDivisions(values);
+            updateFilters({ selectedDivisions: values });
+        } else if (filterType === "school-type") {
+            setSelectedSchoolTypes(values);
+            updateFilters({ selectedSchoolTypes: values });
+        } else if (filterType === "region") {
+            setSelectedRegions(values);
+            updateFilters({ selectedRegions: values });
+        } else if (filterType === "implementation-type") {
+            setSelectedImplementationTypes(values);
+            updateFilters({ selectedImplementationTypes: values });
         }
     };
 
@@ -287,6 +352,38 @@ export default function GraphFilters({
             const count = selectedProjectTypes.length;
             if (count === 0) return filter.label;
             const truncated = truncateValues(selectedProjectTypes);
+            const label =
+                count > 1 ? `${filter.label} (${count})` : filter.label;
+            return `${label}: ${truncated}`;
+        }
+        if (filter.value === "division") {
+            const count = selectedDivisions.length;
+            if (count === 0) return filter.label;
+            const truncated = truncateValues(selectedDivisions);
+            const label =
+                count > 1 ? `${filter.label} (${count})` : filter.label;
+            return `${label}: ${truncated}`;
+        }
+        if (filter.value === "school-type") {
+            const count = selectedSchoolTypes.length;
+            if (count === 0) return filter.label;
+            const truncated = truncateValues(selectedSchoolTypes);
+            const label =
+                count > 1 ? `${filter.label} (${count})` : filter.label;
+            return `${label}: ${truncated}`;
+        }
+        if (filter.value === "region") {
+            const count = selectedRegions.length;
+            if (count === 0) return filter.label;
+            const truncated = truncateValues(selectedRegions);
+            const label =
+                count > 1 ? `${filter.label} (${count})` : filter.label;
+            return `${label}: ${truncated}`;
+        }
+        if (filter.value === "implementation-type") {
+            const count = selectedImplementationTypes.length;
+            if (count === 0) return filter.label;
+            const truncated = truncateValues(selectedImplementationTypes);
             const label =
                 count > 1 ? `${filter.label} (${count})` : filter.label;
             return `${label}: ${truncated}`;
@@ -369,10 +466,8 @@ export default function GraphFilters({
                     {/* Active Filter Chips */}
                     {selectedFilters.length > 0 &&
                         selectedFilters.map((filter) => {
-                            const isSchoolCityOrProjectType =
-                                filter.value === "school" ||
-                                filter.value === "city" ||
-                                filter.value === "project-type";
+                            const isMultiSelect =
+                                multiSelectFilterValues.includes(filter.value);
                             const isTeacherParticipation =
                                 filter.value === "teacher-participation";
                             const displayText = getFilterDisplayText(filter);
@@ -395,41 +490,48 @@ export default function GraphFilters({
                                 </div>
                             );
 
-                            if (isSchoolCityOrProjectType) {
+                            if (isMultiSelect) {
+                                const msType =
+                                    filter.value as MultiSelectFilterType;
+                                const optionsMap: Record<
+                                    MultiSelectFilterType,
+                                    string[]
+                                > = {
+                                    "school": schools,
+                                    "city": cities,
+                                    "project-type": projectTypes,
+                                    "division": divisions,
+                                    "school-type": schoolTypes,
+                                    "region": regions,
+                                    "implementation-type": implementationTypes,
+                                };
+                                const selectedMap: Record<
+                                    MultiSelectFilterType,
+                                    string[]
+                                > = {
+                                    "school": selectedSchools,
+                                    "city": selectedCities,
+                                    "project-type": selectedProjectTypes,
+                                    "division": selectedDivisions,
+                                    "school-type": selectedSchoolTypes,
+                                    "region": selectedRegions,
+                                    "implementation-type":
+                                        selectedImplementationTypes,
+                                };
                                 return (
                                     <FilterValuePopover
                                         key={filter.value}
-                                        filterType={
-                                            filter.value as
-                                                | "school"
-                                                | "city"
-                                                | "project-type"
-                                        }
-                                        options={
-                                            filter.value === "school"
-                                                ? schools
-                                                : filter.value === "city"
-                                                  ? cities
-                                                  : projectTypes
-                                        }
-                                        selectedValues={
-                                            filter.value === "school"
-                                                ? selectedSchools
-                                                : filter.value === "city"
-                                                  ? selectedCities
-                                                  : selectedProjectTypes
-                                        }
+                                        filterType={msType}
+                                        options={optionsMap[msType]}
+                                        selectedValues={selectedMap[msType]}
                                         gatewayCities={
-                                            filter.value === "school"
+                                            msType === "school"
                                                 ? gatewaySchools
                                                 : undefined
                                         }
                                         onFinish={(values) =>
                                             handleFilterValueFinish(
-                                                filter.value as
-                                                    | "school"
-                                                    | "city"
-                                                    | "project-type",
+                                                msType,
                                                 values,
                                             )
                                         }

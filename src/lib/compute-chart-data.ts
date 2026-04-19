@@ -117,6 +117,49 @@ export function computeGraphDataset(
         )
             return false;
 
+        // Selected Divisions (array field on project; match if ANY overlap)
+        if (filters.selectedDivisions && filters.selectedDivisions.length > 0) {
+            const divs = p.schoolDivisions;
+            if (!divs || divs.length === 0) {
+                if (!filters.selectedDivisions.includes("Unassigned"))
+                    return false;
+            } else {
+                const normalize = (d: string): string => {
+                    const lower = d.toLowerCase();
+                    if (lower.startsWith("junior")) return "Junior";
+                    if (lower.startsWith("senior")) return "Senior";
+                    if (lower.startsWith("young")) return "Young Historian";
+                    return d;
+                };
+                const normalized = divs.map(normalize);
+                const hasMatch = normalized.some((d) =>
+                    filters.selectedDivisions.includes(d),
+                );
+                if (!hasMatch) return false;
+            }
+        }
+
+        if (
+            filters.selectedSchoolTypes &&
+            filters.selectedSchoolTypes.length > 0
+        ) {
+            const v = p.schoolSchoolType || "Unassigned";
+            if (!filters.selectedSchoolTypes.includes(v)) return false;
+        }
+
+        if (filters.selectedRegions && filters.selectedRegions.length > 0) {
+            const v = p.schoolRegion || "Unassigned";
+            if (!filters.selectedRegions.includes(v)) return false;
+        }
+
+        if (
+            filters.selectedImplementationTypes &&
+            filters.selectedImplementationTypes.length > 0
+        ) {
+            const v = p.schoolImplementationModel || "Unassigned";
+            if (!filters.selectedImplementationTypes.includes(v)) return false;
+        }
+
         if (filters.teacherYearsValue) {
             const yearsActive = teacherYearsMap.get(p.teacherId) || 0;
             const op = filters.teacherYearsOperator;

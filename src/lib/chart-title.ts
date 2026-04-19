@@ -10,6 +10,10 @@ export type ActiveFilters = {
     schools: number;
     cities: number;
     projectTypes: number;
+    divisions?: number;
+    schoolTypes?: number;
+    regions?: number;
+    implementationTypes?: number;
     hasTeacherYearsFilter: boolean;
     onlyGatewaySchools: boolean;
 };
@@ -62,6 +66,29 @@ export function generateChartTitle(
     if (activeFilters.projectTypes > 0) {
         filterDetails.push(
             `${activeFilters.projectTypes} project type${activeFilters.projectTypes > 1 ? "s" : ""}`,
+        );
+    }
+    if (activeFilters.divisions && activeFilters.divisions > 0) {
+        filterDetails.push(
+            `${activeFilters.divisions} division${activeFilters.divisions > 1 ? "s" : ""}`,
+        );
+    }
+    if (activeFilters.schoolTypes && activeFilters.schoolTypes > 0) {
+        filterDetails.push(
+            `${activeFilters.schoolTypes} school type${activeFilters.schoolTypes > 1 ? "s" : ""}`,
+        );
+    }
+    if (activeFilters.regions && activeFilters.regions > 0) {
+        filterDetails.push(
+            `${activeFilters.regions} region${activeFilters.regions > 1 ? "s" : ""}`,
+        );
+    }
+    if (
+        activeFilters.implementationTypes &&
+        activeFilters.implementationTypes > 0
+    ) {
+        filterDetails.push(
+            `${activeFilters.implementationTypes} implementation type${activeFilters.implementationTypes > 1 ? "s" : ""}`,
         );
     }
     if (activeFilters.hasTeacherYearsFilter) {

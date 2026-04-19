@@ -10,7 +10,6 @@ import {
 } from "react";
 import { createRoot } from "react-dom/client";
 import html2canvas from "html2canvas-pro";
-import jsPDF from "jspdf";
 import { toast } from "sonner";
 import { type Filters } from "@/components/GraphFilters/GraphFilters";
 import {
@@ -19,12 +18,10 @@ import {
     groupByLabels,
     type Project,
 } from "@/lib/compute-chart-data";
-import logoImg from "../../public/images/mhd-logo-full.png";
-import "../app/fonts/DMSans-VariableFont_opsz,wght-normal";
 import { ChartDataset } from "@/components/charts/chartTypes";
 import BarGraph from "@/components/charts/BarGraph";
 import MultiLineGraph from "@/components/charts/LineGraph";
-import type { FilterDetail } from "@/lib/export-to-pdf";
+import { downloadGraphs, type FilterDetail } from "@/lib/export-to-pdf";
 
 /**
  * Chart items store only the filter params — no data.
@@ -260,95 +257,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
                 }
             }
 
-            // Load all images before building the PDF
-            const loadedImages = await Promise.all(
-                imageDataUrls.map(
-                    (src) =>
-                        new Promise<HTMLImageElement>((resolve, reject) => {
-                            const img = new Image();
-                            img.onload = () => resolve(img);
-                            img.onerror = () =>
-                                reject(new Error("Failed to load image"));
-                            img.src = src;
-                        }),
-                ),
+            await downloadGraphs(
+                imageDataUrls,
+                items.map((i) => i.filterName),
+                items.map((i) => i.filterDetails ?? []),
+                false,
+                "chart",
             );
-
-            const pdf = new jsPDF();
-            const time = new Date();
-            const year = String(time.getFullYear());
-            const month = String(time.getMonth() + 1);
-            const day = String(time.getDate());
-
-            loadedImages.forEach((img, idx) => {
-                const imgWidth = pdf.internal.pageSize.getWidth();
-                const imgHeight = (img.height / img.width) * imgWidth;
-
-                pdf.setFont("DMSans-VariableFont_opsz,wght", "normal");
-                pdf.text(`${month}/${day}/${year}`, 170, 15);
-                pdf.addImage(
-                    logoImg.src,
-                    "PNG",
-                    15,
-                    10,
-                    logoImg.width * 0.03,
-                    logoImg.height * 0.03,
-                );
-
-                const margin = 15;
-                const wrappedTitle = pdf.splitTextToSize(
-                    items[idx].filterName,
-                    pdf.internal.pageSize.getWidth() - margin * 2,
-                );
-                pdf.text(wrappedTitle, margin, 50);
-
-                const titleHeight = wrappedTitle.length * 7;
-                const chartY = 50 + titleHeight;
-                pdf.addImage(
-                    imageDataUrls[idx],
-                    "JPEG",
-                    15,
-                    chartY,
-                    imgWidth * 0.9,
-                    imgHeight * 0.9,
-                );
-
-                const details = items[idx].filterDetails;
-                if (details && details.length > 0) {
-                    let cursorY = chartY + imgHeight * 0.9 + 10;
-                    pdf.setFontSize(11);
-                    pdf.text("Applied Filters:", margin, cursorY);
-                    cursorY += 6;
-                    pdf.setFontSize(10);
-                    details.forEach(
-                        ({
-                            label,
-                            values,
-                        }: {
-                            label: string;
-                            values: string[];
-                        }) => {
-                            if (
-                                cursorY >
-                                pdf.internal.pageSize.getHeight() - 20
-                            ) {
-                                pdf.addPage();
-                                cursorY = 20;
-                            }
-                            const wrapped = pdf.splitTextToSize(
-                                `${label}: ${values.join(", ")}`,
-                                pdf.internal.pageSize.getWidth() - margin * 2,
-                            );
-                            pdf.text(wrapped, margin, cursorY);
-                            cursorY += wrapped.length * 5 + 3;
-                        },
-                    );
-                }
-
-                if (idx < items.length - 1) pdf.addPage();
-            });
-
-            pdf.save("chart.pdf");
         } catch (err) {
             toast.error(
                 err instanceof Error ? err.message : "Failed to export",
