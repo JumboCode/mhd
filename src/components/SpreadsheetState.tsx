@@ -194,6 +194,19 @@ export default function SpreadsheetState() {
         setYearHasData(year !== null && yearsWithData.has(year));
     }, [year, yearsWithData]);
 
+    // Keep the upload tab's year/file props fresh (initial JSX state captures stale closure)
+    useEffect(() => {
+        if (tabIndex !== STEP_UPLOAD) return;
+        setTab(
+            <SpreadsheetUpload
+                file={file}
+                setFile={setFile}
+                year={year}
+                setYear={setYear}
+            />,
+        );
+    }, [year, file, tabIndex]);
+
     // Enable Next on upload step only when student file and year are set
     useEffect(() => {
         if (tabIndex === STEP_UPLOAD) {
