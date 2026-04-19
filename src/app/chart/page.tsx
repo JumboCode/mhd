@@ -75,7 +75,7 @@ import { Cart } from "@/components/Cart";
 import { CartIndicator } from "@/components/ui/cart-indicator";
 import { Kbd } from "@/components/ui/kbd";
 import { useHotkey } from "@/hooks/useHotkey";
-import { MIN_YEAR } from "@/lib/year-validation";
+import { isYearInRange } from "@/lib/year-validation";
 
 type Project = {
     id: number;
@@ -864,14 +864,14 @@ export default function ChartPage() {
         new Set(allProjects.map((p) => p.category)),
     ).sort();
 
-    const maxYear = new Date().getFullYear();
     const parsedStart = parseInt(tempYearRange.start, 10);
     const parsedEnd = parseInt(tempYearRange.end, 10);
     const startInvalid =
-        isNaN(parsedStart) || parsedStart < MIN_YEAR || parsedStart > maxYear;
+        tempYearRange.start.length === 4 && !isYearInRange(parsedStart);
     const endInvalid =
-        isNaN(parsedEnd) || parsedEnd < MIN_YEAR || parsedEnd > maxYear;
-    const rangeInvalid = startInvalid || endInvalid;
+        tempYearRange.end.length === 4 && !isYearInRange(parsedEnd);
+    const rangeInvalid =
+        !isYearInRange(parsedStart) || !isYearInRange(parsedEnd);
 
     return (
         <div className="w-full min-h-screen flex bg-background">
@@ -1326,21 +1326,32 @@ export default function ChartPage() {
                                                 <input
                                                     type="text"
                                                     inputMode="numeric"
+                                                    maxLength={4}
                                                     value={tempYearRange.start}
-                                                    onChange={(e) =>
+                                                    onChange={(e) => {
+                                                        const v = e.target.value
+                                                            .replace(/\D/g, "")
+                                                            .slice(0, 4);
                                                         setTempYearRange({
                                                             ...tempYearRange,
-                                                            start: e.target
-                                                                .value,
-                                                        })
-                                                    }
-                                                    className={`w-full px-3 py-2 border rounded-md text-sm ${
-                                                        startInvalid &&
-                                                        tempYearRange.start !==
-                                                            ""
-                                                            ? "border-red-500"
-                                                            : "border-input"
-                                                    }`}
+                                                            start: v,
+                                                        });
+                                                    }}
+                                                    onBlur={() => {
+                                                        if (
+                                                            !isYearInRange(
+                                                                parsedStart,
+                                                            )
+                                                        ) {
+                                                            setTempYearRange({
+                                                                ...tempYearRange,
+                                                                start: String(
+                                                                    yearRange.start,
+                                                                ),
+                                                            });
+                                                        }
+                                                    }}
+                                                    className={`w-full px-3 py-2 border rounded-md text-sm outline-none focus:ring-2 ${startInvalid ? "border-red-500 focus:ring-red-500/30" : "border-input focus:ring-ring/30"}`}
                                                 />
                                             </div>
                                             <div>
@@ -1350,19 +1361,32 @@ export default function ChartPage() {
                                                 <input
                                                     type="text"
                                                     inputMode="numeric"
+                                                    maxLength={4}
                                                     value={tempYearRange.end}
-                                                    onChange={(e) =>
+                                                    onChange={(e) => {
+                                                        const v = e.target.value
+                                                            .replace(/\D/g, "")
+                                                            .slice(0, 4);
                                                         setTempYearRange({
                                                             ...tempYearRange,
-                                                            end: e.target.value,
-                                                        })
-                                                    }
-                                                    className={`w-full px-3 py-2 border rounded-md text-sm ${
-                                                        endInvalid &&
-                                                        tempYearRange.end !== ""
-                                                            ? "border-red-500"
-                                                            : "border-input"
-                                                    }`}
+                                                            end: v,
+                                                        });
+                                                    }}
+                                                    onBlur={() => {
+                                                        if (
+                                                            !isYearInRange(
+                                                                parsedEnd,
+                                                            )
+                                                        ) {
+                                                            setTempYearRange({
+                                                                ...tempYearRange,
+                                                                end: String(
+                                                                    yearRange.end,
+                                                                ),
+                                                            });
+                                                        }
+                                                    }}
+                                                    className={`w-full px-3 py-2 border rounded-md text-sm outline-none focus:ring-2 ${endInvalid ? "border-red-500 focus:ring-red-500/30" : "border-input focus:ring-ring/30"}`}
                                                 />
                                             </div>
                                         </div>
