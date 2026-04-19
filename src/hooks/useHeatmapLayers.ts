@@ -1,10 +1,16 @@
 import { useEffect, useRef } from "react";
 import maplibregl from "maplibre-gl";
 
-import regionsData from "@/data/regions.json";
+import maBorderData from "@/data/ma-border.json";
+import originalRegionsData from "@/data/regions.json";
 import { standardize } from "@/lib/string-standardize";
 
-const regions = Object.values(regionsData).map((region) => ({
+const allRegions = Object.values(originalRegionsData).map((region) => ({
+    name: region.name,
+    coordinates: region.coordinates as [number, number][],
+}));
+
+const maBorderRegions = Object.values(maBorderData).map((region) => ({
     name: region.name,
     coordinates: region.coordinates as [number, number][],
 }));
@@ -86,21 +92,26 @@ export function useHeatmapLayers({
         }
 
         const updateHeatLayer = () => {
+            const currentRegionsData = showRegions
+                ? allRegions
+                : maBorderRegions;
+            const geojsonData = {
+                type: "FeatureCollection",
+                features: currentRegionsData.map((c) => ({
+                    type: "Feature",
+                    geometry: {
+                        type: "LineString",
+                        coordinates: c.coordinates,
+                    },
+                    properties: {},
+                })),
+            } as GeoJSON.FeatureCollection;
+
             // Region boundary lines
             if (!map.getSource("regions-source")) {
                 map.addSource("regions-source", {
                     type: "geojson",
-                    data: {
-                        type: "FeatureCollection",
-                        features: regions.map((c) => ({
-                            type: "Feature",
-                            geometry: {
-                                type: "LineString",
-                                coordinates: c.coordinates,
-                            },
-                            properties: {},
-                        })),
-                    },
+                    data: geojsonData,
                 });
                 map.addLayer({
                     id: "regions-layer",
@@ -112,6 +123,10 @@ export function useHeatmapLayers({
                         "line-opacity": 0.5,
                     },
                 });
+            } else {
+                (
+                    map.getSource("regions-source") as maplibregl.GeoJSONSource
+                ).setData(geojsonData);
             }
 
             // Filter to only include schools with data for the selected metric
@@ -238,11 +253,7 @@ export function useHeatmapLayers({
 
             // Toggle layer visibility
             if (map.getLayer("regions-layer")) {
-                map.setLayoutProperty(
-                    "regions-layer",
-                    "visibility",
-                    showRegions ? "visible" : "none",
-                );
+                map.setLayoutProperty("regions-layer", "visibility", "visible");
             }
             if (map.getLayer("schoolHeatLayer")) {
                 map.setLayoutProperty(
