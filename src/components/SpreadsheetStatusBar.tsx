@@ -40,7 +40,7 @@ export default function StatusBar({
         <div className="relative w-full">
             <div className="w-full h-0.5 bg-muted rounded-full">
                 <div
-                    className={`h-0.5 ${barColor} rounded-full transition-all duration-300`}
+                    className={`h-0.5 ${barColor} rounded-full transition-[width,background-color] duration-300`}
                     style={{ width: `${fillPercentage}%` }}
                 />
             </div>
@@ -49,7 +49,7 @@ export default function StatusBar({
                 return (
                     <div
                         key={step}
-                        className={`absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full border-2 transition-all duration-300 ${
+                        className={`absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full border-2 transition-[background-color,border-color] duration-300 ${
                             filled
                                 ? `${dotColor} border-transparent`
                                 : "bg-background border-muted"

@@ -158,8 +158,14 @@
     * {
         @apply border-border outline-ring/50;
     }
+    html {
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        text-rendering: optimizeLegibility;
+    }
     body {
         @apply bg-background text-foreground;
+        font-variant-numeric: tabular-nums;
     }
     .maplibregl-popup-content {
         @apply bg-transparent! shadow-none! p-0! rounded-none!;

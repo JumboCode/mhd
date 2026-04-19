@@ -7,8 +7,8 @@ import { Button, type ButtonProps } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const variants = {
-    initial: { opacity: 0.15, scale: 0.7, filter: "blur(2px)" },
-    visible: { opacity: 1, scale: 1, filter: "blur(0)" },
+    initial: { opacity: 0, scale: 0.25, filter: "blur(4px)" },
+    visible: { opacity: 1, scale: 1, filter: "blur(0px)" },
 };
 
 interface AnimatedToggleButtonProps extends Omit<ButtonProps, "children"> {
@@ -40,7 +40,9 @@ const AnimatedToggleButton = React.forwardRef<
         };
 
         return (
-            <MotionConfig transition={{ duration: 0.2 }}>
+            <MotionConfig
+                transition={{ type: "spring", duration: 0.3, bounce: 0 }}
+            >
                 <Button
                     ref={ref}
                     {...props}
