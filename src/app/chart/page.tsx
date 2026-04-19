@@ -1535,7 +1535,7 @@ export default function ChartPage() {
                         )}
                     </div>
 
-                    <div className="px-8 overflow-x-auto max-h-64 overflow-y-auto border-t border-border">
+                    <div className="px-8 overflow-x-auto max-h-64 overflow-y-auto border-border">
                         <DataTable data={rows} columns={cols} />
                     </div>
 
