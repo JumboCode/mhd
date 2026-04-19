@@ -19,6 +19,7 @@ import {
     ShoppingBasket,
     Trash2,
 } from "lucide-react";
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "./ui/button";
@@ -55,14 +56,14 @@ function CartItemRow({
 
     useEffect(() => {
         return () => {
-            if (fadeInTimeoutRef.current != null) {
+            if (fadeInTimeoutRef.current !== null) {
                 clearTimeout(fadeInTimeoutRef.current);
             }
         };
     }, []);
 
     const cancelFadeInSchedule = () => {
-        if (fadeInTimeoutRef.current != null) {
+        if (fadeInTimeoutRef.current !== null) {
             clearTimeout(fadeInTimeoutRef.current);
             fadeInTimeoutRef.current = null;
         }
@@ -182,9 +183,12 @@ function CartItemRow({
                             onTransitionEnd={handlePreviewTransitionEnd}
                         >
                             {previewSrc ? (
-                                <img
+                                <Image
                                     src={previewSrc}
                                     alt={`${item.filterName} preview`}
+                                    width={288}
+                                    height={180}
+                                    unoptimized
                                     className="w-full h-auto block"
                                 />
                             ) : (
