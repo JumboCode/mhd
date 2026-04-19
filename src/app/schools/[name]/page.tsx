@@ -21,6 +21,7 @@ import { SchoolLocationEditor } from "@/components/SchoolLocationEditor";
 import { SchoolInfoRow } from "@/components/SchoolInfoRow";
 import { StatCard } from "@/components/ui/stat-card";
 import { ENTITY_CONFIG } from "@/lib/entity-config";
+import type { MeasuredAs } from "@/components/GraphFilters/GraphFilters";
 import YearDropdown from "@/components/YearDropdown";
 import MultiLineGraph, { GraphDataset } from "@/components/charts/LineGraph";
 import { Info } from "lucide-react";
@@ -214,9 +215,9 @@ export default function SchoolProfilePage() {
         data: studentYearData,
     };
 
-    const studentsHref =
+    const chartHref = (measuredAs: MeasuredAs) =>
         year !== null
-            ? `/chart?type=line&startYear=${year - 5}&endYear=${year}&measuredAs=total-student-count&schools=${encodeURIComponent(schoolData?.name ?? "")}`
+            ? `/chart?type=line&startYear=${year - 5}&endYear=${year}&measuredAs=${measuredAs}&schools=${encodeURIComponent(schoolData?.name ?? "")}`
             : "#";
 
     // Calculate sparkline data arrays from allYearsData
@@ -392,6 +393,7 @@ export default function SchoolProfilePage() {
                         percentChange={projectsPercentChange}
                         showTrend={true}
                         variant="with-aspect"
+                        href={chartHref("total-project-count")}
                     />
                     <StatCard
                         label={ENTITY_CONFIG.teachers.label}
@@ -404,6 +406,7 @@ export default function SchoolProfilePage() {
                         percentChange={teachersPercentChange}
                         showTrend={true}
                         variant="with-aspect"
+                        href={chartHref("total-teacher-count")}
                     />
                     <StatCard
                         label={ENTITY_CONFIG.students.label}
@@ -416,6 +419,7 @@ export default function SchoolProfilePage() {
                         percentChange={studentsPercentChange}
                         showTrend={true}
                         variant="with-aspect"
+                        href={chartHref("total-student-count")}
                     />
                 </div>
 
@@ -427,7 +431,7 @@ export default function SchoolProfilePage() {
                     firstYear={schoolData.firstYear}
                 />
                 <Link
-                    href={studentsHref}
+                    href={chartHref("total-student-count")}
                     className="block rounded-lg border border-border px-6 pt-4 pb-2 hover:bg-muted/40 transition-colors"
                 >
                     <p className="text-sm font-medium text-center mb-2">
