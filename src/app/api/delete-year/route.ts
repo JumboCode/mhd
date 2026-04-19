@@ -18,42 +18,31 @@ import {
     yearMetadata,
 } from "@/lib/schema";
 import { eq } from "drizzle-orm";
+import { yearQuerySchema } from "@/lib/api-schemas";
+import {
+    parseOrError,
+    searchParamsToObject,
+    internalError,
+} from "@/lib/api-utils";
 
-/**
- * Deletes all data for the specified year.
- *
- * @param req NextRequest object
- * @returns JSON response with success or error
- */
 export async function DELETE(req: NextRequest) {
     try {
-        const { searchParams } = new URL(req.url);
-        const yearString = searchParams.get("year");
-        const currentYear = Number(yearString);
+        const parsed = parseOrError(yearQuerySchema, searchParamsToObject(req));
+        if (!parsed.success) return parsed.response;
 
-        if (!currentYear || isNaN(currentYear)) {
-            return NextResponse.json(
-                { message: "Invalid year parameter" },
-                { status: 400 },
-            );
-        }
+        const { year } = parsed.data;
 
-        // Delete rows for the specified year
-        await db.delete(projects).where(eq(projects.year, currentYear));
+        await db.delete(projects).where(eq(projects.year, year));
         await db
             .delete(yearlySchoolParticipation)
-            .where(eq(yearlySchoolParticipation.year, currentYear));
+            .where(eq(yearlySchoolParticipation.year, year));
         await db
             .delete(yearlyTeacherParticipation)
-            .where(eq(yearlyTeacherParticipation.year, currentYear));
-        await db.delete(yearMetadata).where(eq(yearMetadata.year, currentYear));
+            .where(eq(yearlyTeacherParticipation.year, year));
+        await db.delete(yearMetadata).where(eq(yearMetadata.year, year));
 
-        // Return a success response so fetch.ok becomes true
         return NextResponse.json({ success: true });
-    } catch (error) {
-        return NextResponse.json(
-            { error: "Internal server error: " + (error as Error).message },
-            { status: 500 },
-        );
+    } catch {
+        return internalError();
     }
 }

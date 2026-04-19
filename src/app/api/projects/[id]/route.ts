@@ -17,6 +17,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { projects, yearMetadata } from "@/lib/schema";
 import { eq } from "drizzle-orm";
+import { idParamSchema, projectPatchBodySchema } from "@/lib/api-schemas";
+import { parseOrError, internalError } from "@/lib/api-utils";
 
 export async function PATCH(
     req: NextRequest,
@@ -24,20 +26,13 @@ export async function PATCH(
 ) {
     try {
         const { id } = await params;
-        // Parse and validate the project ID from the URL
-        const numericId = Number(id);
-
-        if (isNaN(numericId) || !Number.isInteger(numericId)) {
-            return NextResponse.json(
-                { error: "Invalid project ID" },
-                { status: 400 },
-            );
-        }
+        const idParsed = parseOrError(idParamSchema, id);
+        if (!idParsed.success) return idParsed.response;
 
         const body = await req.json();
+        const parsed = parseOrError(projectPatchBodySchema, body);
+        if (!parsed.success) return parsed.response;
 
-        // Build an updates object containing only the fields present in the body.
-        // This ensures we never overwrite fields the caller didn't intend to change.
         const updates: Partial<{
             title: string;
             category: string;
@@ -47,70 +42,24 @@ export async function PATCH(
             numStudents: number;
         }> = {};
 
-        // Validate and coerce each allowed field to its correct DB type
-        if ("title" in body) {
-            const val = String(body.title).trim();
-            if (!val)
-                return NextResponse.json(
-                    { error: "title cannot be empty" },
-                    { status: 400 },
-                );
-            updates.title = val;
-        }
-        if ("category" in body) {
-            const val = String(body.category).trim();
-            if (!val)
-                return NextResponse.json(
-                    { error: "category cannot be empty" },
-                    { status: 400 },
-                );
-            updates.category = val;
-        }
-        if ("categoryId" in body) {
-            updates.categoryId = String(body.categoryId).trim();
-        }
-        if ("division" in body) {
-            const val = String(body.division).trim();
-            if (!val)
-                return NextResponse.json(
-                    { error: "division cannot be empty" },
-                    { status: 400 },
-                );
-            updates.division = val;
-        }
-        if ("teamProject" in body) {
-            // Accept both boolean true and the string "true" from JSON
-            updates.teamProject =
-                body.teamProject === true || body.teamProject === "true";
-        }
-        if ("numStudents" in body) {
-            // Must be a positive integer — reject decimals, negatives, and NaN
-            const val = Number(body.numStudents);
-            if (isNaN(val) || !Number.isInteger(val) || val < 1) {
-                return NextResponse.json(
-                    { error: "numStudents must be a positive integer" },
-                    { status: 400 },
-                );
-            }
-            updates.numStudents = val;
-        }
+        if (parsed.data.title !== undefined) updates.title = parsed.data.title;
+        if (parsed.data.category !== undefined)
+            updates.category = parsed.data.category;
+        if (parsed.data.categoryId !== undefined)
+            updates.categoryId = parsed.data.categoryId;
+        if (parsed.data.division !== undefined)
+            updates.division = parsed.data.division;
+        if (parsed.data.teamProject !== undefined)
+            updates.teamProject = parsed.data.teamProject;
+        if (parsed.data.numStudents !== undefined)
+            updates.numStudents = parsed.data.numStudents;
 
-        // Reject the request if the body contained no recognized fields
-        if (Object.keys(updates).length === 0) {
-            return NextResponse.json(
-                { error: "No valid fields to update" },
-                { status: 400 },
-            );
-        }
-
-        // Write only the changed fields to the database
         const result = await db
             .update(projects)
             .set(updates)
-            .where(eq(projects.id, numericId))
+            .where(eq(projects.id, idParsed.data))
             .returning({ id: projects.id, year: projects.year });
 
-        // If no rows were returned the ID didn't match any record
         if (result.length === 0) {
             return NextResponse.json(
                 { error: "Project not found" },
@@ -118,17 +67,13 @@ export async function PATCH(
             );
         }
 
-        // Bump lastUpdatedAt for this year
         await db
             .update(yearMetadata)
             .set({ lastUpdatedAt: new Date() })
             .where(eq(yearMetadata.year, result[0].year));
 
         return NextResponse.json({ message: "Project updated successfully" });
-    } catch (error) {
-        return NextResponse.json(
-            { error: "Internal server error: " + (error as Error).message },
-            { status: 500 },
-        );
+    } catch {
+        return internalError();
     }
 }

@@ -17,6 +17,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { teachers, projects, yearMetadata } from "@/lib/schema";
 import { eq, inArray } from "drizzle-orm";
+import { idParamSchema, teacherPatchBodySchema } from "@/lib/api-schemas";
+import { parseOrError, internalError } from "@/lib/api-utils";
 
 export async function PATCH(
     req: NextRequest,
@@ -24,64 +26,24 @@ export async function PATCH(
 ) {
     try {
         const { id } = await params;
-        // Parse and validate the teacher ID from the URL
-        const numericId = Number(id);
-
-        if (isNaN(numericId) || !Number.isInteger(numericId)) {
-            return NextResponse.json(
-                { error: "Invalid teacher ID" },
-                { status: 400 },
-            );
-        }
+        const idParsed = parseOrError(idParamSchema, id);
+        if (!idParsed.success) return idParsed.response;
 
         const body = await req.json();
+        const parsed = parseOrError(teacherPatchBodySchema, body);
+        if (!parsed.success) return parsed.response;
 
-        // Build updates object with only the fields present in the request body
         const updates: Partial<{ name: string; email: string }> = {};
 
-        if ("name" in body) {
-            const val = String(body.name).trim();
-            if (!val)
-                return NextResponse.json(
-                    { error: "name cannot be empty" },
-                    { status: 400 },
-                );
-            updates.name = val;
-        }
-        if ("email" in body) {
-            const val = String(body.email).trim();
-            if (!val)
-                return NextResponse.json(
-                    { error: "email cannot be empty" },
-                    { status: 400 },
-                );
-            // Validate basic email format before writing to the database
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(val)) {
-                return NextResponse.json(
-                    { error: "Invalid email format" },
-                    { status: 400 },
-                );
-            }
-            updates.email = val;
-        }
+        if (parsed.data.name !== undefined) updates.name = parsed.data.name;
+        if (parsed.data.email !== undefined) updates.email = parsed.data.email;
 
-        // Reject the request if the body contained no recognized fields
-        if (Object.keys(updates).length === 0) {
-            return NextResponse.json(
-                { error: "No valid fields to update" },
-                { status: 400 },
-            );
-        }
-
-        // Write the changes to the database
         const result = await db
             .update(teachers)
             .set(updates)
-            .where(eq(teachers.id, numericId))
+            .where(eq(teachers.id, idParsed.data))
             .returning({ id: teachers.id });
 
-        // If no rows were returned the ID didn't match any record
         if (result.length === 0) {
             return NextResponse.json(
                 { error: "Teacher not found" },
@@ -89,11 +51,10 @@ export async function PATCH(
             );
         }
 
-        // Bump lastUpdatedAt for all years this teacher has projects in
         const teacherProjects = await db
             .select({ year: projects.year })
             .from(projects)
-            .where(eq(projects.teacherId, numericId));
+            .where(eq(projects.teacherId, idParsed.data));
         const affectedYears = [...new Set(teacherProjects.map((p) => p.year))];
         if (affectedYears.length > 0) {
             await db
@@ -103,10 +64,7 @@ export async function PATCH(
         }
 
         return NextResponse.json({ message: "Teacher updated successfully" });
-    } catch (error) {
-        return NextResponse.json(
-            { error: "Internal server error: " + (error as Error).message },
-            { status: 500 },
-        );
+    } catch {
+        return internalError();
     }
 }
