@@ -6,7 +6,6 @@ import {
     SheetContent,
     SheetHeader,
     SheetTitle,
-    SheetDescription,
 } from "@/components/ui/sheet";
 import {
     Accordion,
@@ -19,16 +18,67 @@ import {
     Map,
     BarChart3,
     School,
+    BookOpen,
     FileUp,
     Settings,
+    TrendingUp,
+    TrendingDown,
+    Minus,
+    ShoppingBasket,
 } from "lucide-react";
+import type { ReactNode } from "react";
 
 interface HelpSheetProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
 }
 
-const pages = [
+// Small reusable inline indicator components
+function GreenDot() {
+    return (
+        <span className="inline-block h-2 w-2 rounded-full bg-green-500 align-middle mx-0.5" />
+    );
+}
+
+function TrendLegend() {
+    return (
+        <div className="mt-1.5 space-y-1.5 pl-1">
+            <div className="flex items-center gap-2 text-green-600">
+                <TrendingUp className="h-3.5 w-3.5 shrink-0" />
+                <span>Increase from prior year</span>
+            </div>
+            <div className="flex items-center gap-2 text-red-600">
+                <TrendingDown className="h-3.5 w-3.5 shrink-0" />
+                <span>Decrease from prior year</span>
+            </div>
+            <div className="flex items-center gap-2 text-muted-foreground">
+                <Minus className="h-3.5 w-3.5 shrink-0" />
+                <span>No change or no prior year data</span>
+            </div>
+        </div>
+    );
+}
+
+function CartBadge() {
+    return (
+        <span className="relative inline-flex align-middle mx-0.5">
+            <ShoppingBasket className="inline h-3.5 w-3.5" />
+            <span className="absolute -top-1.5 -right-1.5 h-3.5 w-3.5 rounded-full bg-primary text-[8px] font-medium text-primary-foreground flex items-center justify-center leading-none">
+                2
+            </span>
+        </span>
+    );
+}
+
+interface Page {
+    value: string;
+    label: string;
+    icon: React.ElementType;
+    description: string;
+    features: ReactNode[];
+}
+
+const pages: Page[] = [
     {
         value: "/",
         label: "Dashboard",
@@ -37,9 +87,13 @@ const pages = [
             "A high-level summary of MHD program data for a selected year.",
         features: [
             "Use the year selector to switch between available data years.",
-            "View total counts for students, projects, and teachers across all schools.",
-            "Trend lines show how each metric has changed year over year.",
-            "Percent change indicators highlight growth or decline from the prior year.",
+            "View total counts for students, projects, teachers, and schools.",
+            <>
+                Each stat card shows a percentage change from the prior year:
+                <TrendLegend />
+            </>,
+            "Click any stat card to jump to the Chart page filtered to that metric.",
+            "The two line graphs show total projects and schools over the past 6 years.",
         ],
     },
     {
@@ -50,13 +104,20 @@ const pages = [
             "An interactive heatmap of participating schools across Massachusetts.",
         features: [
             "Switch the Counts dropdown between Students, Projects, and Teachers to change what the heatmap visualizes.",
-            "Use the Year dropdown to select which year's data is displayed.",
+            <>
+                In the Year dropdown, a <GreenDot /> filled green dot next to a
+                year means data is available for that year.
+            </>,
             "Change Region View to zoom into Western, Central, Boston, Northeast, or Southeast MA.",
             "Open Filters to toggle school markers, the heatmap overlay, and region boundaries on or off.",
             "Enable Gateway Schools Only to restrict the view to gateway city schools.",
             "Click a school cluster or marker to see a popup with that school's data.",
             "Export saves the current map as a PDF. Copy link shares the exact view via URL.",
-            "Add to cart to collect multiple figure (map and chart) configurations into a combined export.",
+            <>
+                Add to cart to collect maps and charts for a combined export.
+                The <CartBadge /> badge on the Cart button shows how many items
+                you&apos;ve collected.
+            </>,
             "Keyboard: ⌘S opens the export dialog, ⌘P downloads a PDF directly.",
         ],
     },
@@ -72,7 +133,11 @@ const pages = [
             "Use Group By to segment the chart by school, city, or project type.",
             "Measured As controls whether the y-axis shows raw counts or percentages.",
             "Export saves the current chart as a PDF. Copy link shares the current filter state via URL.",
-            "Add to cart to collect multiple chart configurations for a combined export.",
+            <>
+                Add to cart to collect charts and maps for a combined export.
+                The <CartBadge /> badge on the Cart button shows how many items
+                you&apos;ve collected.
+            </>,
             "Keyboard: ⌘S opens the export dialog.",
         ],
     },
@@ -83,11 +148,43 @@ const pages = [
         description:
             "A table of all participating schools and their data for a selected year.",
         features: [
-            "Use the Year dropdown to select which year to display.",
+            <>
+                In the Year dropdown, a <GreenDot /> filled green dot means data
+                is available for that year.
+            </>,
             "Search by school name using the search bar.",
-            "Columns show year-over-year comparisons — arrows indicate change from the prior year.",
+            <>
+                The # Students, # Teachers, and # Projects columns show
+                year-over-year change:
+                <TrendLegend />
+            </>,
             "Click any school row to open that school's detailed profile.",
-            "Click column headers to sort by that metric.",
+            "Click column headers to sort the table by that metric.",
+        ],
+    },
+    {
+        value: "/schools/profile",
+        label: "School Profile",
+        icon: BookOpen,
+        description:
+            "A detailed view of a single school's data, history, and project records.",
+        features: [
+            <>
+                In the Year dropdown, a <GreenDot /> filled green dot means the
+                school participated that year. Years the school didn&apos;t
+                participate in are grayed out and unselectable.
+            </>,
+            <>
+                The three stat cards show projects, teachers, and students for
+                the selected year with year-over-year trend indicators:
+                <TrendLegend />
+            </>,
+            "The student count line graph shows enrollment history over the past 5 years. Click it to open the Chart page filtered to this school.",
+            "The project type distribution pie chart breaks down projects by category for the selected year.",
+            "School Location shows the school's pin on a map. Drag the pin to update its coordinates.",
+            "The View and Edit Data table lists all project records for the selected year. Double-click any cell to edit it. Teacher changes apply globally across all of that teacher's projects.",
+            "Double-click the school name at the top of the page to rename the school.",
+            "Use the ⋮ menu to access Merge School, which combines this school's records with another school.",
         ],
     },
     {
@@ -120,7 +217,7 @@ const pages = [
 
 function pathnameToValue(pathname: string): string {
     if (pathname === "/") return "/";
-    if (pathname.startsWith("/schools/")) return "/schools";
+    if (pathname.startsWith("/schools/")) return "/schools/profile";
     const clean = pathname.replace(/\/$/, "");
     const match = pages.find(
         (p) => p.value !== "/" && clean.startsWith(p.value),
@@ -176,7 +273,9 @@ export function HelpSheet({ open, onOpenChange }: HelpSheetProps) {
                                                     className="flex gap-2"
                                                 >
                                                     <span className="mt-[7px] h-1.5 w-1.5 rounded-full bg-muted-foreground/60 shrink-0" />
-                                                    <span>{feature}</span>
+                                                    <span className="leading-relaxed">
+                                                        {feature}
+                                                    </span>
                                                 </li>
                                             ))}
                                         </ul>
