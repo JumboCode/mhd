@@ -75,6 +75,9 @@ import { Cart } from "@/components/Cart";
 import { CartIndicator } from "@/components/ui/cart-indicator";
 import { Kbd } from "@/components/ui/kbd";
 import { useHotkey } from "@/hooks/useHotkey";
+import { DataTable } from "@/components/DataTable";
+import { CellValue } from "@/types/spreadsheet";
+import { ColumnDef } from "@tanstack/react-table";
 
 type Project = {
     id: number;
@@ -816,6 +819,45 @@ export default function ChartPage() {
         onlyGatewaySchools,
     ]);
 
+    const { cols, rows } = useMemo(() => {
+        if (!graphDataset.length) return { cols: [], rows: [] };
+
+        // Collect all unique years across all datasets
+        const allYears = Array.from(
+            new Set(graphDataset.flatMap((ds) => ds.data.map((d) => d.x))),
+        ).sort((a, b) => Number(a) - Number(b));
+
+        // Year column + one column per dataset label
+        const cols = [
+            { id: "year", accessorKey: "year", header: "Year" },
+            ...graphDataset.map((ds) => ({
+                id: ds.label,
+                accessorKey: ds.label,
+                header:
+                    ds.label === "All"
+                        ? (measuredAsLabels[filters.measuredAs] ?? ds.label)
+                        : ds.label,
+            })),
+        ];
+
+        // One row per year, one cell per dataset
+        const rows = allYears.map((year) => {
+            const row: Record<string, CellValue> = { year };
+            graphDataset.forEach((ds) => {
+                const point = ds.data.find((d) => d.x === year);
+                row[ds.label] =
+                    point !== undefined
+                        ? filters.measuredAs === "school-return-rate"
+                            ? `${(point.y * 100).toFixed(1)}%`
+                            : Math.round(point.y)
+                        : "—";
+            });
+            return row;
+        });
+
+        return { cols, rows };
+    }, [graphDataset, filters.measuredAs]);
+
     // Calculate filtered count (based on selected 'measured by' category)
     const filteredProjectCount = useMemo(() => {
         return graphDataset.reduce((total, dataset) => {
@@ -1484,6 +1526,10 @@ export default function ChartPage() {
                                 )}
                             </>
                         )}
+                    </div>
+
+                    <div className="px-8 overflow-x-auto max-h-64 overflow-y-auto border-t border-border">
+                        <DataTable data={rows} columns={cols} />
                     </div>
 
                     {/* Footer */}
