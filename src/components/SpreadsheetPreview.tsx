@@ -55,48 +55,137 @@ export default function SpreadsheetPreview({
             headerMap.set(normalizeColumnName(header), index);
         });
 
-        // Find column indices for each required column
-        const columnMapping: {
-            index: number;
-            name: string;
-            displayName: string;
-        }[] = [];
+        const getColumnIndex = (columnName: string): number | undefined =>
+            headerMap.get(normalizeColumnName(columnName));
 
+        const schoolNameIdx =
+            getColumnIndex("schoolName") ?? getColumnIndex("School name");
+        const schoolIdIdx = getColumnIndex("schoolId");
+        const teacherIdIdx = getColumnIndex("teacherId");
+        const teacherNameIdx = getColumnIndex("teacherName");
+        const projectIdIdx = getColumnIndex("projectId");
+        const projectTitleIdx = getColumnIndex("title");
+
+        // Student spreadsheets include schoolName and can be aggregated into
+        // top participating schools. Fall back to plain preview for others.
+        if (schoolNameIdx !== undefined) {
+            type SchoolStats = {
+                schoolName: string;
+                studentCount: number;
+                teacherIds: Set<string>;
+                projectIds: Set<string>;
+            };
+
+            const statsBySchool = new Map<string, SchoolStats>();
+            const dataRows = spreadsheetData
+                .slice(1)
+                .filter((row) =>
+                    row.some((value) => String(value ?? "").trim().length > 0),
+                );
+
+            dataRows.forEach((row) => {
+                const schoolName = String(row[schoolNameIdx] ?? "").trim();
+                if (!schoolName) return;
+
+                const schoolId = String(
+                    schoolIdIdx !== undefined ? (row[schoolIdIdx] ?? "") : "",
+                ).trim();
+                const schoolKey = schoolId || schoolName.toLowerCase();
+
+                if (!statsBySchool.has(schoolKey)) {
+                    statsBySchool.set(schoolKey, {
+                        schoolName,
+                        studentCount: 0,
+                        teacherIds: new Set<string>(),
+                        projectIds: new Set<string>(),
+                    });
+                }
+
+                const stats = statsBySchool.get(schoolKey);
+                if (!stats) return;
+
+                stats.studentCount += 1;
+
+                const teacherValue = String(
+                    teacherIdIdx !== undefined
+                        ? (row[teacherIdIdx] ?? "")
+                        : teacherNameIdx !== undefined
+                          ? (row[teacherNameIdx] ?? "")
+                          : "",
+                ).trim();
+                if (teacherValue) stats.teacherIds.add(teacherValue);
+
+                const projectValue = String(
+                    projectIdIdx !== undefined
+                        ? (row[projectIdIdx] ?? "")
+                        : projectTitleIdx !== undefined
+                          ? (row[projectTitleIdx] ?? "")
+                          : "",
+                ).trim();
+                if (projectValue) stats.projectIds.add(projectValue);
+            });
+
+            const topSchools = Array.from(statsBySchool.values())
+                .sort((a, b) => {
+                    if (b.studentCount !== a.studentCount) {
+                        return b.studentCount - a.studentCount;
+                    }
+                    if (b.teacherIds.size !== a.teacherIds.size) {
+                        return b.teacherIds.size - a.teacherIds.size;
+                    }
+                    if (b.projectIds.size !== a.projectIds.size) {
+                        return b.projectIds.size - a.projectIds.size;
+                    }
+                    return a.schoolName.localeCompare(b.schoolName);
+                })
+                .slice(0, 5);
+
+            setCols([
+                { id: "0", accessorKey: "0", header: "School Name" },
+                { id: "1", accessorKey: "1", header: "Student Count" },
+                { id: "2", accessorKey: "2", header: "Teacher Count" },
+                { id: "3", accessorKey: "3", header: "Project Count" },
+            ]);
+            setRows(
+                topSchools.map((school) => [
+                    school.schoolName,
+                    school.studentCount,
+                    school.teacherIds.size,
+                    school.projectIds.size,
+                ]),
+            );
+            setNumCols(4);
+            return;
+        }
+
+        // Fallback: original preview behavior for non-student spreadsheets.
+        const columnMapping: { index: number; displayName: string }[] = [];
         columns.forEach((col: string) => {
-            const normalizedRequired = normalizeColumnName(col);
-            const columnIndex = headerMap.get(normalizedRequired);
-
-            if (columnIndex !== undefined) {
-                // Convert camelCase to readable display name
-                const displayName = col
-                    .replace(/([A-Z])/g, " $1")
-                    .replace(/^./, (str: string) => str.toUpperCase())
-                    .trim();
-
-                columnMapping.push({
-                    index: columnIndex,
-                    name: col,
-                    displayName,
-                });
-            }
+            const columnIndex = getColumnIndex(col);
+            if (columnIndex === undefined) return;
+            const displayName = col
+                .replace(/([A-Z])/g, " $1")
+                .replace(/^./, (str: string) => str.toUpperCase())
+                .trim();
+            columnMapping.push({
+                index: columnIndex,
+                displayName,
+            });
         });
 
-        // Create columns with sequential accessorKeys
-        const tableCols = columnMapping.map((col, arrayIndex) => ({
-            id: String(arrayIndex),
-            accessorKey: String(arrayIndex),
-            header: col.displayName,
-        }));
-
-        // Extract only the required columns from each row
-        // Skip the first row (index 0) as it contains headers, take rows 1-5
-        const filteredRows = spreadsheetData
-            .slice(1, 6)
-            .map((row) => columnMapping.map((col) => row[col.index]));
-
+        setCols(
+            columnMapping.map((col, arrayIndex) => ({
+                id: String(arrayIndex),
+                accessorKey: String(arrayIndex),
+                header: col.displayName,
+            })),
+        );
+        setRows(
+            spreadsheetData
+                .slice(1, 6)
+                .map((row) => columnMapping.map((col) => row[col.index])),
+        );
         setNumCols(columnMapping.length);
-        setCols(tableCols);
-        setRows(filteredRows);
     }, [spreadsheetData, columns]);
 
     return (
@@ -129,9 +218,12 @@ export default function SpreadsheetPreview({
                         </div>
                     </div>
                     <div className="flex flex-col gap-2">
-                        <h2 className="text-xl font-bold mt-5 ">Data sample</h2>
+                        <h2 className="text-xl font-bold mt-5 ">
+                            Top Participating Schools
+                        </h2>
                         <p className="text-muted-foreground">
-                            Here are the first 5 rows from your file
+                            Here are the top 5 highest participating schools
+                            from your file
                         </p>
                     </div>
                 </div>
