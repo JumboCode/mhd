@@ -91,6 +91,45 @@ export function filterProjects(
         )
             return false;
 
+        // Selected Divisions (schoolDivisions is an array; match if ANY overlap)
+        if (filters.selectedDivisions && filters.selectedDivisions.length > 0) {
+            const divs = p.schoolDivisions;
+            if (!divs || divs.length === 0) {
+                if (!filters.selectedDivisions.includes("Unassigned"))
+                    return false;
+            } else {
+                const normalized = divs.map(normalizeDivision);
+                const hasMatch = normalized.some((d) =>
+                    filters.selectedDivisions.includes(d),
+                );
+                if (!hasMatch) return false;
+            }
+        }
+
+        // Selected School Types
+        if (
+            filters.selectedSchoolTypes &&
+            filters.selectedSchoolTypes.length > 0
+        ) {
+            const v = p.schoolSchoolType || "Unassigned";
+            if (!filters.selectedSchoolTypes.includes(v)) return false;
+        }
+
+        // Selected Regions
+        if (filters.selectedRegions && filters.selectedRegions.length > 0) {
+            const v = p.schoolRegion || "Unassigned";
+            if (!filters.selectedRegions.includes(v)) return false;
+        }
+
+        // Selected Implementation Types
+        if (
+            filters.selectedImplementationTypes &&
+            filters.selectedImplementationTypes.length > 0
+        ) {
+            const v = p.schoolImplementationModel || "Unassigned";
+            if (!filters.selectedImplementationTypes.includes(v)) return false;
+        }
+
         // Teacher Years Participation
         if (filters.teacherYearsValue) {
             const yearsActive = teacherYearsMap.get(p.teacherId) || 0;

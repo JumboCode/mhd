@@ -18,9 +18,10 @@ import {
     CommandGroup,
     CommandItem,
 } from "@/components/ui/command";
+import type { MultiSelectFilterType } from "./constants";
 
 interface FilterValuePopoverProps {
-    filterType: "school" | "city" | "project-type";
+    filterType: MultiSelectFilterType;
     options: string[];
     selectedValues: string[];
     gatewayCities?: string[]; // List of gateway city names (only for city filter)

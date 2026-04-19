@@ -23,6 +23,10 @@ const filterParsers = {
     schools: parseAsArrayOf(parseAsString).withDefault([]),
     cities: parseAsArrayOf(parseAsString).withDefault([]),
     projectTypes: parseAsArrayOf(parseAsString).withDefault([]),
+    divisions: parseAsArrayOf(parseAsString).withDefault([]),
+    schoolTypes: parseAsArrayOf(parseAsString).withDefault([]),
+    regions: parseAsArrayOf(parseAsString).withDefault([]),
+    implementationTypes: parseAsArrayOf(parseAsString).withDefault([]),
     teacherYearsValue: parseAsString.withDefault(""),
     teacherYearsOperator: parseAsString.withDefault("="),
     teacherYearsValue2: parseAsString.withDefault(""),
@@ -75,6 +79,14 @@ export type UseChartFiltersReturn = {
     setSelectedCities: (cities: string[]) => void;
     selectedProjectTypes: string[];
     setSelectedProjectTypes: (types: string[]) => void;
+    selectedDivisions: string[];
+    setSelectedDivisions: (divisions: string[]) => void;
+    selectedSchoolTypes: string[];
+    setSelectedSchoolTypes: (types: string[]) => void;
+    selectedRegions: string[];
+    setSelectedRegions: (regions: string[]) => void;
+    selectedImplementationTypes: string[];
+    setSelectedImplementationTypes: (types: string[]) => void;
     teacherYearsValue: string;
     setTeacherYearsValue: (value: string) => void;
     teacherYearsOperator: string;
@@ -92,6 +104,10 @@ export type UseChartFiltersReturn = {
             schools: string[] | null;
             cities: string[] | null;
             projectTypes: string[] | null;
+            divisions: string[] | null;
+            schoolTypes: string[] | null;
+            regions: string[] | null;
+            implementationTypes: string[] | null;
             teacherYearsValue: string | null;
             teacherYearsOperator: string | null;
             teacherYearsValue2: string | null;
@@ -158,6 +174,10 @@ export function useChartFilters(): UseChartFiltersReturn {
             selectedSchools: filterState.schools,
             selectedCities: filterState.cities,
             selectedProjectTypes: filterState.projectTypes,
+            selectedDivisions: filterState.divisions,
+            selectedSchoolTypes: filterState.schoolTypes,
+            selectedRegions: filterState.regions,
+            selectedImplementationTypes: filterState.implementationTypes,
             teacherYearsValue: filterState.teacherYearsValue,
             teacherYearsOperator: filterState.teacherYearsOperator as
                 | "="
@@ -208,6 +228,16 @@ export function useChartFilters(): UseChartFiltersReturn {
         selectedProjectTypes: filterState.projectTypes,
         setSelectedProjectTypes: (types) =>
             setFilterState({ projectTypes: types }),
+        selectedDivisions: filterState.divisions,
+        setSelectedDivisions: (divisions) => setFilterState({ divisions }),
+        selectedSchoolTypes: filterState.schoolTypes,
+        setSelectedSchoolTypes: (types) =>
+            setFilterState({ schoolTypes: types }),
+        selectedRegions: filterState.regions,
+        setSelectedRegions: (regions) => setFilterState({ regions }),
+        selectedImplementationTypes: filterState.implementationTypes,
+        setSelectedImplementationTypes: (types) =>
+            setFilterState({ implementationTypes: types }),
         teacherYearsValue: filterState.teacherYearsValue,
         setTeacherYearsValue: (value) =>
             setFilterState({ teacherYearsValue: value }),
