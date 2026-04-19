@@ -374,41 +374,63 @@ export default function ChartPage() {
         },
     );
 
-    const filterDetails: FilterDetail[] = [
-        ...(selectedSchools.length > 0
-            ? [{ label: "Schools", values: selectedSchools }]
-            : []),
-        ...(selectedCities.length > 0
-            ? [{ label: "Cities", values: selectedCities }]
-            : []),
-        ...(selectedProjectTypes.length > 0
-            ? [{ label: "Project Types", values: selectedProjectTypes }]
-            : []),
-        ...(onlyGatewaySchools
-            ? [{ label: "Gateway Schools", values: ["Only Gateway Schools"] }]
-            : []),
-        ...(teacherYearsValue !== ""
-            ? [
-                  {
-                      label: "Teacher Years",
-                      values: [
-                          teacherYearsOperator === "between"
-                              ? `between ${teacherYearsValue} and ${teacherYearsValue2}`
-                              : `${teacherYearsOperator} ${teacherYearsValue}`,
-                      ],
-                  },
-              ]
-            : []),
-        {
-            label: "Measured As",
-            values: [measuredAsLabels[measuredAs] ?? measuredAs],
-        },
-        { label: "Grouped By", values: [groupByLabels[groupBy] ?? groupBy] },
-        {
-            label: "Year Range",
-            values: [`${yearRange.start} – ${yearRange.end}`],
-        },
-    ];
+    const filterDetails = useMemo<FilterDetail[]>(
+        () => [
+            ...(selectedSchools.length > 0
+                ? [{ label: "Schools", values: selectedSchools }]
+                : []),
+            ...(selectedCities.length > 0
+                ? [{ label: "Cities", values: selectedCities }]
+                : []),
+            ...(selectedProjectTypes.length > 0
+                ? [{ label: "Project Types", values: selectedProjectTypes }]
+                : []),
+            ...(onlyGatewaySchools
+                ? [
+                      {
+                          label: "Gateway Schools",
+                          values: ["Only Gateway Schools"],
+                      },
+                  ]
+                : []),
+            ...(teacherYearsValue !== ""
+                ? [
+                      {
+                          label: "Teacher Years",
+                          values: [
+                              teacherYearsOperator === "between"
+                                  ? `between ${teacherYearsValue} and ${teacherYearsValue2}`
+                                  : `${teacherYearsOperator} ${teacherYearsValue}`,
+                          ],
+                      },
+                  ]
+                : []),
+            {
+                label: "Measured As",
+                values: [measuredAsLabels[measuredAs] ?? measuredAs],
+            },
+            {
+                label: "Grouped By",
+                values: [groupByLabels[groupBy] ?? groupBy],
+            },
+            {
+                label: "Year Range",
+                values: [`${yearRange.start} – ${yearRange.end}`],
+            },
+        ],
+        [
+            selectedSchools,
+            selectedCities,
+            selectedProjectTypes,
+            onlyGatewaySchools,
+            teacherYearsValue,
+            teacherYearsOperator,
+            teacherYearsValue2,
+            measuredAs,
+            groupBy,
+            yearRange,
+        ],
+    );
 
     // Fetch all graphs from session storage on load
     useEffect(() => {

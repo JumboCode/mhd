@@ -54,7 +54,11 @@ export async function exportMapToPDF(
         );
 
         const margin = 20;
-        const wrappedTitle = pdf.splitTextToSize(title!, pdfWidth - margin * 2);
+        const safeTitle = title ?? "Heatmap";
+        const wrappedTitle = pdf.splitTextToSize(
+            safeTitle,
+            pdfWidth - margin * 2,
+        );
         pdf.text(wrappedTitle, margin, 50);
 
         // Calculate dimensions to maintain aspect ratio
@@ -62,14 +66,28 @@ export async function exportMapToPDF(
         const imgWidth = pdfWidth - margin * 2;
         const imgHeight = imgWidth * aspectRatio;
 
-        pdf.addImage(
-            dataURL,
-            "JPEG",
-            margin,
-            50 + titleHeight,
-            imgWidth,
-            imgHeight,
-        );
+        const imgY = 50 + titleHeight;
+        pdf.addImage(dataURL, "JPEG", margin, imgY, imgWidth, imgHeight);
+
+        if (filterDetails.length > 0) {
+            let cursorY = imgY + imgHeight + 10;
+            pdf.setFontSize(11);
+            pdf.text("Applied Filters:", margin, cursorY);
+            cursorY += 6;
+            pdf.setFontSize(10);
+            filterDetails.forEach(({ label, values }) => {
+                if (cursorY > pdf.internal.pageSize.getHeight() - 20) {
+                    pdf.addPage();
+                    cursorY = 20;
+                }
+                const wrapped = pdf.splitTextToSize(
+                    `${label}: ${values.join(", ")}`,
+                    pdfWidth - margin * 2,
+                );
+                pdf.text(wrapped, margin, cursorY);
+                cursorY += wrapped.length * 5 + 3;
+            });
+        }
 
         pdf.save("heatmap.pdf");
         toast.success("Heatmap exported successfully!");
