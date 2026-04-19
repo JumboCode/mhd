@@ -198,7 +198,8 @@ export function computeGraphDataset(
                 );
                 const year = projects[0].year;
                 const priorParticipation = allProjects.filter(
-                    (x) => schoolsThisYear.has(x.schoolId) && x.year < year,
+                    (x) =>
+                        schoolsThisYear.has(x.schoolId) && x.year === year - 1,
                 );
                 const returningSchools = new Set(
                     priorParticipation.map((p) => p.schoolId),
