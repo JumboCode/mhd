@@ -11,7 +11,8 @@
 
 "use client";
 
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
+import { useQueryState, parseAsInteger } from "nuqs";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -67,16 +68,10 @@ export default function SchoolProfilePage() {
     const params = useParams();
     const schoolName = params.name as string;
     const router = useRouter();
-    const searchParams = useSearchParams();
-    const parsedYearFromQuery = Number(searchParams.get("year"));
-    const initialYearFromQuery = Number.isFinite(parsedYearFromQuery)
-        ? parsedYearFromQuery
-        : null;
-
+    const [year, setYear] = useQueryState("year", parseAsInteger);
     const [schoolData, setSchoolData] = useState<SchoolData | null>(null);
     const [prevYearData, setPrevYearData] = useState<SchoolData | null>(null);
 
-    const [year, setYear] = useState<number | null>(initialYearFromQuery);
     const [projects, setProjects] = useState<ProjectRow[]>([]);
     const [editingName, setEditingName] = useState(false);
     const [nameDraft, setNameDraft] = useState("");
@@ -88,37 +83,9 @@ export default function SchoolProfilePage() {
     const [showPrevYearWarning, setShowPrevYearWarning] = useState(true);
     const [mergeOpen, setMergeOpen] = useState(false);
 
-    const buildSchoolUrl = (slug: string, yearParam: number | null) =>
-        yearParam !== null
-            ? `/schools/${slug}?year=${yearParam}`
-            : `/schools/${slug}`;
-
     const handleYearChange = (selectedYear: number | null) => {
-        if (selectedYear === null) return;
-
         setYear(selectedYear);
-
-        const parsedQueryYear = Number(searchParams.get("year"));
-        const queryYear = Number.isFinite(parsedQueryYear)
-            ? parsedQueryYear
-            : null;
-        if (queryYear !== selectedYear) {
-            router.replace(buildSchoolUrl(schoolName, selectedYear), {
-                scroll: false,
-            });
-        }
     };
-
-    useEffect(() => {
-        const yearFromQuery = searchParams.get("year");
-        if (!yearFromQuery) return;
-
-        const parsedYear = Number(yearFromQuery);
-        if (!Number.isFinite(parsedYear)) return;
-        if (year === parsedYear) return;
-
-        setYear(parsedYear);
-    }, [searchParams, year]);
 
     useEffect(() => {
         setShowPrevYearWarning(true);
@@ -131,7 +98,11 @@ export default function SchoolProfilePage() {
                 if (r.status === 301) {
                     const data = await r.json();
                     if (data.redirectTo) {
-                        router.replace(buildSchoolUrl(data.redirectTo, year));
+                        router.replace(
+                            year !== null
+                                ? `/schools/${data.redirectTo}?year=${year}`
+                                : `/schools/${data.redirectTo}`,
+                        );
                     }
                 }
             })
