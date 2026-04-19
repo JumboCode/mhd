@@ -8,28 +8,16 @@ import {
     yearlyTeacherParticipation,
 } from "@/lib/schema";
 import { eq, inArray } from "drizzle-orm";
+import { mergeSchoolsBodySchema } from "@/lib/api-schemas";
+import { parseOrError, internalError } from "@/lib/api-utils";
 
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
-        const { baseSchoolId, mergingSchoolId } = body;
+        const parsed = parseOrError(mergeSchoolsBodySchema, body);
+        if (!parsed.success) return parsed.response;
 
-        if (
-            typeof baseSchoolId !== "number" ||
-            typeof mergingSchoolId !== "number"
-        ) {
-            return NextResponse.json(
-                { error: "baseSchoolId and mergingSchoolId must be numbers" },
-                { status: 400 },
-            );
-        }
-
-        if (baseSchoolId === mergingSchoolId) {
-            return NextResponse.json(
-                { error: "A school cannot be merged with itself" },
-                { status: 400 },
-            );
-        }
+        const { baseSchoolId, mergingSchoolId } = parsed.data;
 
         const [baseSchool, mergingSchool] = await Promise.all([
             db
@@ -170,10 +158,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({
             message: `"${mergingSchool[0].name}" was successfully merged into "${baseSchool[0].name}"`,
         });
-    } catch (error) {
-        return NextResponse.json(
-            { error: "Internal server error: " + (error as Error).message },
-            { status: 500 },
-        );
+    } catch {
+        return internalError();
     }
 }
