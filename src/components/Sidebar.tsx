@@ -12,6 +12,7 @@ import {
     Settings as SettingsIcon,
     LogOut,
     MoreHorizontal,
+    MessageCircleQuestion,
 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import Image from "next/image";
@@ -23,11 +24,13 @@ import {
 import { DEV_BYPASS, DEV_BYPASS_COOKIE } from "@/lib/dev-config"; // TO DO - REMOVE: dev auth bypass
 import { DEV_SESSION_USER } from "@/lib/dev-session"; // TO DO - REMOVE: dev auth bypass
 import { useUnsavedChanges } from "@/components/UnsavedChangesContext";
+import { HelpSheet } from "@/components/HelpSheet";
 
 export default function Sidebar() {
     const pathname = usePathname();
     const router = useRouter();
     const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+    const [isHelpOpen, setIsHelpOpen] = useState(false);
     const { data: authSession, isPending } = authClient.useSession();
     const { onNavigationAttempt } = useUnsavedChanges();
     // TO DO - REMOVE: dev auth bypass - show dev user when in dev mode with no real session
@@ -160,118 +163,143 @@ export default function Sidebar() {
     ];
 
     return (
-        <aside className="h-full bg-card border-r border-border flex flex-col justify-between w-56 flex-shrink-0">
-            <div className="flex-1 overflow-hidden">
-                <div className="px-6 py-5 flex items-center justify-center">
-                    <h1>
-                        <Link href="/">
-                            <Image
-                                src="/images/mhd-logo.png"
-                                alt="MHD Logo"
-                                width={125}
-                                height={125}
-                                priority
-                            />
-                        </Link>
-                    </h1>
-                </div>
+        <>
+            <aside className="h-full bg-card border-r border-border flex flex-col justify-between w-56 flex-shrink-0">
+                <div className="flex-1 overflow-hidden">
+                    <div className="px-6 py-5 flex items-center justify-center">
+                        <h1>
+                            <Link href="/">
+                                <Image
+                                    src="/images/mhd-logo.png"
+                                    alt="MHD Logo"
+                                    width={125}
+                                    height={125}
+                                    priority
+                                />
+                            </Link>
+                        </h1>
+                    </div>
 
-                <div
-                    className="mt-4 px-3 relative"
-                    ref={navContainerRef}
-                    onMouseLeave={handleNavMouseLeave}
-                >
-                    {/* Sliding selector */}
                     <div
-                        className="absolute bg-accent rounded-lg pointer-events-none z-0"
-                        style={{
-                            top: selectorStyle.top,
-                            left: selectorStyle.left,
-                            height: selectorStyle.height,
-                            width: selectorStyle.width,
-                            opacity: selectorStyle.opacity,
-                            transition:
-                                "top 150ms cubic-bezier(0.4, 0, 0.2, 1), left 350ms cubic-bezier(0.4, 0, 0.2, 1), height 350ms cubic-bezier(0.4, 0, 0.2, 1), width 350ms cubic-bezier(0.4, 0, 0.2, 1), opacity 350ms cubic-bezier(0.4, 0, 0.2, 1)",
-                        }}
-                    />
+                        className="mt-4 px-3 relative"
+                        ref={navContainerRef}
+                        onMouseLeave={handleNavMouseLeave}
+                    >
+                        {/* Sliding selector */}
+                        <div
+                            className="absolute bg-accent rounded-lg pointer-events-none z-0"
+                            style={{
+                                top: selectorStyle.top,
+                                left: selectorStyle.left,
+                                height: selectorStyle.height,
+                                width: selectorStyle.width,
+                                opacity: selectorStyle.opacity,
+                                transition:
+                                    "top 150ms cubic-bezier(0.4, 0, 0.2, 1), left 350ms cubic-bezier(0.4, 0, 0.2, 1), height 350ms cubic-bezier(0.4, 0, 0.2, 1), width 350ms cubic-bezier(0.4, 0, 0.2, 1), opacity 350ms cubic-bezier(0.4, 0, 0.2, 1)",
+                            }}
+                        />
 
-                    {sections.map((section) => (
-                        <div key={section.title} className="mb-5 relative z-10">
-                            <p className="text-xs font-semibold text-anti-brand-dark mb-2 px-2 overflow-hidden whitespace-nowrap">
-                                {section.title}
-                            </p>
+                        {sections.map((section) => (
+                            <div
+                                key={section.title}
+                                className="mb-5 relative z-10"
+                            >
+                                <p className="text-xs font-semibold text-anti-brand-dark mb-2 px-2 overflow-hidden whitespace-nowrap">
+                                    {section.title}
+                                </p>
 
-                            <nav className="flex flex-col space-y-1">
-                                {section.items.map((item) => {
-                                    const isActive = pathname === item.href;
+                                <nav className="flex flex-col space-y-1">
+                                    {section.items.map((item) => {
+                                        const isActive = pathname === item.href;
 
-                                    return (
-                                        <Link
-                                            key={item.href}
-                                            href={item.href}
-                                            onMouseEnter={handleItemMouseEnter}
-                                            onClick={(e) => {
-                                                e.preventDefault();
-                                                onNavigationAttempt(item.href);
-                                            }}
-                                            data-active={
-                                                isActive ? "true" : undefined
-                                            }
-                                            className={`
+                                        return (
+                                            <Link
+                                                key={item.href}
+                                                href={item.href}
+                                                onMouseEnter={
+                                                    handleItemMouseEnter
+                                                }
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    onNavigationAttempt(
+                                                        item.href,
+                                                    );
+                                                }}
+                                                data-active={
+                                                    isActive
+                                                        ? "true"
+                                                        : undefined
+                                                }
+                                                className={`
                                                     flex items-center gap-3 px-3 py-2 rounded-lg transition-colors relative z-10
                                                     ${isActive ? "font-semibold" : ""}
                                                 `}
-                                        >
-                                            <div className="flex items-center justify-center w-6">
-                                                {item.icon}
-                                            </div>
-                                            <span className="text-sm overflow-hidden whitespace-nowrap">
-                                                {item.label}
-                                            </span>
-                                        </Link>
-                                    );
-                                })}
-                            </nav>
-                        </div>
-                    ))}
-                </div>
-            </div>
-
-            <div className="w-full overflow-hidden">
-                <div className="border-t border-border/40 mx-4" />
-                <div className="px-4 py-4 flex items-center gap-3">
-                    <Popover
-                        open={isPopoverOpen}
-                        onOpenChange={setIsPopoverOpen}
-                    >
-                        <PopoverTrigger asChild>
-                            <button
-                                suppressHydrationWarning
-                                className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-foreground overflow-hidden whitespace-nowrap hover:bg-accent cursor-pointer w-full"
-                            >
-                                <span className="flex-1 overflow-hidden whitespace-nowrap text-left">
-                                    {session?.user?.email || "Loading..."}
-                                </span>
-                                <MoreHorizontal
-                                    size={14}
-                                    className="shrink-0 text-muted-foreground"
-                                />
-                            </button>
-                        </PopoverTrigger>
-                        <PopoverContent align="center" className="w-48 p-0">
-                            <div className="flex flex-col space-y-2">
-                                <button
-                                    onClick={handleSignOut}
-                                    className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-accent text-sm font-medium w-full text-left hover:text-destructive hover:cursor-pointer"
-                                >
-                                    <LogOut size={16} />
-                                    Sign Out
-                                </button>
+                                            >
+                                                <div className="flex items-center justify-center w-6">
+                                                    {item.icon}
+                                                </div>
+                                                <span className="text-sm overflow-hidden whitespace-nowrap">
+                                                    {item.label}
+                                                </span>
+                                            </Link>
+                                        );
+                                    })}
+                                </nav>
                             </div>
-                        </PopoverContent>
-                    </Popover>
+                        ))}
+                    </div>
                 </div>
-            </div>
-        </aside>
+
+                <div className="w-full overflow-hidden">
+                    <div className="px-4 pt-2">
+                        <button
+                            onClick={() => setIsHelpOpen(true)}
+                            className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground w-full cursor-pointer transition-colors"
+                        >
+                            <MessageCircleQuestion
+                                size={16}
+                                className="shrink-0"
+                            />
+                            Help
+                        </button>
+                    </div>
+                    <div className="border-t border-border/40 mx-4 mt-2" />
+                    <div className="px-4 py-4 flex items-center gap-3">
+                        <Popover
+                            open={isPopoverOpen}
+                            onOpenChange={setIsPopoverOpen}
+                        >
+                            <PopoverTrigger asChild>
+                                <button
+                                    suppressHydrationWarning
+                                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-foreground overflow-hidden whitespace-nowrap hover:bg-accent cursor-pointer w-full"
+                                >
+                                    <span className="flex-1 overflow-hidden whitespace-nowrap text-left">
+                                        {session?.user?.email || "Loading..."}
+                                    </span>
+                                    <MoreHorizontal
+                                        size={14}
+                                        className="shrink-0 text-muted-foreground"
+                                    />
+                                </button>
+                            </PopoverTrigger>
+                            <PopoverContent align="center" className="w-48 p-0">
+                                <div className="flex flex-col space-y-2">
+                                    <button
+                                        onClick={handleSignOut}
+                                        className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-accent text-sm font-medium w-full text-left hover:text-destructive hover:cursor-pointer"
+                                    >
+                                        <LogOut size={16} />
+                                        Sign Out
+                                    </button>
+                                </div>
+                            </PopoverContent>
+                        </Popover>
+                    </div>
+                </div>
+            </aside>
+
+            <HelpSheet open={isHelpOpen} onOpenChange={setIsHelpOpen} />
+        </>
     );
 }
