@@ -14,9 +14,19 @@ type YearInputProps = {
 
 export default function YearInput({ year, onYearChange }: YearInputProps) {
     const [draft, setDraft] = useState<string | null>(null);
+    const [lastValidYear, setLastValidYear] = useState<number | null>(
+        year ?? null,
+    );
     const [yearsWithData, setYearsWithData] = useState<Set<number> | null>(
         null,
     );
+
+    // Sync lastValidYear when year prop changes externally (e.g. default year effect)
+    useEffect(() => {
+        if (draft === null && year !== null && year !== undefined) {
+            setLastValidYear(year);
+        }
+    }, [year, draft]);
 
     useEffect(() => {
         async function fetchYearsWithData() {
@@ -33,6 +43,8 @@ export default function YearInput({ year, onYearChange }: YearInputProps) {
     // Derive display value: use draft while typing, otherwise derive from prop
     const displayValue = draft ?? (year ? String(year) : "");
     const displayYear = Number(displayValue);
+    const isInvalid =
+        draft !== null && draft.length === 4 && !isYearInRange(Number(draft));
     const hasData = !!displayYear && !!yearsWithData?.has(displayYear);
 
     const handleYearInput = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -41,8 +53,10 @@ export default function YearInput({ year, onYearChange }: YearInputProps) {
         setDraft(value);
         if (value.length === 4) {
             const parsedYear = Number(value);
-            onYearChange(isYearInRange(parsedYear) ? parsedYear : null);
-            setDraft(null);
+            if (isYearInRange(parsedYear)) {
+                onYearChange(parsedYear);
+                setLastValidYear(parsedYear);
+            }
         } else {
             onYearChange(null);
         }
@@ -58,7 +72,12 @@ export default function YearInput({ year, onYearChange }: YearInputProps) {
 
         const normalized = draft.padStart(4, "0");
         const parsedYear = Number(normalized);
-        onYearChange(isYearInRange(parsedYear) ? parsedYear : null);
+        if (isYearInRange(parsedYear)) {
+            onYearChange(parsedYear);
+            setLastValidYear(parsedYear);
+        } else {
+            onYearChange(lastValidYear);
+        }
         setDraft(null);
     };
 
@@ -72,7 +91,9 @@ export default function YearInput({ year, onYearChange }: YearInputProps) {
 
     return (
         <div className="flex flex-col gap-2">
-            <div className="flex items-center rounded-md border border-border overflow-hidden w-fit">
+            <div
+                className={`flex items-center rounded-md border overflow-hidden w-fit ${isInvalid ? "border-red-500" : "border-border"}`}
+            >
                 <Button
                     variant="ghost"
                     onClick={decrementYear}

@@ -100,6 +100,7 @@ export default function SchoolsPage() {
                             selectedYear={year}
                             onYearChange={setYear}
                             showDataIndicator={true}
+                            enableArrowHotkeys={true}
                         />
                     </div>
                     <SchoolSearchBar search={search} setSearch={setSearch} />
