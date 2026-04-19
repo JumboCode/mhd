@@ -23,6 +23,7 @@
  * 4. Persist coordinates back to the database
  */
 
+import { type CsvRow } from "@/types/csv";
 import { db } from "@/lib/db";
 import { schools } from "@/lib/schema";
 import fs from "fs";
@@ -36,21 +37,6 @@ import { parse } from "csv-parse/sync";
 type SchoolLocation = {
     lat: number;
     long: number;
-};
-
-/**
- * Shape of each row in the CSV file.
- * All numeric fields are strings when parsed.
- */
-type CsvRow = {
-    name: string;
-    street: string;
-    city: string;
-    state: string;
-    zipCode: string;
-    county: string;
-    lat: string;
-    long: string;
 };
 
 /**

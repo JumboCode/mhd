@@ -133,33 +133,25 @@ export default function GraphFilters({
         setTeacherYearsValue2(filters.teacherYearsValue2 ?? "");
         setOnlyGatewaySchools(filters.onlyGatewaySchools);
 
-        const newSelectedFilters: Filter[] = [];
-        if ((filters.selectedSchools || []).length) {
-            newSelectedFilters.push(
-                filterOptions.find((f) => f.value === "school")!,
-            );
-        }
-        if ((filters.selectedCities || []).length) {
-            newSelectedFilters.push(
-                filterOptions.find((f) => f.value === "city")!,
-            );
-        }
-        if ((filters.selectedProjectTypes || []).length) {
-            newSelectedFilters.push(
-                filterOptions.find((f) => f.value === "project-type")!,
-            );
-        }
-        if (filters.onlyGatewaySchools) {
-            newSelectedFilters.push(
-                filterOptions.find((f) => f.value === "only-gateway-school")!,
-            );
-        }
-        if (filters.teacherYearsValue) {
-            newSelectedFilters.push(
-                filterOptions.find((f) => f.value === "teacher-participation")!,
-            );
-        }
-        setSelectedFilters(newSelectedFilters);
+        setSelectedFilters((prev) => {
+            const next = [...prev];
+            const has = (v: string) => next.some((f) => f.value === v);
+            const maybeAdd = (v: string) => {
+                if (!has(v)) {
+                    const found = filterOptions.find((f) => f.value === v);
+                    if (found) next.push(found);
+                }
+            };
+
+            if ((filters.selectedSchools || []).length) maybeAdd("school");
+            if ((filters.selectedCities || []).length) maybeAdd("city");
+            if ((filters.selectedProjectTypes || []).length)
+                maybeAdd("project-type");
+            if (filters.onlyGatewaySchools) maybeAdd("only-gateway-school");
+            if (filters.teacherYearsValue) maybeAdd("teacher-participation");
+
+            return next;
+        });
     }, [filters]);
 
     const updateFilters = (updates: Partial<Filters>) => {
@@ -279,19 +271,25 @@ export default function GraphFilters({
             const count = selectedSchools.length;
             if (count === 0) return filter.label;
             const truncated = truncateValues(selectedSchools);
-            return `${filter.label}: ${truncated}`;
+            const label =
+                count > 1 ? `${filter.label} (${count})` : filter.label;
+            return `${label}: ${truncated}`;
         }
         if (filter.value === "city") {
             const count = selectedCities.length;
             if (count === 0) return filter.label;
             const truncated = truncateValues(selectedCities);
-            return `${filter.label}: ${truncated}`;
+            const label =
+                count > 1 ? `${filter.label} (${count})` : filter.label;
+            return `${label}: ${truncated}`;
         }
         if (filter.value === "project-type") {
             const count = selectedProjectTypes.length;
             if (count === 0) return filter.label;
             const truncated = truncateValues(selectedProjectTypes);
-            return `${filter.label}: ${truncated}`;
+            const label =
+                count > 1 ? `${filter.label} (${count})` : filter.label;
+            return `${label}: ${truncated}`;
         }
         if (filter.value === "teacher-participation") {
             if (!teacherYearsValue) return filter.label;
@@ -386,13 +384,13 @@ export default function GraphFilters({
                                     <Button
                                         variant="ghost"
                                         size="icon"
-                                        className="h-6 w-6 group hover:cursor-pointer hover:scale-105"
+                                        className="h-6 w-6 group hover:cursor-pointer"
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             handleFilterRemove(filter);
                                         }}
                                     >
-                                        <X className="h-4 w-4 text-muted-foreground transition-transform duration-150 group-hover:scale-105" />
+                                        <X className="h-4 w-4 text-muted-foreground cursor-pointer transition-transform transition-colors duration-150 group-hover:scale-110 group-hover:text-destructive" />
                                     </Button>
                                 </div>
                             );
