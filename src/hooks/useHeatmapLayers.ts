@@ -35,6 +35,7 @@ interface UseHeatmapLayersOptions {
     mapRef: React.RefObject<maplibregl.Map | null>;
     filteredSchoolPoints: GeoJSON.FeatureCollection | null;
     metric: string;
+    year: number | null;
     showSchools: boolean;
     showHeatmap: boolean;
     showRegions: boolean;
@@ -44,6 +45,7 @@ export function useHeatmapLayers({
     mapRef,
     filteredSchoolPoints,
     metric,
+    year,
     showSchools,
     showHeatmap,
     showRegions,
@@ -271,10 +273,14 @@ export function useHeatmapLayers({
                     number,
                     number,
                 ];
+
                 const { name } = feature.properties || {};
                 const value = feature.properties?.[metric] || 0;
                 const schoolSlug = standardize(name);
-                const profileUrl = `/schools/${schoolSlug}`;
+                const profileUrl =
+                    year !== null
+                        ? `/schools/${schoolSlug}?year=${year}`
+                        : `/schools/${schoolSlug}`;
 
                 const html = `
                     <div style="
@@ -508,7 +514,14 @@ export function useHeatmapLayers({
             cleanup?.();
             map.off("load", onLoad);
         };
-    }, [metric, filteredSchoolPoints, showSchools, showHeatmap, showRegions]);
+    }, [
+        metric,
+        year,
+        filteredSchoolPoints,
+        showSchools,
+        showHeatmap,
+        showRegions,
+    ]);
 
     return { closePopup };
 }

@@ -252,6 +252,7 @@ function HeatMapPage() {
         mapRef,
         filteredSchoolPoints,
         metric,
+        year,
         showSchools,
         showHeatmap,
         showRegions,
