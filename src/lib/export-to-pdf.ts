@@ -103,59 +103,30 @@ export function downloadGraphs(
  * for the PDF without impacting the live, visible page layout.
  */
 export async function downloadSingleGraph(
-    chartRef: React.RefObject<HTMLDivElement | null>,
+    chartRefs:
+        | React.RefObject<HTMLDivElement | null>
+        | React.RefObject<HTMLDivElement | null>[],
     filterName: string,
     print = false,
 ) {
-    const el = chartRef.current;
-    if (!el) return;
+    const refs = Array.isArray(chartRefs) ? chartRefs : [chartRefs];
+    const dataUrls: string[] = [];
+    const titles: string[] = [];
 
-    const canvas = await html2canvas(el, {
-        backgroundColor: "#fff",
-        scale: 2,
-        /*
-        onclone essentially screenshots the DOM and returns it, this is used
-        to modify the profile page so it formats well in the PDF
-        */
-        onclone: (doc) => {
-            // have pie chart and map side by side
-            const mapTitle = Array.from(doc.querySelectorAll("h2")).find((h) =>
-                h.textContent?.includes("School Location"),
-            );
-            if (!mapTitle) return;
+    for (const ref of refs) {
+        const el = ref.current;
+        if (!el) continue;
 
-            const mapContainer = mapTitle.parentElement;
-            const pieGrid = mapContainer?.previousElementSibling;
+        const canvas = await html2canvas(el, {
+            backgroundColor: "#fff",
+            scale: 2,
+        });
 
-            if (mapContainer && pieGrid && pieGrid.classList.contains("grid")) {
-                mapTitle.remove();
+        dataUrls.push(canvas.toDataURL());
+        titles.push(filterName);
+    }
 
-                pieGrid.className = "flex flex-row items-stretch gap-8 w-full";
-
-                const pieWrapper = pieGrid.firstElementChild as HTMLElement;
-                if (pieWrapper) pieWrapper.className = "flex-1 min-w-0";
-
-                pieGrid.appendChild(mapContainer);
-
-                mapContainer.className = "flex-1 min-w-0 flex flex-col";
-
-                const mapInnerDiv = mapContainer.querySelector(".h-80");
-                if (mapInnerDiv) {
-                    mapInnerDiv.className = mapInnerDiv.className.replace(
-                        "h-80",
-                        "h-[272px] w-full",
-                    );
-
-                    // draw the school dot (original dot layer doesn't get captured)
-                    const dot = doc.createElement("div");
-                    dot.className =
-                        "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-4 w-4 rounded-full bg-red-500/60 border-2 border-red-500 shadow-lg";
-                    dot.style.zIndex = "50";
-                    mapInnerDiv.appendChild(dot);
-                }
-            }
-        },
-    });
-
-    downloadGraphs([canvas.toDataURL()], [filterName], print);
+    if (dataUrls.length > 0) {
+        downloadGraphs(dataUrls, titles, print);
+    }
 }

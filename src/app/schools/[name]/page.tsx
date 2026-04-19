@@ -89,26 +89,43 @@ export default function SchoolProfilePage() {
     const [studentYearData, setstudentYearData] = useState<
         { x: string | number; y: number }[]
     >([]);
+    const [projectYearData, setProjectYearData] = useState<
+        { x: string | number; y: number }[]
+    >([]);
+    const [teacherYearData, setTeacherYearData] = useState<
+        { x: string | number; y: number }[]
+    >([]);
     const [allYearsData, setAllYearsData] = useState<SchoolData[]>([]);
     const [showPrevYearWarning, setShowPrevYearWarning] = useState(true);
     const [mergeOpen, setMergeOpen] = useState(false);
     const profileRef = useRef<HTMLDivElement>(null);
+    const projectsGraphRef = useRef<HTMLDivElement>(null);
+    const teachersGraphRef = useRef<HTMLDivElement>(null);
+    const studentsGraphRef = useRef<HTMLDivElement>(null);
     const mapEditorRef = useRef<SchoolLocationEditorHandle>(null);
 
     const handleExportPdf = async () => {
         if (!schoolData) return;
 
-        // reset map view when exporting
-        mapEditorRef.current?.resetView();
-        await new Promise((resolve) => setTimeout(resolve, 500));
         const title = year
             ? `${schoolData.name} (${year})`
             : `${schoolData.name} Profile`;
-        toast.promise(downloadSingleGraph(profileRef, title), {
-            loading: "Exporting PDF...",
-            success: "School profile exported successfully!",
-            error: "Failed to export",
-        });
+        toast.promise(
+            downloadSingleGraph(
+                [
+                    profileRef,
+                    studentsGraphRef,
+                    projectsGraphRef,
+                    teachersGraphRef,
+                ],
+                title,
+            ),
+            {
+                loading: "Exporting PDF...",
+                success: "School profile exported successfully!",
+                error: "Failed to export",
+            },
+        );
     };
 
     useEffect(() => {
@@ -188,11 +205,21 @@ export default function SchoolProfilePage() {
                     x: sparklineYears[i],
                     y: Number(d.studentCount),
                 }));
+                const projectPoints = sparklineResults.map((d, i) => ({
+                    x: sparklineYears[i],
+                    y: Number(d.projectCount),
+                }));
+                const teacherPoints = sparklineResults.map((d, i) => ({
+                    x: sparklineYears[i],
+                    y: Number(d.teacherCount),
+                }));
 
                 setSchoolData(curr);
                 setPrevYearData(prev);
                 setProjects(curr.projects);
                 setstudentYearData(points);
+                setProjectYearData(projectPoints);
+                setTeacherYearData(teacherPoints);
                 setAllYearsData(sparklineResults);
             } catch (err: unknown) {
                 if (signal.aborted) return;
@@ -464,6 +491,7 @@ export default function SchoolProfilePage() {
                     <Link
                         href={studentsHref}
                         className="block rounded-lg border border-border px-6 pt-4 pb-2 hover:bg-muted/40 transition-colors"
+                        data-html2canvas-ignore="true"
                     >
                         <p className="text-sm font-medium text-center mb-2">
                             Total # Students
@@ -491,7 +519,10 @@ export default function SchoolProfilePage() {
                     )}
 
                     {/* School location map */}
-                    <div className="rounded-lg space-y-4">
+                    <div
+                        className="rounded-lg space-y-4"
+                        data-html2canvas-ignore="true"
+                    >
                         <h2 className="text-xl font-semibold text-foreground">
                             School Location
                         </h2>
@@ -522,6 +553,59 @@ export default function SchoolProfilePage() {
                             initialData={projects}
                         />
                     </div>
+                </div>
+            </div>
+
+            {/* hidden graphs, for pdf export only */}
+            <div className="absolute top-0 left-[-9999px] w-[1000px] flex flex-col gap-6">
+                <div
+                    ref={studentsGraphRef}
+                    className="bg-background w-full rounded-lg border border-border px-8 pt-6 pb-4"
+                >
+                    <p className="text-lg font-medium text-center mb-4">
+                        Total # Students
+                    </p>
+                    <MultiLineGraph
+                        datasets={[studentData]}
+                        yAxisLabel={"Total # Students"}
+                        xAxisLabel="Year"
+                    />
+                </div>
+                <div
+                    ref={projectsGraphRef}
+                    className="bg-background w-full rounded-lg border border-border px-8 pt-6 pb-4"
+                >
+                    <p className="text-lg font-medium text-center mb-4">
+                        Total # Projects
+                    </p>
+                    <MultiLineGraph
+                        datasets={[
+                            {
+                                label: "Projects by Year",
+                                data: projectYearData,
+                            },
+                        ]}
+                        yAxisLabel={"Total # Projects"}
+                        xAxisLabel="Year"
+                    />
+                </div>
+                <div
+                    ref={teachersGraphRef}
+                    className="bg-background w-full rounded-lg border border-border px-8 pt-6 pb-4"
+                >
+                    <p className="text-lg font-medium text-center mb-4">
+                        Total # Teachers
+                    </p>
+                    <MultiLineGraph
+                        datasets={[
+                            {
+                                label: "Teachers by Year",
+                                data: teacherYearData,
+                            },
+                        ]}
+                        yAxisLabel={"Total # Teachers"}
+                        xAxisLabel="Year"
+                    />
                 </div>
             </div>
         </div>
