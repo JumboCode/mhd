@@ -11,37 +11,15 @@
  *
  **************************************************************/
 
+import { type CsvRow } from "@/types/csv";
 import { NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
 import { parse } from "csv-parse/sync";
 import { db } from "@/lib/db";
 import { schools } from "@/lib/schema";
+import { type KnownSchool } from "@/lib/school-matching";
 import { isNotNull } from "drizzle-orm";
-
-/**
- * Shape of each row in the CSV file.
- */
-type CsvRow = {
-    name: string;
-    street: string;
-    city: string;
-    state: string;
-    zipcode: string;
-    county: string;
-    lat: string;
-    long: string;
-};
-
-/**
- * Known school data returned to frontend
- */
-export type KnownSchool = {
-    name: string;
-    city: string;
-    lat: number | null;
-    long: number | null;
-};
 
 export async function GET() {
     try {
