@@ -295,10 +295,14 @@ function HeatMapPage() {
     const currentFilterDetails = useMemo<FilterDetail[]>(
         () => [
             { label: "Metric", values: [metric] },
-            { label: "Year", values: [String(year)] },
+            { label: "Year", values: [year ? String(year) : "All Years"] },
             {
                 label: "Region",
-                values: [regionView === "Default" ? "All of MA" : regionView],
+                values: [
+                    regionView === "default"
+                        ? "All of MA"
+                        : `${capitalize(regionView)} Region`,
+                ],
             },
             ...(onlyGatewaySchools
                 ? [
@@ -308,8 +312,30 @@ function HeatMapPage() {
                       },
                   ]
                 : []),
+            {
+                label: "Layers",
+                values: [
+                    ...(showSchools ? ["Schools"] : []),
+                    ...(showHeatmap ? ["Heatmap"] : []),
+                    ...(showRegions ? ["Regions"] : []),
+                ].length
+                    ? [
+                          ...(showSchools ? ["Schools"] : []),
+                          ...(showHeatmap ? ["Heatmap"] : []),
+                          ...(showRegions ? ["Regions"] : []),
+                      ]
+                    : ["None"],
+            },
         ],
-        [metric, year, regionView, onlyGatewaySchools],
+        [
+            metric,
+            year,
+            regionView,
+            onlyGatewaySchools,
+            showSchools,
+            showHeatmap,
+            showRegions,
+        ],
     );
 
     // Cmd+S to open export dialog, Cmd+P to print PDF
@@ -393,7 +419,11 @@ function HeatMapPage() {
                                 const mapImageData = map
                                     .getCanvas()
                                     .toDataURL("image/jpeg", 0.5);
-                                addMapItem(filterName, mapImageData);
+                                addMapItem(
+                                    filterName,
+                                    mapImageData,
+                                    currentFilterDetails,
+                                );
                             }
                         }}
                     >
