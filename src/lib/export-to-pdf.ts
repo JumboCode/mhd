@@ -13,20 +13,25 @@
 import React from "react";
 import html2canvas from "html2canvas-pro";
 import jsPDF from "jspdf";
-import logoImg from "../../public/images/mhd-logo-full.png";
 import { toast } from "sonner";
 import "../app/fonts/DMSans-VariableFont_opsz,wght-normal";
+import {
+    drawHeader,
+    drawTitle,
+    drawFilters,
+    applyFootersToAllPages,
+    PAGE_MARGIN,
+    type FilterDetail,
+} from "./pdf-layout";
 
-export type FilterDetail = {
-    label: string;
-    values: string[];
-};
+export type { FilterDetail };
 
 export async function downloadGraphs(
     cart: string[],
     filterNames: string[],
     filterDetails: FilterDetail[][] = [],
     print = false,
+    filename?: string,
 ) {
     if (cart.length === 0) {
         toast.error("Cart is empty");
@@ -42,92 +47,50 @@ export async function downloadGraphs(
             const img = new Image();
             img.src = canvas;
             img.onload = () => {
-                pdf.setFontSize(11);
-                pdf.setFont("DMSans-VariableFont_opsz,wght", "normal");
-                const time = new Date();
-                const year = String(time.getFullYear());
-                const month = String(time.getMonth() + 1).padStart(2, "0");
-                const day = String(time.getDate()).padStart(2, "0");
+                if (idx > 0) pdf.addPage();
 
                 const pageWidth = pdf.internal.pageSize.getWidth();
-                const imgWidth = pageWidth;
-                const imgHeight = (img.height / img.width) * imgWidth;
+                const margin = PAGE_MARGIN;
 
-                pdf.text(`${month}/${day}/${year}`, 155, 15);
-                pdf.addImage(
-                    logoImg.src,
-                    "PNG",
-                    15,
-                    10,
-                    logoImg.width * 0.03,
-                    logoImg.height * 0.03,
-                );
-
-                const margin = 15;
-
-                pdf.setFont("DMSans-VariableFont_opsz,wght", "normal");
-                pdf.setFontSize(14);
-
-                const wrappedTitle = pdf.splitTextToSize(
+                const afterHeader = drawHeader(pdf);
+                const afterTitle = drawTitle(
+                    pdf,
                     filterNames[idx],
-                    pageWidth - margin * 2,
+                    afterHeader + 2,
                 );
 
-                const titleY = 50;
+                const maxImgWidth = pageWidth - margin * 2;
+                const scale = 0.85;
+                const finalW = maxImgWidth * scale;
+                const finalH = (img.height / img.width) * finalW;
+                const chartX = (pageWidth - finalW) / 2;
 
-                pdf.text(wrappedTitle, pageWidth / 2, titleY, {
-                    align: "center",
-                });
-
-                const titleHeight = wrappedTitle.length * 7;
-
-                const chartY = 50 + titleHeight;
                 pdf.addImage(
                     canvas,
                     "JPEG",
-                    margin,
-                    chartY,
-                    imgWidth * 0.8,
-                    imgHeight * 0.8,
+                    chartX,
+                    afterTitle,
+                    finalW,
+                    finalH,
                 );
 
-                const details = filterDetails[idx];
-                if (details && details.length > 0) {
-                    let cursorY = chartY + imgHeight * 0.8 + 10;
+                const afterChart = afterTitle + finalH + 10;
+                drawFilters(pdf, filterDetails[idx], afterChart);
 
-                    pdf.setFontSize(11);
-                    pdf.text("Applied Filters:", margin, cursorY);
-                    cursorY += 6;
-                    pdf.setFontSize(10);
-
-                    details.forEach(({ label, values }) => {
-                        if (cursorY > pdf.internal.pageSize.getHeight() - 20) {
-                            pdf.addPage();
-                            cursorY = 20;
-                        }
-                        const line = `${label}: ${values.join(", ")}`;
-                        const wrapped = pdf.splitTextToSize(
-                            line,
-                            pageWidth - margin * 2,
-                        );
-                        pdf.text(wrapped, margin, cursorY);
-                        cursorY += wrapped.length * 5 + 3;
-                    });
-                }
-
-                if (idx < cart.length - 1) pdf.addPage();
                 resolve();
             };
         });
     }
+
+    applyFootersToAllPages(pdf);
 
     if (print) {
         const blob = pdf.output("blob");
         const url = URL.createObjectURL(blob);
         window.open(url, "_blank");
     } else {
-        const filename = filterNames[0] || "chart";
-        pdf.save(`${filename}.pdf`);
+        const name = filename || filterNames[0] || "chart";
+        pdf.save(`${name}.pdf`);
     }
 }
 
