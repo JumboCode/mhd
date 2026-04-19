@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Plus } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Filter, filterOptions } from "./constants";
 
@@ -20,9 +21,10 @@ export function AddFilterPopover(props: AddFilterPopoverProps) {
             <PopoverTrigger asChild>
                 <button
                     type="button"
-                    className="flex items-center gap-1 text-sm text-foreground hover:text-foreground py-2 cursor-pointer w-full bg-background hover:bg-muted rounded-sm px-2"
+                    className="flex items-center justify-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground w-full rounded-lg border border-dashed border-border hover:border-foreground/40 bg-transparent hover:bg-muted/40 px-3 py-2 cursor-pointer transition-colors"
                 >
-                    + Add Filter
+                    <Plus className="h-4 w-4" />
+                    Add filter
                 </button>
             </PopoverTrigger>
             <PopoverContent className="w-56 p-2" align="start">
