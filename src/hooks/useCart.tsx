@@ -274,6 +274,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
                     10,
                     logoImg.width * 0.03,
                     logoImg.height * 0.03,
+                    "FAST",
                 );
 
                 const margin = 15;
@@ -291,6 +292,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
                     50 + titleHeight,
                     imgWidth * 0.9,
                     imgHeight * 0.9,
+                    "FAST",
                 );
 
                 if (idx < items.length - 1) pdf.addPage();

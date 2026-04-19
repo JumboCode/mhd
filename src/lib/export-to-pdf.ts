@@ -73,6 +73,7 @@ export function downloadGraphs(
                     50 + titleHeight,
                     imgWidth * 0.9,
                     imgHeight * 0.9,
+                    "FAST",
                 );
 
                 if (idx < cart.length - 1) pdf.addPage();

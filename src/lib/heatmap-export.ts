@@ -68,6 +68,7 @@ export async function exportMapToPDF(
             50 + titleHeight,
             imgWidth,
             imgHeight,
+            "FAST",
         );
 
         if (print) {
