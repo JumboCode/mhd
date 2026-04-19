@@ -431,6 +431,7 @@ export default function SchoolProfilePage() {
                     region={schoolData.region}
                     implementationModel={schoolData.implementationModel}
                     firstYear={schoolData.firstYear}
+                    division={schoolData.division}
                 />
                 <Link
                     href={studentsHref}
