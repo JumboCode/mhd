@@ -95,7 +95,7 @@ export function useHeatmapLayers({
             const currentRegionsData = showRegions
                 ? allRegions
                 : maBorderRegions;
-            const geojsonData = {
+            const geoJsonData = {
                 type: "FeatureCollection",
                 features: currentRegionsData.map((c) => ({
                     type: "Feature",
@@ -111,7 +111,7 @@ export function useHeatmapLayers({
             if (!map.getSource("regions-source")) {
                 map.addSource("regions-source", {
                     type: "geojson",
-                    data: geojsonData,
+                    data: geoJsonData,
                 });
                 map.addLayer({
                     id: "regions-layer",
@@ -126,7 +126,7 @@ export function useHeatmapLayers({
             } else {
                 (
                     map.getSource("regions-source") as maplibregl.GeoJSONSource
-                ).setData(geojsonData);
+                ).setData(geoJsonData);
             }
 
             // Filter to only include schools with data for the selected metric
