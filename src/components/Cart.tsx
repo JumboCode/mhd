@@ -19,6 +19,8 @@ import {
     ShoppingBasket,
     Trash2,
 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { useCart, type CartItem } from "@/hooks/useCart";
@@ -38,74 +40,187 @@ function getFilterCount(item: CartItem): number {
 function CartItemRow({
     item,
     onRemove,
+    isGeneratingPreviews,
 }: {
     item: CartItem;
     onRemove: () => void;
+    isGeneratingPreviews: boolean;
 }) {
     const filterCount = getFilterCount(item);
+    const previewSrc =
+        item.type === "chart" ? item.previewDataUrl : item.imageDataUrl;
+    const [hoverRect, setHoverRect] = useState<DOMRect | null>(null);
+    const [previewVisible, setPreviewVisible] = useState(false);
+    const fadeInTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    useEffect(() => {
+        return () => {
+            if (fadeInTimeoutRef.current != null) {
+                clearTimeout(fadeInTimeoutRef.current);
+            }
+        };
+    }, []);
+
+    const cancelFadeInSchedule = () => {
+        if (fadeInTimeoutRef.current != null) {
+            clearTimeout(fadeInTimeoutRef.current);
+            fadeInTimeoutRef.current = null;
+        }
+    };
+
+    const scheduleFadeIn = () => {
+        cancelFadeInSchedule();
+        setPreviewVisible(false);
+        fadeInTimeoutRef.current = setTimeout(() => {
+            fadeInTimeoutRef.current = null;
+            setPreviewVisible(true);
+        }, 0);
+    };
+
+    const handleMouseEnter = (event: React.MouseEvent<HTMLDivElement>) => {
+        setHoverRect(event.currentTarget.getBoundingClientRect());
+        scheduleFadeIn();
+    };
+
+    const handleMouseLeave = () => {
+        cancelFadeInSchedule();
+        setPreviewVisible((wasVisible) => {
+            if (wasVisible) return false;
+            setHoverRect(null);
+            return false;
+        });
+    };
+
+    const handlePreviewTransitionEnd = (
+        event: React.TransitionEvent<HTMLDivElement>,
+    ) => {
+        if (event.target !== event.currentTarget) return;
+        if (event.propertyName !== "opacity") return;
+        if (previewVisible) return;
+        setHoverRect(null);
+    };
 
     return (
-        <div className="flex gap-3 items-start rounded-lg border p-3">
-            <div className="mt-0.5 text-muted-foreground">
-                {item.type === "map" ? (
-                    <MapIcon className="h-4 w-4" />
-                ) : item.params.chartType === "bar" ? (
-                    <ChartColumn className="h-4 w-4" />
-                ) : (
-                    <LineChart className="h-4 w-4" />
-                )}
-            </div>
-            <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium leading-snug">
-                    {item.filterName}
-                </p>
-                <div className="flex gap-1 flex-wrap mt-1.5">
-                    {item.type === "chart" ? (
-                        <>
+        <>
+            <div
+                className="relative flex gap-3 items-start rounded-lg border p-3"
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={handleMouseLeave}
+            >
+                <div className="mt-0.5 text-muted-foreground">
+                    {item.type === "map" ? (
+                        <MapIcon className="h-4 w-4" />
+                    ) : item.params.chartType === "bar" ? (
+                        <ChartColumn className="h-4 w-4" />
+                    ) : (
+                        <LineChart className="h-4 w-4" />
+                    )}
+                </div>
+                <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium leading-snug">
+                        {item.filterName}
+                    </p>
+                    <div className="flex gap-1 flex-wrap mt-1.5">
+                        {item.type === "chart" ? (
+                            <>
+                                <Badge
+                                    variant="secondary"
+                                    className="text-[10px] px-1.5 py-0"
+                                >
+                                    {item.params.chartType === "bar"
+                                        ? "Bar"
+                                        : "Line"}
+                                </Badge>
+                                <Badge
+                                    variant="outline"
+                                    className="text-[10px] px-1.5 py-0"
+                                >
+                                    {item.params.yearStart ===
+                                    item.params.yearEnd
+                                        ? item.params.yearStart
+                                        : `${item.params.yearStart}–${item.params.yearEnd}`}
+                                </Badge>
+                            </>
+                        ) : (
                             <Badge
                                 variant="secondary"
                                 className="text-[10px] px-1.5 py-0"
                             >
-                                {item.params.chartType === "bar"
-                                    ? "Bar"
-                                    : "Line"}
+                                Heatmap
                             </Badge>
-                            <Badge
-                                variant="outline"
-                                className="text-[10px] px-1.5 py-0"
-                            >
-                                {item.params.yearStart === item.params.yearEnd
-                                    ? item.params.yearStart
-                                    : `${item.params.yearStart}–${item.params.yearEnd}`}
+                        )}
+                        {filterCount > 0 && (
+                            <Badge className="text-[10px] px-1.5 py-0">
+                                {filterCount} filter
+                                {filterCount !== 1 ? "s" : ""}
                             </Badge>
-                        </>
-                    ) : (
-                        <Badge
-                            variant="secondary"
-                            className="text-[10px] px-1.5 py-0"
-                        >
-                            Heatmap
-                        </Badge>
-                    )}
-                    {filterCount > 0 && (
-                        <Badge className="text-[10px] px-1.5 py-0">
-                            {filterCount} filter{filterCount !== 1 ? "s" : ""}
-                        </Badge>
-                    )}
+                        )}
+                    </div>
                 </div>
+                <button
+                    onClick={onRemove}
+                    className="text-gray-400 hover:text-red-500 p-1 transition-colors duration-150 ease-in-out shrink-0"
+                >
+                    <Trash2 className="h-4 w-4" />
+                </button>
             </div>
-            <button
-                onClick={onRemove}
-                className="text-gray-400 hover:text-red-500 p-1 transition-colors duration-150 ease-in-out shrink-0"
-            >
-                <Trash2 className="h-4 w-4" />
-            </button>
-        </div>
+            {hoverRect &&
+                typeof document !== "undefined" &&
+                createPortal(
+                    <div
+                        className="pointer-events-none fixed z-[80]"
+                        style={{
+                            top: hoverRect.top + hoverRect.height / 2,
+                            left: hoverRect.left - 28,
+                            transform: "translate(-100%, -50%)",
+                        }}
+                    >
+                        <div
+                            className={`w-72 rounded-md border bg-background shadow-lg overflow-hidden transition-opacity duration-200 ease-out ${
+                                previewVisible ? "opacity-100" : "opacity-0"
+                            }`}
+                            onTransitionEnd={handlePreviewTransitionEnd}
+                        >
+                            {previewSrc ? (
+                                <img
+                                    src={previewSrc}
+                                    alt={`${item.filterName} preview`}
+                                    className="w-full h-auto block"
+                                />
+                            ) : (
+                                <div className="h-24 flex items-center justify-center text-xs text-muted-foreground gap-2">
+                                    {isGeneratingPreviews ? (
+                                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                    ) : null}
+                                    Generating preview...
+                                </div>
+                            )}
+                        </div>
+                    </div>,
+                    document.body,
+                )}
+        </>
     );
 }
 
 export function Cart() {
-    const { items, removeItem, clearCart, exportAll, isExporting } = useCart();
+    const {
+        items,
+        removeItem,
+        clearCart,
+        exportAll,
+        ensureChartPreviews,
+        isExporting,
+        isGeneratingPreviews,
+    } = useCart();
+
+    useEffect(() => {
+        if (
+            items.some((item) => item.type === "chart" && !item.previewDataUrl)
+        ) {
+            void ensureChartPreviews();
+        }
+    }, [items, ensureChartPreviews]);
 
     return (
         <div className="flex flex-col justify-between h-full gap-2 pt-2 pb-6">
@@ -127,6 +242,7 @@ export function Cart() {
                             key={index}
                             item={item}
                             onRemove={() => removeItem(index)}
+                            isGeneratingPreviews={isGeneratingPreviews}
                         />
                     ))
                 )}

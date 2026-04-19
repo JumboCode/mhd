@@ -6,6 +6,7 @@ import {
     useState,
     useEffect,
     useCallback,
+    useRef,
     ReactNode,
 } from "react";
 import { createRoot } from "react-dom/client";
@@ -43,6 +44,7 @@ export type CartItem =
           filterName: string;
           params: ChartCartParams;
           filterDetails: FilterDetail[];
+          previewDataUrl?: string;
       }
     | {
           type: "map";
@@ -67,7 +69,9 @@ type CartContextValue = {
     removeByName: (filterName: string) => void;
     clearCart: () => void;
     exportAll: () => Promise<void>;
+    ensureChartPreviews: () => Promise<void>;
     isExporting: boolean;
+    isGeneratingPreviews: boolean;
     hasItem: (filterName: string) => boolean;
 };
 
@@ -167,6 +171,8 @@ async function renderChartToImage(
 export function CartProvider({ children }: { children: ReactNode }) {
     const [items, setItems] = useState<CartItem[]>([]);
     const [isExporting, setIsExporting] = useState(false);
+    const [isGeneratingPreviews, setIsGeneratingPreviews] = useState(false);
+    const isGeneratingPreviewsRef = useRef(false);
 
     // Load from sessionStorage on mount
     useEffect(() => {
@@ -235,6 +241,73 @@ export function CartProvider({ children }: { children: ReactNode }) {
         sessionStorage.removeItem(STORAGE_KEY);
     }, []);
 
+    const ensureChartPreviews = useCallback(async () => {
+        if (isGeneratingPreviewsRef.current) return;
+
+        const chartIndexes = items
+            .map((item, index) => ({ item, index }))
+            .filter(
+                ({ item }) =>
+                    item.type === "chart" && item.previewDataUrl == null,
+            );
+
+        if (chartIndexes.length === 0) return;
+
+        isGeneratingPreviewsRef.current = true;
+        setIsGeneratingPreviews(true);
+
+        try {
+            const generated = await Promise.all(
+                chartIndexes.map(async ({ item, index }) => {
+                    if (item.type !== "chart") return null;
+                    const dataset = await fetchAndComputeDataset(item.params);
+                    const previewDataUrl = await renderChartToImage(
+                        item.params,
+                        dataset,
+                    );
+                    return { index, previewDataUrl };
+                }),
+            );
+
+            const generatedByIndex = new Map(
+                generated
+                    .filter(
+                        (
+                            value,
+                        ): value is { index: number; previewDataUrl: string } =>
+                            value !== null,
+                    )
+                    .map(({ index, previewDataUrl }) => [
+                        index,
+                        previewDataUrl,
+                    ]),
+            );
+
+            if (generatedByIndex.size > 0) {
+                setItems((prev) =>
+                    prev.map((item, index) => {
+                        if (
+                            item.type !== "chart" ||
+                            item.previewDataUrl != null ||
+                            !generatedByIndex.has(index)
+                        ) {
+                            return item;
+                        }
+                        return {
+                            ...item,
+                            previewDataUrl: generatedByIndex.get(index)!,
+                        };
+                    }),
+                );
+            }
+        } catch {
+            toast.error("Failed to generate one or more chart previews");
+        } finally {
+            isGeneratingPreviewsRef.current = false;
+            setIsGeneratingPreviews(false);
+        }
+    }, [items]);
+
     const exportAll = useCallback(async () => {
         setIsExporting(true);
 
@@ -251,12 +324,18 @@ export function CartProvider({ children }: { children: ReactNode }) {
                 if (item.type === "map") {
                     imageDataUrls.push(item.imageDataUrl);
                 } else {
-                    const dataset = await fetchAndComputeDataset(item.params);
-                    const dataUrl = await renderChartToImage(
-                        item.params,
-                        dataset,
-                    );
-                    imageDataUrls.push(dataUrl);
+                    if (item.previewDataUrl) {
+                        imageDataUrls.push(item.previewDataUrl);
+                    } else {
+                        const dataset = await fetchAndComputeDataset(
+                            item.params,
+                        );
+                        const dataUrl = await renderChartToImage(
+                            item.params,
+                            dataset,
+                        );
+                        imageDataUrls.push(dataUrl);
+                    }
                 }
             }
 
@@ -368,7 +447,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
                 removeByName,
                 clearCart,
                 exportAll,
+                ensureChartPreviews,
                 isExporting,
+                isGeneratingPreviews,
                 hasItem,
             }}
         >
