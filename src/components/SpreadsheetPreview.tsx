@@ -26,6 +26,12 @@ type PreviewProps = {
     columns?: string[];
 };
 
+type SchoolStats = {
+    schoolName: string;
+    studentCount: number;
+    teacherIds: Set<string>;
+    projectIds: Set<string>;
+};
 export default function SpreadsheetPreview({
     fileName,
     numRows,
@@ -70,13 +76,6 @@ export default function SpreadsheetPreview({
         const projectTitleIdx = getColumnIndex("title");
 
         if (isStudentSpreadsheet && schoolNameIdx !== undefined) {
-            type SchoolStats = {
-                schoolName: string;
-                studentCount: number;
-                teacherIds: Set<string>;
-                projectIds: Set<string>;
-            };
-
             const statsBySchool = new Map<string, SchoolStats>();
             const dataRows = spreadsheetData
                 .slice(1)
