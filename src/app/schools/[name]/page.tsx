@@ -12,6 +12,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
+import { useQueryState, parseAsInteger } from "nuqs";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -68,11 +69,10 @@ export default function SchoolProfilePage() {
     const params = useParams();
     const schoolName = params.name as string;
     const router = useRouter();
-
+    const [year, setYear] = useQueryState("year", parseAsInteger);
     const [schoolData, setSchoolData] = useState<SchoolData | null>(null);
     const [prevYearData, setPrevYearData] = useState<SchoolData | null>(null);
 
-    const [year, setYear] = useState<number | null>(null);
     const [projects, setProjects] = useState<ProjectRow[]>([]);
     const [editingName, setEditingName] = useState(false);
     const [nameDraft, setNameDraft] = useState("");
@@ -83,6 +83,10 @@ export default function SchoolProfilePage() {
     const [allYearsData, setAllYearsData] = useState<SchoolData[]>([]);
     const [showPrevYearWarning, setShowPrevYearWarning] = useState(true);
     const [mergeOpen, setMergeOpen] = useState(false);
+
+    const handleYearChange = (selectedYear: number | null) => {
+        setYear(selectedYear);
+    };
 
     useEffect(() => {
         setShowPrevYearWarning(true);
@@ -95,12 +99,16 @@ export default function SchoolProfilePage() {
                 if (r.status === 301) {
                     const data = await r.json();
                     if (data.redirectTo) {
-                        router.replace(`/schools/${data.redirectTo}`);
+                        router.replace(
+                            year !== null
+                                ? `/schools/${data.redirectTo}?year=${year}`
+                                : `/schools/${data.redirectTo}`,
+                        );
                     }
                 }
             })
             .catch(() => {});
-    }, [schoolName, router]);
+    }, [schoolName, router, year]);
 
     useEffect(() => {
         if (!year) return;
@@ -139,7 +147,9 @@ export default function SchoolProfilePage() {
 
                 // If the school has been merged away, redirect to the absorbing school
                 if (responses[5]?.redirectTo) {
-                    router.replace(`/schools/${responses[5].redirectTo}`);
+                    router.replace(
+                        `/schools/${responses[5].redirectTo}/?year=${year}`,
+                    );
                     return;
                 }
 
@@ -219,7 +229,7 @@ export default function SchoolProfilePage() {
         year !== null
             ? `/chart?type=line&startYear=${year - 5}&endYear=${year}&measuredAs=${measuredAs}&schools=${encodeURIComponent(schoolData?.name ?? "")}`
             : "#";
-
+  
     // Calculate sparkline data arrays from allYearsData
     const projectsSparkline = allYearsData.map((d) =>
         Number(d.projectCount || 0),
@@ -272,11 +282,7 @@ export default function SchoolProfilePage() {
                         <div className="ml-auto flex flex-row items-center gap-2">
                             <YearDropdown
                                 selectedYear={year}
-                                onYearChange={(selectedYear) => {
-                                    if (selectedYear !== null) {
-                                        setYear(selectedYear);
-                                    }
-                                }}
+                                onYearChange={handleYearChange}
                                 showDataIndicator={true}
                                 school={schoolName}
                             />
@@ -324,11 +330,7 @@ export default function SchoolProfilePage() {
                     <div className="ml-auto flex flex-row items-center gap-2">
                         <YearDropdown
                             selectedYear={year}
-                            onYearChange={(selectedYear) => {
-                                if (selectedYear !== null) {
-                                    setYear(selectedYear);
-                                }
-                            }}
+                            onYearChange={handleYearChange}
                             showDataIndicator={true}
                             school={schoolName}
                         />

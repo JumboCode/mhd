@@ -18,6 +18,8 @@ import {
     yearlyTeacherParticipation,
 } from "@/lib/schema";
 import { and, count, eq, sum } from "drizzle-orm";
+import { yearParamSchema } from "@/lib/api-schemas";
+import { parseOrError, internalError } from "@/lib/api-utils";
 
 function percentageChange(curr: number, past: number) {
     return past !== 0 ? Math.round(((curr - past) / past) * 100) : undefined;
@@ -51,15 +53,13 @@ export async function GET(req: NextRequest) {
             return NextResponse.json(allSchools);
         }
 
-        const yearString = searchParams.get("year");
-        const currentYear = Number(yearString);
+        const yearParsed = parseOrError(
+            yearParamSchema,
+            searchParams.get("year"),
+        );
+        if (!yearParsed.success) return yearParsed.response;
 
-        if (!currentYear || isNaN(currentYear)) {
-            return NextResponse.json(
-                { message: "Invalid year parameter" },
-                { status: 400 },
-            );
-        }
+        const currentYear = yearParsed.data;
 
         // Fetch all schools with yearly data for the requested year
         const allSchools = await db
@@ -205,10 +205,7 @@ export async function GET(req: NextRequest) {
         });
 
         return NextResponse.json(schoolsToReturn);
-    } catch (error) {
-        return NextResponse.json(
-            { message: "Internal server error" },
-            { status: 500 },
-        );
+    } catch {
+        return internalError();
     }
 }

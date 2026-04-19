@@ -20,6 +20,7 @@ import { db } from "@/lib/db";
 import { schools } from "@/lib/schema";
 import { type KnownSchool } from "@/lib/school-matching";
 import { isNotNull } from "drizzle-orm";
+import { internalError } from "@/lib/api-utils";
 
 export async function GET() {
     try {
@@ -79,10 +80,7 @@ export async function GET() {
         }
 
         return NextResponse.json(knownSchools);
-    } catch (error) {
-        return NextResponse.json(
-            { message: "Failed to load known schools" },
-            { status: 500 },
-        );
+    } catch {
+        return internalError();
     }
 }

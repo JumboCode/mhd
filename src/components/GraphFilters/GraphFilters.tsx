@@ -164,9 +164,14 @@ export default function GraphFilters({
             selectedCities,
             selectedProjectTypes,
             teacherYearsOperator,
-            teacherYearsValue,
+            teacherYearsValue:
+                teacherYearsValue !== ""
+                    ? teacherYearsValue
+                    : (filters?.teacherYearsValue ?? ""),
             teacherYearsValue2:
-                teacherYearsValue2 === "" ? undefined : teacherYearsValue2,
+                teacherYearsValue2 !== ""
+                    ? teacherYearsValue2
+                    : (filters?.teacherYearsValue2 ?? undefined),
             onlyGatewaySchools,
             ...updates,
         };
@@ -516,13 +521,19 @@ export default function GraphFilters({
                                                                 setTeacherYearsValue(
                                                                     val,
                                                                 );
-                                                                updateFilters({
-                                                                    teacherYearsValue:
-                                                                        val,
-                                                                });
+                                                                if (
+                                                                    val !== ""
+                                                                ) {
+                                                                    updateFilters(
+                                                                        {
+                                                                            teacherYearsValue:
+                                                                                val,
+                                                                        },
+                                                                    );
+                                                                }
                                                             }}
                                                             placeholder="Min"
-                                                            className="h-8 text-xs flex-1"
+                                                            className={`h-8 text-xs flex-1${teacherYearsValue === "" ? " border-destructive focus-visible:ring-destructive" : ""}`}
                                                         />
                                                         <span className="text-muted-foreground">
                                                             -
@@ -540,13 +551,19 @@ export default function GraphFilters({
                                                                 setTeacherYearsValue2(
                                                                     val,
                                                                 );
-                                                                updateFilters({
-                                                                    teacherYearsValue2:
-                                                                        val,
-                                                                });
+                                                                if (
+                                                                    val !== ""
+                                                                ) {
+                                                                    updateFilters(
+                                                                        {
+                                                                            teacherYearsValue2:
+                                                                                val,
+                                                                        },
+                                                                    );
+                                                                }
                                                             }}
                                                             placeholder="Max"
-                                                            className="h-8 text-xs flex-1"
+                                                            className={`h-8 text-xs flex-1${teacherYearsValue2 === "" ? " border-destructive focus-visible:ring-destructive" : ""}`}
                                                         />
                                                     </div>
                                                 </>
@@ -598,13 +615,14 @@ export default function GraphFilters({
                                                             setTeacherYearsValue(
                                                                 val,
                                                             );
-                                                            updateFilters({
-                                                                teacherYearsValue:
-                                                                    val,
-                                                            });
+                                                            if (val !== "") {
+                                                                updateFilters({
+                                                                    teacherYearsValue:
+                                                                        val,
+                                                                });
+                                                            }
                                                         }}
-                                                        placeholder="Number"
-                                                        className="h-8 text-xs flex-1"
+                                                        className={`h-8 text-xs flex-1${teacherYearsValue === "" ? " border-destructive focus-visible:ring-destructive" : ""}`}
                                                     />
                                                     <span className="text-muted-foreground text-xs whitespace-nowrap">
                                                         years
