@@ -218,6 +218,9 @@ export default function SchoolProfilePage() {
         year !== null
             ? `/chart?type=line&startYear=${year - 5}&endYear=${year}&measuredAs=total-student-count&schools=${encodeURIComponent(schoolData?.name ?? "")}`
             : "#";
+    const projectsChartHref = `/chart?measuredAs=total-project-count&type=line&schools=${encodeURIComponent(schoolData?.name ?? "")}`;
+    const teachersChartHref = `/chart?measuredAs=total-teacher-count&type=line&schools=${encodeURIComponent(schoolData?.name ?? "")}`;
+    const studentsChartHref = `/chart?measuredAs=total-student-count&type=line&schools=${encodeURIComponent(schoolData?.name ?? "")}`;
 
     // Calculate sparkline data arrays from allYearsData
     const projectsSparkline = allYearsData.map((d) =>
@@ -392,6 +395,7 @@ export default function SchoolProfilePage() {
                         percentChange={projectsPercentChange}
                         showTrend={true}
                         variant="with-aspect"
+                        href={projectsChartHref}
                     />
                     <StatCard
                         label={ENTITY_CONFIG.teachers.label}
@@ -404,6 +408,7 @@ export default function SchoolProfilePage() {
                         percentChange={teachersPercentChange}
                         showTrend={true}
                         variant="with-aspect"
+                        href={teachersChartHref}
                     />
                     <StatCard
                         label={ENTITY_CONFIG.students.label}
@@ -416,6 +421,7 @@ export default function SchoolProfilePage() {
                         percentChange={studentsPercentChange}
                         showTrend={true}
                         variant="with-aspect"
+                        href={studentsChartHref}
                     />
                 </div>
 
