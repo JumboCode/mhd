@@ -432,21 +432,21 @@ export default function ChartPage() {
         ],
     );
 
-    // Fetch all graphs from session storage on load
+    // Restore cart from session storage on load
     useEffect(() => {
         const cartStorage = sessionStorage.getItem("cartStorage");
         const cartNameStorage = sessionStorage.getItem("cartNameStorage");
+        const cartFilterDetailsStorage = sessionStorage.getItem(
+            "cartFilterDetailsStorage",
+        );
 
-        if (cartStorage) {
-            setCart(JSON.parse(cartStorage));
-        }
-
-        if (cartNameStorage) {
-            setFilterNames(JSON.parse(cartNameStorage));
-        }
+        if (cartStorage) setCart(JSON.parse(cartStorage));
+        if (cartNameStorage) setFilterNames(JSON.parse(cartNameStorage));
+        if (cartFilterDetailsStorage)
+            setAllFilterDetails(JSON.parse(cartFilterDetailsStorage));
     }, []);
 
-    // Update cart in session storage when user changes cart
+    // Persist cart to session storage on change
     useEffect(() => {
         if (cart.length !== 0) {
             sessionStorage.setItem("cartStorage", JSON.stringify(cart));
@@ -455,7 +455,6 @@ export default function ChartPage() {
         }
     }, [cart]);
 
-    // Update cart names when use changes the filters
     useEffect(() => {
         if (filterNames.length !== 0) {
             sessionStorage.setItem(
@@ -467,20 +466,6 @@ export default function ChartPage() {
         }
     }, [filterNames]);
 
-    // Sync tempYearRange with yearRange only when popover opens in custom mode
-    useEffect(() => {
-        if (yearRangeOpen && timePeriod === "custom") {
-            setTempYearRange(yearRange);
-        }
-    }, [yearRangeOpen, timePeriod, yearRange]);
-
-    // Load on mount
-    useEffect(() => {
-        const stored = sessionStorage.getItem("cartFilterDetailsStorage");
-        if (stored) setAllFilterDetails(JSON.parse(stored));
-    }, []);
-
-    // Save on change
     useEffect(() => {
         if (allFilterDetails.length !== 0) {
             sessionStorage.setItem(
@@ -491,6 +476,13 @@ export default function ChartPage() {
             sessionStorage.removeItem("cartFilterDetailsStorage");
         }
     }, [allFilterDetails]);
+
+    // Sync tempYearRange with yearRange only when popover opens in custom mode
+    useEffect(() => {
+        if (yearRangeOpen && timePeriod === "custom") {
+            setTempYearRange(yearRange);
+        }
+    }, [yearRangeOpen, timePeriod, yearRange]);
 
     const copyURLtoClipboard = async () => {
         try {

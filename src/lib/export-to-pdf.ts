@@ -178,6 +178,7 @@ export function clearCart(
     setAllFilterDetails([]);
     sessionStorage.removeItem("cartStorage");
     sessionStorage.removeItem("cartNameStorage");
+    sessionStorage.removeItem("cartFilterDetailsStorage");
 }
 
 export function deleteFromCart(
