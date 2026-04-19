@@ -221,25 +221,35 @@ export default function ChartPage() {
         "endYear",
         parseAsInteger.withDefault(2025),
     );
-    const normalizeYearRange = useCallback(
-        (range: { start: number; end: number }) => {
-            if (range.start <= range.end) {
-                return { range, wasSwapped: false };
+    const normalizeYearRange = useCallback((start: number, end: number) => {
+        if (start <= end) {
+            return { start, end };
+        }
+
+        return { start: end, end: start };
+    }, []);
+    const updateYearRange = useCallback(
+        (
+            start: number,
+            end: number,
+            options?: { notifyIfSwapped?: boolean },
+        ) => {
+            const normalizedRange = normalizeYearRange(start, end);
+
+            if (options?.notifyIfSwapped && start > end) {
+                toast.info(
+                    "Year range was swapped to keep start year before end year.",
+                );
             }
 
-            return {
-                range: { start: range.end, end: range.start },
-                wasSwapped: true,
-            };
+            setStartYear(normalizedRange.start);
+            setEndYear(normalizedRange.end);
         },
-        [],
+        [normalizeYearRange, setStartYear, setEndYear],
     );
     const yearRange = useMemo(
-        () => ({
-            start: Math.min(startYear, endYear),
-            end: Math.max(startYear, endYear),
-        }),
-        [startYear, endYear],
+        () => normalizeYearRange(startYear, endYear),
+        [startYear, endYear, normalizeYearRange],
     );
     const [tempYearRange, setTempYearRange] = useState({
         start: startYear,
@@ -516,18 +526,10 @@ export default function ChartPage() {
 
     // Keep query params normalized if an invalid range is loaded from URL.
     useEffect(() => {
-        const { range: normalizedRange, wasSwapped } = normalizeYearRange({
-            start: startYear,
-            end: endYear,
-        });
-
-        if (!wasSwapped) {
-            return;
-        }
-
-        setStartYear(normalizedRange.start);
-        setEndYear(normalizedRange.end);
-    }, [startYear, endYear, normalizeYearRange, setStartYear, setEndYear]);
+        if (startYear <= endYear) return;
+        setStartYear(endYear);
+        setEndYear(startYear);
+    }, [startYear, endYear, setStartYear, setEndYear]);
 
     const copyURLtoClipboard = async () => {
         const url = window.location.href;
@@ -545,21 +547,18 @@ export default function ChartPage() {
 
         if (timePeriod === "3y") {
             //return { start: maxYear - 2, end: maxYear };
-            setStartYear(maxYear - 2);
-            setEndYear(maxYear);
+            updateYearRange(maxYear - 2, maxYear);
             return;
         } else if (timePeriod === "5y") {
             //return { start: maxYear - 4, end: maxYear };
-            setStartYear(maxYear - 4);
-            setEndYear(maxYear);
+            updateYearRange(maxYear - 4, maxYear);
             return;
         }
 
         // "all" - use full range
         const minYear = Math.min(...allYears);
-        setStartYear(minYear);
-        setEndYear(maxYear);
-    }, [timePeriod, allProjects]);
+        updateYearRange(minYear, maxYear);
+    }, [timePeriod, allProjects, updateYearRange]);
 
     // Memoize graph dataset calculation to run only when data or filters change
     const graphDataset: ChartDataset[] = useMemo(() => {
@@ -1361,27 +1360,12 @@ export default function ChartPage() {
                                             <Button
                                                 size="sm"
                                                 onClick={() => {
-                                                    const {
-                                                        range: normalizedTempYearRange,
-                                                        wasSwapped,
-                                                    } =
-                                                        normalizeYearRange(
-                                                            tempYearRange,
-                                                        );
-                                                    if (wasSwapped) {
-                                                        toast.warning(
-                                                            "Start year cannot be after end year. Years were swapped.",
-                                                        );
-                                                    }
-
-                                                    setStartYear(
-                                                        normalizedTempYearRange.start,
-                                                    );
-                                                    setEndYear(
-                                                        normalizedTempYearRange.end,
-                                                    );
-                                                    setTempYearRange(
-                                                        normalizedTempYearRange,
+                                                    updateYearRange(
+                                                        tempYearRange.start,
+                                                        tempYearRange.end,
+                                                        {
+                                                            notifyIfSwapped: true,
+                                                        },
                                                     );
                                                     setTimePeriod("custom");
                                                     setYearRangeOpen(false);
