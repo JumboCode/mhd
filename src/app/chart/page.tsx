@@ -69,7 +69,7 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { downloadSingleGraph } from "@/lib/export-to-pdf";
+import { downloadSingleGraph, type FilterDetail } from "@/lib/export-to-pdf";
 import { useCart } from "@/hooks/useCart";
 import { Cart } from "@/components/Cart";
 import { CartIndicator } from "@/components/ui/cart-indicator";
@@ -420,6 +420,64 @@ export default function ChartPage() {
 
     const chartInCart = hasItem(filterName);
 
+    const filterDetails = useMemo<FilterDetail[]>(
+        () => [
+            ...(selectedSchools.length > 0
+                ? [{ label: "Schools", values: selectedSchools }]
+                : []),
+            ...(selectedCities.length > 0
+                ? [{ label: "Cities", values: selectedCities }]
+                : []),
+            ...(selectedProjectTypes.length > 0
+                ? [{ label: "Project Types", values: selectedProjectTypes }]
+                : []),
+            ...(onlyGatewaySchools
+                ? [
+                      {
+                          label: "Gateway Schools",
+                          values: ["Only Gateway Schools"],
+                      },
+                  ]
+                : []),
+            ...(teacherYearsValue !== ""
+                ? [
+                      {
+                          label: "Teacher Years",
+                          values: [
+                              teacherYearsOperator === "between"
+                                  ? `between ${teacherYearsValue} and ${teacherYearsValue2}`
+                                  : `${teacherYearsOperator} ${teacherYearsValue}`,
+                          ],
+                      },
+                  ]
+                : []),
+            {
+                label: "Measured As",
+                values: [measuredAsLabels[measuredAs] ?? measuredAs],
+            },
+            {
+                label: "Grouped By",
+                values: [groupByLabels[groupBy] ?? groupBy],
+            },
+            {
+                label: "Year Range",
+                values: [`${yearRange.start} – ${yearRange.end}`],
+            },
+        ],
+        [
+            selectedSchools,
+            selectedCities,
+            selectedProjectTypes,
+            onlyGatewaySchools,
+            teacherYearsValue,
+            teacherYearsOperator,
+            teacherYearsValue2,
+            measuredAs,
+            groupBy,
+            yearRange,
+        ],
+    );
+
     // Cmd+S to open export dialog, Cmd+P to print PDF
     useHotkey(
         "s",
@@ -431,7 +489,7 @@ export default function ChartPage() {
     useHotkey(
         "p",
         () => {
-            downloadSingleGraph(chartRef, filterName, true);
+            downloadSingleGraph(chartRef, filterName, filterDetails, true);
         },
         { meta: true },
     );
@@ -928,6 +986,7 @@ export default function ChartPage() {
                                                 await downloadSingleGraph(
                                                     chartRef,
                                                     filterName,
+                                                    filterDetails,
                                                 );
                                                 setIsExporting(false);
                                                 toast.success(
@@ -948,14 +1007,18 @@ export default function ChartPage() {
                                     if (chartInCart) {
                                         removeByName(filterName);
                                     } else {
-                                        addChartItem(filterName, {
-                                            chartType: chartType as
-                                                | "bar"
-                                                | "line",
-                                            filters,
-                                            yearStart: yearRange.start,
-                                            yearEnd: yearRange.end,
-                                        });
+                                        addChartItem(
+                                            filterName,
+                                            {
+                                                chartType: chartType as
+                                                    | "bar"
+                                                    | "line",
+                                                filters,
+                                                yearStart: yearRange.start,
+                                                yearEnd: yearRange.end,
+                                            },
+                                            filterDetails,
+                                        );
                                     }
                                 }}
                             >
@@ -1028,6 +1091,7 @@ export default function ChartPage() {
                                             await downloadSingleGraph(
                                                 chartRef,
                                                 filterName,
+                                                filterDetails,
                                             );
                                             setIsExporting(false);
                                             toast.success(
@@ -1050,14 +1114,19 @@ export default function ChartPage() {
                                             if (chartInCart) {
                                                 removeByName(filterName);
                                             } else {
-                                                addChartItem(filterName, {
-                                                    chartType: chartType as
-                                                        | "bar"
-                                                        | "line",
-                                                    filters,
-                                                    yearStart: yearRange.start,
-                                                    yearEnd: yearRange.end,
-                                                });
+                                                addChartItem(
+                                                    filterName,
+                                                    {
+                                                        chartType: chartType as
+                                                            | "bar"
+                                                            | "line",
+                                                        filters,
+                                                        yearStart:
+                                                            yearRange.start,
+                                                        yearEnd: yearRange.end,
+                                                    },
+                                                    filterDetails,
+                                                );
                                             }
                                         }}
                                     >

@@ -72,6 +72,8 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
+import type { FilterDetail } from "@/lib/export-to-pdf";
+
 type Region = {
     center: [number, number];
     zoom: number;
@@ -289,6 +291,26 @@ function HeatMapPage() {
 
     const mapInCart = hasItem(filterName);
 
+    const currentFilterDetails = useMemo<FilterDetail[]>(
+        () => [
+            { label: "Metric", values: [metric] },
+            { label: "Year", values: [String(year)] },
+            {
+                label: "Region",
+                values: [regionView === "Default" ? "All of MA" : regionView],
+            },
+            ...(onlyGatewaySchools
+                ? [
+                      {
+                          label: "Gateway Schools",
+                          values: ["Only Gateway Schools"],
+                      },
+                  ]
+                : []),
+        ],
+        [metric, year, regionView, onlyGatewaySchools],
+    );
+
     // Cmd+S to open export dialog, Cmd+P to print PDF
     useHotkey(
         "s",
@@ -302,7 +324,7 @@ function HeatMapPage() {
         () => {
             const map = mapRef.current;
             if (!map) return;
-            exportMapToPDF(map, filterName, true);
+            exportMapToPDF(map, filterName, currentFilterDetails, true);
         },
         { meta: true },
     );
@@ -345,7 +367,11 @@ function HeatMapPage() {
                                     onClick={() => {
                                         const mapCurrent = mapRef.current;
                                         if (!mapCurrent) return;
-                                        exportMapToPDF(mapCurrent, filterName);
+                                        exportMapToPDF(
+                                            mapCurrent,
+                                            filterName,
+                                            currentFilterDetails,
+                                        );
                                     }}
                                 >
                                     Download
@@ -439,6 +465,7 @@ function HeatMapPage() {
                                     const exported = await exportMapToPDF(
                                         mapCurrent,
                                         filterName,
+                                        currentFilterDetails,
                                     );
                                     if (exported) {
                                         toast.success(
@@ -463,7 +490,11 @@ function HeatMapPage() {
                                         const mapImageData = map
                                             .getCanvas()
                                             .toDataURL("image/jpeg", 0.5);
-                                        addMapItem(filterName, mapImageData);
+                                        addMapItem(
+                                            filterName,
+                                            mapImageData,
+                                            currentFilterDetails,
+                                        );
                                     }
                                 }}
                             >

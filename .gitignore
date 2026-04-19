@@ -48,4 +48,4 @@ next-env.d.ts
 .vscode
 
 # drizzle
-/drizzle
+/drizzle*

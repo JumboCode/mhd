@@ -17,38 +17,43 @@ import logoImg from "../../public/images/mhd-logo-full.png";
 import { toast } from "sonner";
 import "../app/fonts/DMSans-VariableFont_opsz,wght-normal";
 
-export function downloadGraphs(
+export type FilterDetail = {
+    label: string;
+    values: string[];
+};
+
+export async function downloadGraphs(
     cart: string[],
     filterNames: string[],
+    filterDetails: FilterDetail[][] = [],
     print = false,
 ) {
-    // Displays toast when there are no images to export
     if (cart.length === 0) {
         toast.error("Cart is empty");
-        return Promise.resolve();
+        return;
     }
 
-    return new Promise((resolve) => {
-        const pdf = new jsPDF();
+    const pdf = new jsPDF();
 
-        // Does process for each graph in the cart
-        cart.forEach((canvas: string, idx: number) => {
+    for (let idx = 0; idx < cart.length; idx++) {
+        const canvas = cart[idx];
+
+        await new Promise<void>((resolve) => {
             const img = new Image();
             img.src = canvas;
-
-            // Date data for image
-            const time = new Date();
-            const year = String(time.getFullYear());
-            const month = String(time.getMonth() + 1);
-            const day = String(time.getDate());
-
             img.onload = () => {
-                const imgWidth = pdf.internal.pageSize.getWidth();
+                pdf.setFontSize(11);
+                pdf.setFont("DMSans-VariableFont_opsz,wght", "normal");
+                const time = new Date();
+                const year = String(time.getFullYear());
+                const month = String(time.getMonth() + 1).padStart(2, "0");
+                const day = String(time.getDate()).padStart(2, "0");
+
+                const pageWidth = pdf.internal.pageSize.getWidth();
+                const imgWidth = pageWidth;
                 const imgHeight = (img.height / img.width) * imgWidth;
 
-                pdf.setFont("DMSans-VariableFont_opsz,wght", "normal");
-
-                pdf.text(`${month}/${day}/${year}`, 170, 15);
+                pdf.text(`${month}/${day}/${year}`, 155, 15);
                 pdf.addImage(
                     logoImg.src,
                     "PNG",
@@ -59,43 +64,77 @@ export function downloadGraphs(
                 );
 
                 const margin = 15;
+
+                pdf.setFont("DMSans-VariableFont_opsz,wght", "normal");
+                pdf.setFontSize(14);
+
                 const wrappedTitle = pdf.splitTextToSize(
                     filterNames[idx],
-                    pdf.internal.pageSize.getWidth() - margin * 2,
+                    pageWidth - margin * 2,
                 );
-                pdf.text(wrappedTitle, margin, 50);
+
+                const titleY = 50;
+
+                pdf.text(wrappedTitle, pageWidth / 2, titleY, {
+                    align: "center",
+                });
 
                 const titleHeight = wrappedTitle.length * 7;
+
+                const chartY = 50 + titleHeight;
                 pdf.addImage(
                     canvas,
                     "JPEG",
-                    15,
-                    50 + titleHeight,
-                    imgWidth * 0.9,
-                    imgHeight * 0.9,
+                    margin,
+                    chartY,
+                    imgWidth * 0.8,
+                    imgHeight * 0.8,
                 );
 
-                if (idx < cart.length - 1) pdf.addPage();
+                const details = filterDetails[idx];
+                if (details && details.length > 0) {
+                    let cursorY = chartY + imgHeight * 0.8 + 10;
 
-                if (idx === cart.length - 1) {
-                    if (print) {
-                        const blob = pdf.output("blob");
-                        const url = URL.createObjectURL(blob);
-                        window.open(url, "_blank");
-                    } else {
-                        const filename = filterNames[0] || "chart";
-                        pdf.save(`${filename}.pdf`);
-                    }
-                    setTimeout(resolve, 1000);
+                    pdf.setFontSize(11);
+                    pdf.text("Applied Filters:", margin, cursorY);
+                    cursorY += 6;
+                    pdf.setFontSize(10);
+
+                    details.forEach(({ label, values }) => {
+                        if (cursorY > pdf.internal.pageSize.getHeight() - 20) {
+                            pdf.addPage();
+                            cursorY = 20;
+                        }
+                        const line = `${label}: ${values.join(", ")}`;
+                        const wrapped = pdf.splitTextToSize(
+                            line,
+                            pageWidth - margin * 2,
+                        );
+                        pdf.text(wrapped, margin, cursorY);
+                        cursorY += wrapped.length * 5 + 3;
+                    });
                 }
+
+                if (idx < cart.length - 1) pdf.addPage();
+                resolve();
             };
         });
-    });
+    }
+
+    if (print) {
+        const blob = pdf.output("blob");
+        const url = URL.createObjectURL(blob);
+        window.open(url, "_blank");
+    } else {
+        const filename = filterNames[0] || "chart";
+        pdf.save(`${filename}.pdf`);
+    }
 }
 
 export async function downloadSingleGraph(
     chartRef: React.RefObject<HTMLDivElement | null>,
     filterName: string,
+    filterDetails: FilterDetail[] = [],
     print = false,
 ) {
     const el = chartRef.current;
@@ -104,7 +143,14 @@ export async function downloadSingleGraph(
     const canvas = await html2canvas(el, {
         backgroundColor: "#fff",
         scale: 2,
+        height: el.scrollHeight,
+        windowHeight: el.scrollHeight,
     });
 
-    downloadGraphs([canvas.toDataURL()], [filterName], print);
+    await downloadGraphs(
+        [canvas.toDataURL()],
+        [filterName],
+        [filterDetails],
+        print,
+    );
 }

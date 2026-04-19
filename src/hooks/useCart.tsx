@@ -1,6 +1,6 @@
 "use client";
 
-import React, {
+import {
     createContext,
     useContext,
     useState,
@@ -24,6 +24,7 @@ import "../app/fonts/DMSans-VariableFont_opsz,wght-normal";
 import { ChartDataset } from "@/components/charts/chartTypes";
 import BarGraph from "@/components/charts/BarGraph";
 import MultiLineGraph from "@/components/charts/LineGraph";
+import type { FilterDetail } from "@/lib/export-to-pdf";
 
 /**
  * Chart items store only the filter params — no data.
@@ -41,17 +42,27 @@ export type CartItem =
           type: "chart";
           filterName: string;
           params: ChartCartParams;
+          filterDetails: FilterDetail[];
       }
     | {
           type: "map";
           filterName: string;
           imageDataUrl: string;
+          filterDetails: FilterDetail[];
       };
 
 type CartContextValue = {
     items: CartItem[];
-    addChartItem: (filterName: string, params: ChartCartParams) => void;
-    addMapItem: (filterName: string, imageDataUrl: string) => void;
+    addChartItem: (
+        filterName: string,
+        params: ChartCartParams,
+        filterDetails?: FilterDetail[],
+    ) => void;
+    addMapItem: (
+        filterName: string,
+        imageDataUrl: string,
+        filterDetails?: FilterDetail[],
+    ) => void;
     removeItem: (index: number) => void;
     removeByName: (filterName: string) => void;
     clearCart: () => void;
@@ -179,20 +190,28 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }, [items]);
 
     const addChartItem = useCallback(
-        (filterName: string, params: ChartCartParams) => {
+        (
+            filterName: string,
+            params: ChartCartParams,
+            filterDetails: FilterDetail[] = [],
+        ) => {
             setItems((prev) => [
                 ...prev,
-                { type: "chart", filterName, params },
+                { type: "chart", filterName, params, filterDetails },
             ]);
         },
         [],
     );
 
     const addMapItem = useCallback(
-        (filterName: string, imageDataUrl: string) => {
+        (
+            filterName: string,
+            imageDataUrl: string,
+            filterDetails: FilterDetail[] = [],
+        ) => {
             setItems((prev) => [
                 ...prev,
-                { type: "map", filterName, imageDataUrl },
+                { type: "map", filterName, imageDataUrl, filterDetails },
             ]);
         },
         [],
@@ -284,14 +303,47 @@ export function CartProvider({ children }: { children: ReactNode }) {
                 pdf.text(wrappedTitle, margin, 50);
 
                 const titleHeight = wrappedTitle.length * 7;
+                const chartY = 50 + titleHeight;
                 pdf.addImage(
                     imageDataUrls[idx],
                     "JPEG",
                     15,
-                    50 + titleHeight,
+                    chartY,
                     imgWidth * 0.9,
                     imgHeight * 0.9,
                 );
+
+                const details = items[idx].filterDetails;
+                if (details && details.length > 0) {
+                    let cursorY = chartY + imgHeight * 0.9 + 10;
+                    pdf.setFontSize(11);
+                    pdf.text("Applied Filters:", margin, cursorY);
+                    cursorY += 6;
+                    pdf.setFontSize(10);
+                    details.forEach(
+                        ({
+                            label,
+                            values,
+                        }: {
+                            label: string;
+                            values: string[];
+                        }) => {
+                            if (
+                                cursorY >
+                                pdf.internal.pageSize.getHeight() - 20
+                            ) {
+                                pdf.addPage();
+                                cursorY = 20;
+                            }
+                            const wrapped = pdf.splitTextToSize(
+                                `${label}: ${values.join(", ")}`,
+                                pdf.internal.pageSize.getWidth() - margin * 2,
+                            );
+                            pdf.text(wrapped, margin, cursorY);
+                            cursorY += wrapped.length * 5 + 3;
+                        },
+                    );
+                }
 
                 if (idx < items.length - 1) pdf.addPage();
             });
