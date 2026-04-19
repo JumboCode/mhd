@@ -410,6 +410,23 @@ export default function ChartPage() {
                         setTeacherYearsValue2(
                             newFilters.teacherYearsValue2 ?? "",
                         );
+
+                        if (teacherYearsValue2 !== undefined) {
+                            const min = parseInt(
+                                newFilters.teacherYearsValue,
+                                10,
+                            );
+                            const max = parseInt(
+                                newFilters.teacherYearsValue2 ?? "",
+                                10,
+                            );
+
+                            if (max <= min) {
+                                setTeacherYearsValue2(
+                                    newFilters.teacherYearsValue,
+                                );
+                            }
+                        }
                         setOnlyGatewaySchools(newFilters.onlyGatewaySchools);
                     }}
                 />
