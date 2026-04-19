@@ -227,10 +227,6 @@ export default function ChartPage() {
             .withDefault(currentYear)
             .withOptions({ clearOnDefault: false }),
     );
-    useEffect(() => {
-        setStartYear((v) => v);
-        setEndYear((v) => v);
-    }, []);
     const normalizeYearRange = useCallback((start: number, end: number) => {
         if (start <= end) {
             return { start, end };
@@ -291,12 +287,17 @@ export default function ChartPage() {
     // Filter hooks
     const [groupBy, setGroupBy] = useQueryState(
         "groupBy",
-        parseAsString.withDefault("none"),
+        parseAsString
+            .withDefault("none")
+            .withOptions({ clearOnDefault: false }),
     );
     const [measuredAs, setMeasuredAs] = useQueryState(
         "measuredAs",
-        parseAsString.withDefault("total-school-count"),
+        parseAsString
+            .withDefault("total-school-count")
+            .withOptions({ clearOnDefault: false }),
     );
+
     const [selectedSchools, setSelectedSchools] = useQueryState(
         "schools",
         parseAsArrayOf(parseAsString).withDefault([]),
