@@ -12,7 +12,7 @@
 
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
     Select,
@@ -23,12 +23,14 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { useHotkey } from "@/hooks/useHotkey";
 
 type YearDropdownProps = {
     selectedYear?: number | null;
     onYearChange?: (year: number | null) => void;
     showDataIndicator?: boolean;
     school?: string | null;
+    enableArrowHotkeys?: boolean;
 };
 
 export default function YearDropdown({
@@ -36,6 +38,7 @@ export default function YearDropdown({
     onYearChange,
     showDataIndicator = false,
     school = null,
+    enableArrowHotkeys = false,
 }: YearDropdownProps) {
     const [year, setYear] = useState<number | null>(null);
     const [yearsWithData, setYearsWithData] = useState<Set<number>>(new Set());
@@ -133,29 +136,37 @@ export default function YearDropdown({
             ? years.filter((y) => schoolYears.has(y))
             : years;
 
-    const handlePreviousYear = () => {
+    const handlePreviousYear = useCallback(() => {
         const currentIndex = navigableYears.findIndex((y) => y === year);
         if (currentIndex > 0) {
             const newYear = navigableYears[currentIndex - 1];
             setYear(newYear);
             onYearChange?.(newYear);
         }
-    };
+    }, [navigableYears, year, onYearChange]);
 
-    const handleNextYear = () => {
+    const handleNextYear = useCallback(() => {
         const currentIndex = navigableYears.findIndex((y) => y === year);
         if (currentIndex < navigableYears.length - 1) {
             const newYear = navigableYears[currentIndex + 1];
             setYear(newYear);
             onYearChange?.(newYear);
         }
-    };
+    }, [navigableYears, year, onYearChange]);
 
     const isAtOldestYear =
         navigableYears.length === 0 ||
         year === navigableYears[navigableYears.length - 1];
     const isAtNewestYear =
         navigableYears.length === 0 || year === navigableYears[0];
+
+    // Left arrow moves to an older year, right arrow to a newer year.
+    useHotkey("ArrowLeft", handleNextYear, {
+        disabled: !enableArrowHotkeys || !year || isAtOldestYear,
+    });
+    useHotkey("ArrowRight", handlePreviousYear, {
+        disabled: !enableArrowHotkeys || !year || isAtNewestYear,
+    });
 
     return (
         <div className="flex items-stretch w-[180px] shadow-sm rounded-md">
