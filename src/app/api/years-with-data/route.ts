@@ -13,6 +13,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { yearlySchoolParticipation, yearMetadata, schools } from "@/lib/schema";
 import { eq } from "drizzle-orm";
+import { internalError } from "@/lib/api-utils";
 
 export async function GET(req: Request) {
     try {
@@ -67,10 +68,7 @@ export async function GET(req: Request) {
         }));
 
         return NextResponse.json({ years: yearsWithMetadata }, { status: 200 });
-    } catch (error) {
-        return NextResponse.json(
-            { error: "Internal server error: " + (error as Error).message },
-            { status: 500 },
-        );
+    } catch {
+        return internalError();
     }
 }

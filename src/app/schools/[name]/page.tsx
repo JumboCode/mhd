@@ -12,6 +12,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
+import { useQueryState, parseAsInteger } from "nuqs";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -21,6 +22,7 @@ import { SchoolLocationEditor } from "@/components/SchoolLocationEditor";
 import { SchoolInfoRow } from "@/components/SchoolInfoRow";
 import { StatCard } from "@/components/ui/stat-card";
 import { ENTITY_CONFIG } from "@/lib/entity-config";
+import type { MeasuredAs } from "@/components/GraphFilters/GraphFilters";
 import YearDropdown from "@/components/YearDropdown";
 import MultiLineGraph, { GraphDataset } from "@/components/charts/LineGraph";
 import { Info } from "lucide-react";
@@ -67,11 +69,10 @@ export default function SchoolProfilePage() {
     const params = useParams();
     const schoolName = params.name as string;
     const router = useRouter();
-
+    const [year, setYear] = useQueryState("year", parseAsInteger);
     const [schoolData, setSchoolData] = useState<SchoolData | null>(null);
     const [prevYearData, setPrevYearData] = useState<SchoolData | null>(null);
 
-    const [year, setYear] = useState<number | null>(null);
     const [projects, setProjects] = useState<ProjectRow[]>([]);
     const [editingName, setEditingName] = useState(false);
     const [nameDraft, setNameDraft] = useState("");
@@ -82,6 +83,10 @@ export default function SchoolProfilePage() {
     const [allYearsData, setAllYearsData] = useState<SchoolData[]>([]);
     const [showPrevYearWarning, setShowPrevYearWarning] = useState(true);
     const [mergeOpen, setMergeOpen] = useState(false);
+
+    const handleYearChange = (selectedYear: number | null) => {
+        setYear(selectedYear);
+    };
 
     useEffect(() => {
         setShowPrevYearWarning(true);
@@ -94,12 +99,16 @@ export default function SchoolProfilePage() {
                 if (r.status === 301) {
                     const data = await r.json();
                     if (data.redirectTo) {
-                        router.replace(`/schools/${data.redirectTo}`);
+                        router.replace(
+                            year !== null
+                                ? `/schools/${data.redirectTo}?year=${year}`
+                                : `/schools/${data.redirectTo}`,
+                        );
                     }
                 }
             })
             .catch(() => {});
-    }, [schoolName, router]);
+    }, [schoolName, router, year]);
 
     useEffect(() => {
         if (!year) return;
@@ -138,7 +147,9 @@ export default function SchoolProfilePage() {
 
                 // If the school has been merged away, redirect to the absorbing school
                 if (responses[5]?.redirectTo) {
-                    router.replace(`/schools/${responses[5].redirectTo}`);
+                    router.replace(
+                        `/schools/${responses[5].redirectTo}/?year=${year}`,
+                    );
                     return;
                 }
 
@@ -214,9 +225,9 @@ export default function SchoolProfilePage() {
         data: studentYearData,
     };
 
-    const studentsHref =
+    const chartHref = (measuredAs: MeasuredAs) =>
         year !== null
-            ? `/chart?type=line&startYear=${year - 5}&endYear=${year}&measuredAs=total-student-count&schools=${encodeURIComponent(schoolData?.name ?? "")}`
+            ? `/chart?type=line&startYear=${year - 5}&endYear=${year}&measuredAs=${measuredAs}&schools=${encodeURIComponent(schoolData?.name ?? "")}`
             : "#";
 
     // Calculate sparkline data arrays from allYearsData
@@ -271,11 +282,7 @@ export default function SchoolProfilePage() {
                         <div className="ml-auto flex flex-row items-center gap-2">
                             <YearDropdown
                                 selectedYear={year}
-                                onYearChange={(selectedYear) => {
-                                    if (selectedYear !== null) {
-                                        setYear(selectedYear);
-                                    }
-                                }}
+                                onYearChange={handleYearChange}
                                 showDataIndicator={true}
                                 school={schoolName}
                             />
@@ -323,11 +330,7 @@ export default function SchoolProfilePage() {
                     <div className="ml-auto flex flex-row items-center gap-2">
                         <YearDropdown
                             selectedYear={year}
-                            onYearChange={(selectedYear) => {
-                                if (selectedYear !== null) {
-                                    setYear(selectedYear);
-                                }
-                            }}
+                            onYearChange={handleYearChange}
                             showDataIndicator={true}
                             school={schoolName}
                         />
@@ -392,6 +395,7 @@ export default function SchoolProfilePage() {
                         percentChange={projectsPercentChange}
                         showTrend={true}
                         variant="with-aspect"
+                        href={chartHref("total-project-count")}
                     />
                     <StatCard
                         label={ENTITY_CONFIG.teachers.label}
@@ -404,6 +408,7 @@ export default function SchoolProfilePage() {
                         percentChange={teachersPercentChange}
                         showTrend={true}
                         variant="with-aspect"
+                        href={chartHref("total-teacher-count")}
                     />
                     <StatCard
                         label={ENTITY_CONFIG.students.label}
@@ -416,6 +421,7 @@ export default function SchoolProfilePage() {
                         percentChange={studentsPercentChange}
                         showTrend={true}
                         variant="with-aspect"
+                        href={chartHref("total-student-count")}
                     />
                 </div>
 
@@ -427,7 +433,7 @@ export default function SchoolProfilePage() {
                     firstYear={schoolData.firstYear}
                 />
                 <Link
-                    href={studentsHref}
+                    href={chartHref("total-student-count")}
                     className="block rounded-lg border border-border px-6 pt-4 pb-2 hover:bg-muted/40 transition-colors"
                 >
                     <p className="text-sm font-medium text-center mb-2">

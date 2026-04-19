@@ -299,7 +299,7 @@ export default function SpreadsheetState() {
                 return true;
             } else {
                 const errorData = await response.json();
-                throw new Error(errorData.message || "Failed to upload data");
+                throw new Error(errorData.error || "Failed to upload data");
             }
         } catch (error) {
             toast.error(
