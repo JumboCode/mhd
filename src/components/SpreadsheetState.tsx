@@ -645,7 +645,7 @@ export default function SpreadsheetState() {
                             <div className="flex flex-col gap-2 mt-4 w-full max-w-lg">
                                 <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
                                     <div
-                                        className="bg-primary h-2 rounded-full transition-all duration-300"
+                                        className="bg-primary h-2 rounded-full transition-[width] duration-300"
                                         style={{ width: `${progress}%` }}
                                     />
                                 </div>

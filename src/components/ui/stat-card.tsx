@@ -104,7 +104,7 @@ function TrendIndicator({
     return (
         <span
             className={cn(
-                "inline-flex items-center gap-1 text-sm font-medium",
+                "inline-flex items-center gap-1 text-sm font-medium tabular-nums",
                 isFlat
                     ? "text-muted-foreground"
                     : isPositive
