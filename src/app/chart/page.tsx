@@ -1085,6 +1085,10 @@ export default function ChartPage() {
                                                 filters,
                                                 yearStart: yearRange.start,
                                                 yearEnd: yearRange.end,
+                                                tableData: {
+                                                    cols,
+                                                    rows,
+                                                },
                                             },
                                             filterDetails,
                                         );
@@ -1193,6 +1197,10 @@ export default function ChartPage() {
                                                         yearStart:
                                                             yearRange.start,
                                                         yearEnd: yearRange.end,
+                                                        tableData: {
+                                                            cols,
+                                                            rows,
+                                                        },
                                                     },
                                                     filterDetails,
                                                 );
