@@ -18,8 +18,12 @@ import { type YearRange } from "@/lib/chart-data-pipeline";
 
 // Schema for batched filter query params
 const filterParsers = {
-    groupBy: parseAsString.withDefault("none"),
-    measuredAs: parseAsString.withDefault("total-school-count"),
+    groupBy: parseAsString
+        .withDefault("none")
+        .withOptions({ clearOnDefault: false }),
+    measuredAs: parseAsString
+        .withDefault("total-school-count")
+        .withOptions({ clearOnDefault: false }),
     schools: parseAsArrayOf(parseAsString).withDefault([]),
     cities: parseAsArrayOf(parseAsString).withDefault([]),
     projectTypes: parseAsArrayOf(parseAsString).withDefault([]),
@@ -36,9 +40,15 @@ const filterParsers = {
 // Schema for year/chart params (separate for clarity)
 const chartParsers = {
     period: parseAsString.withDefault("custom"),
-    startYear: parseAsInteger.withDefault(2020),
-    endYear: parseAsInteger.withDefault(2025),
-    type: parseAsString.withDefault("bar"),
+    startYear: parseAsInteger
+        .withDefault(2020)
+        .withOptions({ clearOnDefault: false }),
+    endYear: parseAsInteger
+        .withDefault(2025)
+        .withOptions({ clearOnDefault: false }),
+    type: parseAsString
+        .withDefault("bar")
+        .withOptions({ clearOnDefault: false }),
 };
 
 export type UseChartFiltersReturn = {

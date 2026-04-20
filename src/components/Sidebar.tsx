@@ -111,17 +111,19 @@ export default function Sidebar() {
         });
     };
 
+    const currentYear: number = new Date().getFullYear();
+
     const sections = [
         {
             title: "ANALYSIS",
             items: [
                 {
-                    href: "/map",
+                    href: "/map?metric=projects&regionView=default",
                     label: "Map",
                     icon: <Map size={20} />,
                 },
                 {
-                    href: "/chart",
+                    href: `/chart?startYear=${currentYear - 5}&endYear=${currentYear}&measuredAs=total-school-count&groupBy=none&type=bar`,
                     label: "Chart",
                     icon: <BarChart3 size={20} />,
                 },
