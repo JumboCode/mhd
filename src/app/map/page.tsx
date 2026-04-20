@@ -608,7 +608,7 @@ function HeatMapPage() {
                         selectedYear={year}
                         onYearChange={(y) => setYear(y)}
                         enableArrowHotkeys={true}
-                        showDataIndicator={false}
+                        showDataIndicator={true}
                     />
                 </div>
                 <div className="flex flex-col gap-1.5 w-48">
