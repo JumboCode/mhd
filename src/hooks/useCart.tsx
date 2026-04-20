@@ -33,6 +33,10 @@ export type ChartCartParams = {
     filters: Filters;
     yearStart: number;
     yearEnd: number;
+    tableData?: {
+        cols: { header: string; accessorKey: string }[];
+        rows: Record<string, unknown>[];
+    };
 };
 
 export type CartItem =
@@ -352,8 +356,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
                 );
 
                 const details = items[idx].filterDetails;
+                let cursorY = chartY + imgHeight * 0.9 + 10;
+
                 if (details && details.length > 0) {
-                    let cursorY = chartY + imgHeight * 0.9 + 10;
                     pdf.setFontSize(11);
                     pdf.text("Applied Filters:", margin, cursorY);
                     cursorY += 6;
@@ -381,6 +386,58 @@ export function CartProvider({ children }: { children: ReactNode }) {
                             cursorY += wrapped.length * 5 + 3;
                         },
                     );
+                }
+
+                // Render data table if present
+                const item = items[idx];
+                if (item.type === "chart" && item.params.tableData) {
+                    const { cols, rows } = item.params.tableData;
+
+                    if (cursorY > pdf.internal.pageSize.getHeight() - 40) {
+                        pdf.addPage();
+                        cursorY = 20;
+                    }
+
+                    cursorY += 6;
+                    pdf.setFontSize(11);
+                    pdf.text("Data Table:", margin, cursorY);
+                    cursorY += 7;
+                    pdf.setFontSize(9);
+
+                    const pageWidth = pdf.internal.pageSize.getWidth();
+                    const colWidth = (pageWidth - margin * 2) / cols.length;
+
+                    // Header row
+                    pdf.setFont("DMSans-VariableFont_opsz,wght", "normal");
+                    cols.forEach((col, colIdx) => {
+                        pdf.text(
+                            String(col.header),
+                            margin + colIdx * colWidth,
+                            cursorY,
+                        );
+                    });
+                    cursorY += 5;
+
+                    // Divider line
+                    pdf.setDrawColor(180);
+                    pdf.line(margin, cursorY, pageWidth - margin, cursorY);
+                    cursorY += 4;
+
+                    // Data rows
+                    rows.forEach((row) => {
+                        if (cursorY > pdf.internal.pageSize.getHeight() - 15) {
+                            pdf.addPage();
+                            cursorY = 20;
+                        }
+                        cols.forEach((col, colIdx) => {
+                            pdf.text(
+                                String(row[col.accessorKey] ?? "—"),
+                                margin + colIdx * colWidth,
+                                cursorY,
+                            );
+                        });
+                        cursorY += 5;
+                    });
                 }
 
                 if (idx < items.length - 1) pdf.addPage();

@@ -11,9 +11,10 @@
 
 "use client";
 
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
+import { useQueryState, parseAsInteger } from "nuqs";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { SchoolProfileSkeleton } from "@/components/skeletons/SchoolProfileSkeleton";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -44,6 +45,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import MergeSchoolDialog from "@/components/MergeSchoolDialog";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // interface such that data can be blank if API is loading
 type SchoolData = {
@@ -63,20 +65,16 @@ type SchoolData = {
 
 type ProjectRow = EditableProjectRow;
 
+type SchoolProfileGraphMetric = "students" | "projects" | "teachers";
+
 export default function SchoolProfilePage() {
     const params = useParams();
     const schoolName = params.name as string;
     const router = useRouter();
-    const searchParams = useSearchParams();
-    const parsedYearFromQuery = Number(searchParams.get("year"));
-    const initialYearFromQuery = Number.isFinite(parsedYearFromQuery)
-        ? parsedYearFromQuery
-        : null;
-
+    const [year, setYear] = useQueryState("year", parseAsInteger);
     const [schoolData, setSchoolData] = useState<SchoolData | null>(null);
     const [prevYearData, setPrevYearData] = useState<SchoolData | null>(null);
 
-    const [year, setYear] = useState<number | null>(initialYearFromQuery);
     const [projects, setProjects] = useState<ProjectRow[]>([]);
     const [editingName, setEditingName] = useState(false);
     const [nameDraft, setNameDraft] = useState("");
@@ -87,38 +85,16 @@ export default function SchoolProfilePage() {
     const [allYearsData, setAllYearsData] = useState<SchoolData[]>([]);
     const [showPrevYearWarning, setShowPrevYearWarning] = useState(true);
     const [mergeOpen, setMergeOpen] = useState(false);
+    const [graphMetric, setGraphMetric] =
+        useState<SchoolProfileGraphMetric>("students");
 
-    const buildSchoolUrl = (slug: string, yearParam: number | null) =>
-        yearParam !== null
-            ? `/schools/${slug}?year=${yearParam}`
-            : `/schools/${slug}`;
+    const StudentsIcon = ENTITY_CONFIG.students.icon;
+    const TeachersIcon = ENTITY_CONFIG.teachers.icon;
+    const ProjectsIcon = ENTITY_CONFIG.projects.icon;
 
     const handleYearChange = (selectedYear: number | null) => {
-        if (selectedYear === null) return;
-
         setYear(selectedYear);
-
-        const parsedQueryYear = Number(searchParams.get("year"));
-        const queryYear = Number.isFinite(parsedQueryYear)
-            ? parsedQueryYear
-            : null;
-        if (queryYear !== selectedYear) {
-            router.replace(buildSchoolUrl(schoolName, selectedYear), {
-                scroll: false,
-            });
-        }
     };
-
-    useEffect(() => {
-        const yearFromQuery = searchParams.get("year");
-        if (!yearFromQuery) return;
-
-        const parsedYear = Number(yearFromQuery);
-        if (!Number.isFinite(parsedYear)) return;
-        if (year === parsedYear) return;
-
-        setYear(parsedYear);
-    }, [searchParams, year]);
 
     useEffect(() => {
         setShowPrevYearWarning(true);
@@ -131,7 +107,11 @@ export default function SchoolProfilePage() {
                 if (r.status === 301) {
                     const data = await r.json();
                     if (data.redirectTo) {
-                        router.replace(buildSchoolUrl(data.redirectTo, year));
+                        router.replace(
+                            year !== null
+                                ? `/schools/${data.redirectTo}?year=${year}`
+                                : `/schools/${data.redirectTo}`,
+                        );
                     }
                 }
             })
@@ -248,15 +228,52 @@ export default function SchoolProfilePage() {
         }
     };
 
-    const studentData: GraphDataset = {
-        label: "Students by Year",
-        data: studentYearData,
+    const graphSeries = useMemo(() => {
+        if (allYearsData.length === 0) return [];
+        return allYearsData.map((d, i) => ({
+            x: studentYearData[i]?.x ?? i,
+            y:
+                graphMetric === "students"
+                    ? Number(d.studentCount)
+                    : graphMetric === "projects"
+                      ? Number(d.projectCount)
+                      : Number(d.teacherCount),
+        }));
+    }, [allYearsData, studentYearData, graphMetric]);
+
+    const graphYAxisLabel =
+        graphMetric === "students"
+            ? ENTITY_CONFIG.students.label
+            : graphMetric === "projects"
+              ? ENTITY_CONFIG.projects.label
+              : ENTITY_CONFIG.teachers.label;
+
+    const graphDataset: GraphDataset = {
+        label:
+            graphMetric === "students"
+                ? "Students by Year"
+                : graphMetric === "projects"
+                  ? "Projects by Year"
+                  : "Teachers by Year",
+        data: graphSeries,
     };
 
-    const studentsHref =
-        year !== null
-            ? `/chart?type=line&startYear=${year - 5}&endYear=${year}&measuredAs=total-student-count&schools=${encodeURIComponent(schoolData?.name ?? "")}`
-            : "#";
+    const measuredAsForMetric =
+        graphMetric === "students"
+            ? "total-student-count"
+            : graphMetric === "projects"
+              ? "total-project-count"
+              : "total-teacher-count";
+
+    const trendChartHref =
+        year !== null && schoolData
+            ? `/chart?type=line&startYear=${year - 5}&endYear=${year}&measuredAs=${measuredAsForMetric}&schools=${encodeURIComponent(schoolData.name)}`
+            : schoolData
+              ? `/chart?measuredAs=${measuredAsForMetric}&type=line&schools=${encodeURIComponent(schoolData.name)}`
+              : "#";
+    const projectsChartHref = `/chart?measuredAs=total-project-count&type=line&schools=${encodeURIComponent(schoolData?.name ?? "")}`;
+    const teachersChartHref = `/chart?measuredAs=total-teacher-count&type=line&schools=${encodeURIComponent(schoolData?.name ?? "")}`;
+    const studentsChartHref = `/chart?measuredAs=total-student-count&type=line&schools=${encodeURIComponent(schoolData?.name ?? "")}`;
 
     // Calculate sparkline data arrays from allYearsData
     const projectsSparkline = allYearsData.map((d) =>
@@ -423,6 +440,7 @@ export default function SchoolProfilePage() {
                         percentChange={projectsPercentChange}
                         showTrend={true}
                         variant="with-aspect"
+                        href={projectsChartHref}
                     />
                     <StatCard
                         label={ENTITY_CONFIG.teachers.label}
@@ -435,6 +453,7 @@ export default function SchoolProfilePage() {
                         percentChange={teachersPercentChange}
                         showTrend={true}
                         variant="with-aspect"
+                        href={teachersChartHref}
                     />
                     <StatCard
                         label={ENTITY_CONFIG.students.label}
@@ -447,6 +466,7 @@ export default function SchoolProfilePage() {
                         percentChange={studentsPercentChange}
                         showTrend={true}
                         variant="with-aspect"
+                        href={studentsChartHref}
                     />
                 </div>
 
@@ -457,19 +477,50 @@ export default function SchoolProfilePage() {
                     implementationModel={schoolData.implementationModel}
                     firstYear={schoolData.firstYear}
                 />
-                <Link
-                    href={studentsHref}
-                    className="block rounded-lg border border-border px-6 pt-4 pb-2 hover:bg-muted/40 transition-colors"
-                >
-                    <p className="text-sm font-medium text-center mb-2">
-                        Total # Students
-                    </p>
-                    <MultiLineGraph
-                        datasets={[studentData]}
-                        yAxisLabel={"Total # Students"}
-                        xAxisLabel="Year"
-                    />
-                </Link>
+                <div className="rounded-lg border border-border px-6 pt-4 pb-2">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-2">
+                        <p className="text-sm font-medium text-center sm:text-left">
+                            {graphYAxisLabel}
+                        </p>
+
+                        <Tabs
+                            value={graphMetric}
+                            onValueChange={(value) =>
+                                setGraphMetric(
+                                    value as SchoolProfileGraphMetric,
+                                )
+                            }
+                        >
+                            <TabsList>
+                                <TabsTrigger value="students" className="gap-2">
+                                    <StudentsIcon className="w-4 h-4" />
+                                    Students
+                                </TabsTrigger>
+
+                                <TabsTrigger value="teachers" className="gap-2">
+                                    <TeachersIcon className="w-4 h-4" />
+                                    Teachers
+                                </TabsTrigger>
+
+                                <TabsTrigger value="projects" className="gap-2">
+                                    <ProjectsIcon className="w-4 h-4" />
+                                    Projects
+                                </TabsTrigger>
+                            </TabsList>
+                        </Tabs>
+                    </div>
+
+                    <Link
+                        href={trendChartHref}
+                        className="block -mx-2 px-2 rounded-md hover:bg-muted/40 transition-colors"
+                    >
+                        <MultiLineGraph
+                            datasets={[graphDataset]}
+                            yAxisLabel={graphYAxisLabel}
+                            xAxisLabel="Year"
+                        />
+                    </Link>
+                </div>
 
                 {/* Project type distribution — same 3-col grid as stats; spans 2 cells */}
                 {projects.length !== 0 && (

@@ -18,6 +18,7 @@ import { parse } from "csv-parse/sync";
 import { db } from "@/lib/db";
 import { schools } from "@/lib/schema";
 import { isNotNull } from "drizzle-orm";
+import { internalError } from "@/lib/api-utils";
 
 /**
  * Shape of each row in the CSV file.
@@ -101,10 +102,7 @@ export async function GET() {
         }
 
         return NextResponse.json(knownSchools);
-    } catch (error) {
-        return NextResponse.json(
-            { message: "Failed to load known schools" },
-            { status: 500 },
-        );
+    } catch {
+        return internalError();
     }
 }

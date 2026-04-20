@@ -25,6 +25,7 @@ import { standardize, toTitleCase } from "@/lib/string-standardize";
 import { studentRequiredColumns } from "@/lib/required-spreadsheet-columns";
 import { findRegionOf } from "@/lib/region-finder";
 import { yearSchema, MIN_YEAR, MAX_YEAR } from "@/lib/year-validation";
+import { internalError } from "@/lib/api-utils";
 
 type RowData = Array<string | number | boolean | null>;
 
@@ -140,7 +141,7 @@ export async function POST(req: NextRequest) {
         if (!yearResult.success) {
             return NextResponse.json(
                 {
-                    message: `Year must be between ${MIN_YEAR} and ${MAX_YEAR}.`,
+                    error: `Year must be between ${MIN_YEAR} and ${MAX_YEAR}.`,
                 },
                 { status: 400 },
             );
@@ -167,7 +168,7 @@ export async function POST(req: NextRequest) {
 
         if (rawData.length === 0) {
             return NextResponse.json(
-                { message: "No data provided" },
+                { error: "No data provided" },
                 { status: 400 },
             );
         }
@@ -201,7 +202,7 @@ export async function POST(req: NextRequest) {
         if (missingColumns.length > 0) {
             return NextResponse.json(
                 {
-                    message: `Missing required columns: ${missingColumns.join(", ")}`,
+                    error: `Missing required columns: ${missingColumns.join(", ")}`,
                 },
                 { status: 400 },
             );
@@ -395,11 +396,8 @@ export async function POST(req: NextRequest) {
             { message: "Upload started" },
             { status: 200 },
         );
-    } catch (error) {
-        return NextResponse.json(
-            { message: "Import failed", error: String(error) },
-            { status: 500 },
-        );
+    } catch {
+        return internalError();
     }
 }
 

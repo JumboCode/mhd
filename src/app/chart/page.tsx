@@ -20,10 +20,13 @@ import {
     LineChart,
     Link,
     Loader2,
+    Minus,
     PlusCircle,
     Share,
     ShoppingBasket,
     SlidersHorizontal,
+    TrendingDown,
+    TrendingUp,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -75,6 +78,8 @@ import { Cart } from "@/components/Cart";
 import { CartIndicator } from "@/components/ui/cart-indicator";
 import { Kbd } from "@/components/ui/kbd";
 import { useHotkey } from "@/hooks/useHotkey";
+import { DataTable } from "@/components/DataTable";
+import { CellValue } from "@/types/spreadsheet";
 
 type Project = {
     id: number;
@@ -826,6 +831,161 @@ export default function ChartPage() {
         onlyGatewaySchools,
     ]);
 
+    const { cols, rows } = useMemo(() => {
+        if (!graphDataset.length) return { cols: [], rows: [] };
+
+        const isReturnRate = filters.measuredAs === "school-return-rate";
+
+        // Collect all unique years across all datasets, sorted ascending
+        const allYears = Array.from(
+            new Set(graphDataset.flatMap((ds) => ds.data.map((d) => d.x))),
+        ).sort((a, b) => Number(a) - Number(b));
+
+        // Build columns: Year, then for each dataset: value | Δ | Trend
+        const cols = [
+            { id: "year", accessorKey: "year", header: "Year" },
+            ...graphDataset.flatMap((ds) => {
+                const valueHeader =
+                    ds.label === "All"
+                        ? (measuredAsLabels[filters.measuredAs] ?? ds.label)
+                        : ds.label;
+                const prefix = graphDataset.length === 1 ? "" : `${ds.label} `;
+                const pctRawKey = `${ds.label}__pctRaw`;
+                return [
+                    {
+                        id: ds.label,
+                        accessorKey: ds.label,
+                        header: valueHeader,
+                    },
+                    {
+                        id: `${ds.label}__delta`,
+                        accessorKey: `${ds.label}__delta`,
+                        header: `${prefix}Δ`,
+                        cell: ({
+                            row,
+                        }: {
+                            row: { original: Record<string, CellValue> };
+                        }) => {
+                            const formatted = row.original[
+                                `${ds.label}__delta`
+                            ] as string;
+                            if (formatted === "—")
+                                return (
+                                    <span className="text-muted-foreground">
+                                        —
+                                    </span>
+                                );
+                            const color = formatted.startsWith("+")
+                                ? "text-[#46A758]"
+                                : formatted.startsWith("-")
+                                  ? "text-[#E5484D]"
+                                  : "text-[#808080]";
+                            return <span className={color}>{formatted}</span>;
+                        },
+                    },
+                    {
+                        id: `${ds.label}__pct`,
+                        accessorKey: `${ds.label}__pct`,
+                        header: `${prefix}% Change`,
+                        cell: ({
+                            row,
+                        }: {
+                            row: { original: Record<string, CellValue> };
+                        }) => {
+                            const raw = row.original[pctRawKey];
+                            const formatted = row.original[
+                                `${ds.label}__pct`
+                            ] as string;
+                            if (
+                                raw === null ||
+                                raw === undefined ||
+                                formatted === "—"
+                            ) {
+                                return (
+                                    <span className="text-muted-foreground">
+                                        —
+                                    </span>
+                                );
+                            }
+                            const pct = raw as number;
+                            const absStr = `${Math.abs(pct).toFixed(1)}%`;
+                            if (Math.abs(pct) < 0.5) {
+                                return (
+                                    <div className="flex items-center gap-1 text-[#808080]">
+                                        <Minus size={14} />
+                                        {absStr}
+                                    </div>
+                                );
+                            }
+                            if (pct > 0) {
+                                return (
+                                    <div className="flex items-center gap-1 text-[#46A758]">
+                                        <TrendingUp size={14} />
+                                        {absStr}
+                                    </div>
+                                );
+                            }
+                            return (
+                                <div className="flex items-center gap-1 text-[#E5484D]">
+                                    <TrendingDown size={14} />
+                                    {absStr}
+                                </div>
+                            );
+                        },
+                    },
+                ];
+            }),
+        ];
+
+        // One row per year
+        const rows = allYears.map((year, yearIdx) => {
+            const row: Record<string, CellValue> = { year };
+            graphDataset.forEach((ds) => {
+                const point = ds.data.find((d) => d.x === year);
+                const prevPoint =
+                    yearIdx > 0
+                        ? ds.data.find((d) => d.x === allYears[yearIdx - 1])
+                        : undefined;
+
+                if (point !== undefined) {
+                    row[ds.label] = isReturnRate
+                        ? `${(point.y * 100).toFixed(1)}%`
+                        : Math.round(point.y);
+
+                    if (prevPoint !== undefined) {
+                        const delta = point.y - prevPoint.y;
+                        const pct =
+                            prevPoint.y !== 0
+                                ? (delta / prevPoint.y) * 100
+                                : null;
+
+                        row[`${ds.label}__delta`] = isReturnRate
+                            ? `${delta >= 0 ? "+" : ""}${(delta * 100).toFixed(1)}pp`
+                            : `${delta >= 0 ? "+" : ""}${Math.round(delta)}`;
+
+                        row[`${ds.label}__pct`] =
+                            pct !== null
+                                ? `${pct >= 0 ? "+" : ""}${pct.toFixed(1)}%`
+                                : "—";
+                        row[`${ds.label}__pctRaw`] = pct;
+                    } else {
+                        row[`${ds.label}__delta`] = "—";
+                        row[`${ds.label}__pct`] = "—";
+                        row[`${ds.label}__pctRaw`] = null;
+                    }
+                } else {
+                    row[ds.label] = "—";
+                    row[`${ds.label}__delta`] = "—";
+                    row[`${ds.label}__pct`] = "—";
+                    row[`${ds.label}__pctRaw`] = null;
+                }
+            });
+            return row;
+        });
+
+        return { cols, rows };
+    }, [graphDataset, filters.measuredAs]);
+
     // Calculate filtered count (based on selected 'measured by' category)
     const filteredProjectCount = useMemo(() => {
         return graphDataset.reduce((total, dataset) => {
@@ -1062,6 +1222,10 @@ export default function ChartPage() {
                                                 filters,
                                                 yearStart: yearRange.start,
                                                 yearEnd: yearRange.end,
+                                                tableData: {
+                                                    cols,
+                                                    rows,
+                                                },
                                             },
                                             filterDetails,
                                         );
@@ -1179,6 +1343,10 @@ export default function ChartPage() {
                                                         yearStart:
                                                             yearRange.start,
                                                         yearEnd: yearRange.end,
+                                                        tableData: {
+                                                            cols,
+                                                            rows,
+                                                        },
                                                     },
                                                     filterDetails,
                                                 );
@@ -1512,6 +1680,10 @@ export default function ChartPage() {
                                 )}
                             </>
                         )}
+                    </div>
+
+                    <div className="px-8 overflow-x-auto max-h-64 overflow-y-auto border-border">
+                        <DataTable data={rows} columns={cols} />
                     </div>
 
                     {/* Footer */}
