@@ -206,14 +206,14 @@ const GatewaySchools = forwardRef<
                                             <td className="px-4 py-3 text-sm w-[80%]">
                                                 {school.name}
                                             </td>
-                                            <td className="px-4 py-3 text-sm text-center">
+                                            <td className="text-sm text-center p-0">
                                                 <button
                                                     onClick={() =>
                                                         handleRemoveSchool(
                                                             school.id,
                                                         )
                                                     }
-                                                    className="text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
+                                                    className="w-full h-full px-4 py-3 flex items-center justify-center text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
                                                     aria-label={`Remove ${school.name}`}
                                                 >
                                                     <Trash className="w-4 h-4" />
