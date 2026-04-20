@@ -44,7 +44,16 @@ export function drawHeader(pdf: jsPDF): number {
     const mhsW = mhsLogoImg.width * mhsScale;
     const mhsH = mhsTargetH;
 
-    pdf.addImage(logoImg.src, "PNG", margin, logoY, mhdW, mhdH);
+    pdf.addImage(
+        logoImg.src,
+        "PNG",
+        margin,
+        logoY,
+        mhdW,
+        mhdH,
+        "mhd-logo",
+        "FAST",
+    );
     pdf.addImage(
         mhsLogoImg.src,
         "PNG",
@@ -52,6 +61,8 @@ export function drawHeader(pdf: jsPDF): number {
         logoY,
         mhsW,
         mhsH,
+        "mhs-logo",
+        "FAST",
     );
 
     const lineY = logoY + Math.max(mhdH, mhsH) + 3;

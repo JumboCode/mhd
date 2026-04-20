@@ -151,9 +151,9 @@ async function renderChartToImage(
 
     const canvas = await html2canvas(container, {
         backgroundColor: "#fff",
-        scale: 2,
+        scale: 1.5,
     });
-    const dataUrl = canvas.toDataURL();
+    const dataUrl = canvas.toDataURL("image/jpeg", 0.75);
 
     root.unmount();
     document.body.removeChild(container);

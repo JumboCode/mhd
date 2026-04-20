@@ -38,7 +38,7 @@ export async function downloadGraphs(
         return;
     }
 
-    const pdf = new jsPDF();
+    const pdf = new jsPDF({ compress: true });
 
     for (let idx = 0; idx < cart.length; idx++) {
         const canvas = cart[idx];
@@ -72,6 +72,8 @@ export async function downloadGraphs(
                     afterTitle,
                     finalW,
                     finalH,
+                    undefined,
+                    "FAST",
                 );
 
                 const afterChart = afterTitle + finalH + 10;
@@ -105,13 +107,13 @@ export async function downloadSingleGraph(
 
     const canvas = await html2canvas(el, {
         backgroundColor: "#fff",
-        scale: 2,
+        scale: 1.5,
         height: el.scrollHeight,
         windowHeight: el.scrollHeight,
     });
 
     await downloadGraphs(
-        [canvas.toDataURL()],
+        [canvas.toDataURL("image/jpeg", 0.75)],
         [filterName],
         [filterDetails],
         print,
