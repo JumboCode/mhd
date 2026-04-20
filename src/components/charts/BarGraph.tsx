@@ -37,7 +37,7 @@ export default function BarGraph({
         content: string;
     } | null>(null);
 
-    const height = config?.height ?? 400;
+    const height = config?.height ?? 350;
     const mTop = config?.margin?.top ?? 6;
     const mRight = config?.margin?.right ?? 25;
     const mBottom = config?.margin?.bottom ?? 80;

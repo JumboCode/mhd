@@ -10,8 +10,6 @@
  *        Summary: Export an svg graph as a pdf
  **************************************************************/
 
-import React from "react";
-import html2canvas from "html2canvas-pro";
 import jsPDF from "jspdf";
 import { toast } from "sonner";
 import "../app/fonts/DMSans-VariableFont_opsz,wght-normal";
@@ -23,6 +21,8 @@ import {
     PAGE_MARGIN,
     type FilterDetail,
 } from "./pdf-layout";
+import { type ChartDataset } from "@/components/charts/chartTypes";
+import { renderChartToDataUrl } from "@/lib/render-chart";
 
 export type { FilterDetail };
 
@@ -95,25 +95,20 @@ export async function downloadGraphs(
 }
 
 export async function downloadSingleGraph(
-    chartRef: React.RefObject<HTMLDivElement | null>,
+    chartType: "bar" | "line",
+    dataset: ChartDataset[],
+    yAxisLabel: string,
+    legendTitle: string | undefined,
     filterName: string,
     filterDetails: FilterDetail[] = [],
     print = false,
 ) {
-    const el = chartRef.current;
-    if (!el) return;
-
-    const canvas = await html2canvas(el, {
-        backgroundColor: "#fff",
-        scale: 2,
-        height: el.scrollHeight,
-        windowHeight: el.scrollHeight,
-    });
-
-    await downloadGraphs(
-        [canvas.toDataURL()],
-        [filterName],
-        [filterDetails],
-        print,
+    const dataUrl = await renderChartToDataUrl(
+        chartType,
+        dataset,
+        yAxisLabel,
+        legendTitle,
     );
+
+    await downloadGraphs([dataUrl], [filterName], [filterDetails], print);
 }
