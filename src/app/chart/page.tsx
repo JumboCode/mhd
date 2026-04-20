@@ -512,7 +512,17 @@ export default function ChartPage() {
     useHotkey(
         "p",
         () => {
-            downloadSingleGraph(chartRef, filterName, filterDetails, true);
+            downloadSingleGraph(
+                chartType as "bar" | "line",
+                graphDataset,
+                measuredAsLabels[filters.measuredAs],
+                filters.groupBy === "none"
+                    ? undefined
+                    : groupByLabels[filters.groupBy],
+                filterName,
+                filterDetails,
+                true,
+            );
         },
         { meta: true },
     );
@@ -1011,7 +1021,16 @@ export default function ChartPage() {
                                                 setExportDialogOpen(false);
                                                 setIsExporting(true);
                                                 await downloadSingleGraph(
-                                                    chartRef,
+                                                    chartType as "bar" | "line",
+                                                    graphDataset,
+                                                    measuredAsLabels[
+                                                        filters.measuredAs
+                                                    ],
+                                                    filters.groupBy === "none"
+                                                        ? undefined
+                                                        : groupByLabels[
+                                                              filters.groupBy
+                                                          ],
                                                     filterName,
                                                     filterDetails,
                                                 );
@@ -1116,7 +1135,16 @@ export default function ChartPage() {
                                         onClick={async () => {
                                             setIsExporting(true);
                                             await downloadSingleGraph(
-                                                chartRef,
+                                                chartType as "bar" | "line",
+                                                graphDataset,
+                                                measuredAsLabels[
+                                                    filters.measuredAs
+                                                ],
+                                                filters.groupBy === "none"
+                                                    ? undefined
+                                                    : groupByLabels[
+                                                          filters.groupBy
+                                                      ],
                                                 filterName,
                                                 filterDetails,
                                             );

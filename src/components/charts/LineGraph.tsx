@@ -41,7 +41,7 @@ export default function MultiLineGraph({
     const height = config?.height ?? 400;
     const mTop = config?.margin?.top ?? 6;
     const mRight = config?.margin?.right ?? 8;
-    const mBottom = config?.margin?.bottom ?? 80;
+    const mBottom = 0;
     const strokeWidth = config?.strokeWidth ?? 2;
     const dotRadius = config?.dotRadius ?? 6;
 

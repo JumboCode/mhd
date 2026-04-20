@@ -189,7 +189,7 @@ function CartItemRow({
                                     width={288}
                                     height={180}
                                     unoptimized
-                                    className="w-full h-auto block"
+                                    className="w-full h-auto block pt-4 px-4"
                                 />
                             ) : (
                                 <div className="h-24 flex items-center justify-center text-xs text-muted-foreground gap-2">

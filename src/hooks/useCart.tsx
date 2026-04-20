@@ -9,8 +9,6 @@ import {
     useRef,
     ReactNode,
 } from "react";
-import { createRoot } from "react-dom/client";
-import html2canvas from "html2canvas-pro";
 import jsPDF from "jspdf";
 import { toast } from "sonner";
 import { type Filters } from "@/components/GraphFilters/GraphFilters";
@@ -23,8 +21,7 @@ import {
 import logoImg from "../../public/images/mhd-logo-full.png";
 import "../app/fonts/DMSans-VariableFont_opsz,wght-normal";
 import { ChartDataset } from "@/components/charts/chartTypes";
-import BarGraph from "@/components/charts/BarGraph";
-import MultiLineGraph from "@/components/charts/LineGraph";
+import { renderChartToDataUrl } from "@/lib/render-chart";
 import type { FilterDetail } from "@/lib/export-to-pdf";
 
 /**
@@ -111,7 +108,6 @@ async function fetchAndComputeDataset(params: ChartCartParams) {
     });
 }
 
-/** Render a chart component offscreen and capture it as a data URL. */
 async function renderChartToImage(
     params: ChartCartParams,
     dataset: ChartDataset[],
@@ -123,49 +119,12 @@ async function renderChartToImage(
             ? undefined
             : groupByLabels[params.filters.groupBy];
 
-    const container = document.createElement("div");
-    container.style.position = "fixed";
-    container.style.left = "-9999px";
-    container.style.top = "0";
-    container.style.width = "800px";
-    container.style.height = "500px";
-    container.style.backgroundColor = "#fff";
-    document.body.appendChild(container);
-
-    const root = createRoot(container);
-
-    if (params.chartType === "bar") {
-        root.render(
-            <BarGraph
-                dataset={dataset}
-                yAxisLabel={yAxisLabel}
-                xAxisLabel="Year"
-                legendTitle={legendTitle}
-            />,
-        );
-    } else {
-        root.render(
-            <MultiLineGraph
-                datasets={dataset}
-                yAxisLabel={yAxisLabel}
-                xAxisLabel="Year"
-                legendTitle={legendTitle}
-            />,
-        );
-    }
-
-    await new Promise((resolve) => setTimeout(resolve, 100));
-
-    const canvas = await html2canvas(container, {
-        backgroundColor: "#fff",
-        scale: 2,
-    });
-    const dataUrl = canvas.toDataURL();
-
-    root.unmount();
-    document.body.removeChild(container);
-
-    return dataUrl;
+    return renderChartToDataUrl(
+        params.chartType,
+        dataset,
+        yAxisLabel,
+        legendTitle,
+    );
 }
 
 export function CartProvider({ children }: { children: ReactNode }) {
