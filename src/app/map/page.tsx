@@ -294,10 +294,14 @@ function HeatMapPage() {
     const currentFilterDetails = useMemo<FilterDetail[]>(
         () => [
             { label: "Metric", values: [metric] },
-            { label: "Year", values: [String(year)] },
+            { label: "Year", values: [year ? String(year) : "All Years"] },
             {
                 label: "Region",
-                values: [regionView === "Default" ? "All of MA" : regionView],
+                values: [
+                    regionView === "default"
+                        ? "All of MA"
+                        : `${capitalize(regionView)} Region`,
+                ],
             },
             ...(onlyGatewaySchools
                 ? [
@@ -307,8 +311,30 @@ function HeatMapPage() {
                       },
                   ]
                 : []),
+            {
+                label: "Layers",
+                values: [
+                    ...(showSchools ? ["Schools"] : []),
+                    ...(showHeatmap ? ["Heatmap"] : []),
+                    ...(showRegions ? ["Regions"] : []),
+                ].length
+                    ? [
+                          ...(showSchools ? ["Schools"] : []),
+                          ...(showHeatmap ? ["Heatmap"] : []),
+                          ...(showRegions ? ["Regions"] : []),
+                      ]
+                    : ["None"],
+            },
         ],
-        [metric, year, regionView, onlyGatewaySchools],
+        [
+            metric,
+            year,
+            regionView,
+            onlyGatewaySchools,
+            showSchools,
+            showHeatmap,
+            showRegions,
+        ],
     );
 
     // Cmd+S to open export dialog, Cmd+P to print PDF
@@ -392,7 +418,11 @@ function HeatMapPage() {
                                 const mapImageData = map
                                     .getCanvas()
                                     .toDataURL("image/jpeg", 0.5);
-                                addMapItem(filterName, mapImageData);
+                                addMapItem(
+                                    filterName,
+                                    mapImageData,
+                                    currentFilterDetails,
+                                );
                             }
                         }}
                     >
@@ -667,21 +697,18 @@ function HeatMapPage() {
                             ref={mapRef}
                         />
                         {showHeatmap && isLoaded && (
-                            <div className="absolute bottom-4 left-4 z-10 bg-white/40 backdrop-blur-md rounded-lg px-3 py-2">
+                            <div className="absolute bottom-4 left-4 z-10 bg-white/80 backdrop-blur-md rounded-lg px-3 py-2 shadow-sm border border-slate-200">
                                 <HeatmapLegend
                                     colors={[
-                                        "#d5e0e6",
-                                        "#a2c1d8",
-                                        "#69aacf",
-                                        "#f0ddd1",
-                                        "#f2a27f",
-                                        "#e09040",
-                                        "#cf4f45",
-                                        "#b2182b",
+                                        "rgba(33,102,172,0)",
+                                        "rgb(103,169,207)",
+                                        "rgb(209,229,240)",
+                                        "rgb(253,219,199)",
+                                        "rgb(239,138,98)",
+                                        "rgb(178,24,43)",
                                     ]}
-                                    startLabel="Less dense"
-                                    endLabel="More dense"
-                                    squareSize={20}
+                                    startLabel="Low"
+                                    endLabel="High"
                                 />
                             </div>
                         )}

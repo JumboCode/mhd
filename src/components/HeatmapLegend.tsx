@@ -1,57 +1,26 @@
-/***************************************************************
- *
- *                /components/GatewaySchools.tsx
- *
- *         Author: Justin
- *           Date: 4/19/2026
- *
- *        Summary: Component for displaying the heatmap legend
- *
- **************************************************************/
-import React from "react";
-
 interface HeatmapLegendProps {
     colors: string[];
     startLabel: string;
     endLabel: string;
-    squareSize?: number;
 }
+
 export default function HeatmapLegend({
     colors,
     startLabel,
     endLabel,
-    squareSize = 24,
 }: HeatmapLegendProps) {
-    const gradient = `linear-gradient(to right, ${colors.join(",")})`;
+    const gradient = `linear-gradient(to right, ${colors.join(", ")})`;
 
     return (
-        <div
-            style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-            }}
-        >
-            <span
-                style={{ fontSize: 13, color: "#676767", whiteSpace: "nowrap" }}
-            >
+        <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground whitespace-nowrap">
                 {startLabel}
             </span>
-            <div style={{ display: "flex", gap: 4 }}>
-                {colors.map((color, index) => (
-                    <div
-                        key={index}
-                        style={{
-                            width: squareSize,
-                            height: squareSize,
-                            backgroundColor: color,
-                        }}
-                    />
-                ))}
-            </div>
-            <span
-                style={{ fontSize: 13, color: "#676767", whiteSpace: "nowrap" }}
-            >
+            <div
+                className="h-3 w-36 rounded-sm"
+                style={{ background: gradient }}
+            />
+            <span className="text-xs text-muted-foreground whitespace-nowrap">
                 {endLabel}
             </span>
         </div>
