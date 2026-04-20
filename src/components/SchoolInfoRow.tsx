@@ -61,20 +61,6 @@ export function SchoolInfoRow({
                     </span>
                 </div>
 
-                {/* Implementation Model */}
-                <div className="flex flex-col gap-2 p-4 rounded-lg border border-border">
-                    <div className="flex items-center gap-2">
-                        <BookOpen className="w-5 h-5" />
-                        <span className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                            Implementation Model
-                        </span>
-                    </div>
-                    <span className="text-lg font-semibold text-foreground">
-                        {implementationModel || "None"}
-                    </span>
-                </div>
-            </div>
-            <div className="grid grid-cols-2 gap-6">
                 {/* Data Since Year */}
                 <div className="flex flex-col gap-2 p-4 rounded-lg border border-border">
                     <div className="flex items-center gap-2">
@@ -85,6 +71,20 @@ export function SchoolInfoRow({
                     </div>
                     <span className="text-lg font-semibold text-foreground">
                         {firstYear}
+                    </span>
+                </div>
+            </div>
+            <div className="grid grid-cols-2 gap-6">
+                {/* Implementation Model */}
+                <div className="flex flex-col gap-2 p-4 rounded-lg border border-border">
+                    <div className="flex items-center gap-2">
+                        <BookOpen className="w-5 h-5" />
+                        <span className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                            Implementation Model
+                        </span>
+                    </div>
+                    <span className="text-lg font-semibold text-foreground">
+                        {implementationModel || "None"}
                     </span>
                 </div>
 
