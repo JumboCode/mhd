@@ -45,6 +45,20 @@ export async function GET(req: Request) {
                                 prevYearStats.total_students) *
                             100
                           : null,
+                  competing_students:
+                      prevYearStats.total_competing_students > 0
+                          ? ((yearlyStats.totals.total_competing_students -
+                                prevYearStats.total_competing_students) /
+                                prevYearStats.total_competing_students) *
+                            100
+                          : null,
+                  participating_students:
+                      prevYearStats.total_participating_students > 0
+                          ? ((yearlyStats.totals.total_participating_students -
+                                prevYearStats.total_participating_students) /
+                                prevYearStats.total_participating_students) *
+                            100
+                          : null,
                   schools:
                       prevYearStats.total_schools > 0
                           ? ((yearlyStats.totals.total_schools -

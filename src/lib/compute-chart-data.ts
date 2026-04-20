@@ -28,6 +28,7 @@ export type Project = {
     teacherName: string;
     teacherEmail: string;
     numStudents: number;
+    schoolCompetingStudents: number | null;
     schoolDivisions: string[] | null;
     schoolImplementationModel: string | null;
     schoolSchoolType: string | null;
@@ -35,12 +36,23 @@ export type Project = {
 
 export const measuredAsLabels: Record<string, string> = {
     "total-school-count": "Total Schools",
+    "total-competing-student-count": "Total Competing Students",
+    "total-participating-student-count": "Total Participating Students",
+    // Legacy label kept for any stored URLs pointing at the old key.
     "total-student-count": "Total Students",
     "total-city-count": "Total Cities",
     "total-project-count": "Total Projects",
     "total-teacher-count": "Total Teachers",
     "school-return-rate": "School Return Rate",
 };
+
+/** Normalize legacy `total-student-count` to `total-participating-student-count`. */
+export function normalizeMeasuredAs(metric: string): string {
+    if (metric === "total-student-count") {
+        return "total-participating-student-count";
+    }
+    return metric;
+}
 
 export const groupByLabels: Record<string, string> = {
     "none": "None",
@@ -184,10 +196,24 @@ export function computeGraphDataset(
             case "total-school-count":
                 return new Set(projects.map((p) => p.schoolName)).size;
             case "total-student-count":
+            case "total-participating-student-count":
                 return projects.reduce(
                     (sum, p) => sum + (p.numStudents || 0),
                     0,
                 );
+            case "total-competing-student-count": {
+                // Sum competing students once per (school, year) pair to
+                // avoid double-counting across projects.
+                const seen = new Set<string>();
+                let total = 0;
+                for (const p of projects) {
+                    const key = `${p.schoolId}-${p.year}`;
+                    if (seen.has(key)) continue;
+                    seen.add(key);
+                    total += p.schoolCompetingStudents ?? 0;
+                }
+                return total;
+            }
             case "total-teacher-count":
                 return new Set(projects.map((p) => p.teacherId)).size;
             case "total-city-count":

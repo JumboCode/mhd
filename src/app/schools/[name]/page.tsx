@@ -53,6 +53,8 @@ type SchoolData = {
     name: string;
     town: string;
     studentCount: string;
+    participatingStudentCount: string;
+    competingStudents: number | null;
     teacherCount: string;
     projectCount: string;
     firstYear: string;
@@ -65,7 +67,11 @@ type SchoolData = {
 
 type ProjectRow = EditableProjectRow;
 
-type SchoolProfileGraphMetric = "students" | "projects" | "teachers";
+type SchoolProfileGraphMetric =
+    | "competing-students"
+    | "participating-students"
+    | "projects"
+    | "teachers";
 
 export default function SchoolProfilePage() {
     const params = useParams();
@@ -86,7 +92,7 @@ export default function SchoolProfilePage() {
     const [showPrevYearWarning, setShowPrevYearWarning] = useState(true);
     const [mergeOpen, setMergeOpen] = useState(false);
     const [graphMetric, setGraphMetric] =
-        useState<SchoolProfileGraphMetric>("students");
+        useState<SchoolProfileGraphMetric>("competing-students");
 
     const StudentsIcon = ENTITY_CONFIG.students.icon;
     const TeachersIcon = ENTITY_CONFIG.teachers.icon;
@@ -233,37 +239,45 @@ export default function SchoolProfilePage() {
         return allYearsData.map((d, i) => ({
             x: studentYearData[i]?.x ?? i,
             y:
-                graphMetric === "students"
-                    ? Number(d.studentCount)
-                    : graphMetric === "projects"
-                      ? Number(d.projectCount)
-                      : Number(d.teacherCount),
+                graphMetric === "competing-students"
+                    ? Number(d.competingStudents ?? 0)
+                    : graphMetric === "participating-students"
+                      ? Number(d.studentCount)
+                      : graphMetric === "projects"
+                        ? Number(d.projectCount)
+                        : Number(d.teacherCount),
         }));
     }, [allYearsData, studentYearData, graphMetric]);
 
     const graphYAxisLabel =
-        graphMetric === "students"
-            ? ENTITY_CONFIG.students.label
-            : graphMetric === "projects"
-              ? ENTITY_CONFIG.projects.label
-              : ENTITY_CONFIG.teachers.label;
+        graphMetric === "competing-students"
+            ? "Total # Competing Students"
+            : graphMetric === "participating-students"
+              ? "Total # Participating Students"
+              : graphMetric === "projects"
+                ? ENTITY_CONFIG.projects.label
+                : ENTITY_CONFIG.teachers.label;
 
     const graphDataset: GraphDataset = {
         label:
-            graphMetric === "students"
-                ? "Students by Year"
-                : graphMetric === "projects"
-                  ? "Projects by Year"
-                  : "Teachers by Year",
+            graphMetric === "competing-students"
+                ? "Competing Students by Year"
+                : graphMetric === "participating-students"
+                  ? "Participating Students by Year"
+                  : graphMetric === "projects"
+                    ? "Projects by Year"
+                    : "Teachers by Year",
         data: graphSeries,
     };
 
     const measuredAsForMetric =
-        graphMetric === "students"
-            ? "total-student-count"
-            : graphMetric === "projects"
-              ? "total-project-count"
-              : "total-teacher-count";
+        graphMetric === "competing-students"
+            ? "total-competing-student-count"
+            : graphMetric === "participating-students"
+              ? "total-participating-student-count"
+              : graphMetric === "projects"
+                ? "total-project-count"
+                : "total-teacher-count";
 
     const trendChartHref =
         year !== null && schoolData
@@ -273,7 +287,8 @@ export default function SchoolProfilePage() {
               : "#";
     const projectsChartHref = `/chart?measuredAs=total-project-count&type=line&schools=${encodeURIComponent(schoolData?.name ?? "")}`;
     const teachersChartHref = `/chart?measuredAs=total-teacher-count&type=line&schools=${encodeURIComponent(schoolData?.name ?? "")}`;
-    const studentsChartHref = `/chart?measuredAs=total-student-count&type=line&schools=${encodeURIComponent(schoolData?.name ?? "")}`;
+    const competingStudentsChartHref = `/chart?measuredAs=total-competing-student-count&type=line&schools=${encodeURIComponent(schoolData?.name ?? "")}`;
+    const participatingStudentsChartHref = `/chart?measuredAs=total-participating-student-count&type=line&schools=${encodeURIComponent(schoolData?.name ?? "")}`;
 
     // Calculate sparkline data arrays from allYearsData
     const projectsSparkline = allYearsData.map((d) =>
@@ -282,8 +297,11 @@ export default function SchoolProfilePage() {
     const teachersSparkline = allYearsData.map((d) =>
         Number(d.teacherCount || 0),
     );
-    const studentsSparkline = allYearsData.map((d) =>
+    const participatingStudentsSparkline = allYearsData.map((d) =>
         Number(d.studentCount || 0),
+    );
+    const competingStudentsSparkline = allYearsData.map((d) =>
+        Number(d.competingStudents ?? 0),
     );
 
     // Calculate percent changes against the previous chronological year.
@@ -301,9 +319,13 @@ export default function SchoolProfilePage() {
         Number(schoolData?.teacherCount || 0),
         Number(prevYearData?.teacherCount || 0),
     );
-    const studentsPercentChange = calcPct(
+    const participatingStudentsPercentChange = calcPct(
         Number(schoolData?.studentCount || 0),
         Number(prevYearData?.studentCount || 0),
+    );
+    const competingStudentsPercentChange = calcPct(
+        Number(schoolData?.competingStudents ?? 0),
+        Number(prevYearData?.competingStudents ?? 0),
     );
 
     const firstYearNumeric = Number(schoolData?.firstYear);
@@ -314,7 +336,8 @@ export default function SchoolProfilePage() {
     const trendIndicatorsUnavailable =
         projectsPercentChange === null &&
         teachersPercentChange === null &&
-        studentsPercentChange === null;
+        participatingStudentsPercentChange === null &&
+        competingStudentsPercentChange === null;
     const showComparisonWarning =
         isOldestSchoolYearSelected && trendIndicatorsUnavailable;
 
@@ -428,7 +451,7 @@ export default function SchoolProfilePage() {
                         </button>
                     </div>
                 )}
-                <div className="grid grid-cols-3 gap-8">
+                <div className="grid grid-cols-4 gap-6">
                     <StatCard
                         label={ENTITY_CONFIG.projects.label}
                         value={schoolData.projectCount}
@@ -456,17 +479,38 @@ export default function SchoolProfilePage() {
                         href={teachersChartHref}
                     />
                     <StatCard
-                        label={ENTITY_CONFIG.students.label}
-                        value={schoolData.studentCount}
-                        icon={ENTITY_CONFIG.students.icon}
-                        iconColor={ENTITY_CONFIG.students.color}
-                        sparklineData={studentsSparkline}
-                        sparklineStroke={ENTITY_CONFIG.students.colorMid}
-                        sparklineFill={ENTITY_CONFIG.students.colorMuted}
-                        percentChange={studentsPercentChange}
+                        label="Total # Competing"
+                        value={schoolData.competingStudents ?? "—"}
+                        icon={ENTITY_CONFIG.studentsCompeting.icon}
+                        iconColor={ENTITY_CONFIG.studentsCompeting.color}
+                        sparklineData={competingStudentsSparkline}
+                        sparklineStroke={
+                            ENTITY_CONFIG.studentsCompeting.colorMid
+                        }
+                        sparklineFill={
+                            ENTITY_CONFIG.studentsCompeting.colorMuted
+                        }
+                        percentChange={competingStudentsPercentChange}
                         showTrend={true}
                         variant="with-aspect"
-                        href={studentsChartHref}
+                        href={competingStudentsChartHref}
+                    />
+                    <StatCard
+                        label="Total # Participating"
+                        value={schoolData.studentCount}
+                        icon={ENTITY_CONFIG.studentsParticipating.icon}
+                        iconColor={ENTITY_CONFIG.studentsParticipating.color}
+                        sparklineData={participatingStudentsSparkline}
+                        sparklineStroke={
+                            ENTITY_CONFIG.studentsParticipating.colorMid
+                        }
+                        sparklineFill={
+                            ENTITY_CONFIG.studentsParticipating.colorMuted
+                        }
+                        percentChange={participatingStudentsPercentChange}
+                        showTrend={true}
+                        variant="with-aspect"
+                        href={participatingStudentsChartHref}
                     />
                 </div>
 
@@ -493,18 +537,49 @@ export default function SchoolProfilePage() {
                             }
                         >
                             <TabsList>
-                                <TabsTrigger value="students" className="gap-2">
-                                    <StudentsIcon className="w-4 h-4" />
-                                    Students
+                                <TabsTrigger
+                                    value="competing-students"
+                                    className="gap-2"
+                                >
+                                    <StudentsIcon
+                                        className="w-4 h-4"
+                                        style={{
+                                            color: "rgb(236 72 153)",
+                                        }}
+                                    />
+                                    Competing
+                                </TabsTrigger>
+
+                                <TabsTrigger
+                                    value="participating-students"
+                                    className="gap-2"
+                                >
+                                    <StudentsIcon
+                                        className="w-4 h-4"
+                                        style={{
+                                            color: "rgb(139 92 246)",
+                                        }}
+                                    />
+                                    Participating
                                 </TabsTrigger>
 
                                 <TabsTrigger value="teachers" className="gap-2">
-                                    <TeachersIcon className="w-4 h-4" />
+                                    <TeachersIcon
+                                        className="w-4 h-4"
+                                        style={{
+                                            color: ENTITY_CONFIG.teachers.color,
+                                        }}
+                                    />
                                     Teachers
                                 </TabsTrigger>
 
                                 <TabsTrigger value="projects" className="gap-2">
-                                    <ProjectsIcon className="w-4 h-4" />
+                                    <ProjectsIcon
+                                        className="w-4 h-4"
+                                        style={{
+                                            color: ENTITY_CONFIG.projects.color,
+                                        }}
+                                    />
                                     Projects
                                 </TabsTrigger>
                             </TabsList>

@@ -303,6 +303,10 @@ export async function GET(
             ),
         });
 
+        const participatingStudentCount = studentCount[0]?.total
+            ? Number(studentCount[0].total)
+            : 0;
+
         return NextResponse.json({
             id: school.id,
             name: school.name,
@@ -310,9 +314,10 @@ export async function GET(
             region: school.region,
             latitude: school.latitude,
             longitude: school.longitude,
-            studentCount: studentCount[0]?.total
-                ? Number(studentCount[0].total)
-                : 0,
+            // `studentCount` is kept as a back-compat alias for participating.
+            studentCount: participatingStudentCount,
+            participatingStudentCount,
+            competingStudents: yearlyData?.competingStudents ?? null,
             teacherCount: teacherCount[0]?.count ?? 0,
             projectCount: projectCount[0]?.count ?? 0,
             firstYear: firstYearData ?? null,
