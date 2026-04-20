@@ -20,10 +20,13 @@ import {
     LineChart,
     Link,
     Loader2,
+    Minus,
     PlusCircle,
     Share,
     ShoppingBasket,
     SlidersHorizontal,
+    TrendingDown,
+    TrendingUp,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -828,7 +831,7 @@ export default function ChartPage() {
             new Set(graphDataset.flatMap((ds) => ds.data.map((d) => d.x))),
         ).sort((a, b) => Number(a) - Number(b));
 
-        // Build columns: Year, then for each dataset: value | Δ | % Change
+        // Build columns: Year, then for each dataset: value | Δ | Trend
         const cols = [
             { id: "year", accessorKey: "year", header: "Year" },
             ...graphDataset.flatMap((ds) => {
@@ -837,6 +840,7 @@ export default function ChartPage() {
                         ? (measuredAsLabels[filters.measuredAs] ?? ds.label)
                         : ds.label;
                 const prefix = graphDataset.length === 1 ? "" : `${ds.label} `;
+                const pctRawKey = `${ds.label}__pctRaw`;
                 return [
                     {
                         id: ds.label,
@@ -846,12 +850,78 @@ export default function ChartPage() {
                     {
                         id: `${ds.label}__delta`,
                         accessorKey: `${ds.label}__delta`,
-                        header: `${prefix}Δs`,
+                        header: `${prefix}Δ`,
+                        cell: ({
+                            row,
+                        }: {
+                            row: { original: Record<string, CellValue> };
+                        }) => {
+                            const formatted = row.original[
+                                `${ds.label}__delta`
+                            ] as string;
+                            if (formatted === "—")
+                                return (
+                                    <span className="text-muted-foreground">
+                                        —
+                                    </span>
+                                );
+                            const color = formatted.startsWith("+")
+                                ? "text-[#46A758]"
+                                : formatted.startsWith("-")
+                                  ? "text-[#E5484D]"
+                                  : "text-[#808080]";
+                            return <span className={color}>{formatted}</span>;
+                        },
                     },
                     {
                         id: `${ds.label}__pct`,
                         accessorKey: `${ds.label}__pct`,
                         header: `${prefix}% Change`,
+                        cell: ({
+                            row,
+                        }: {
+                            row: { original: Record<string, CellValue> };
+                        }) => {
+                            const raw = row.original[pctRawKey];
+                            const formatted = row.original[
+                                `${ds.label}__pct`
+                            ] as string;
+                            if (
+                                raw === null ||
+                                raw === undefined ||
+                                formatted === "—"
+                            ) {
+                                return (
+                                    <span className="text-muted-foreground">
+                                        —
+                                    </span>
+                                );
+                            }
+                            const pct = raw as number;
+                            const absStr = `${Math.abs(pct).toFixed(1)}%`;
+                            if (Math.abs(pct) < 0.5) {
+                                return (
+                                    <div className="flex items-center gap-1 text-[#808080]">
+                                        <Minus size={14} />
+                                        {absStr}
+                                    </div>
+                                );
+                            }
+                            if (pct > 0) {
+                                return (
+                                    <div className="flex items-center gap-1 text-[#46A758]">
+                                        <TrendingUp size={14} />
+                                        {absStr}
+                                    </div>
+                                );
+                            }
+                            return (
+                                <div className="flex items-center gap-1 text-[#E5484D]">
+                                    <TrendingDown size={14} />
+                                    {absStr}
+                                </div>
+                            );
+                        },
                     },
                 ];
             }),
@@ -887,14 +957,17 @@ export default function ChartPage() {
                             pct !== null
                                 ? `${pct >= 0 ? "+" : ""}${pct.toFixed(1)}%`
                                 : "—";
+                        row[`${ds.label}__pctRaw`] = pct;
                     } else {
                         row[`${ds.label}__delta`] = "—";
                         row[`${ds.label}__pct`] = "—";
+                        row[`${ds.label}__pctRaw`] = null;
                     }
                 } else {
                     row[ds.label] = "—";
                     row[`${ds.label}__delta`] = "—";
                     row[`${ds.label}__pct`] = "—";
+                    row[`${ds.label}__pctRaw`] = null;
                 }
             });
             return row;
