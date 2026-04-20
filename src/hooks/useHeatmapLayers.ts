@@ -118,9 +118,9 @@ export function useHeatmapLayers({
                     type: "line",
                     source: "regions-source",
                     paint: {
-                        "line-color": "#FF0000",
-                        "line-width": 4,
-                        "line-opacity": 0.5,
+                        "line-color": "#475569",
+                        "line-width": 2,
+                        "line-opacity": 0.6,
                     },
                 });
             } else {
@@ -196,17 +196,17 @@ export function useHeatmapLayers({
                             ["linear"],
                             ["heatmap-density"],
                             0,
-                            "rgba(33,102,172,0)",
+                            "rgba(255,255,204,0)",
                             0.2,
-                            "rgb(103,169,207)",
+                            "rgb(255,237,160)",
                             0.4,
-                            "rgb(209,229,240)",
+                            "rgb(254,178,76)",
                             0.6,
-                            "rgb(253,219,199)",
+                            "rgb(253,141,60)",
                             0.8,
-                            "rgb(239,138,98)",
+                            "rgb(227,74,51)",
                             1,
-                            "rgb(178,24,43)",
+                            "rgb(175,39,47)",
                         ],
                         "heatmap-radius": [
                             "interpolate",
@@ -221,34 +221,20 @@ export function useHeatmapLayers({
                 });
             }
 
-            // School icon points
-            const addSchoolIcons = () => {
-                if (!showSchools) return;
-                if (!map.getLayer("school-icons")) {
-                    map.addLayer({
-                        id: "school-icons",
-                        type: "symbol",
-                        source: "schoolSource",
-                        layout: {
-                            "icon-image": "school-icon",
-                            "icon-size": 1,
-                            "icon-allow-overlap": true,
-                        },
-                    });
-                }
-            };
-
-            if (map.hasImage("school-icon")) {
-                addSchoolIcons();
-            } else {
-                const img = new Image(26, 26);
-                img.onload = () => {
-                    if (!map.hasImage("school-icon")) {
-                        map.addImage("school-icon", img);
-                    }
-                    addSchoolIcons();
-                };
-                img.src = "/images/school-heatmap-icon.svg";
+            // School dot points
+            if (showSchools && !map.getLayer("school-icons")) {
+                map.addLayer({
+                    id: "school-icons",
+                    type: "circle",
+                    source: "schoolSource",
+                    paint: {
+                        "circle-radius": 5,
+                        "circle-color": "#1e293b",
+                        "circle-stroke-width": 1.5,
+                        "circle-stroke-color": "#ffffff",
+                        "circle-opacity": 0.85,
+                    },
+                });
             }
 
             // Toggle layer visibility
