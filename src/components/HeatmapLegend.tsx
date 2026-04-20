@@ -18,18 +18,27 @@ interface HeatmapLegendProps {
     height?: number;
     width?: number;
 }
-function HeatmapLegend({
+export default function HeatmapLegend({
     colors,
     startLabel,
     endLabel,
     height = 28,
-    width = 320,
+    width = 150,
 }: HeatmapLegendProps) {
-    const gradient = 'linear-gradient(to right, ${colors.join(",")})';
+    const gradient = `linear-gradient(to right, ${colors.join(",")})`;
 
     return (
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <span style={{ fontSize: 13, color: "#888", whiteSpace: "nowrap" }}>
+        <div
+            style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                background: "transparent",
+            }}
+        >
+            <span
+                style={{ fontSize: 13, color: "#797979", whiteSpace: "nowrap" }}
+            >
                 {startLabel}
             </span>
             <div
@@ -41,7 +50,9 @@ function HeatmapLegend({
                     background: gradient,
                 }}
             />
-            <span style={{ fontSize: 13, color: "#888", whiteSpace: "nowrap" }}>
+            <span
+                style={{ fontSize: 13, color: "#797979", whiteSpace: "nowrap" }}
+            >
                 {endLabel}
             </span>
         </div>

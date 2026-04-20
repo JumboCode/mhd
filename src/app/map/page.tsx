@@ -71,7 +71,7 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-
+import HeatmapLegend from "@/components/HeatmapLegend";
 import type { FilterDetail } from "@/lib/export-to-pdf";
 
 type Region = {
@@ -666,6 +666,24 @@ function HeatMapPage() {
                             // Allows layers to be added
                             ref={mapRef}
                         />
+                        {showHeatmap && isLoaded && (
+                            <div className="absolute bottom-4 left-4 z-10 bg-white/50 backdrop-blur-sm rounded-lg px-3 py-2">
+                                <HeatmapLegend
+                                    colors={[
+                                        "#eaeded",
+                                        "#a2c1d8",
+                                        "#69aacf",
+                                        "#f0ddd1",
+                                        "#f2a27f",
+                                        "#e09040",
+                                        "#cf4f45",
+                                        "#b2182b",
+                                    ]}
+                                    startLabel="Less dense"
+                                    endLabel="More dense"
+                                />
+                            </div>
+                        )}
                         {!isLoaded && (
                             // Gray overlay + loading wheel
                             <div className="absolute inset-0 z-50 flex items-center justify-center bg-slate-500/20 backdrop-blur-sm">
