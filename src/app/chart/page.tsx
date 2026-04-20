@@ -267,6 +267,17 @@ export default function ChartPage() {
         ],
     );
 
+    // Memoize graph dataset calculation
+    const graphDataset: ChartDataset[] = useMemo(() => {
+        if (!allProjects.length || !filters) return [];
+        const { datasets } = computeChartDatasets(
+            allProjects,
+            filters,
+            yearRange,
+        );
+        return datasets;
+    }, [allProjects, filters, yearRange]);
+
     // Cmd+S to open export dialog, Cmd+P to print PDF
     useHotkey(
         "s",
@@ -336,17 +347,6 @@ export default function ChartPage() {
         const minYear = Math.min(...allYears);
         updateYearRange(minYear, maxYear);
     }, [timePeriod, allProjects, updateYearRange]);
-
-    // Memoize graph dataset calculation - pure function, no side effects
-    const graphDataset: ChartDataset[] = useMemo(() => {
-        if (!allProjects.length || !filters) return [];
-        const { datasets } = computeChartDatasets(
-            allProjects,
-            filters,
-            yearRange,
-        );
-        return datasets;
-    }, [allProjects, filters, yearRange]);
 
     const { cols, rows } = useMemo(() => {
         if (!graphDataset.length) return { cols: [], rows: [] };
