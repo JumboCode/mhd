@@ -277,7 +277,7 @@ export function SchoolsDataTable<TData, TValue>({
                                                     : selectedYear &&
                                                         METRIC_BY_COL_INDEX[
                                                             cell.column.getIndex()
-                                                        ] != null
+                                                        ] !== null
                                                       ? "text-left z-0 border-b overflow-hidden p-0"
                                                       : "text-left z-0 border-b overflow-hidden"
                                             }
@@ -304,7 +304,7 @@ export function SchoolsDataTable<TData, TValue>({
                                             ) : selectedYear &&
                                               METRIC_BY_COL_INDEX[
                                                   cell.column.getIndex()
-                                              ] != null ? (
+                                              ] !== null ? (
                                                 <Link
                                                     href={buildChartUrl(
                                                         (
