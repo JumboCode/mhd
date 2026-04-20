@@ -205,7 +205,8 @@ export default function Sidebar() {
 
                             <nav className="flex flex-col space-y-1">
                                 {section.items.map((item) => {
-                                    const isActive = pathname === item.href;
+                                    const isActive =
+                                        pathname === item.href.split("?")[0];
 
                                     return (
                                         <Link
