@@ -72,12 +72,14 @@ import {
     measuredAsLabels,
     groupByLabels,
 } from "@/lib/chart-title";
+import { DataLineagePopup } from "@/components/DataLineagePopup";
 
 export default function ChartPage() {
     const [isExporting, setIsExporting] = useState(false);
     const [exportDialogOpen, setExportDialogOpen] = useState(false);
     const [cartOpen, setCartOpen] = useState(false);
     const [filterOpen, setFilterOpen] = useState(false);
+    const [dataLineageOpen, setDataLineageOpen] = useState(false);
 
     // All chart filters and URL state from single hook
     const {
@@ -139,6 +141,7 @@ export default function ChartPage() {
     // Keyboard shortcuts for chart type
     useHotkey("b", () => handleChartTypeChange("bar"));
     useHotkey("l", () => handleChartTypeChange("line"));
+    useHotkey("?", () => setDataLineageOpen((v) => !v));
 
     const chartRef = useRef<HTMLDivElement | null>(null);
 
@@ -1039,56 +1042,9 @@ export default function ChartPage() {
             <DataLineagePopup
                 open={dataLineageOpen}
                 onOpenChange={setDataLineageOpen}
-                metricTitle="Total Schools"
-                metricDescription="Counts the number of unique schools that have projects in the selected time range."
-                sections={[
-                    {
-                        label: "DATA ORIGIN",
-                        color: "blue",
-                        items: [
-                            {
-                                title: 'CSV field "schoolId"',
-                                description:
-                                    "Each row in your spreadsheet has a school identifier",
-                            },
-                            {
-                                title: "Schools table",
-                                description:
-                                    'Matched or created using "schoolId" — stored with name, city, and location',
-                            },
-                            {
-                                title: "Projects table (school_id FK)",
-                                description:
-                                    "Each project references its school via a foreign key",
-                            },
-                            {
-                                title: "COUNT(DISTINCT school_id) per year",
-                                description:
-                                    "We count unique schools with at least one project that year",
-                            },
-                        ],
-                    },
-                    {
-                        label: "ACTIVE FILTERS & GROUPING",
-                        color: "orange",
-                        items: [
-                            {
-                                title: `Year range: ${yearRange.start}–${yearRange.end}`,
-                                description:
-                                    'Only projects whose "year" field falls within this range are included.',
-                            },
-                            {
-                                title: "Project type filter active",
-                                description: `Filtered to ${selectedProjectTypes.length} project types — matched against the "category" field in the Projects table (originally from CSV "categoryName").`,
-                            },
-                            {
-                                title: "Gateway schools only",
-                                description:
-                                    'Only showing Gateway schools — filtered by the "gateway" boolean flag on the Schools table.',
-                            },
-                        ],
-                    },
-                ]}
+                filters={filters}
+                yearRange={yearRange}
+                allProjects={allProjects}
             />
         </>
     );

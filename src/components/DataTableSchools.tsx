@@ -47,6 +47,27 @@ interface DataTableProps<TData, TValue> {
     setGlobalFilter: (value: string) => void;
     isLoading?: boolean;
     prevYearError?: string | null;
+    selectedYear?: number | null;
+}
+
+const METRIC_BY_COL_INDEX: Record<number, string> = {
+    6: "total-student-count", // numStudents
+    7: "total-teacher-count", // numTeachers
+    8: "total-project-count", // numProjects
+};
+
+function buildChartUrl(
+    schoolName: string,
+    colIndex: number,
+    selectedYear: number,
+): string {
+    const params = new URLSearchParams({
+        measuredAs: METRIC_BY_COL_INDEX[colIndex],
+        startYear: String(selectedYear - 4),
+        endYear: String(selectedYear),
+        schools: schoolName,
+    });
+    return `/chart?${params.toString()}`;
 }
 
 export function SchoolsDataTable<TData, TValue>({
@@ -57,6 +78,7 @@ export function SchoolsDataTable<TData, TValue>({
     setGlobalFilter,
     isLoading = false,
     prevYearError = null,
+    selectedYear = null,
 }: DataTableProps<TData, TValue>) {
     const [showPrevYearError, setShowPrevYearError] = useState(true);
     const [sorting, setSorting] = useState<SortingState>([
@@ -252,7 +274,12 @@ export function SchoolsDataTable<TData, TValue>({
                                             className={
                                                 cell.column.getIndex() === 0
                                                     ? "text-left sticky left-0 z-20 bg-muted border-r border-b overflow-hidden"
-                                                    : "text-left z-0 border-b overflow-hidden"
+                                                    : selectedYear &&
+                                                        METRIC_BY_COL_INDEX[
+                                                            cell.column.getIndex()
+                                                        ] != null
+                                                      ? "text-left z-0 border-b overflow-hidden p-0"
+                                                      : "text-left z-0 border-b overflow-hidden"
                                             }
                                             style={{
                                                 width: cell.column.getSize(),
@@ -273,6 +300,35 @@ export function SchoolsDataTable<TData, TValue>({
                                                             .cell,
                                                         cell.getContext(),
                                                     )}
+                                                </Link>
+                                            ) : selectedYear &&
+                                              METRIC_BY_COL_INDEX[
+                                                  cell.column.getIndex()
+                                              ] != null ? (
+                                                <Link
+                                                    href={buildChartUrl(
+                                                        (
+                                                            row.original as Record<
+                                                                string,
+                                                                unknown
+                                                            >
+                                                        ).name as string,
+                                                        cell.column.getIndex(),
+                                                        selectedYear,
+                                                    )}
+                                                    className="flex items-center h-12 w-full group"
+                                                >
+                                                    <div className="flex flex-row items-center gap-2 w-full rounded-lg px-3 py-2 group-hover:bg-border transition-colors">
+                                                        <span className="group-hover:underline underline-offset-2">
+                                                            {flexRender(
+                                                                cell.column
+                                                                    .columnDef
+                                                                    .cell,
+                                                                cell.getContext(),
+                                                            )}
+                                                        </span>
+                                                        {yoyChange(cell, row)}
+                                                    </div>
                                                 </Link>
                                             ) : (
                                                 <div className="flex flex-row items-center space-x-1 gap-2 h-12 px-1 py-2 truncate">

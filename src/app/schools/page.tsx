@@ -123,6 +123,7 @@ export default function SchoolsPage() {
                             setGlobalFilter={setSearch}
                             isLoading={isLoading}
                             prevYearError={prevYearError}
+                            selectedYear={year}
                         />
                     )}
                 </div>
