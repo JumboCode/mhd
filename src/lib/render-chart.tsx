@@ -18,7 +18,7 @@ export async function renderChartToDataUrl(
     container.style.left = "-9999px";
     container.style.top = "0";
     container.style.width = "800px";
-    container.style.height = "500px";
+    container.style.height = "auto";
     container.style.backgroundColor = "#fff";
     document.body.appendChild(container);
 
