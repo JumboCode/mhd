@@ -667,10 +667,10 @@ function HeatMapPage() {
                             ref={mapRef}
                         />
                         {showHeatmap && isLoaded && (
-                            <div className="absolute bottom-4 left-4 z-10 bg-white/50 backdrop-blur-sm rounded-lg px-3 py-2">
+                            <div className="absolute bottom-4 left-4 z-10 bg-white/40 backdrop-blur-md rounded-lg px-3 py-2">
                                 <HeatmapLegend
                                     colors={[
-                                        "#eaeded",
+                                        "#d5e0e6",
                                         "#a2c1d8",
                                         "#69aacf",
                                         "#f0ddd1",
@@ -681,6 +681,7 @@ function HeatMapPage() {
                                     ]}
                                     startLabel="Less dense"
                                     endLabel="More dense"
+                                    squareSize={20}
                                 />
                             </div>
                         )}

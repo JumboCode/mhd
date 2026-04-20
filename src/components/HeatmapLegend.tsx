@@ -3,10 +3,9 @@
  *                /components/GatewaySchools.tsx
  *
  *         Author: Justin
- *           Date: 3/1/2026
+ *           Date: 4/19/2026
  *
- *        Summary: Component for displaying current gateway
- *                 schools and modifying this flag for each.
+ *        Summary: Component for displaying the heatmap legend
  *
  **************************************************************/
 import React from "react";
@@ -15,15 +14,13 @@ interface HeatmapLegendProps {
     colors: string[];
     startLabel: string;
     endLabel: string;
-    height?: number;
-    width?: number;
+    squareSize?: number;
 }
 export default function HeatmapLegend({
     colors,
     startLabel,
     endLabel,
-    height = 28,
-    width = 150,
+    squareSize = 24,
 }: HeatmapLegendProps) {
     const gradient = `linear-gradient(to right, ${colors.join(",")})`;
 
@@ -32,26 +29,28 @@ export default function HeatmapLegend({
             style={{
                 display: "flex",
                 alignItems: "center",
-                gap: 12,
-                background: "transparent",
+                gap: 8,
             }}
         >
             <span
-                style={{ fontSize: 13, color: "#797979", whiteSpace: "nowrap" }}
+                style={{ fontSize: 13, color: "#676767", whiteSpace: "nowrap" }}
             >
                 {startLabel}
             </span>
-            <div
-                style={{
-                    flex: 1,
-                    width,
-                    height,
-                    borderRadius: 4,
-                    background: gradient,
-                }}
-            />
+            <div style={{ display: "flex", gap: 4 }}>
+                {colors.map((color, index) => (
+                    <div
+                        key={index}
+                        style={{
+                            width: squareSize,
+                            height: squareSize,
+                            backgroundColor: color,
+                        }}
+                    />
+                ))}
+            </div>
             <span
-                style={{ fontSize: 13, color: "#797979", whiteSpace: "nowrap" }}
+                style={{ fontSize: 13, color: "#676767", whiteSpace: "nowrap" }}
             >
                 {endLabel}
             </span>
