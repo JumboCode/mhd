@@ -9,13 +9,14 @@ import { ENTITY_CONFIG } from "@/lib/entity-config";
  * Matches against multiple label patterns since chart page and entity config may use different formats.
  * Returns undefined if label doesn't match any entity.
  */
-export function getEntityColorByLabel(label: string):
+export function getEntityColorByLabel(label: string | undefined):
     | {
           color: string;
           colorMuted: string;
           colorMid: string;
       }
     | undefined {
+    if (!label) return undefined;
     const normalizedLabel = label.toLowerCase();
 
     // Map of keywords to entity types
