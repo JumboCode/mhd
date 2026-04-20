@@ -118,7 +118,7 @@ export default function Sidebar() {
             title: "ANALYSIS",
             items: [
                 {
-                    href: "/map",
+                    href: "/map?metric=projects&regionView=default",
                     label: "Map",
                     icon: <Map size={20} />,
                 },

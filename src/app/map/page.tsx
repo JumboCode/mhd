@@ -132,7 +132,9 @@ function HeatMapPage() {
     // totalStudents | totalProjects | totalTeachers (lowercase in URL)
     const [rawMetric, setRawMetric] = useQueryState(
         "metric",
-        parseAsString.withDefault("projects"),
+        parseAsString
+            .withDefault("projects")
+            .withOptions({ clearOnDefault: false }),
     );
 
     // gateway school toggle variable
@@ -143,7 +145,9 @@ function HeatMapPage() {
 
     const [rawRegionView, setRegionView] = useQueryState(
         "regionView",
-        parseAsString.withDefault("default"),
+        parseAsString
+            .withDefault("default")
+            .withOptions({ clearOnDefault: false }),
     );
     const regionView = rawRegionView.toLowerCase();
 
