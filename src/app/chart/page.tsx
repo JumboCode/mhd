@@ -821,35 +821,81 @@ export default function ChartPage() {
     const { cols, rows } = useMemo(() => {
         if (!graphDataset.length) return { cols: [], rows: [] };
 
-        // Collect all unique years across all datasets
+        const isReturnRate = filters.measuredAs === "school-return-rate";
+
+        // Collect all unique years across all datasets, sorted ascending
         const allYears = Array.from(
             new Set(graphDataset.flatMap((ds) => ds.data.map((d) => d.x))),
         ).sort((a, b) => Number(a) - Number(b));
 
-        // Year column + one column per dataset label
+        // Build columns: Year, then for each dataset: value | Δ | % Change
         const cols = [
             { id: "year", accessorKey: "year", header: "Year" },
-            ...graphDataset.map((ds) => ({
-                id: ds.label,
-                accessorKey: ds.label,
-                header:
+            ...graphDataset.flatMap((ds) => {
+                const valueHeader =
                     ds.label === "All"
                         ? (measuredAsLabels[filters.measuredAs] ?? ds.label)
-                        : ds.label,
-            })),
+                        : ds.label;
+                const prefix = graphDataset.length === 1 ? "" : `${ds.label} `;
+                return [
+                    {
+                        id: ds.label,
+                        accessorKey: ds.label,
+                        header: valueHeader,
+                    },
+                    {
+                        id: `${ds.label}__delta`,
+                        accessorKey: `${ds.label}__delta`,
+                        header: `${prefix}Δs`,
+                    },
+                    {
+                        id: `${ds.label}__pct`,
+                        accessorKey: `${ds.label}__pct`,
+                        header: `${prefix}% Change`,
+                    },
+                ];
+            }),
         ];
 
-        // One row per year, one cell per dataset
-        const rows = allYears.map((year) => {
+        // One row per year
+        const rows = allYears.map((year, yearIdx) => {
             const row: Record<string, CellValue> = { year };
             graphDataset.forEach((ds) => {
                 const point = ds.data.find((d) => d.x === year);
-                row[ds.label] =
-                    point !== undefined
-                        ? filters.measuredAs === "school-return-rate"
-                            ? `${(point.y * 100).toFixed(1)}%`
-                            : Math.round(point.y)
-                        : "—";
+                const prevPoint =
+                    yearIdx > 0
+                        ? ds.data.find((d) => d.x === allYears[yearIdx - 1])
+                        : undefined;
+
+                if (point !== undefined) {
+                    row[ds.label] = isReturnRate
+                        ? `${(point.y * 100).toFixed(1)}%`
+                        : Math.round(point.y);
+
+                    if (prevPoint !== undefined) {
+                        const delta = point.y - prevPoint.y;
+                        const pct =
+                            prevPoint.y !== 0
+                                ? (delta / prevPoint.y) * 100
+                                : null;
+
+                        row[`${ds.label}__delta`] = isReturnRate
+                            ? `${delta >= 0 ? "+" : ""}${(delta * 100).toFixed(1)}pp`
+                            : `${delta >= 0 ? "+" : ""}${Math.round(delta)}`;
+
+                        row[`${ds.label}__pct`] =
+                            pct !== null
+                                ? `${pct >= 0 ? "+" : ""}${pct.toFixed(1)}%`
+                                : "—";
+                    } else {
+                        row[`${ds.label}__delta`] = "—";
+                        row[`${ds.label}__pct`] = "—";
+                    }
+                } else {
+                    row[ds.label] = "—";
+                    row[`${ds.label}__delta`] = "—";
+                    row[`${ds.label}__pct`] = "—";
+                }
             });
             return row;
         });
