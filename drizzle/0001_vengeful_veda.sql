@@ -1,0 +1,1 @@
+ALTER TABLE "yearly_school_participation" ADD COLUMN "competing_students" integer DEFAULT 0 NOT NULL;

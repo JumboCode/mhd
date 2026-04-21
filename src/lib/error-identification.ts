@@ -64,6 +64,7 @@ export type ColumnType =
     | "boolean"
     | "date"
     | "string_or_number"
+    | "optional_number"
     | "enum";
 
 /**

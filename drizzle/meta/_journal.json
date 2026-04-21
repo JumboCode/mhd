@@ -8,6 +8,13 @@
             "when": 1776643767677,
             "tag": "0000_round_flatman",
             "breakpoints": true
+        },
+        {
+            "idx": 1,
+            "version": "7",
+            "when": 1776733884709,
+            "tag": "0001_vengeful_veda",
+            "breakpoints": true
         }
     ]
 }

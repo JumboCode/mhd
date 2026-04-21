@@ -11,7 +11,7 @@
  **************************************************************/
 
 import { NextRequest, NextResponse } from "next/server";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
     schools,
@@ -22,7 +22,10 @@ import {
     yearMetadata,
 } from "@/lib/schema";
 import { standardize, toTitleCase } from "@/lib/string-standardize";
-import { studentRequiredColumns } from "@/lib/required-spreadsheet-columns";
+import {
+    studentRequiredColumns,
+    schoolRequiredColumns,
+} from "@/lib/required-spreadsheet-columns";
 import { findRegionOf } from "@/lib/region-finder";
 import { yearSchema, MIN_YEAR, MAX_YEAR } from "@/lib/year-validation";
 import { internalError } from "@/lib/api-utils";
@@ -45,6 +48,8 @@ type SchoolInfoEntry = {
     division: string[];
     implementationModel: string;
     schoolType: string;
+    /** Null means the cell was empty so fall back to sum of project numStudents. */
+    competingStudents: number | null;
 };
 
 /**
@@ -90,6 +95,9 @@ function buildSchoolInfoMap(rawData: RowData[]): Map<string, SchoolInfoEntry> {
     const schoolTypeIdx =
         headerMap.get(normalize("schoolType")) ??
         headerMap.get(normalize("School Type"));
+    const competingStudentsIdx = headerMap.get(
+        normalize("# students who began project at the school level"),
+    );
 
     if (schoolIdIdx === undefined) return map;
 
@@ -113,6 +121,17 @@ function buildSchoolInfoMap(rawData: RowData[]): Map<string, SchoolInfoEntry> {
                 ? normalizeSlashes(String(row[schoolTypeIdx] ?? ""))
                 : "";
 
+        const rawCompeting =
+            competingStudentsIdx !== undefined
+                ? row[competingStudentsIdx]
+                : null;
+        const competingStudents =
+            rawCompeting !== null &&
+            rawCompeting !== undefined &&
+            rawCompeting !== ""
+                ? Number(rawCompeting)
+                : null;
+
         const existing = map.get(schoolId);
         if (existing) {
             // Accumulate divisions from additional rows for the same school
@@ -126,6 +145,7 @@ function buildSchoolInfoMap(rawData: RowData[]): Map<string, SchoolInfoEntry> {
                 division: divisions,
                 implementationModel,
                 schoolType,
+                competingStudents,
             });
         }
     }
@@ -151,11 +171,31 @@ export async function POST(req: NextRequest) {
         const schoolCoordinates: SchoolCoordinateData[] =
             jsonReq.schoolCoordinates || [];
 
-        // Parse the school info spreadsheet if provided
-        const schoolInfoMap: Map<string, SchoolInfoEntry> =
-            jsonReq.schoolInfoData
-                ? buildSchoolInfoMap(JSON.parse(jsonReq.schoolInfoData))
-                : new Map();
+        if (!jsonReq.schoolInfoData) {
+            return NextResponse.json(
+                { error: "School info spreadsheet is required." },
+                { status: 400 },
+            );
+        }
+
+        const schoolInfoRaw: RowData[] = JSON.parse(jsonReq.schoolInfoData);
+        const normalizeCol = (s: string) => s.toLowerCase().replace(/\s+/g, "");
+        const schoolInfoHeaders = (schoolInfoRaw[0] as string[]).map(
+            normalizeCol,
+        );
+        const missingSchoolInfoColumns = schoolRequiredColumns.filter(
+            (col) => !schoolInfoHeaders.includes(normalizeCol(col)),
+        );
+        if (missingSchoolInfoColumns.length > 0) {
+            return NextResponse.json(
+                {
+                    error: `School info spreadsheet missing required columns: ${missingSchoolInfoColumns.join(", ")}`,
+                },
+                { status: 400 },
+            );
+        }
+
+        const schoolInfoMap = buildSchoolInfoMap(schoolInfoRaw);
 
         // Build coordinates lookup
         const coordsMap = new Map<
@@ -220,6 +260,9 @@ export async function POST(req: NextRequest) {
             .delete(yearlyTeacherParticipation)
             .where(eq(yearlyTeacherParticipation.year, year));
 
+        // Maps integer school PK to string schoolId for post-processing
+        const schoolIntToStrId = new Map<number, string>();
+
         const total = filteredRows.length;
         for (let i = 0; i < filteredRows.length; i++) {
             const row = filteredRows[i];
@@ -231,6 +274,7 @@ export async function POST(req: NextRequest) {
 
             const schoolName = row[COLUMN_INDICES.schoolName] as string;
             const schoolTown = toTitleCase(row[COLUMN_INDICES.city] as string);
+            schoolIntToStrId.set(school!.id, schoolIdValue);
             const schoolInfo = schoolInfoMap.get(schoolIdValue);
 
             if (!school) {
@@ -380,6 +424,46 @@ export async function POST(req: NextRequest) {
             currentProgress.progress = Math.round(((i + 1) / total) * 100);
             currentProgress.complete = false;
         }
+        // Set competingStudents for every school: explicit value from school info
+        // sheet, or fall back to sum of project numStudents for that school+year.
+        const yearlySchools = await db.query.yearlySchoolParticipation.findMany(
+            {
+                where: eq(yearlySchoolParticipation.year, year),
+            },
+        );
+
+        for (const ysp of yearlySchools) {
+            const schoolIdStr = schoolIntToStrId.get(ysp.schoolId);
+            const explicitValue =
+                schoolIdStr != null
+                    ? (schoolInfoMap.get(schoolIdStr)?.competingStudents ??
+                      null)
+                    : null;
+
+            let competingStudentsValue: number;
+            if (explicitValue != null) {
+                competingStudentsValue = explicitValue;
+            } else {
+                const [result] = await db
+                    .select({
+                        total: sql<number>`COALESCE(SUM(${projects.numStudents}), 0)`,
+                    })
+                    .from(projects)
+                    .where(
+                        and(
+                            eq(projects.schoolId, ysp.schoolId),
+                            eq(projects.year, year),
+                        ),
+                    );
+                competingStudentsValue = result?.total ?? 0;
+            }
+
+            await db
+                .update(yearlySchoolParticipation)
+                .set({ competingStudents: competingStudentsValue })
+                .where(eq(yearlySchoolParticipation.id, ysp.id));
+        }
+
         currentProgress.progress = 100;
         currentProgress.complete = true;
 
