@@ -23,7 +23,7 @@ export default function SchoolsPage() {
     const [prevYearSchoolInfo, setPrevYearSchoolInfo] = useState<Schools[]>([]);
     const [year, setYear] = useState<number | null>(null);
     const [search, setSearch] = useState("");
-    const [isLoading, setIsLoading] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
     const [schoolDataError, setSchoolDataError] = useState<string | null>(null);
     const [prevYearError, setPrevYearError] = useState<string | null>(null);
     const [retryTrigger, setRetryTrigger] = useState(0);

@@ -26,8 +26,3 @@ export function StatCardSkeleton({
         </div>
     );
 }
-
-/** @deprecated Use StatCardSkeleton with variant="with-aspect" instead */
-export function StatCardSkeletonWithAspect() {
-    return <StatCardSkeleton variant="with-aspect" />;
-}
