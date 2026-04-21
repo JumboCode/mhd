@@ -33,7 +33,7 @@ import {
     parseAsBoolean,
 } from "nuqs";
 
-const VALID_METRICS = ["students", "projects", "teachers"];
+const VALID_METRICS = ["competing", "participating", "projects", "teachers"];
 
 import "maplibre-gl/dist/maplibre-gl.css";
 

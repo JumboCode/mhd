@@ -56,6 +56,7 @@ export type Schools = {
     implementationModel: string;
     schoolType: string;
     numStudents: number;
+    competingStudents: number | null;
     numTeachers: number;
     numProjects: number;
     trend: string; // TODO: calculate trend and change type if needed
@@ -119,12 +120,25 @@ export function createColumns(): ColumnDef<Schools>[] {
             ),
         },
         {
-            accessorKey: "numStudents",
-            size: 145,
-            minSize: 145,
+            accessorKey: "competingStudents",
+            size: 155,
+            minSize: 155,
             maxSize: 250,
             header: ({ column }) => (
-                <SortableHeader column={column} label="# Students" />
+                <SortableHeader column={column} label="# Competing" />
+            ),
+            cell: ({ getValue }) => {
+                const v = getValue() as number | null;
+                return v ?? "—";
+            },
+        },
+        {
+            accessorKey: "numStudents",
+            size: 160,
+            minSize: 160,
+            maxSize: 250,
+            header: ({ column }) => (
+                <SortableHeader column={column} label="# Participating" />
             ),
         },
         {

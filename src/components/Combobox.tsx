@@ -29,7 +29,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { CommandList } from "cmdk";
 
-type Option = { value: string; label: string };
+type Option = {
+    value: string;
+    label: string;
+    /** Optional abbreviated label shown in the closed trigger. */
+    shortLabel?: string;
+};
 
 type ComboBoxProps = {
     options: Option[];
@@ -46,10 +51,9 @@ export function Combobox({
 }: ComboBoxProps) {
     const [open, setOpen] = React.useState(false);
 
+    const selected = options.find((option) => option.value === value);
     const selectedLabel =
-        options.find((option) => option.value === value)?.label ??
-        placeholder ??
-        "Select...";
+        selected?.shortLabel ?? selected?.label ?? placeholder ?? "Select...";
 
     return (
         <Popover open={open} onOpenChange={setOpen}>

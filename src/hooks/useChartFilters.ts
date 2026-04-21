@@ -15,6 +15,7 @@ import {
     type MeasuredAs,
 } from "@/components/GraphFilters/GraphFilters";
 import { type YearRange } from "@/lib/chart-data-pipeline";
+import { normalizeMeasuredAs } from "@/lib/compute-chart-data";
 
 // Schema for batched filter query params
 const filterParsers = {
@@ -197,7 +198,9 @@ export function useChartFilters(): UseChartFiltersReturn {
             teacherYearsValue2: filterState.teacherYearsValue2 || undefined,
             groupBy: filterState.groupBy as GroupBy,
             onlyGatewaySchools: filterState.onlyGatewaySchools,
-            measuredAs: filterState.measuredAs as MeasuredAs,
+            measuredAs: normalizeMeasuredAs(
+                filterState.measuredAs,
+            ) as MeasuredAs,
         }),
         [filterState],
     );
@@ -228,9 +231,11 @@ export function useChartFilters(): UseChartFiltersReturn {
         // Individual filter accessors
         groupBy: filterState.groupBy,
         setGroupBy: (value) => setFilterState({ groupBy: value }),
-        measuredAs: filterState.measuredAs,
+        measuredAs: normalizeMeasuredAs(filterState.measuredAs),
         setMeasuredAs: (value) =>
-            setFilterState({ measuredAs: value as string }),
+            setFilterState({
+                measuredAs: normalizeMeasuredAs(value as string),
+            }),
         selectedSchools: filterState.schools,
         setSelectedSchools: (schools) => setFilterState({ schools }),
         selectedCities: filterState.cities,

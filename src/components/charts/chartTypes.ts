@@ -19,6 +19,25 @@ export function getEntityColorByLabel(label: string | undefined):
     if (!label) return undefined;
     const normalizedLabel = label.toLowerCase();
 
+    // Check competing/participating students BEFORE the generic "student"
+    // match so they get their distinct entity colors.
+    if (normalizedLabel.includes("competing")) {
+        const c = ENTITY_CONFIG.studentsCompeting;
+        return {
+            color: c.color,
+            colorMuted: c.colorMuted,
+            colorMid: c.colorMid,
+        };
+    }
+    if (normalizedLabel.includes("participating")) {
+        const c = ENTITY_CONFIG.studentsParticipating;
+        return {
+            color: c.color,
+            colorMuted: c.colorMuted,
+            colorMid: c.colorMid,
+        };
+    }
+
     // Map of keywords to entity types
     const labelPatterns: Record<string, keyof typeof ENTITY_CONFIG> = {
         project: "projects",
