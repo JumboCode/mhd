@@ -20,7 +20,7 @@ import {
     useRef,
 } from "react";
 import { toast } from "sonner";
-import { Check, Trash, Upload, X } from "lucide-react";
+import { AlertTriangle, Check, Trash, Upload, X } from "lucide-react";
 import Link from "next/link";
 import {
     Dialog,
@@ -222,10 +222,18 @@ const YearsOfData = forwardRef<
                                     </td>
                                     <td className="px-4 py-3 text-sm text-center">
                                         <div className="flex items-center justify-center">
-                                            {yearsWithData.has(entry.year) ? (
+                                            {yearsWithData.has(entry.year) &&
+                                            entry.uploadedAt !== null ? (
                                                 <span className="inline-flex items-center justify-center gap-1.5 w-24 px-3 py-1 rounded-sm text-xs font-medium bg-green-100 text-green-700 border border-green-300">
                                                     <Check className="w-3 h-3" />
                                                     Uploaded
+                                                </span>
+                                            ) : yearsWithData.has(
+                                                  entry.year,
+                                              ) ? (
+                                                <span className="inline-flex items-center justify-center gap-1.5 w-28 px-3 py-1 rounded-sm text-xs font-medium bg-amber-100 text-amber-700 border border-amber-300">
+                                                    <AlertTriangle className="w-3 h-3" />
+                                                    Incomplete
                                                 </span>
                                             ) : (
                                                 <span className="inline-flex items-center justify-center gap-1.5 w-24 px-3 py-1 rounded-sm text-xs font-medium bg-red-100 text-red-600 border border-red-300">

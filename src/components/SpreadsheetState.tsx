@@ -13,12 +13,27 @@
 
 "use client";
 
-import { type ReactElement, useEffect, useState, useCallback } from "react";
+import {
+    type ReactElement,
+    useEffect,
+    useState,
+    useCallback,
+    useRef,
+} from "react";
 import { CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import * as XLSX from "xlsx";
+import { useUnsavedChanges } from "@/components/UnsavedChangesContext";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogFooter,
+} from "@/components/ui/dialog";
 import SpreadsheetStatusBar from "@/components/SpreadsheetStatusBar";
 import type { SpreadsheetData } from "@/types/spreadsheet";
 import SpreadsheetConfirmation from "./SpreadsheetConfirmation";
@@ -127,6 +142,58 @@ export default function SpreadsheetState() {
     const router = useRouter();
     const [uploadSuccess, setUploadSuccess] = useState(false);
     const [uploadedYear, setUploadedYear] = useState<number | null>(null);
+
+    // Navigation blocking while upload is in progress
+    const { setOnNavigationAttempt } = useUnsavedChanges();
+    const isSubmittingRef = useRef(false);
+    const [showLeaveDialog, setShowLeaveDialog] = useState(false);
+    const [pendingNavigation, setPendingNavigation] = useState<string | null>(
+        null,
+    );
+
+    // Keep ref in sync so sidebar nav handler always reads latest value
+    useEffect(() => {
+        isSubmittingRef.current = isSubmitting;
+    }, [isSubmitting]);
+
+    // Block browser refresh / tab close during upload
+    useEffect(() => {
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            if (isSubmitting) {
+                e.preventDefault();
+            }
+        };
+        window.addEventListener("beforeunload", handleBeforeUnload);
+        return () =>
+            window.removeEventListener("beforeunload", handleBeforeUnload);
+    }, [isSubmitting]);
+
+    // Block sidebar navigation during upload
+    useEffect(() => {
+        setOnNavigationAttempt(() => (href: string) => {
+            if (isSubmittingRef.current) {
+                setPendingNavigation(href);
+                setShowLeaveDialog(true);
+            } else {
+                router.push(href);
+            }
+        });
+        return () => {
+            setOnNavigationAttempt(() => (href: string) => router.push(href));
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [setOnNavigationAttempt]);
+
+    const handleLeaveAnyway = () => {
+        setShowLeaveDialog(false);
+        if (pendingNavigation) router.push(pendingNavigation);
+        setPendingNavigation(null);
+    };
+
+    const handleStay = () => {
+        setShowLeaveDialog(false);
+        setPendingNavigation(null);
+    };
 
     const handleSchoolLocationAssigned = useCallback(
         (schoolId: string, lat: number, long: number) => {
@@ -687,6 +754,35 @@ export default function SpreadsheetState() {
                     </Button>
                 </div>
             )}
+
+            {/* Warn user if they try to navigate away while upload is in progress */}
+            <Dialog open={showLeaveDialog} onOpenChange={handleStay}>
+                <DialogContent
+                    showCloseButton={false}
+                    onInteractOutside={(e) => e.preventDefault()}
+                >
+                    <DialogHeader>
+                        <DialogTitle>Upload in Progress</DialogTitle>
+                        <DialogDescription>
+                            Leaving now will result in incomplete data being
+                            saved. The year will appear as uploaded in Settings
+                            but will be missing records. Are you sure you want
+                            to leave?
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={handleStay}>
+                            Stay on Page
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            onClick={handleLeaveAnyway}
+                        >
+                            Leave Anyway
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
