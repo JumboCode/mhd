@@ -11,6 +11,7 @@
  **************************************************************/
 
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import SpreadsheetState from "@/components/SpreadsheetState";
 
 export const metadata: Metadata = {
@@ -18,5 +19,9 @@ export const metadata: Metadata = {
 };
 
 export default function UploadPage() {
-    return <SpreadsheetState />;
+    return (
+        <Suspense>
+            <SpreadsheetState />
+        </Suspense>
+    );
 }

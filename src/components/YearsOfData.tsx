@@ -254,7 +254,7 @@ const YearsOfData = forwardRef<
                                             </button>
                                         ) : (
                                             <Link
-                                                href="/upload"
+                                                href={`/upload?year=${entry.year}`}
                                                 className="w-full h-full px-4 py-3 flex items-center justify-center text-gray-400 hover:text-blue-500 transition-colors"
                                                 aria-label={`Upload ${entry.year}`}
                                             >

@@ -16,7 +16,7 @@
 import { type ReactElement, useEffect, useState, useCallback } from "react";
 import { CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import * as XLSX from "xlsx";
 import SpreadsheetStatusBar from "@/components/SpreadsheetStatusBar";
@@ -81,6 +81,12 @@ function parseFile(file: File): Promise<SpreadsheetData | null> {
 }
 
 export default function SpreadsheetState() {
+    const searchParams = useSearchParams();
+    const yearParam = searchParams.get("year");
+    const initialYear = yearParam
+        ? parseInt(yearParam, 10)
+        : new Date().getFullYear();
+
     // Files
     const [file, setFile] = useState<File | undefined>();
     const [schoolInfoFile, setSchoolInfoFile] = useState<File | undefined>();
@@ -90,7 +96,7 @@ export default function SpreadsheetState() {
     const [schoolInfoData, setSchoolInfoData] = useState<SpreadsheetData>([]);
 
     // Year
-    const [year, setYear] = useState<number | null>(new Date().getFullYear());
+    const [year, setYear] = useState<number | null>(initialYear);
     const [yearHasData, setYearHasData] = useState(false);
     const [yearsWithData, setYearsWithData] = useState<Set<number>>(new Set());
 
@@ -178,11 +184,11 @@ export default function SpreadsheetState() {
         fetchKnownSchools();
     }, []);
 
-    // Set default year to current year once yearsWithData loads
+    // Set default year to current year once yearsWithData loads (skip if year was pre-filled via URL)
     useEffect(() => {
         if (yearsWithData.size === 0) return;
-        setYear(new Date().getFullYear());
-    }, [yearsWithData]);
+        if (!yearParam) setYear(new Date().getFullYear());
+    }, [yearsWithData, yearParam]);
 
     // Check if selected year has data whenever year changes
     useEffect(() => {
