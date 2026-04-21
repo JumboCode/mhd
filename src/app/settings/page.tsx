@@ -33,9 +33,10 @@ import {
 } from "@/components/ui/dialog";
 
 export default function Settings() {
-    const [otherHasChanges, setOtherHasChanges] = useState(false);
+    const [gatewayDirty, setGatewayDirty] = useState(false);
+    const [locationDirty, setLocationDirty] = useState(false);
     const [yearsHasChanges, setYearsHasChanges] = useState(false);
-    const hasUnsavedChanges = otherHasChanges || yearsHasChanges;
+    const hasUnsavedChanges = gatewayDirty || locationDirty || yearsHasChanges;
     const router = useRouter();
     const gatewaySchoolsRef = useRef<GatewaySchoolsHandle>(null);
     const yearsOfDataRef = useRef<YearsOfDataHandle>(null);
@@ -54,7 +55,8 @@ export default function Settings() {
                 yearsOfDataRef.current?.save(),
                 schoolLocationRef.current?.save(),
             ]);
-            setOtherHasChanges(false);
+            setGatewayDirty(false);
+            setLocationDirty(false);
             setYearsHasChanges(false);
         } catch {
             // save was cancelled (e.g. user dismissed a confirmation dialog)
@@ -65,7 +67,8 @@ export default function Settings() {
         gatewaySchoolsRef.current?.discard();
         yearsOfDataRef.current?.discard();
         schoolLocationRef.current?.discard();
-        setOtherHasChanges(false);
+        setGatewayDirty(false);
+        setLocationDirty(false);
         setYearsHasChanges(false);
     };
 
@@ -129,12 +132,12 @@ export default function Settings() {
                     </h4>
                     <GatewaySchools
                         ref={gatewaySchoolsRef}
-                        onUnsavedChange={() => setOtherHasChanges(true)}
+                        onDirtyChange={setGatewayDirty}
                     />
                 </div>
                 <SchoolLocationEditor
                     ref={schoolLocationRef}
-                    onUnsavedChange={() => setOtherHasChanges(true)}
+                    onUnsavedChange={() => setLocationDirty(true)}
                 />
                 <div className="space-y-3">
                     <h3 className="font-bold">Available Data</h3>
