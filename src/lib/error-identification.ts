@@ -114,6 +114,7 @@ export const schoolRequiredColumnsDict: Record<string, ColumnType> = {
     "Division": "string",
     "Implementation Model": "string",
     "School Type": "string",
+    "# students who began project at the school level": "optional_number",
 };
 
 /** Column spec used for the school info spreadsheet. */
@@ -125,6 +126,7 @@ export const schoolColumnSpec: ColumnSpec = {
         "Division": "enum",
         "Implementation Model": "enum",
         "School Type": "enum",
+        "# students who began project at the school level": "optional_number",
     },
     enumValues: {
         "Division": [
@@ -336,7 +338,9 @@ function checkRequiredColumnTypes(
             const coords = xytoCoords(row, colIdx);
 
             if (cell === null || cell === undefined || cell === "") {
-                emptyCellCoords.push(coords);
+                if (expectedType !== "optional_number") {
+                    emptyCellCoords.push(coords);
+                }
                 continue;
             }
 
@@ -358,6 +362,9 @@ function checkRequiredColumnTypes(
                     break;
                 case "string_or_number":
                     isValid = typeof cell === "string" || !isNaN(Number(cell));
+                    break;
+                case "optional_number":
+                    isValid = !isNaN(Number(cell));
                     break;
                 case "enum": {
                     const allowed = enumValues?.[colName];
