@@ -306,10 +306,13 @@ export async function POST(req: NextRequest) {
                     .returning();
                 project = inserted;
             } else {
-                // Project exists, so increment student count
+                // Project exists: increment student count and mark as team project
                 const [updated] = await db
                     .update(projects)
-                    .set({ numStudents: project.numStudents + 1 })
+                    .set({
+                        numStudents: project.numStudents + 1,
+                        teamProject: true,
+                    })
                     .where(eq(projects.id, project.id))
                     .returning();
                 project = updated;
