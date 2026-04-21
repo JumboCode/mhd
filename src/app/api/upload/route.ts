@@ -435,13 +435,13 @@ export async function POST(req: NextRequest) {
         for (const ysp of yearlySchools) {
             const schoolIdStr = schoolIntToStrId.get(ysp.schoolId);
             const explicitValue =
-                schoolIdStr != null
+                schoolIdStr !== null && schoolIdStr !== undefined
                     ? (schoolInfoMap.get(schoolIdStr)?.competingStudents ??
                       null)
                     : null;
 
             let competingStudentsValue: number;
-            if (explicitValue != null) {
+            if (explicitValue !== null) {
                 competingStudentsValue = explicitValue;
             } else {
                 const [result] = await db
