@@ -26,7 +26,6 @@ type Stats = {
     totals: {
         total_projects: number;
         total_teachers: number;
-        total_students: number;
         total_competing_students: number;
         total_participating_students: number;
         total_schools: number;
@@ -39,7 +38,6 @@ type YearStats = {
     year: number;
     total_projects: number;
     total_teachers: number;
-    total_students: number;
     total_competing_students: number;
     total_participating_students: number;
     total_schools: number;
@@ -48,7 +46,6 @@ type YearStats = {
 type PercentChanges = {
     projects: number | null;
     teachers: number | null;
-    students: number | null;
     competing_students: number | null;
     participating_students: number | null;
     schools: number | null;
@@ -279,10 +276,7 @@ export default function Dashboard() {
                         />
                         <StatCard
                             label="Total # Participating"
-                            value={
-                                stats.totals.total_participating_students ??
-                                stats.totals.total_students
-                            }
+                            value={stats.totals.total_participating_students}
                             icon={ENTITY_CONFIG.studentsParticipating.icon}
                             iconColor={
                                 ENTITY_CONFIG.studentsParticipating.color
@@ -296,7 +290,6 @@ export default function Dashboard() {
                             }
                             percentChange={
                                 percentChanges?.participating_students ??
-                                percentChanges?.students ??
                                 undefined
                             }
                             showTrend={true}

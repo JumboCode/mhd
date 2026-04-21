@@ -35,16 +35,6 @@ import {
 
 const VALID_METRICS = ["competing", "participating", "projects", "teachers"];
 
-/**
- * Map legacy URL metric values onto their current equivalents.
- * `students` used to mean "sum of projects.num_students" (participating).
- */
-function normalizeMapMetric(raw: string): string {
-    const lower = raw.toLowerCase();
-    if (lower === "students") return "participating";
-    return lower;
-}
-
 import "maplibre-gl/dist/maplibre-gl.css";
 
 import YearDropdown from "@/components/YearDropdown";
@@ -178,10 +168,9 @@ function HeatMapPage() {
         rawYear !== null && rawYear >= 1990 && rawYear <= currentYear
             ? rawYear
             : null;
-    const normalizedRawMetric = normalizeMapMetric(rawMetric);
     const metric = capitalize(
-        VALID_METRICS.includes(normalizedRawMetric)
-            ? normalizedRawMetric
+        VALID_METRICS.includes(rawMetric.toLowerCase())
+            ? rawMetric.toLowerCase()
             : "projects",
     );
 

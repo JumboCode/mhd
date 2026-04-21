@@ -11,9 +11,7 @@ async function getCompetingStudentsByYear(): Promise<Map<number, number>> {
         .from(yearlySchoolParticipation)
         .groupBy(yearlySchoolParticipation.year);
 
-    return new Map(
-        rows.map((r) => [r.year, r.total ? Number(r.total) : 0] as const),
-    );
+    return new Map(rows.map((r) => [r.year, Number(r.total)] as const));
 }
 
 export async function getYearlyStats(year: number) {
@@ -23,7 +21,7 @@ export async function getYearlyStats(year: number) {
             total_schools: countDistinct(projects.schoolId),
             total_teachers: countDistinct(projects.teacherId),
             total_projects: count(projects.id),
-            total_students: sum(projects.numStudents),
+            total_participating_students: sum(projects.numStudents),
         })
         .from(projects)
         .where(eq(projects.year, year));
@@ -35,9 +33,7 @@ export async function getYearlyStats(year: number) {
         .from(yearlySchoolParticipation)
         .where(eq(yearlySchoolParticipation.year, year));
 
-    const total_competing_students = competingRow?.total
-        ? Number(competingRow.total)
-        : 0;
+    const total_competing_students = Number(competingRow?.total);
 
     // Handle case when no data exists for the year
     if (!result) {
@@ -47,25 +43,20 @@ export async function getYearlyStats(year: number) {
                 total_schools: 0,
                 total_teachers: 0,
                 total_projects: 0,
-                total_students: 0,
                 total_competing_students,
                 total_participating_students: 0,
             },
         };
     }
 
-    const total_participating_students = result.total_students
-        ? Number(result.total_students)
-        : 0;
+    const total_participating_students = Number(
+        result.total_participating_students,
+    );
 
-    // Convert sum result from string to number
     const totals = {
         total_schools: result.total_schools || 0,
         total_teachers: result.total_teachers || 0,
         total_projects: result.total_projects || 0,
-        // `total_students` retained for backward-compat; it represents
-        // participating (row-count-based) students.
-        total_students: total_participating_students,
         total_competing_students,
         total_participating_students,
     };
@@ -83,7 +74,7 @@ export async function getAllYearsStats() {
             total_schools: countDistinct(projects.schoolId),
             total_teachers: countDistinct(projects.teacherId),
             total_projects: count(projects.id),
-            total_students: sum(projects.numStudents),
+            total_participating_students: sum(projects.numStudents),
         })
         .from(projects)
         .groupBy(projects.year)
@@ -91,19 +82,12 @@ export async function getAllYearsStats() {
 
     const competingByYear = await getCompetingStudentsByYear();
 
-    return results.map((row) => {
-        const total_participating_students = row.total_students
-            ? Number(row.total_students)
-            : 0;
-        const total_competing_students = competingByYear.get(row.year) ?? 0;
-        return {
-            year: row.year,
-            total_schools: row.total_schools || 0,
-            total_teachers: row.total_teachers || 0,
-            total_projects: row.total_projects || 0,
-            total_students: total_participating_students,
-            total_competing_students,
-            total_participating_students,
-        };
-    });
+    return results.map((row) => ({
+        year: row.year,
+        total_schools: row.total_schools || 0,
+        total_teachers: row.total_teachers || 0,
+        total_projects: row.total_projects || 0,
+        total_competing_students: competingByYear.get(row.year) ?? 0,
+        total_participating_students: Number(row.total_participating_students),
+    }));
 }
