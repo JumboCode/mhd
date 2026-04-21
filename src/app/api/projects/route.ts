@@ -43,6 +43,8 @@ export async function GET() {
                 schoolImplementationModel:
                     yearlySchoolParticipation.implementationModel,
                 schoolSchoolType: yearlySchoolParticipation.schoolType,
+                schoolCompetingStudents:
+                    yearlySchoolParticipation.competingStudents,
             })
             .from(projects)
             .innerJoin(schools, eq(schools.id, projects.schoolId))

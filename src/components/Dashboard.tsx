@@ -27,6 +27,8 @@ type Stats = {
         total_projects: number;
         total_teachers: number;
         total_students: number;
+        total_competing_students: number;
+        total_participating_students: number;
         total_schools: number;
         total_cities: number;
     };
@@ -38,6 +40,8 @@ type YearStats = {
     total_projects: number;
     total_teachers: number;
     total_students: number;
+    total_competing_students: number;
+    total_participating_students: number;
     total_schools: number;
 };
 
@@ -45,6 +49,8 @@ type PercentChanges = {
     projects: number | null;
     teachers: number | null;
     students: number | null;
+    competing_students: number | null;
+    participating_students: number | null;
     schools: number | null;
 };
 
@@ -155,8 +161,11 @@ export default function Dashboard() {
     const teachersSparkline = sparklineYears.map(
         (y) => statsMap.get(y)?.total_teachers ?? 0,
     );
-    const studentsSparkline = sparklineYears.map(
-        (y) => statsMap.get(y)?.total_students ?? 0,
+    const competingStudentsSparkline = sparklineYears.map(
+        (y) => statsMap.get(y)?.total_competing_students ?? 0,
+    );
+    const participatingStudentsSparkline = sparklineYears.map(
+        (y) => statsMap.get(y)?.total_participating_students ?? 0,
     );
     const schoolsSparkline = sparklineYears.map(
         (y) => statsMap.get(y)?.total_schools ?? 0,
@@ -221,7 +230,7 @@ export default function Dashboard() {
                             </button>
                         </div>
                     )}
-                    <div className="grid grid-cols-4 gap-5">
+                    <div className="grid grid-cols-5 gap-5">
                         <StatCard
                             label={ENTITY_CONFIG.projects.label}
                             value={stats.totals.total_projects}
@@ -251,18 +260,47 @@ export default function Dashboard() {
                             href="/chart?measuredAs=total-teacher-count&type=line"
                         />
                         <StatCard
-                            label={ENTITY_CONFIG.students.label}
-                            value={stats.totals.total_students}
-                            icon={ENTITY_CONFIG.students.icon}
-                            iconColor={ENTITY_CONFIG.students.color}
-                            sparklineData={studentsSparkline}
-                            sparklineStroke={ENTITY_CONFIG.students.colorMid}
-                            sparklineFill={ENTITY_CONFIG.students.colorMuted}
+                            label="Total # Competing"
+                            value={stats.totals.total_competing_students ?? 0}
+                            icon={ENTITY_CONFIG.studentsCompeting.icon}
+                            iconColor={ENTITY_CONFIG.studentsCompeting.color}
+                            sparklineData={competingStudentsSparkline}
+                            sparklineStroke={
+                                ENTITY_CONFIG.studentsCompeting.colorMid
+                            }
+                            sparklineFill={
+                                ENTITY_CONFIG.studentsCompeting.colorMuted
+                            }
                             percentChange={
-                                percentChanges?.students ?? undefined
+                                percentChanges?.competing_students ?? undefined
                             }
                             showTrend={true}
-                            href="/chart?measuredAs=total-student-count&type=line"
+                            href="/chart?measuredAs=total-competing-student-count&type=line"
+                        />
+                        <StatCard
+                            label="Total # Participating"
+                            value={
+                                stats.totals.total_participating_students ??
+                                stats.totals.total_students
+                            }
+                            icon={ENTITY_CONFIG.studentsParticipating.icon}
+                            iconColor={
+                                ENTITY_CONFIG.studentsParticipating.color
+                            }
+                            sparklineData={participatingStudentsSparkline}
+                            sparklineStroke={
+                                ENTITY_CONFIG.studentsParticipating.colorMid
+                            }
+                            sparklineFill={
+                                ENTITY_CONFIG.studentsParticipating.colorMuted
+                            }
+                            percentChange={
+                                percentChanges?.participating_students ??
+                                percentChanges?.students ??
+                                undefined
+                            }
+                            showTrend={true}
+                            href="/chart?measuredAs=total-participating-student-count&type=line"
                         />
                         <StatCard
                             label={ENTITY_CONFIG.schools.label}

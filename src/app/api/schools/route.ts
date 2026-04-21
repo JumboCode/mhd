@@ -75,6 +75,7 @@ export async function GET(req: NextRequest) {
                 implementationModel:
                     yearlySchoolParticipation.implementationModel,
                 schoolType: yearlySchoolParticipation.schoolType,
+                competingStudents: yearlySchoolParticipation.competingStudents,
             })
             .from(schools)
             .leftJoin(
@@ -84,6 +85,15 @@ export async function GET(req: NextRequest) {
                     eq(yearlySchoolParticipation.year, currentYear),
                 ),
             );
+
+        // Competing students for previous year (used for percent-change calc)
+        const lastYearCompeting = await db
+            .select({
+                schoolId: yearlySchoolParticipation.schoolId,
+                competingStudents: yearlySchoolParticipation.competingStudents,
+            })
+            .from(yearlySchoolParticipation)
+            .where(eq(yearlySchoolParticipation.year, currentYear - 1));
 
         // Fetch project counts for current year grouped by school
         const currYearProjects = await db
@@ -170,6 +180,12 @@ export async function GET(req: NextRequest) {
         const lastTeachersMap = new Map(
             lastYearTeachers.map((t) => [t.schoolId, t.count]),
         );
+        const lastCompetingMap = new Map(
+            lastYearCompeting.map((c) => [
+                c.schoolId,
+                c.competingStudents ?? 0,
+            ]),
+        );
 
         // Combine data for each school excluding schools with no participation in the current year
         const schoolsToReturn = allSchools.flatMap((school) => {
@@ -179,11 +195,14 @@ export async function GET(req: NextRequest) {
             const lastStudents = lastStudentsMap.get(school.id) ?? 0;
             const currTeachers = currTeachersMap.get(school.id) ?? 0;
             const lastTeachers = lastTeachersMap.get(school.id) ?? 0;
+            const currCompeting = school.competingStudents ?? 0;
+            const lastCompeting = lastCompetingMap.get(school.id) ?? 0;
 
             if (
                 currProjects === 0 &&
                 currStudents === 0 &&
-                currTeachers === 0
+                currTeachers === 0 &&
+                currCompeting === 0
             ) {
                 return [];
             }
@@ -197,6 +216,11 @@ export async function GET(req: NextRequest) {
                 schoolType: school.schoolType ?? "",
                 numStudents: currStudents,
                 studentChange: percentageChange(currStudents, lastStudents),
+                competingStudents: school.competingStudents,
+                competingStudentsChange: percentageChange(
+                    currCompeting,
+                    lastCompeting,
+                ),
                 numTeachers: currTeachers,
                 teacherChange: percentageChange(currTeachers, lastTeachers),
                 numProjects: currProjects,

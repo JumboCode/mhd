@@ -36,7 +36,16 @@ import { Button } from "../ui/button";
 
 const measuredAsOptions = [
     { value: "total-school-count", label: "Total School Count" },
-    { value: "total-student-count", label: "Total Student Count" },
+    {
+        value: "total-competing-student-count",
+        label: "Total Competing Students",
+        shortLabel: "Competing Students",
+    },
+    {
+        value: "total-participating-student-count",
+        label: "Total Participating Students",
+        shortLabel: "Participating Students",
+    },
     { value: "total-city-count", label: "Total City Count" },
     { value: "total-project-count", label: "Total Project Count" },
     { value: "total-teacher-count", label: "Total Teacher Count" },
@@ -55,7 +64,9 @@ const groupByOptions = [
 
 export type MeasuredAs =
     | "total-school-count"
-    | "total-student-count"
+    | "total-student-count" // deprecated; alias for participating
+    | "total-competing-student-count"
+    | "total-participating-student-count"
     | "total-city-count"
     | "total-project-count"
     | "total-teacher-count"

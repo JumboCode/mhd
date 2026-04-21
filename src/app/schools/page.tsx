@@ -51,6 +51,7 @@ export default function SchoolsPage() {
                 const filtered = data.filter(
                     (s: Schools) =>
                         s.numStudents > 0 ||
+                        (s.competingStudents ?? 0) > 0 ||
                         s.numTeachers > 0 ||
                         s.numProjects > 0,
                 );

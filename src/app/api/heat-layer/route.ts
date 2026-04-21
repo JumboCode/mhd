@@ -11,8 +11,13 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { schools, projects, yearlyTeacherParticipation } from "@/lib/schema";
-import { eq, isNotNull } from "drizzle-orm";
+import {
+    schools,
+    projects,
+    yearlyTeacherParticipation,
+    yearlySchoolParticipation,
+} from "@/lib/schema";
+import { and, eq, isNotNull } from "drizzle-orm";
 import { yearQuerySchema } from "@/lib/api-schemas";
 import {
     parseOrError,
@@ -53,6 +58,22 @@ export async function GET(req: NextRequest) {
             .from(yearlyTeacherParticipation)
             .where(eq(yearlyTeacherParticipation.year, year));
 
+        const competingPerYear = await db
+            .select({
+                schoolId: yearlySchoolParticipation.schoolId,
+                competingStudents: yearlySchoolParticipation.competingStudents,
+            })
+            .from(yearlySchoolParticipation)
+            .where(
+                and(
+                    eq(yearlySchoolParticipation.year, year),
+                    isNotNull(yearlySchoolParticipation.competingStudents),
+                ),
+            );
+        const competingMap = new Map(
+            competingPerYear.map((r) => [r.schoolId, r.competingStudents ?? 0]),
+        );
+
         const mapData: GeoJSON.Feature[] = [];
 
         schoolsPerYear.forEach((school) => {
@@ -86,7 +107,10 @@ export async function GET(req: NextRequest) {
                         name: school.name,
                         Teachers: totalTeachers,
                         Projects: totalProjects,
+                        // Legacy key — participating students (row count).
                         Students: totalStudents,
+                        Participating: totalStudents,
+                        Competing: competingMap.get(school.id) ?? 0,
                     },
                 });
             }

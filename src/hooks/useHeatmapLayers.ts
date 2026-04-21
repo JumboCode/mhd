@@ -279,6 +279,16 @@ export function useHeatmapLayers({
                         ? `/schools/${schoolSlug}?year=${year}`
                         : `/schools/${schoolSlug}`;
 
+                // Competing / Participating are student-count metrics — they
+                // don't pluralize via trailing "s" like Projects/Teachers do.
+                const isStudentMetric =
+                    metric === "Competing" || metric === "Participating";
+                const unitLabel = isStudentMetric
+                    ? `${metric.toLowerCase()} student${value === 1 ? "" : "s"}`
+                    : value === 1
+                      ? metric.slice(0, -1).toLowerCase()
+                      : metric.toLowerCase();
+
                 const html = `
                     <div style="
                         background: white;
@@ -292,7 +302,7 @@ export function useHeatmapLayers({
                     ">
                         <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: #111;">${name}</h3>
                         <p style="margin: 2px 0 8px 0; font-size: 16px; color: #333; font-weight: 500;">
-                            ${value.toLocaleString()} ${value === 1 ? metric.slice(0, -1).toLowerCase() : metric.toLowerCase()}
+                            ${value.toLocaleString()} ${unitLabel}
                         </p>
                         <a href="${profileUrl}" style="color: #af272f; text-decoration: underline;">View Profile &rarr;</a>
                     </div>

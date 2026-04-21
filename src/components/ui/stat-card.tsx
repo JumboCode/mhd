@@ -208,7 +208,7 @@ export function StatCard({
                 {/* Label */}
                 <span
                     className={cn(
-                        "flex items-center gap-1.5 text-muted-foreground",
+                        "flex items-center gap-1.5 text-muted-foreground whitespace-nowrap",
                         variant === "default" ? "text-xs" : "text-sm",
                     )}
                 >
