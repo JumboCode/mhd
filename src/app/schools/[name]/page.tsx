@@ -461,7 +461,7 @@ export default function SchoolProfilePage() {
                 <div>
                     <div className="flex items-center gap-2 mb-4">
                         <h2 className="text-xl font-semibold text-foreground">
-                            View and Edit Data
+                            Project Data
                         </h2>
                         <Tooltip>
                             <TooltipTrigger>
