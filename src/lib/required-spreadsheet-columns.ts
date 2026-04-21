@@ -25,4 +25,5 @@ export const schoolRequiredColumns = [
     "Division",
     "Implementation Model",
     "School Type",
+    "# students who began project at the school level",
 ];

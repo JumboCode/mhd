@@ -23,7 +23,7 @@ export default function SchoolsPage() {
     const [prevYearSchoolInfo, setPrevYearSchoolInfo] = useState<Schools[]>([]);
     const [year, setYear] = useState<number | null>(null);
     const [search, setSearch] = useState("");
-    const [isLoading, setIsLoading] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
     const [schoolDataError, setSchoolDataError] = useState<string | null>(null);
     const [prevYearError, setPrevYearError] = useState<string | null>(null);
     const [retryTrigger, setRetryTrigger] = useState(0);
@@ -51,6 +51,7 @@ export default function SchoolsPage() {
                 const filtered = data.filter(
                     (s: Schools) =>
                         s.numStudents > 0 ||
+                        (s.competingStudents ?? 0) > 0 ||
                         s.numTeachers > 0 ||
                         s.numProjects > 0,
                 );
@@ -100,6 +101,7 @@ export default function SchoolsPage() {
                             selectedYear={year}
                             onYearChange={setYear}
                             showDataIndicator={true}
+                            enableArrowHotkeys={true}
                         />
                     </div>
                     <SchoolSearchBar search={search} setSearch={setSearch} />

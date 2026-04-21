@@ -104,7 +104,7 @@ function TrendIndicator({
     return (
         <span
             className={cn(
-                "inline-flex items-center gap-1 text-sm font-medium",
+                "inline-flex items-center gap-1 text-sm font-medium tabular-nums",
                 isFlat
                     ? "text-muted-foreground"
                     : isPositive
@@ -208,7 +208,7 @@ export function StatCard({
                 {/* Label */}
                 <span
                     className={cn(
-                        "flex items-center gap-1.5 text-muted-foreground",
+                        "flex items-center gap-1.5 text-muted-foreground whitespace-nowrap",
                         variant === "default" ? "text-xs" : "text-sm",
                     )}
                 >

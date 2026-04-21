@@ -14,6 +14,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { schools } from "@/lib/schema";
 import { eq } from "drizzle-orm";
+import { gatewayPatchBodySchema } from "@/lib/api-schemas";
+import { parseOrError, internalError } from "@/lib/api-utils";
 
 /**
  * Fetch the gateway status of a school.
@@ -43,11 +45,8 @@ export async function GET(
         }
 
         return NextResponse.json({ gateway: schoolResult[0].gateway });
-    } catch (error) {
-        return NextResponse.json(
-            { error: "Internal server error: " + (error as Error).message },
-            { status: 500 },
-        );
+    } catch {
+        return internalError();
     }
 }
 
@@ -66,14 +65,10 @@ export async function PATCH(
         const { name } = await params;
 
         const body = await req.json();
-        const { gateway } = body;
+        const parsed = parseOrError(gatewayPatchBodySchema, body);
+        if (!parsed.success) return parsed.response;
 
-        if (typeof gateway !== "boolean") {
-            return NextResponse.json(
-                { error: "Invalid gateway value" },
-                { status: 400 },
-            );
-        }
+        const { gateway } = parsed.data;
 
         const schoolResult = await db
             .select({ id: schools.id })
@@ -97,10 +92,7 @@ export async function PATCH(
             message: "Gateway updated successfully",
             gateway,
         });
-    } catch (error) {
-        return NextResponse.json(
-            { error: "Internal server error: " + (error as Error).message },
-            { status: 500 },
-        );
+    } catch {
+        return internalError();
     }
 }

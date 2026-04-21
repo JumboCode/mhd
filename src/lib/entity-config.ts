@@ -43,6 +43,28 @@ export const ENTITY_CONFIG = {
         textClass: "text-entity-students",
         bgClass: "bg-entity-students-muted",
     },
+    // Competing = primary student metric, reuses the existing student pink.
+    studentsCompeting: {
+        icon: GraduationCap,
+        label: "Total # Students",
+        color: "rgb(236 72 153)",
+        colorMuted: "rgb(236 72 153 / 0.08)",
+        colorMid: "rgb(236 72 153 / 0.35)",
+        borderClass: "border-l-entity-students",
+        textClass: "text-entity-students",
+        bgClass: "bg-entity-students-muted",
+    },
+    // Participating uses a complementary violet ramp.
+    studentsParticipating: {
+        icon: GraduationCap,
+        label: "Total # Students",
+        color: "rgb(139 92 246)",
+        colorMuted: "rgb(139 92 246 / 0.08)",
+        colorMid: "rgb(139 92 246 / 0.35)",
+        borderClass: "border-l-entity-students",
+        textClass: "text-entity-students",
+        bgClass: "bg-entity-students-muted",
+    },
     schools: {
         icon: School,
         label: "# Schools",

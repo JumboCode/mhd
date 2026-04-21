@@ -12,12 +12,13 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
+import { useQueryState, parseAsInteger } from "nuqs";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { SchoolProfileSkeleton } from "@/components/skeletons/SchoolProfileSkeleton";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MapPlacer } from "@/components/ui/mapPlacer";
+import { SchoolLocationEditor } from "@/components/SchoolLocationEditor";
 import { SchoolInfoRow } from "@/components/SchoolInfoRow";
 import { StatCard } from "@/components/ui/stat-card";
 import { ENTITY_CONFIG } from "@/lib/entity-config";
@@ -35,13 +36,25 @@ import {
 } from "@/components/EditableProjectsTable";
 import PieChart from "@/components/charts/PieChart";
 import { projectCategoryDistribution } from "@/lib/utils";
-import { AlertCircle, X, Users } from "lucide-react";
+import { AlertCircle, X, Users, EllipsisVertical, Merge } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import MergeSchoolDialog from "@/components/MergeSchoolDialog";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // interface such that data can be blank if API is loading
 type SchoolData = {
+    id: number;
     name: string;
     town: string;
     studentCount: string;
+    participatingStudentCount: string;
+    competingStudents: number | null;
     teacherCount: string;
     projectCount: string;
     firstYear: string;
@@ -52,22 +65,22 @@ type SchoolData = {
     schoolType: string;
 };
 
-type MapCoordinates = {
-    latitude: number | null;
-    longitude: number | null;
-};
-
 type ProjectRow = EditableProjectRow;
+
+type SchoolProfileGraphMetric =
+    | "competing-students"
+    | "participating-students"
+    | "projects"
+    | "teachers";
 
 export default function SchoolProfilePage() {
     const params = useParams();
     const schoolName = params.name as string;
     const router = useRouter();
-
+    const [year, setYear] = useQueryState("year", parseAsInteger);
     const [schoolData, setSchoolData] = useState<SchoolData | null>(null);
     const [prevYearData, setPrevYearData] = useState<SchoolData | null>(null);
-    const [coordinates, setCoordinates] = useState<MapCoordinates | null>(null);
-    const [year, setYear] = useState<number | null>(null);
+
     const [projects, setProjects] = useState<ProjectRow[]>([]);
     const [editingName, setEditingName] = useState(false);
     const [nameDraft, setNameDraft] = useState("");
@@ -77,10 +90,39 @@ export default function SchoolProfilePage() {
     >([]);
     const [allYearsData, setAllYearsData] = useState<SchoolData[]>([]);
     const [showPrevYearWarning, setShowPrevYearWarning] = useState(true);
+    const [mergeOpen, setMergeOpen] = useState(false);
+    const [graphMetric, setGraphMetric] =
+        useState<SchoolProfileGraphMetric>("competing-students");
+
+    const StudentsIcon = ENTITY_CONFIG.students.icon;
+    const TeachersIcon = ENTITY_CONFIG.teachers.icon;
+    const ProjectsIcon = ENTITY_CONFIG.projects.icon;
+
+    const handleYearChange = (selectedYear: number | null) => {
+        setYear(selectedYear);
+    };
 
     useEffect(() => {
         setShowPrevYearWarning(true);
     }, [year]);
+
+    // Check on mount whether this school has been merged away
+    useEffect(() => {
+        fetch(`/api/schools/${schoolName}`)
+            .then(async (r) => {
+                if (r.status === 301) {
+                    const data = await r.json();
+                    if (data.redirectTo) {
+                        router.replace(
+                            year !== null
+                                ? `/schools/${data.redirectTo}?year=${year}`
+                                : `/schools/${data.redirectTo}`,
+                        );
+                    }
+                }
+            })
+            .catch(() => {});
+    }, [schoolName, router, year]);
 
     useEffect(() => {
         if (!year) return;
@@ -106,7 +148,8 @@ export default function SchoolProfilePage() {
                     fetchYears.map((y) =>
                         fetch(`/api/schools/${schoolName}?year=${y}`, {
                             signal,
-                        }).then((r) => {
+                        }).then(async (r) => {
+                            if (r.status === 301) return r.json();
                             if (!r.ok)
                                 throw new Error(`Failed to fetch year ${y}`);
                             return r.json();
@@ -115,6 +158,14 @@ export default function SchoolProfilePage() {
                 );
 
                 if (signal.aborted) return;
+
+                // If the school has been merged away, redirect to the absorbing school
+                if (responses[5]?.redirectTo) {
+                    router.replace(
+                        `/schools/${responses[5].redirectTo}/?year=${year}`,
+                    );
+                    return;
+                }
 
                 const curr = responses[5]; // current year
                 const sparklineResults = responses.slice(1); // year-4..year (5 items)
@@ -183,15 +234,61 @@ export default function SchoolProfilePage() {
         }
     };
 
-    const studentData: GraphDataset = {
-        label: "Students by Year",
-        data: studentYearData,
+    const graphSeries = useMemo(() => {
+        if (allYearsData.length === 0) return [];
+        return allYearsData.map((d, i) => ({
+            x: studentYearData[i]?.x ?? i,
+            y:
+                graphMetric === "competing-students"
+                    ? Number(d.competingStudents ?? 0)
+                    : graphMetric === "participating-students"
+                      ? Number(d.studentCount)
+                      : graphMetric === "projects"
+                        ? Number(d.projectCount)
+                        : Number(d.teacherCount),
+        }));
+    }, [allYearsData, studentYearData, graphMetric]);
+
+    const graphYAxisLabel =
+        graphMetric === "competing-students"
+            ? "Total # Competing Students"
+            : graphMetric === "participating-students"
+              ? "Total # Participating Students"
+              : graphMetric === "projects"
+                ? ENTITY_CONFIG.projects.label
+                : ENTITY_CONFIG.teachers.label;
+
+    const graphDataset: GraphDataset = {
+        label:
+            graphMetric === "competing-students"
+                ? "Competing Students by Year"
+                : graphMetric === "participating-students"
+                  ? "Participating Students by Year"
+                  : graphMetric === "projects"
+                    ? "Projects by Year"
+                    : "Teachers by Year",
+        data: graphSeries,
     };
 
-    const studentsHref =
-        year !== null
-            ? `/chart?type=line&startYear=${year - 5}&endYear=${year}&measuredAs=total-student-count&schools=${encodeURIComponent(schoolData?.name ?? "")}`
-            : "#";
+    const measuredAsForMetric =
+        graphMetric === "competing-students"
+            ? "total-competing-student-count"
+            : graphMetric === "participating-students"
+              ? "total-participating-student-count"
+              : graphMetric === "projects"
+                ? "total-project-count"
+                : "total-teacher-count";
+
+    const trendChartHref =
+        year !== null && schoolData
+            ? `/chart?type=line&startYear=${year - 5}&endYear=${year}&measuredAs=${measuredAsForMetric}&schools=${encodeURIComponent(schoolData.name)}`
+            : schoolData
+              ? `/chart?measuredAs=${measuredAsForMetric}&type=line&schools=${encodeURIComponent(schoolData.name)}`
+              : "#";
+    const projectsChartHref = `/chart?measuredAs=total-project-count&type=line&schools=${encodeURIComponent(schoolData?.name ?? "")}`;
+    const teachersChartHref = `/chart?measuredAs=total-teacher-count&type=line&schools=${encodeURIComponent(schoolData?.name ?? "")}`;
+    const competingStudentsChartHref = `/chart?measuredAs=total-competing-student-count&type=line&schools=${encodeURIComponent(schoolData?.name ?? "")}`;
+    const participatingStudentsChartHref = `/chart?measuredAs=total-participating-student-count&type=line&schools=${encodeURIComponent(schoolData?.name ?? "")}`;
 
     // Calculate sparkline data arrays from allYearsData
     const projectsSparkline = allYearsData.map((d) =>
@@ -200,8 +297,11 @@ export default function SchoolProfilePage() {
     const teachersSparkline = allYearsData.map((d) =>
         Number(d.teacherCount || 0),
     );
-    const studentsSparkline = allYearsData.map((d) =>
+    const participatingStudentsSparkline = allYearsData.map((d) =>
         Number(d.studentCount || 0),
+    );
+    const competingStudentsSparkline = allYearsData.map((d) =>
+        Number(d.competingStudents ?? 0),
     );
 
     // Calculate percent changes against the previous chronological year.
@@ -219,9 +319,13 @@ export default function SchoolProfilePage() {
         Number(schoolData?.teacherCount || 0),
         Number(prevYearData?.teacherCount || 0),
     );
-    const studentsPercentChange = calcPct(
+    const participatingStudentsPercentChange = calcPct(
         Number(schoolData?.studentCount || 0),
         Number(prevYearData?.studentCount || 0),
+    );
+    const competingStudentsPercentChange = calcPct(
+        Number(schoolData?.competingStudents ?? 0),
+        Number(prevYearData?.competingStudents ?? 0),
     );
 
     const firstYearNumeric = Number(schoolData?.firstYear);
@@ -232,27 +336,27 @@ export default function SchoolProfilePage() {
     const trendIndicatorsUnavailable =
         projectsPercentChange === null &&
         teachersPercentChange === null &&
-        studentsPercentChange === null;
+        participatingStudentsPercentChange === null &&
+        competingStudentsPercentChange === null;
     const showComparisonWarning =
         isOldestSchoolYearSelected && trendIndicatorsUnavailable;
 
     if (!schoolData) {
         return (
-            <div className="h-screen w-full bg-background overflow-y-auto flex justify-center">
+            <div className="w-full bg-background overflow-y-auto flex justify-center">
                 <div className="w-full flex flex-col gap-6 py-8 max-w-5xl px-6">
                     <div className="flex flex-row items-center w-full">
                         <Skeleton className="h-8 w-64" />
-                        <div className="ml-auto">
+                        <div className="ml-auto flex flex-row items-center gap-2">
                             <YearDropdown
                                 selectedYear={year}
-                                onYearChange={(selectedYear) => {
-                                    if (selectedYear !== null) {
-                                        setYear(selectedYear);
-                                    }
-                                }}
+                                onYearChange={handleYearChange}
                                 showDataIndicator={true}
                                 school={schoolName}
                             />
+                            <Button variant="ghost" size="icon">
+                                <EllipsisVertical className="h-4 w-4" />
+                            </Button>
                         </div>
                     </div>
                     <SchoolProfileSkeleton skipHeader contentOnly />
@@ -291,19 +395,43 @@ export default function SchoolProfilePage() {
                             {schoolData.name}
                         </h1>
                     )}
-                    <div className="ml-auto">
+                    <div className="ml-auto flex flex-row items-center gap-2">
                         <YearDropdown
                             selectedYear={year}
-                            onYearChange={(selectedYear) => {
-                                if (selectedYear !== null) {
-                                    setYear(selectedYear);
-                                }
-                            }}
+                            onYearChange={handleYearChange}
                             showDataIndicator={true}
                             school={schoolName}
                         />
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon">
+                                    <EllipsisVertical className="h-4 w-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent
+                                align="end"
+                                className="mt-2 min-w-48"
+                            >
+                                <DropdownMenuItem
+                                    onClick={() => setMergeOpen(true)}
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <Merge className="h-4 w-4" />
+                                        Merge school
+                                    </div>
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                     </div>
                 </div>
+
+                <MergeSchoolDialog
+                    open={mergeOpen}
+                    onOpenChange={setMergeOpen}
+                    currentSchoolId={schoolData.id}
+                    currentSchoolName={schoolData.name}
+                    onMergeComplete={() => router.push("/schools")}
+                />
 
                 {/* Stats cards */}
                 {showComparisonWarning && showPrevYearWarning && (
@@ -323,7 +451,7 @@ export default function SchoolProfilePage() {
                         </button>
                     </div>
                 )}
-                <div className="grid grid-cols-3 gap-8">
+                <div className="grid grid-cols-4 gap-6">
                     <StatCard
                         label={ENTITY_CONFIG.projects.label}
                         value={schoolData.projectCount}
@@ -335,6 +463,7 @@ export default function SchoolProfilePage() {
                         percentChange={projectsPercentChange}
                         showTrend={true}
                         variant="with-aspect"
+                        href={projectsChartHref}
                     />
                     <StatCard
                         label={ENTITY_CONFIG.teachers.label}
@@ -347,40 +476,127 @@ export default function SchoolProfilePage() {
                         percentChange={teachersPercentChange}
                         showTrend={true}
                         variant="with-aspect"
+                        href={teachersChartHref}
                     />
                     <StatCard
-                        label={ENTITY_CONFIG.students.label}
-                        value={schoolData.studentCount}
-                        icon={ENTITY_CONFIG.students.icon}
-                        iconColor={ENTITY_CONFIG.students.color}
-                        sparklineData={studentsSparkline}
-                        sparklineStroke={ENTITY_CONFIG.students.colorMid}
-                        sparklineFill={ENTITY_CONFIG.students.colorMuted}
-                        percentChange={studentsPercentChange}
+                        label="Total # Competing"
+                        value={schoolData.competingStudents ?? "—"}
+                        icon={ENTITY_CONFIG.studentsCompeting.icon}
+                        iconColor={ENTITY_CONFIG.studentsCompeting.color}
+                        sparklineData={competingStudentsSparkline}
+                        sparklineStroke={
+                            ENTITY_CONFIG.studentsCompeting.colorMid
+                        }
+                        sparklineFill={
+                            ENTITY_CONFIG.studentsCompeting.colorMuted
+                        }
+                        percentChange={competingStudentsPercentChange}
                         showTrend={true}
                         variant="with-aspect"
+                        href={competingStudentsChartHref}
+                    />
+                    <StatCard
+                        label="Total # Participating"
+                        value={schoolData.studentCount}
+                        icon={ENTITY_CONFIG.studentsParticipating.icon}
+                        iconColor={ENTITY_CONFIG.studentsParticipating.color}
+                        sparklineData={participatingStudentsSparkline}
+                        sparklineStroke={
+                            ENTITY_CONFIG.studentsParticipating.colorMid
+                        }
+                        sparklineFill={
+                            ENTITY_CONFIG.studentsParticipating.colorMuted
+                        }
+                        percentChange={participatingStudentsPercentChange}
+                        showTrend={true}
+                        variant="with-aspect"
+                        href={participatingStudentsChartHref}
                     />
                 </div>
 
                 {/* Info Row */}
                 <SchoolInfoRow
                     town={schoolData.town}
+                    region={schoolData.region}
                     implementationModel={schoolData.implementationModel}
                     firstYear={schoolData.firstYear}
+                    division={schoolData.division}
                 />
-                <Link
-                    href={studentsHref}
-                    className="block rounded-lg border border-border px-6 pt-4 pb-2 hover:bg-muted/40 transition-colors"
-                >
-                    <p className="text-sm font-medium text-center mb-2">
-                        Total # Students
-                    </p>
-                    <MultiLineGraph
-                        datasets={[studentData]}
-                        yAxisLabel={"Total # Students"}
-                        xAxisLabel="Year"
-                    />
-                </Link>
+                <div className="rounded-lg border border-border px-6 pt-4 pb-2">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-2">
+                        <p className="text-sm font-medium text-center sm:text-left">
+                            {graphYAxisLabel}
+                        </p>
+
+                        <Tabs
+                            value={graphMetric}
+                            onValueChange={(value) =>
+                                setGraphMetric(
+                                    value as SchoolProfileGraphMetric,
+                                )
+                            }
+                        >
+                            <TabsList>
+                                <TabsTrigger
+                                    value="competing-students"
+                                    className="gap-2"
+                                >
+                                    <StudentsIcon
+                                        className="w-4 h-4"
+                                        style={{
+                                            color: "rgb(236 72 153)",
+                                        }}
+                                    />
+                                    Competing
+                                </TabsTrigger>
+
+                                <TabsTrigger
+                                    value="participating-students"
+                                    className="gap-2"
+                                >
+                                    <StudentsIcon
+                                        className="w-4 h-4"
+                                        style={{
+                                            color: "rgb(139 92 246)",
+                                        }}
+                                    />
+                                    Participating
+                                </TabsTrigger>
+
+                                <TabsTrigger value="teachers" className="gap-2">
+                                    <TeachersIcon
+                                        className="w-4 h-4"
+                                        style={{
+                                            color: ENTITY_CONFIG.teachers.color,
+                                        }}
+                                    />
+                                    Teachers
+                                </TabsTrigger>
+
+                                <TabsTrigger value="projects" className="gap-2">
+                                    <ProjectsIcon
+                                        className="w-4 h-4"
+                                        style={{
+                                            color: ENTITY_CONFIG.projects.color,
+                                        }}
+                                    />
+                                    Projects
+                                </TabsTrigger>
+                            </TabsList>
+                        </Tabs>
+                    </div>
+
+                    <Link
+                        href={trendChartHref}
+                        className="block -mx-2 px-2 rounded-md hover:bg-muted/40 transition-colors"
+                    >
+                        <MultiLineGraph
+                            datasets={[graphDataset]}
+                            yAxisLabel={graphYAxisLabel}
+                            xAxisLabel="Year"
+                        />
+                    </Link>
+                </div>
 
                 {/* Project type distribution — same 3-col grid as stats; spans 2 cells */}
                 {projects.length !== 0 && (
@@ -421,40 +637,12 @@ export default function SchoolProfilePage() {
 
                 {/* School location map */}
                 <div className="rounded-lg space-y-4">
-                    <h2 className="text-xl font-semibold mb-4 text-foreground">
+                    <h2 className="text-xl font-semibold text-foreground">
                         School Location
                     </h2>
-                    <div className="h-80 rounded-lg overflow-hidden border border-border">
-                        <MapPlacer
-                            schoolId={schoolName}
-                            schoolName={schoolData.name}
-                            onCoordinatesLoaded={setCoordinates}
-                        />
-                    </div>
-                    <div className="mt-3 text-sm text-muted-foreground flex justify-between items-center">
-                        <div className="flex items-center gap-1.5">
-                            {coordinates &&
-                                coordinates.latitude !== null &&
-                                coordinates.longitude !== null && (
-                                    <div className="bg-muted text-black px-2 rounded border">
-                                        <span>
-                                            Coordinates:{" "}
-                                            {coordinates.latitude.toFixed(6)},{" "}
-                                            {coordinates.longitude.toFixed(6)}
-                                        </span>
-                                    </div>
-                                )}
-                        </div>
-                        <div>
-                            {/* TO DO: Replace with actual dates from db */}
-                            Last Updated:{" "}
-                            {new Date().toLocaleDateString("en-US", {
-                                month: "2-digit",
-                                day: "2-digit",
-                                year: "numeric",
-                            })}
-                        </div>
-                    </div>
+                    <SchoolLocationEditor
+                        fixedSchool={{ name: schoolData.name }}
+                    />
                 </div>
 
                 {/* Editable project data table */}

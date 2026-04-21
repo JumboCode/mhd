@@ -8,18 +8,25 @@
  *        Summary: Export a mapLibre heatmap to PDF
  **************************************************************/
 
-import { useState } from "react";
 import jsPDF from "jspdf";
-import logoImg from "../../public/images/mhd-logo-full.png";
 import { toast } from "sonner";
 import { Map } from "maplibre-gl";
 import "../app/fonts/DMSans-VariableFont_opsz,wght-normal";
+import {
+    drawHeader,
+    drawTitle,
+    drawFilters,
+    applyFootersToAllPages,
+    PAGE_MARGIN,
+    type FilterDetail,
+} from "./pdf-layout";
 
 export async function exportMapToPDF(
     map: Map | null,
     title: string | null,
+    filterDetails: FilterDetail[] = [],
     print = false,
-) {
+): Promise<boolean> {
     if (!map) {
         toast.error("Map instance not found");
         return false;
@@ -30,45 +37,25 @@ export async function exportMapToPDF(
         const dataURL = canvas.toDataURL("image/jpeg", 1.0);
 
         const pdf = new jsPDF();
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const margin = PAGE_MARGIN;
 
-        // Metadata
-        const time = new Date();
-        const year = String(time.getFullYear());
-        const month = String(time.getMonth() + 1).padStart(2, "0");
-        const day = String(time.getDate()).padStart(2, "0");
+        const afterHeader = drawHeader(pdf);
+        const safeTitle = title ?? "Heatmap";
+        const afterTitle = drawTitle(pdf, safeTitle, afterHeader + 2);
 
-        const pdfWidth = pdf.internal.pageSize.getWidth();
         const aspectRatio = canvas.height / canvas.width;
+        const maxImgWidth = pageWidth - margin * 2;
+        const finalW = maxImgWidth;
+        const finalH = finalW * aspectRatio;
+        const imgX = (pageWidth - finalW) / 2;
 
-        pdf.setFont("DMSans-VariableFont_opsz,wght", "normal");
+        pdf.addImage(dataURL, "JPEG", imgX, afterTitle, finalW, finalH);
 
-        pdf.text(`${month}/${day}/${year}`, 155, 15);
-        pdf.addImage(
-            logoImg.src,
-            "PNG",
-            20,
-            10,
-            logoImg.width * 0.03,
-            logoImg.height * 0.03,
-        );
+        const afterImg = afterTitle + finalH + 10;
+        drawFilters(pdf, filterDetails, afterImg);
 
-        const margin = 20;
-        const wrappedTitle = pdf.splitTextToSize(title!, pdfWidth - margin * 2);
-        pdf.text(wrappedTitle, margin, 50);
-
-        // Calculate dimensions to maintain aspect ratio
-        const titleHeight = wrappedTitle.length * 7;
-        const imgWidth = pdfWidth - margin * 2;
-        const imgHeight = imgWidth * aspectRatio;
-
-        pdf.addImage(
-            dataURL,
-            "JPEG",
-            margin,
-            50 + titleHeight,
-            imgWidth,
-            imgHeight,
-        );
+        applyFootersToAllPages(pdf);
 
         if (print) {
             const blob = pdf.output("blob");
@@ -79,23 +66,8 @@ export async function exportMapToPDF(
             pdf.save(`${filename}.pdf`);
         }
         return true;
-    } catch (error) {
+    } catch {
         toast.error("Failed to export heatmap");
         return false;
     }
-}
-
-export function useMapExport() {
-    const [isExporting, setIsExporting] = useState(false);
-
-    const exportToPDF = async (map: Map | null, title: string = "Heatmap") => {
-        setIsExporting(true);
-        try {
-            await exportMapToPDF(map, title);
-        } finally {
-            setIsExporting(false);
-        }
-    };
-
-    return { exportToPDF, isExporting };
 }

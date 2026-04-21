@@ -1,16 +1,14 @@
 "use client";
 
-import React, {
+import {
     createContext,
     useContext,
     useState,
     useEffect,
     useCallback,
+    useRef,
     ReactNode,
 } from "react";
-import { createRoot } from "react-dom/client";
-import html2canvas from "html2canvas-pro";
-import jsPDF from "jspdf";
 import { toast } from "sonner";
 import { type Filters } from "@/components/GraphFilters/GraphFilters";
 import {
@@ -19,11 +17,9 @@ import {
     groupByLabels,
     type Project,
 } from "@/lib/compute-chart-data";
-import logoImg from "../../public/images/mhd-logo-full.png";
-import "../app/fonts/DMSans-VariableFont_opsz,wght-normal";
 import { ChartDataset } from "@/components/charts/chartTypes";
-import BarGraph from "@/components/charts/BarGraph";
-import MultiLineGraph from "@/components/charts/LineGraph";
+import { renderChartToDataUrl } from "@/lib/render-chart";
+import { type FilterDetail, downloadGraphs } from "@/lib/export-to-pdf";
 
 /**
  * Chart items store only the filter params — no data.
@@ -34,6 +30,10 @@ export type ChartCartParams = {
     filters: Filters;
     yearStart: number;
     yearEnd: number;
+    tableData?: {
+        cols: { header: string; accessorKey: string }[];
+        rows: Record<string, unknown>[];
+    };
 };
 
 export type CartItem =
@@ -41,22 +41,35 @@ export type CartItem =
           type: "chart";
           filterName: string;
           params: ChartCartParams;
+          filterDetails: FilterDetail[];
+          previewDataUrl?: string;
       }
     | {
           type: "map";
           filterName: string;
           imageDataUrl: string;
+          filterDetails: FilterDetail[];
       };
 
 type CartContextValue = {
     items: CartItem[];
-    addChartItem: (filterName: string, params: ChartCartParams) => void;
-    addMapItem: (filterName: string, imageDataUrl: string) => void;
+    addChartItem: (
+        filterName: string,
+        params: ChartCartParams,
+        filterDetails?: FilterDetail[],
+    ) => void;
+    addMapItem: (
+        filterName: string,
+        imageDataUrl: string,
+        filterDetails?: FilterDetail[],
+    ) => void;
     removeItem: (index: number) => void;
     removeByName: (filterName: string) => void;
     clearCart: () => void;
     exportAll: () => Promise<void>;
+    ensureChartPreviews: () => Promise<void>;
     isExporting: boolean;
+    isGeneratingPreviews: boolean;
     hasItem: (filterName: string) => boolean;
 };
 
@@ -96,7 +109,6 @@ async function fetchAndComputeDataset(params: ChartCartParams) {
     });
 }
 
-/** Render a chart component offscreen and capture it as a data URL. */
 async function renderChartToImage(
     params: ChartCartParams,
     dataset: ChartDataset[],
@@ -108,54 +120,19 @@ async function renderChartToImage(
             ? undefined
             : groupByLabels[params.filters.groupBy];
 
-    const container = document.createElement("div");
-    container.style.position = "fixed";
-    container.style.left = "-9999px";
-    container.style.top = "0";
-    container.style.width = "800px";
-    container.style.height = "500px";
-    container.style.backgroundColor = "#fff";
-    document.body.appendChild(container);
-
-    const root = createRoot(container);
-
-    if (params.chartType === "bar") {
-        root.render(
-            <BarGraph
-                dataset={dataset}
-                yAxisLabel={yAxisLabel}
-                xAxisLabel="Year"
-                legendTitle={legendTitle}
-            />,
-        );
-    } else {
-        root.render(
-            <MultiLineGraph
-                datasets={dataset}
-                yAxisLabel={yAxisLabel}
-                xAxisLabel="Year"
-                legendTitle={legendTitle}
-            />,
-        );
-    }
-
-    await new Promise((resolve) => setTimeout(resolve, 100));
-
-    const canvas = await html2canvas(container, {
-        backgroundColor: "#fff",
-        scale: 2,
-    });
-    const dataUrl = canvas.toDataURL();
-
-    root.unmount();
-    document.body.removeChild(container);
-
-    return dataUrl;
+    return renderChartToDataUrl(
+        params.chartType,
+        dataset,
+        yAxisLabel,
+        legendTitle,
+    );
 }
 
 export function CartProvider({ children }: { children: ReactNode }) {
     const [items, setItems] = useState<CartItem[]>([]);
     const [isExporting, setIsExporting] = useState(false);
+    const [isGeneratingPreviews, setIsGeneratingPreviews] = useState(false);
+    const isGeneratingPreviewsRef = useRef(false);
 
     // Load from sessionStorage on mount
     useEffect(() => {
@@ -179,20 +156,28 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }, [items]);
 
     const addChartItem = useCallback(
-        (filterName: string, params: ChartCartParams) => {
+        (
+            filterName: string,
+            params: ChartCartParams,
+            filterDetails: FilterDetail[] = [],
+        ) => {
             setItems((prev) => [
                 ...prev,
-                { type: "chart", filterName, params },
+                { type: "chart", filterName, params, filterDetails },
             ]);
         },
         [],
     );
 
     const addMapItem = useCallback(
-        (filterName: string, imageDataUrl: string) => {
+        (
+            filterName: string,
+            imageDataUrl: string,
+            filterDetails: FilterDetail[] = [],
+        ) => {
             setItems((prev) => [
                 ...prev,
-                { type: "map", filterName, imageDataUrl },
+                { type: "map", filterName, imageDataUrl, filterDetails },
             ]);
         },
         [],
@@ -216,6 +201,73 @@ export function CartProvider({ children }: { children: ReactNode }) {
         sessionStorage.removeItem(STORAGE_KEY);
     }, []);
 
+    const ensureChartPreviews = useCallback(async () => {
+        if (isGeneratingPreviewsRef.current) return;
+
+        const chartIndexes = items
+            .map((item, index) => ({ item, index }))
+            .filter(
+                ({ item }) =>
+                    item.type === "chart" && item.previewDataUrl === undefined,
+            );
+
+        if (chartIndexes.length === 0) return;
+
+        isGeneratingPreviewsRef.current = true;
+        setIsGeneratingPreviews(true);
+
+        try {
+            const generated = await Promise.all(
+                chartIndexes.map(async ({ item, index }) => {
+                    if (item.type !== "chart") return null;
+                    const dataset = await fetchAndComputeDataset(item.params);
+                    const previewDataUrl = await renderChartToImage(
+                        item.params,
+                        dataset,
+                    );
+                    return { index, previewDataUrl };
+                }),
+            );
+
+            const generatedByIndex = new Map(
+                generated
+                    .filter(
+                        (
+                            value,
+                        ): value is { index: number; previewDataUrl: string } =>
+                            value !== null,
+                    )
+                    .map(({ index, previewDataUrl }) => [
+                        index,
+                        previewDataUrl,
+                    ]),
+            );
+
+            if (generatedByIndex.size > 0) {
+                setItems((prev) =>
+                    prev.map((item, index) => {
+                        if (
+                            item.type !== "chart" ||
+                            typeof item.previewDataUrl === "string" ||
+                            !generatedByIndex.has(index)
+                        ) {
+                            return item;
+                        }
+                        return {
+                            ...item,
+                            previewDataUrl: generatedByIndex.get(index)!,
+                        };
+                    }),
+                );
+            }
+        } catch {
+            toast.error("Failed to generate one or more chart previews");
+        } finally {
+            isGeneratingPreviewsRef.current = false;
+            setIsGeneratingPreviews(false);
+        }
+    }, [items]);
+
     const exportAll = useCallback(async () => {
         setIsExporting(true);
 
@@ -232,71 +284,28 @@ export function CartProvider({ children }: { children: ReactNode }) {
                 if (item.type === "map") {
                     imageDataUrls.push(item.imageDataUrl);
                 } else {
-                    const dataset = await fetchAndComputeDataset(item.params);
-                    const dataUrl = await renderChartToImage(
-                        item.params,
-                        dataset,
-                    );
-                    imageDataUrls.push(dataUrl);
+                    if (item.previewDataUrl) {
+                        imageDataUrls.push(item.previewDataUrl);
+                    } else {
+                        const dataset = await fetchAndComputeDataset(
+                            item.params,
+                        );
+                        const dataUrl = await renderChartToImage(
+                            item.params,
+                            dataset,
+                        );
+                        imageDataUrls.push(dataUrl);
+                    }
                 }
             }
 
-            // Load all images before building the PDF
-            const loadedImages = await Promise.all(
-                imageDataUrls.map(
-                    (src) =>
-                        new Promise<HTMLImageElement>((resolve, reject) => {
-                            const img = new Image();
-                            img.onload = () => resolve(img);
-                            img.onerror = () =>
-                                reject(new Error("Failed to load image"));
-                            img.src = src;
-                        }),
-                ),
+            await downloadGraphs(
+                imageDataUrls,
+                items.map((i) => i.filterName),
+                items.map((i) => i.filterDetails ?? []),
+                false,
+                "chart",
             );
-
-            const pdf = new jsPDF();
-            const time = new Date();
-            const year = String(time.getFullYear());
-            const month = String(time.getMonth() + 1);
-            const day = String(time.getDate());
-
-            loadedImages.forEach((img, idx) => {
-                const imgWidth = pdf.internal.pageSize.getWidth();
-                const imgHeight = (img.height / img.width) * imgWidth;
-
-                pdf.setFont("DMSans-VariableFont_opsz,wght", "normal");
-                pdf.text(`${month}/${day}/${year}`, 170, 15);
-                pdf.addImage(
-                    logoImg.src,
-                    "PNG",
-                    15,
-                    10,
-                    logoImg.width * 0.03,
-                    logoImg.height * 0.03,
-                );
-
-                const margin = 15;
-                const wrappedTitle = pdf.splitTextToSize(
-                    items[idx].filterName,
-                    pdf.internal.pageSize.getWidth() - margin * 2,
-                );
-                pdf.text(wrappedTitle, margin, 50);
-
-                const titleHeight = wrappedTitle.length * 7;
-                pdf.addImage(
-                    imageDataUrls[idx],
-                    "JPEG",
-                    15,
-                    50 + titleHeight,
-                    imgWidth * 0.9,
-                    imgHeight * 0.9,
-                );
-
-                if (idx < items.length - 1) pdf.addPage();
-            });
-
-            pdf.save("chart.pdf");
         } catch (err) {
             toast.error(
                 err instanceof Error ? err.message : "Failed to export",
@@ -316,7 +325,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
                 removeByName,
                 clearCart,
                 exportAll,
+                ensureChartPreviews,
                 isExporting,
+                isGeneratingPreviews,
                 hasItem,
             }}
         >

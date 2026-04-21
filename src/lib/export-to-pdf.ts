@@ -10,101 +10,105 @@
  *        Summary: Export an svg graph as a pdf
  **************************************************************/
 
-import React from "react";
-import html2canvas from "html2canvas-pro";
 import jsPDF from "jspdf";
-import logoImg from "../../public/images/mhd-logo-full.png";
 import { toast } from "sonner";
 import "../app/fonts/DMSans-VariableFont_opsz,wght-normal";
+import {
+    drawHeader,
+    drawTitle,
+    drawFilters,
+    applyFootersToAllPages,
+    PAGE_MARGIN,
+    type FilterDetail,
+} from "./pdf-layout";
+import { type ChartDataset } from "@/components/charts/chartTypes";
+import { renderChartToDataUrl } from "@/lib/render-chart";
 
-export function downloadGraphs(
+export type { FilterDetail };
+
+export async function downloadGraphs(
     cart: string[],
     filterNames: string[],
+    filterDetails: FilterDetail[][] = [],
     print = false,
+    filename?: string,
 ) {
-    // Displays toast when there are no images to export
     if (cart.length === 0) {
         toast.error("Cart is empty");
-        return Promise.resolve();
+        return;
     }
 
-    return new Promise((resolve) => {
-        const pdf = new jsPDF();
+    const pdf = new jsPDF();
 
-        // Does process for each graph in the cart
-        cart.forEach((canvas: string, idx: number) => {
+    for (let idx = 0; idx < cart.length; idx++) {
+        const canvas = cart[idx];
+
+        await new Promise<void>((resolve) => {
             const img = new Image();
             img.src = canvas;
-
-            // Date data for image
-            const time = new Date();
-            const year = String(time.getFullYear());
-            const month = String(time.getMonth() + 1);
-            const day = String(time.getDate());
-
             img.onload = () => {
-                const imgWidth = pdf.internal.pageSize.getWidth();
-                const imgHeight = (img.height / img.width) * imgWidth;
+                if (idx > 0) pdf.addPage();
 
-                pdf.setFont("DMSans-VariableFont_opsz,wght", "normal");
+                const pageWidth = pdf.internal.pageSize.getWidth();
+                const margin = PAGE_MARGIN;
 
-                pdf.text(`${month}/${day}/${year}`, 170, 15);
-                pdf.addImage(
-                    logoImg.src,
-                    "PNG",
-                    15,
-                    10,
-                    logoImg.width * 0.03,
-                    logoImg.height * 0.03,
-                );
-
-                const margin = 15;
-                const wrappedTitle = pdf.splitTextToSize(
+                const afterHeader = drawHeader(pdf);
+                const afterTitle = drawTitle(
+                    pdf,
                     filterNames[idx],
-                    pdf.internal.pageSize.getWidth() - margin * 2,
+                    afterHeader + 2,
                 );
-                pdf.text(wrappedTitle, margin, 50);
 
-                const titleHeight = wrappedTitle.length * 7;
+                const maxImgWidth = pageWidth - margin * 2;
+                const scale = 0.85;
+                const finalW = maxImgWidth * scale;
+                const finalH = (img.height / img.width) * finalW;
+                const chartX = (pageWidth - finalW) / 2;
+
                 pdf.addImage(
                     canvas,
                     "JPEG",
-                    15,
-                    50 + titleHeight,
-                    imgWidth * 0.9,
-                    imgHeight * 0.9,
+                    chartX,
+                    afterTitle,
+                    finalW,
+                    finalH,
                 );
 
-                if (idx < cart.length - 1) pdf.addPage();
+                const afterChart = afterTitle + finalH + 10;
+                drawFilters(pdf, filterDetails[idx], afterChart);
 
-                if (idx === cart.length - 1) {
-                    if (print) {
-                        const blob = pdf.output("blob");
-                        const url = URL.createObjectURL(blob);
-                        window.open(url, "_blank");
-                    } else {
-                        const filename = filterNames[0] || "chart";
-                        pdf.save(`${filename}.pdf`);
-                    }
-                    setTimeout(resolve, 1000);
-                }
+                resolve();
             };
         });
-    });
+    }
+
+    applyFootersToAllPages(pdf);
+
+    if (print) {
+        const blob = pdf.output("blob");
+        const url = URL.createObjectURL(blob);
+        window.open(url, "_blank");
+    } else {
+        const name = filename || filterNames[0] || "chart";
+        pdf.save(`${name}.pdf`);
+    }
 }
 
 export async function downloadSingleGraph(
-    chartRef: React.RefObject<HTMLDivElement | null>,
+    chartType: "bar" | "line",
+    dataset: ChartDataset[],
+    yAxisLabel: string,
+    legendTitle: string | undefined,
     filterName: string,
+    filterDetails: FilterDetail[] = [],
     print = false,
 ) {
-    const el = chartRef.current;
-    if (!el) return;
+    const dataUrl = await renderChartToDataUrl(
+        chartType,
+        dataset,
+        yAxisLabel,
+        legendTitle,
+    );
 
-    const canvas = await html2canvas(el, {
-        backgroundColor: "#fff",
-        scale: 2,
-    });
-
-    downloadGraphs([canvas.toDataURL()], [filterName], print);
+    await downloadGraphs([dataUrl], [filterName], [filterDetails], print);
 }

@@ -36,6 +36,7 @@ export const yearlySchoolParticipation = pgTable(
         division: text("division").array().notNull().default([]),
         implementationModel: text("implementation_model").notNull().default(""),
         schoolType: text("school_type").notNull().default(""),
+        competingStudents: integer("competing_students").notNull().default(0),
     },
 );
 
@@ -87,6 +88,17 @@ export const yearlyTeacherParticipation = pgTable(
         year: integer("year").notNull(),
     },
 );
+
+// Stores historic names for schools that have been merged into another school
+export const schoolHistoricNames = pgTable("school_historic_names", {
+    id: serial("id").primaryKey(),
+    absorbingSchoolId: integer("absorbing_school_id")
+        .notNull()
+        .references(() => schools.id, { onDelete: "cascade" }),
+    mergedName: text("merged_name").notNull(),
+    mergedStandardizedName: text("merged_standardized_name").notNull().unique(),
+    mergedExternalSchoolId: text("merged_external_school_id"),
+});
 
 // Better-Auth generated Schema below
 export const user = pgTable("user", {

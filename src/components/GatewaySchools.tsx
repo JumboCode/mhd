@@ -17,6 +17,7 @@ import { Combobox } from "@/components/Combobox";
 import { Trash } from "lucide-react";
 import { toast } from "sonner";
 import { LoadError } from "@/components/ui/load-error";
+import { Skeleton } from "@/components/ui/skeleton";
 import { standardize } from "@/lib/string-standardize";
 
 /**
@@ -55,6 +56,7 @@ const GatewaySchools = forwardRef<
     const [pendingAdditions, setPendingAdditions] = useState<SchoolEntry[]>([]);
     const [pendingRemovals, setPendingRemovals] = useState<SchoolEntry[]>([]);
     const [error, setError] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
 
     // Load all schools for dropdown and gateway schools
     const fetchData = () => {
@@ -72,6 +74,9 @@ const GatewaySchools = forwardRef<
             })
             .catch(() => {
                 setError("Failed to load schools data");
+            })
+            .finally(() => {
+                setIsLoading(false);
             });
     };
 
@@ -197,7 +202,18 @@ const GatewaySchools = forwardRef<
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-200 bg-white">
-                                {gatewaySchools.length > 0 ? (
+                                {isLoading ? (
+                                    Array.from({ length: 3 }).map((_, i) => (
+                                        <tr key={i}>
+                                            <td className="px-4 py-3 w-[80%]">
+                                                <Skeleton className="h-4 w-48" />
+                                            </td>
+                                            <td className="px-4 py-3 text-center">
+                                                <Skeleton className="h-4 w-4 mx-auto" />
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : gatewaySchools.length > 0 ? (
                                     gatewaySchools.map((school) => (
                                         <tr
                                             key={school.id}
@@ -206,14 +222,14 @@ const GatewaySchools = forwardRef<
                                             <td className="px-4 py-3 text-sm w-[80%]">
                                                 {school.name}
                                             </td>
-                                            <td className="px-4 py-3 text-sm text-center">
+                                            <td className="text-sm text-center p-0">
                                                 <button
                                                     onClick={() =>
                                                         handleRemoveSchool(
                                                             school.id,
                                                         )
                                                     }
-                                                    className="text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
+                                                    className="w-full h-full px-4 py-3 flex items-center justify-center text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
                                                     aria-label={`Remove ${school.name}`}
                                                 >
                                                     <Trash className="w-4 h-4" />

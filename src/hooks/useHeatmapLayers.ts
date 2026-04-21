@@ -1,10 +1,16 @@
 import { useEffect, useRef } from "react";
 import maplibregl from "maplibre-gl";
 
-import regionsData from "@/data/regions.json";
+import maBorderData from "@/data/ma-border.json";
+import originalRegionsData from "@/data/regions.json";
 import { standardize } from "@/lib/string-standardize";
 
-const regions = Object.values(regionsData).map((region) => ({
+const allRegions = Object.values(originalRegionsData).map((region) => ({
+    name: region.name,
+    coordinates: region.coordinates as [number, number][],
+}));
+
+const maBorderRegions = Object.values(maBorderData).map((region) => ({
     name: region.name,
     coordinates: region.coordinates as [number, number][],
 }));
@@ -35,6 +41,7 @@ interface UseHeatmapLayersOptions {
     mapRef: React.RefObject<maplibregl.Map | null>;
     filteredSchoolPoints: GeoJSON.FeatureCollection | null;
     metric: string;
+    year: number | null;
     showSchools: boolean;
     showHeatmap: boolean;
     showRegions: boolean;
@@ -44,6 +51,7 @@ export function useHeatmapLayers({
     mapRef,
     filteredSchoolPoints,
     metric,
+    year,
     showSchools,
     showHeatmap,
     showRegions,
@@ -84,32 +92,41 @@ export function useHeatmapLayers({
         }
 
         const updateHeatLayer = () => {
+            const currentRegionsData = showRegions
+                ? allRegions
+                : maBorderRegions;
+            const geoJsonData = {
+                type: "FeatureCollection",
+                features: currentRegionsData.map((c) => ({
+                    type: "Feature",
+                    geometry: {
+                        type: "LineString",
+                        coordinates: c.coordinates,
+                    },
+                    properties: {},
+                })),
+            } as GeoJSON.FeatureCollection;
+
             // Region boundary lines
             if (!map.getSource("regions-source")) {
                 map.addSource("regions-source", {
                     type: "geojson",
-                    data: {
-                        type: "FeatureCollection",
-                        features: regions.map((c) => ({
-                            type: "Feature",
-                            geometry: {
-                                type: "LineString",
-                                coordinates: c.coordinates,
-                            },
-                            properties: {},
-                        })),
-                    },
+                    data: geoJsonData,
                 });
                 map.addLayer({
                     id: "regions-layer",
                     type: "line",
                     source: "regions-source",
                     paint: {
-                        "line-color": "#FF0000",
-                        "line-width": 4,
-                        "line-opacity": 0.5,
+                        "line-color": "#475569",
+                        "line-width": 2,
+                        "line-opacity": 0.6,
                     },
                 });
+            } else {
+                (
+                    map.getSource("regions-source") as maplibregl.GeoJSONSource
+                ).setData(geoJsonData);
             }
 
             // Filter to only include schools with data for the selected metric
@@ -179,17 +196,17 @@ export function useHeatmapLayers({
                             ["linear"],
                             ["heatmap-density"],
                             0,
-                            "rgba(33,102,172,0)",
+                            "rgba(255,255,204,0)",
                             0.2,
-                            "rgb(103,169,207)",
+                            "rgb(255,237,160)",
                             0.4,
-                            "rgb(209,229,240)",
+                            "rgb(254,178,76)",
                             0.6,
-                            "rgb(253,219,199)",
+                            "rgb(253,141,60)",
                             0.8,
-                            "rgb(239,138,98)",
+                            "rgb(227,74,51)",
                             1,
-                            "rgb(178,24,43)",
+                            "rgb(175,39,47)",
                         ],
                         "heatmap-radius": [
                             "interpolate",
@@ -204,43 +221,25 @@ export function useHeatmapLayers({
                 });
             }
 
-            // School icon points
-            const addSchoolIcons = () => {
-                if (!showSchools) return;
-                if (!map.getLayer("school-icons")) {
-                    map.addLayer({
-                        id: "school-icons",
-                        type: "symbol",
-                        source: "schoolSource",
-                        layout: {
-                            "icon-image": "school-icon",
-                            "icon-size": 1,
-                            "icon-allow-overlap": true,
-                        },
-                    });
-                }
-            };
-
-            if (map.hasImage("school-icon")) {
-                addSchoolIcons();
-            } else {
-                const img = new Image(26, 26);
-                img.onload = () => {
-                    if (!map.hasImage("school-icon")) {
-                        map.addImage("school-icon", img);
-                    }
-                    addSchoolIcons();
-                };
-                img.src = "/images/school-heatmap-icon.svg";
+            // School dot points
+            if (showSchools && !map.getLayer("school-icons")) {
+                map.addLayer({
+                    id: "school-icons",
+                    type: "circle",
+                    source: "schoolSource",
+                    paint: {
+                        "circle-radius": 5,
+                        "circle-color": "#1e293b",
+                        "circle-stroke-width": 1.5,
+                        "circle-stroke-color": "#ffffff",
+                        "circle-opacity": 0.85,
+                    },
+                });
             }
 
             // Toggle layer visibility
             if (map.getLayer("regions-layer")) {
-                map.setLayoutProperty(
-                    "regions-layer",
-                    "visibility",
-                    showRegions ? "visible" : "none",
-                );
+                map.setLayoutProperty("regions-layer", "visibility", "visible");
             }
             if (map.getLayer("schoolHeatLayer")) {
                 map.setLayoutProperty(
@@ -271,10 +270,24 @@ export function useHeatmapLayers({
                     number,
                     number,
                 ];
+
                 const { name } = feature.properties || {};
                 const value = feature.properties?.[metric] || 0;
                 const schoolSlug = standardize(name);
-                const profileUrl = `/schools/${schoolSlug}`;
+                const profileUrl =
+                    year !== null
+                        ? `/schools/${schoolSlug}?year=${year}`
+                        : `/schools/${schoolSlug}`;
+
+                // Competing / Participating are student-count metrics — they
+                // don't pluralize via trailing "s" like Projects/Teachers do.
+                const isStudentMetric =
+                    metric === "Competing" || metric === "Participating";
+                const unitLabel = isStudentMetric
+                    ? `${metric.toLowerCase()} student${value === 1 ? "" : "s"}`
+                    : value === 1
+                      ? metric.slice(0, -1).toLowerCase()
+                      : metric.toLowerCase();
 
                 const html = `
                     <div style="
@@ -289,7 +302,7 @@ export function useHeatmapLayers({
                     ">
                         <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: #111;">${name}</h3>
                         <p style="margin: 2px 0 8px 0; font-size: 16px; color: #333; font-weight: 500;">
-                            ${value.toLocaleString()} ${value === 1 ? metric.slice(0, -1).toLowerCase() : metric.toLowerCase()}
+                            ${value.toLocaleString()} ${unitLabel}
                         </p>
                         <a href="${profileUrl}" style="color: #af272f; text-decoration: underline;">View Profile &rarr;</a>
                     </div>
@@ -508,7 +521,14 @@ export function useHeatmapLayers({
             cleanup?.();
             map.off("load", onLoad);
         };
-    }, [metric, filteredSchoolPoints, showSchools, showHeatmap, showRegions]);
+    }, [
+        metric,
+        year,
+        filteredSchoolPoints,
+        showSchools,
+        showHeatmap,
+        showRegions,
+    ]);
 
     return { closePopup };
 }

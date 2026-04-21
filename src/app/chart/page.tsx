@@ -20,10 +20,13 @@ import {
     LineChart,
     Link,
     Loader2,
+    Minus,
     PlusCircle,
     Share,
     ShoppingBasket,
     SlidersHorizontal,
+    TrendingDown,
+    TrendingUp,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -31,11 +34,7 @@ import { toast } from "sonner";
 import { LoadError } from "@/components/ui/load-error";
 import BarGraph from "@/components/charts/BarGraph";
 import { type ChartDataset } from "@/components/charts/chartTypes";
-import GraphFilters, {
-    type Filters,
-    type GroupBy,
-    type MeasuredAs,
-} from "@/components/GraphFilters/GraphFilters";
+import GraphFilters from "@/components/GraphFilters/GraphFilters";
 import LineGraph from "@/components/charts/LineGraph";
 import { Button } from "@/components/ui/button";
 import { AnimatedToggleButton } from "@/components/ui/animated-toggle-button";
@@ -51,13 +50,8 @@ import {
     SheetTitle,
 } from "@/components/ui/sheet";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-    useQueryState,
-    parseAsInteger,
-    parseAsString,
-    parseAsArrayOf,
-    parseAsBoolean,
-} from "nuqs";
+import { useChartFilters } from "@/hooks/useChartFilters";
+import { useChartData } from "@/hooks/useChartData";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -69,180 +63,86 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { downloadSingleGraph } from "@/lib/export-to-pdf";
+import { downloadSingleGraph, type FilterDetail } from "@/lib/export-to-pdf";
 import { useCart } from "@/hooks/useCart";
 import { Cart } from "@/components/Cart";
 import { CartIndicator } from "@/components/ui/cart-indicator";
 import { Kbd } from "@/components/ui/kbd";
 import { useHotkey } from "@/hooks/useHotkey";
-
-type Project = {
-    id: number;
-    title: string;
-    division: string;
-    category: string;
-    gatewaySchool: string;
-    year: number;
-    teamProject: boolean;
-    schoolId: number;
-    schoolName: string;
-    standardizedSchoolName: string;
-    schoolTown: string;
-    schoolRegion: string;
-    teacherId: number;
-    teacherName: string;
-    teacherEmail: string;
-    numStudents: number;
-    schoolDivisions: string[] | null;
-    schoolImplementationModel: string | null;
-    schoolSchoolType: string | null;
-};
-
-// possible values for measured as filter
-const measuredAsLabels: Record<string, string> = {
-    "total-school-count": "Total Schools",
-    "total-student-count": "Total Students",
-    "total-city-count": "Total Cities",
-    "total-project-count": "Total Projects",
-    "total-teacher-count": "Total Teachers",
-    "school-return-rate": "School Return Rate",
-};
-
-// possible values for group by filter
-const groupByLabels: Record<string, string> = {
-    "none": "None",
-    "region": "Region",
-    "school-type": "School Type",
-    "division": "Division",
-    "implementation-model": "Implementation Model",
-    "project-type": "Project Type",
-    "gateway-school": "Schools Representing Gateway Cities",
-};
-
-// Helper function for generating dynamic titles
-const generateChartTitle = (
-    chartType: string,
-    measuredAs: string,
-    groupBy: string,
-    yearStart: number,
-    yearEnd: number,
-    activeFilters: {
-        schools: number;
-        cities: number;
-        projectTypes: number;
-        hasTeacherYearsFilter: boolean;
-        onlyGatewaySchools: boolean;
-    },
-): string => {
-    // Chart type
-    const chartTypeLabel = chartType === "bar" ? "Bar Chart" : "Line Chart";
-
-    // Measured as label
-    const measuredAsLabel = measuredAsLabels[measuredAs] || "Unknown Metric";
-
-    // Group by label
-    const groupByLabel = groupByLabels[groupBy] || "None";
-
-    // Date range
-    const dateRange =
-        yearStart === yearEnd ? `${yearStart}` : `${yearStart}-${yearEnd}`;
-
-    let gateway = "";
-
-    if (measuredAs === "total-school-count") {
-        gateway = " Representing Gateway Cities";
-    } else {
-        gateway = "for Schools Representing Gateway Cities";
-    }
-
-    // Build main title
-    let mainTitle = `${chartTypeLabel} - ${measuredAsLabel} ${activeFilters.onlyGatewaySchools ? gateway : ""}`;
-
-    // Add group by if not "None"
-    if (groupBy !== "none") {
-        mainTitle += ` by ${groupByLabel}`;
-    }
-
-    // Add date range
-    mainTitle += ` (${dateRange})`;
-
-    // Build filter details
-    const filterDetails: string[] = [];
-
-    if (activeFilters.schools > 0) {
-        filterDetails.push(
-            `${activeFilters.schools} school${activeFilters.schools > 1 ? "s" : ""}`,
-        );
-    }
-    if (activeFilters.cities > 0) {
-        filterDetails.push(
-            `${activeFilters.cities} cit${activeFilters.cities > 1 ? "ies" : "y"}`,
-        );
-    }
-    if (activeFilters.projectTypes > 0) {
-        filterDetails.push(
-            `${activeFilters.projectTypes} project type${activeFilters.projectTypes > 1 ? "s" : ""}`,
-        );
-    }
-    if (activeFilters.hasTeacherYearsFilter) {
-        filterDetails.push("teacher filter applied");
-    }
-
-    // Add filter details if any filters are active
-    if (filterDetails.length > 0) {
-        mainTitle += ` • Filtered: ${filterDetails.join(", ")}`;
-    }
-
-    return mainTitle;
-};
+import { isYearInRange } from "@/lib/year-validation";
+import { computeChartDatasets } from "@/lib/chart-data-pipeline";
+import {
+    generateChartTitle,
+    measuredAsLabels,
+    groupByLabels,
+} from "@/lib/chart-title";
+import { DataTable } from "@/components/DataTable";
+import { CellValue } from "@/types/spreadsheet";
 
 export default function ChartPage() {
-    const [allProjects, setAllProjects] = useState<Project[]>([]);
-    const [gatewaySchools, setGatewaySchools] = useState<string[]>([]);
     const [isExporting, setIsExporting] = useState(false);
     const [exportDialogOpen, setExportDialogOpen] = useState(false);
     const [cartOpen, setCartOpen] = useState(false);
     const [filterOpen, setFilterOpen] = useState(false);
-    const [isLoaded, setIsLoaded] = useState(false);
-    const [projectDataError, setProjectDataError] = useState<string | null>(
-        null,
-    );
 
-    // Setting hooks
-    const [timePeriod, setTimePeriod] = useQueryState(
-        "period",
-        parseAsString.withDefault("custom"),
-    );
-    const [startYear, setStartYear] = useQueryState(
-        "startYear",
-        parseAsInteger.withDefault(2020),
-    );
-    const [endYear, setEndYear] = useQueryState(
-        "endYear",
-        parseAsInteger.withDefault(2025),
-    );
-    const yearRange = useMemo(
-        () => ({
-            start: startYear,
-            end: endYear,
-        }),
-        [startYear, endYear],
-    );
-    const [tempYearRange, setTempYearRange] = useState({
-        start: startYear,
-        end: endYear,
-    });
-    const [yearRangeOpen, setYearRangeOpen] = useState(false);
+    // All chart filters and URL state from single hook
+    const {
+        // Year range
+        yearRange,
+        updateYearRange,
+        startYear,
+        endYear,
+        setStartYear,
+        setEndYear,
+        timePeriod,
+        setTimePeriod,
+        yearRangeOpen,
+        setYearRangeOpen,
+        // Chart type
+        chartType,
+        setChartType,
+        // Filters
+        groupBy,
+        setGroupBy,
+        measuredAs,
+        setMeasuredAs,
+        selectedSchools,
+        setSelectedSchools,
+        selectedCities,
+        setSelectedCities,
+        selectedProjectTypes,
+        setSelectedProjectTypes,
+        selectedDivisions,
+        setSelectedDivisions,
+        selectedSchoolTypes,
+        setSelectedSchoolTypes,
+        selectedRegions,
+        setSelectedRegions,
+        selectedImplementationTypes,
+        setSelectedImplementationTypes,
+        teacherYearsValue,
+        setTeacherYearsValue,
+        teacherYearsOperator,
+        setTeacherYearsOperator,
+        teacherYearsValue2,
+        setTeacherYearsValue2,
+        onlyGatewaySchools,
+        setOnlyGatewaySchools,
+        // Computed
+        filters,
+    } = useChartFilters();
 
-    const [chartType, setChartType] = useQueryState(
-        "type",
-        parseAsString.withDefault("bar"),
-    );
+    const { items, addChartItem, hasItem, removeByName } = useCart();
+
+    const [startDraft, setStartDraft] = useState(String(yearRange.start));
+    const [endDraft, setEndDraft] = useState(String(yearRange.end));
+
+    // Chart type animation direction
     const slideDirection = useRef(0);
     const handleChartTypeChange = useCallback(
         (value: string) => {
             slideDirection.current = value === "line" ? -1 : 1;
-            setChartType(value as "bar" | "line");
+            setChartType(value);
         },
         [setChartType],
     );
@@ -255,153 +155,17 @@ export default function ChartPage() {
     useHotkey("b", () => handleChartTypeChange("bar"));
     useHotkey("l", () => handleChartTypeChange("line"));
 
-    // Filter hooks
-    const [groupBy, setGroupBy] = useQueryState(
-        "groupBy",
-        parseAsString.withDefault("none"),
-    );
-    const [measuredAs, setMeasuredAs] = useQueryState(
-        "measuredAs",
-        parseAsString.withDefault("total-school-count"),
-    );
-    const [selectedSchools, setSelectedSchools] = useQueryState(
-        "schools",
-        parseAsArrayOf(parseAsString).withDefault([]),
-    );
-    const [selectedCities, setSelectedCities] = useQueryState(
-        "cities",
-        parseAsArrayOf(parseAsString).withDefault([]),
-    );
-    const [selectedProjectTypes, setSelectedProjectTypes] = useQueryState(
-        "projectTypes",
-        parseAsArrayOf(parseAsString).withDefault([]),
-    );
-    const [teacherYearsValue, setTeacherYearsValue] = useQueryState(
-        "teacherYearsValue",
-        parseAsString.withDefault(""),
-    );
-    const [teacherYearsOperator, setTeacherYearsOperator] = useQueryState(
-        "teacherYearsOperator",
-        parseAsString.withDefault("="),
-    );
-    const [teacherYearsValue2, setTeacherYearsValue2] = useQueryState(
-        "teacherYearsValue2",
-        parseAsString.withDefault(""),
-    );
-
-    const [onlyGatewaySchools, setOnlyGatewaySchools] = useQueryState(
-        "onlyGatewaySchools",
-        parseAsBoolean.withDefault(false),
-    );
-
-    const { items, addChartItem, hasItem, removeByName } = useCart();
-
-    const filters: Filters = useMemo(
-        () => ({
-            individualProjects: true,
-            groupProjects: true,
-            selectedSchools,
-            selectedCities,
-            selectedProjectTypes,
-            teacherYearsValue,
-            teacherYearsOperator: teacherYearsOperator as
-                | "="
-                | ">"
-                | "<"
-                | "between",
-            teacherYearsValue2: teacherYearsValue2 || undefined,
-            groupBy: groupBy as GroupBy,
-            onlyGatewaySchools: onlyGatewaySchools,
-            measuredAs: measuredAs as MeasuredAs,
-        }),
-        [
-            selectedSchools,
-            selectedCities,
-            selectedProjectTypes,
-            teacherYearsValue,
-            teacherYearsOperator,
-            teacherYearsValue2,
-            groupBy,
-            measuredAs,
-            onlyGatewaySchools,
-        ],
-    );
     const chartRef = useRef<HTMLDivElement | null>(null);
 
-    // Fetch all project data
-    const fetchProjects = useCallback(async () => {
-        setIsLoaded(false);
-        setProjectDataError(null);
-        try {
-            const response = await fetch("/api/projects");
-            if (!response.ok) throw new Error("Failed to load project data");
-
-            const data = await response.json();
-
-            const updatedProjects = data.map((p: Project) => ({
-                ...p,
-                gatewaySchool: gatewaySchools.includes(p.schoolName)
-                    ? "Gateway"
-                    : "Non-Gateway",
-            }));
-
-            setAllProjects(updatedProjects);
-            setProjectDataError(null);
-        } catch (error) {
-            setProjectDataError(
-                error instanceof Error
-                    ? error.message
-                    : "Failed to load project data",
-            );
-        } finally {
-            setIsLoaded(true);
-        }
-    }, [gatewaySchools]);
-
-    useEffect(() => {
-        fetchProjects();
-    }, [fetchProjects]);
-
-    // Fetch gateway schools
-    useEffect(() => {
-        fetch("/api/schools?gateway=true&list=true")
-            .then((res) => res.json())
-            .then((data) => {
-                const schoolNames: string[] = data.map(
-                    (school: { name: string }) => school.name,
-                );
-
-                setGatewaySchools(schoolNames);
-            });
-    }, []);
-
-    // Fetch year metadata to derive "data last updated" date
-    const [yearsMetadata, setYearsMetadata] = useState<
-        { year: number; lastUpdatedAt: string | null }[]
-    >([]);
-    useEffect(() => {
-        fetch("/api/years-with-data")
-            .then((res) => res.json())
-            .then((data) => {
-                if (Array.isArray(data.years)) {
-                    setYearsMetadata(data.years);
-                }
-            })
-            .catch(() => {});
-    }, []);
-
-    const dataLastUpdated = useMemo(() => {
-        const dates = yearsMetadata
-            .filter(
-                (m) =>
-                    m.year >= yearRange.start &&
-                    m.year <= yearRange.end &&
-                    m.lastUpdatedAt !== null,
-            )
-            .map((m) => new Date(m.lastUpdatedAt!).getTime());
-        if (dates.length === 0) return null;
-        return new Date(Math.max(...dates));
-    }, [yearsMetadata, yearRange]);
+    // All data fetching from single hook
+    const {
+        allProjects,
+        gatewaySchools,
+        isLoaded,
+        projectDataError,
+        fetchProjects,
+        dataLastUpdated,
+    } = useChartData(yearRange);
 
     const filterName = generateChartTitle(
         chartType,
@@ -413,12 +177,106 @@ export default function ChartPage() {
             schools: selectedSchools.length,
             cities: selectedCities.length,
             projectTypes: selectedProjectTypes.length,
+            divisions: selectedDivisions.length,
+            schoolTypes: selectedSchoolTypes.length,
+            regions: selectedRegions.length,
+            implementationTypes: selectedImplementationTypes.length,
             hasTeacherYearsFilter: teacherYearsValue !== "",
             onlyGatewaySchools: onlyGatewaySchools,
         },
     );
 
     const chartInCart = hasItem(filterName);
+
+    const filterDetails = useMemo<FilterDetail[]>(
+        () => [
+            ...(selectedSchools.length > 0
+                ? [{ label: "Schools", values: selectedSchools }]
+                : []),
+            ...(selectedCities.length > 0
+                ? [{ label: "Cities", values: selectedCities }]
+                : []),
+            ...(selectedProjectTypes.length > 0
+                ? [{ label: "Project Types", values: selectedProjectTypes }]
+                : []),
+            ...(selectedDivisions.length > 0
+                ? [{ label: "Divisions", values: selectedDivisions }]
+                : []),
+            ...(selectedSchoolTypes.length > 0
+                ? [{ label: "School Types", values: selectedSchoolTypes }]
+                : []),
+            ...(selectedRegions.length > 0
+                ? [{ label: "Regions", values: selectedRegions }]
+                : []),
+            ...(selectedImplementationTypes.length > 0
+                ? [
+                      {
+                          label: "Implementation Types",
+                          values: selectedImplementationTypes,
+                      },
+                  ]
+                : []),
+            ...(onlyGatewaySchools
+                ? [
+                      {
+                          label: "Gateway Schools",
+                          values: ["Only Gateway Schools"],
+                      },
+                  ]
+                : []),
+            ...(teacherYearsValue !== ""
+                ? [
+                      {
+                          label: "Teacher Years",
+                          values: [
+                              teacherYearsOperator === "between"
+                                  ? `between ${teacherYearsValue} and ${teacherYearsValue2}`
+                                  : `${teacherYearsOperator} ${teacherYearsValue}`,
+                          ],
+                      },
+                  ]
+                : []),
+            {
+                label: "Measured As",
+                values: [measuredAsLabels[measuredAs] ?? measuredAs],
+            },
+            {
+                label: "Grouped By",
+                values: [groupByLabels[groupBy] ?? groupBy],
+            },
+            {
+                label: "Year Range",
+                values: [`${yearRange.start} – ${yearRange.end}`],
+            },
+        ],
+        [
+            selectedSchools,
+            selectedCities,
+            selectedProjectTypes,
+            selectedDivisions,
+            selectedSchoolTypes,
+            selectedRegions,
+            selectedImplementationTypes,
+            onlyGatewaySchools,
+            teacherYearsValue,
+            teacherYearsOperator,
+            teacherYearsValue2,
+            measuredAs,
+            groupBy,
+            yearRange,
+        ],
+    );
+
+    // Memoize graph dataset calculation
+    const graphDataset: ChartDataset[] = useMemo(() => {
+        if (!allProjects.length || !filters) return [];
+        const { datasets } = computeChartDatasets(
+            allProjects,
+            filters,
+            yearRange,
+        );
+        return datasets;
+    }, [allProjects, filters, yearRange]);
 
     // Cmd+S to open export dialog, Cmd+P to print PDF
     useHotkey(
@@ -431,17 +289,35 @@ export default function ChartPage() {
     useHotkey(
         "p",
         () => {
-            downloadSingleGraph(chartRef, filterName, true);
+            downloadSingleGraph(
+                chartType as "bar" | "line",
+                graphDataset,
+                measuredAsLabels[filters.measuredAs],
+                filters.groupBy === "none"
+                    ? undefined
+                    : groupByLabels[filters.groupBy],
+                filterName,
+                filterDetails,
+                true,
+            );
         },
         { meta: true },
     );
 
-    // Sync tempYearRange with yearRange only when popover opens in custom mode
+    // Sync drafts with yearRange only when popover opens in custom mode
     useEffect(() => {
         if (yearRangeOpen && timePeriod === "custom") {
-            setTempYearRange(yearRange);
+            setStartDraft(String(yearRange.start));
+            setEndDraft(String(yearRange.end));
         }
     }, [yearRangeOpen, timePeriod, yearRange]);
+
+    // Keep query params normalized if an invalid range is loaded from URL.
+    useEffect(() => {
+        if (startYear <= endYear) return;
+        setStartYear(endYear);
+        setEndYear(startYear);
+    }, [startYear, endYear, setStartYear, setEndYear]);
 
     const copyURLtoClipboard = async () => {
         const url = window.location.href;
@@ -459,277 +335,183 @@ export default function ChartPage() {
 
         if (timePeriod === "3y") {
             //return { start: maxYear - 2, end: maxYear };
-            setStartYear(maxYear - 2);
-            setEndYear(maxYear);
+            updateYearRange(maxYear - 2, maxYear);
             return;
         } else if (timePeriod === "5y") {
             //return { start: maxYear - 4, end: maxYear };
-            setStartYear(maxYear - 4);
-            setEndYear(maxYear);
+            updateYearRange(maxYear - 4, maxYear);
             return;
         }
 
         // "all" - use full range
         const minYear = Math.min(...allYears);
-        setStartYear(minYear);
-        setEndYear(maxYear);
-    }, [timePeriod, allProjects]);
+        updateYearRange(minYear, maxYear);
+    }, [timePeriod, allProjects, updateYearRange]);
 
-    // Memoize graph dataset calculation to run only when data or filters change
-    const graphDataset: ChartDataset[] = useMemo(() => {
-        if (!allProjects.length) return [];
+    const { cols, rows } = useMemo(() => {
+        if (!graphDataset.length) return { cols: [], rows: [] };
 
-        // Pre-calculate teacher participation years if filter is active
-        const teacherYearsMap = new Map<number, number>();
-        if (filters?.teacherYearsValue) {
-            const tempMap: Record<number, Set<number>> = {};
-            allProjects.forEach((p) => {
-                if (!tempMap[p.teacherId]) tempMap[p.teacherId] = new Set();
-                tempMap[p.teacherId].add(p.year);
-            });
-            Object.entries(tempMap).forEach(([tId, yearsSet]) => {
-                teacherYearsMap.set(Number(tId), yearsSet.size);
-            });
-        }
+        const isReturnRate = filters.measuredAs === "school-return-rate";
 
-        // Filter projects based on the active filters
-        const filteredProjects = allProjects.filter((p) => {
-            if (!filters) return true;
+        // Collect all unique years across all datasets, sorted ascending
+        const allYears = Array.from(
+            new Set(graphDataset.flatMap((ds) => ds.data.map((d) => d.x))),
+        ).sort((a, b) => Number(a) - Number(b));
 
-            // Year range filter
-            if (p.year < yearRange.start || p.year > yearRange.end) {
-                return false;
-            }
+        // Build columns: Year, then for each dataset: value (and Δ | Trend only when no groupBy)
+        const hasGroupBy = filters.groupBy !== "none";
+        const cols = [
+            { id: "year", accessorKey: "year", header: "Year" },
+            ...graphDataset.flatMap((ds) => {
+                const valueHeader =
+                    ds.label === "All"
+                        ? (measuredAsLabels[filters.measuredAs] ?? ds.label)
+                        : ds.label;
+                const prefix = graphDataset.length === 1 ? "" : `${ds.label} `;
+                const pctRawKey = `${ds.label}__pctRaw`;
 
-            // Individual vs Group Projects
-            if (
-                filters.individualProjects &&
-                !filters.groupProjects &&
-                p.teamProject
-            )
-                return false;
-            if (
-                filters.groupProjects &&
-                !filters.individualProjects &&
-                !p.teamProject
-            )
-                return false;
+                // Base value column
+                const valueCols = [
+                    {
+                        id: ds.label,
+                        accessorKey: ds.label,
+                        header: valueHeader,
+                    },
+                ];
 
-            // Selected Schools
-            if (
-                filters.selectedSchools.length > 0 &&
-                !filters.selectedSchools.includes(p.schoolName)
-            )
-                return false;
+                // Skip delta/% change columns when there's a groupBy
+                if (hasGroupBy) return valueCols;
 
-            if (filters.onlyGatewaySchools && p.gatewaySchool !== "Gateway") {
-                return false;
-            }
+                return [
+                    ...valueCols,
+                    {
+                        id: `${ds.label}__delta`,
+                        accessorKey: `${ds.label}__delta`,
+                        header: `${prefix}Δ`,
+                        cell: ({
+                            row,
+                        }: {
+                            row: { original: Record<string, CellValue> };
+                        }) => {
+                            const formatted = row.original[
+                                `${ds.label}__delta`
+                            ] as string;
+                            if (formatted === "—")
+                                return (
+                                    <span className="text-muted-foreground">
+                                        —
+                                    </span>
+                                );
+                            const color = formatted.startsWith("+")
+                                ? "text-[#46A758]"
+                                : formatted.startsWith("-")
+                                  ? "text-[#E5484D]"
+                                  : "text-[#808080]";
+                            return <span className={color}>{formatted}</span>;
+                        },
+                    },
+                    {
+                        id: `${ds.label}__pct`,
+                        accessorKey: `${ds.label}__pct`,
+                        header: `${prefix}% Change`,
+                        cell: ({
+                            row,
+                        }: {
+                            row: { original: Record<string, CellValue> };
+                        }) => {
+                            const raw = row.original[pctRawKey];
+                            const formatted = row.original[
+                                `${ds.label}__pct`
+                            ] as string;
+                            if (
+                                raw === null ||
+                                raw === undefined ||
+                                formatted === "—"
+                            ) {
+                                return (
+                                    <span className="text-muted-foreground">
+                                        —
+                                    </span>
+                                );
+                            }
+                            const pct = raw as number;
+                            const absStr = `${Math.abs(pct).toFixed(1)}%`;
+                            if (Math.abs(pct) < 0.5) {
+                                return (
+                                    <div className="flex items-center gap-1 text-[#808080]">
+                                        <Minus size={14} />
+                                        {absStr}
+                                    </div>
+                                );
+                            }
+                            if (pct > 0) {
+                                return (
+                                    <div className="flex items-center gap-1 text-[#46A758]">
+                                        <TrendingUp size={14} />
+                                        {absStr}
+                                    </div>
+                                );
+                            }
+                            return (
+                                <div className="flex items-center gap-1 text-[#E5484D]">
+                                    <TrendingDown size={14} />
+                                    {absStr}
+                                </div>
+                            );
+                        },
+                    },
+                ];
+            }),
+        ];
 
-            // Selected Cities
-            if (
-                filters.selectedCities.length > 0 &&
-                !filters.selectedCities.includes(p.schoolTown)
-            )
-                return false;
+        // One row per year
+        const rows = allYears.map((year, yearIdx) => {
+            const row: Record<string, CellValue> = { year };
+            graphDataset.forEach((ds) => {
+                const point = ds.data.find((d) => d.x === year);
+                const prevPoint =
+                    yearIdx > 0
+                        ? ds.data.find((d) => d.x === allYears[yearIdx - 1])
+                        : undefined;
 
-            // Selected Project Types
-            if (
-                filters.selectedProjectTypes.length > 0 &&
-                !filters.selectedProjectTypes.includes(p.category)
-            )
-                return false;
+                if (point !== undefined) {
+                    row[ds.label] = isReturnRate
+                        ? `${(point.y * 100).toFixed(1)}%`
+                        : Math.round(point.y);
 
-            // Teacher Years Participation
-            if (filters.teacherYearsValue) {
-                const yearsActive = teacherYearsMap.get(p.teacherId) || 0;
-                const op = filters.teacherYearsOperator;
+                    if (prevPoint !== undefined) {
+                        const delta = point.y - prevPoint.y;
+                        const pct =
+                            prevPoint.y !== 0
+                                ? (delta / prevPoint.y) * 100
+                                : null;
 
-                if (op === "=") {
-                    const target = parseInt(filters.teacherYearsValue, 10);
-                    if (yearsActive !== target) return false;
-                } else if (op === ">") {
-                    const target = parseInt(filters.teacherYearsValue, 10);
-                    if (yearsActive <= target) return false;
-                } else if (op === "<") {
-                    const target = parseInt(filters.teacherYearsValue, 10);
-                    if (yearsActive >= target) return false;
-                } else if (op === "between" && filters.teacherYearsValue2) {
-                    const min = parseInt(filters.teacherYearsValue, 10);
-                    const max = parseInt(filters.teacherYearsValue2, 10);
-                    if (yearsActive < min || yearsActive > max) return false;
+                        row[`${ds.label}__delta`] = isReturnRate
+                            ? `${delta >= 0 ? "+" : ""}${(delta * 100).toFixed(1)}pp`
+                            : `${delta >= 0 ? "+" : ""}${Math.round(delta)}`;
+
+                        row[`${ds.label}__pct`] =
+                            pct !== null
+                                ? `${pct >= 0 ? "+" : ""}${pct.toFixed(1)}%`
+                                : "—";
+                        row[`${ds.label}__pctRaw`] = pct;
+                    } else {
+                        row[`${ds.label}__delta`] = "—";
+                        row[`${ds.label}__pct`] = "—";
+                        row[`${ds.label}__pctRaw`] = null;
+                    }
+                } else {
+                    row[ds.label] = "—";
+                    row[`${ds.label}__delta`] = "—";
+                    row[`${ds.label}__pct`] = "—";
+                    row[`${ds.label}__pctRaw`] = null;
                 }
-            }
-
-            return true;
+            });
+            return row;
         });
 
-        function computeMetric(projects: Project[], metric: string) {
-            switch (metric) {
-                case "total-school-count":
-                    return new Set(projects.map((p) => p.schoolId)).size;
-
-                case "total-project-count":
-                    return projects.length;
-
-                case "total-student-count":
-                    return projects.reduce(
-                        (sum, p) => sum + (p.numStudents || 0),
-                        0,
-                    );
-
-                case "total-teacher-count":
-                    return new Set(projects.map((p) => p.teacherId)).size;
-
-                case "total-city-count":
-                    return new Set(projects.map((p) => p.schoolTown)).size;
-
-                case "school-return-rate": {
-                    const schoolsThisYear = new Set(
-                        projects.map((p) => p.schoolId),
-                    );
-                    const year = projects[0].year;
-                    const priorParticipation = allProjects.filter(
-                        (x) => schoolsThisYear.has(x.schoolId) && x.year < year,
-                    );
-                    const returningSchools = new Set(
-                        priorParticipation.map((p) => p.schoolId),
-                    );
-                    return returningSchools.size / schoolsThisYear.size || 0;
-                }
-
-                default:
-                    return projects.length;
-            }
-        }
-
-        function buildDatasets(
-            groups: string[],
-            getProjectsInGroup: (groupName: string) => Project[],
-        ) {
-            const metric = filters?.measuredAs || "total-school-count";
-            setMeasuredAs(metric as MeasuredAs);
-            return groups.map((groupName) => {
-                const projectsInGroup = getProjectsInGroup(groupName);
-                const projectsByYear: Record<number, Project[]> = {};
-                projectsInGroup.forEach((p) => {
-                    if (!projectsByYear[p.year]) projectsByYear[p.year] = [];
-                    projectsByYear[p.year].push(p);
-                });
-                const dataPoints = Object.entries(projectsByYear)
-                    .map(([year, projs]) => ({
-                        x: Number(year),
-                        y: computeMetric(projs, metric),
-                    }))
-                    .sort((a, b) => a.x - b.x);
-                return { label: groupName, data: dataPoints };
-            });
-        }
-
-        // Division groupby: school-level array field, one project can belong to multiple groups
-        if (filters.groupBy === "division") {
-            const normalizeDivision = (d: string): string => {
-                const lower = d.toLowerCase();
-                if (lower.startsWith("junior")) return "Junior";
-                if (lower.startsWith("senior")) return "Senior";
-                if (lower.startsWith("young")) return "Young Historian";
-                return d;
-            };
-
-            const allDivisionGroups = new Set<string>();
-            filteredProjects.forEach((p) => {
-                const divs = p.schoolDivisions;
-                if (!divs || divs.length === 0) {
-                    allDivisionGroups.add("Unassigned");
-                } else {
-                    divs.forEach((d) =>
-                        allDivisionGroups.add(normalizeDivision(d)),
-                    );
-                }
-            });
-
-            const divisionGroups = Array.from(allDivisionGroups).sort((a, b) =>
-                a === "Unassigned"
-                    ? 1
-                    : b === "Unassigned"
-                      ? -1
-                      : a.localeCompare(b),
-            );
-
-            return buildDatasets(divisionGroups, (groupName) =>
-                filteredProjects.filter((p) => {
-                    const divs = p.schoolDivisions;
-                    if (groupName === "Unassigned")
-                        return !divs || divs.length === 0;
-                    return (
-                        divs?.some((d) => normalizeDivision(d) === groupName) ??
-                        false
-                    );
-                }),
-            );
-        }
-
-        // Determine the key to group data by for all other groupBys
-        let groupKey: keyof Project | null = null;
-
-        switch (filters.groupBy) {
-            case "none":
-                groupKey = null;
-                break;
-            case "project-type":
-                groupKey = "category";
-                break;
-            case "region":
-                groupKey = "schoolRegion";
-                break;
-            case "school-type":
-                groupKey = "schoolSchoolType";
-                break;
-            case "implementation-model":
-                groupKey = "schoolImplementationModel";
-                break;
-            case "gateway-school":
-                groupKey = "gatewaySchool";
-                break;
-        }
-
-        const uniqueGroups =
-            groupKey === null
-                ? ["All"]
-                : Array.from(
-                      new Set(
-                          filteredProjects.map((p) =>
-                              String(p[groupKey] || "Unassigned"),
-                          ),
-                      ),
-                  ).sort((a, b) =>
-                      a === "Unassigned"
-                          ? 1
-                          : b === "Unassigned"
-                            ? -1
-                            : a.localeCompare(b),
-                  );
-
-        return buildDatasets(uniqueGroups, (groupName) =>
-            groupKey === null
-                ? filteredProjects
-                : filteredProjects.filter(
-                      (p) => String(p[groupKey] || "Unassigned") === groupName,
-                  ),
-        );
-    }, [
-        allProjects,
-        selectedSchools,
-        selectedCities,
-        selectedProjectTypes,
-        teacherYearsValue,
-        teacherYearsOperator,
-        teacherYearsValue2,
-        groupBy,
-        measuredAs,
-        yearRange,
-        onlyGatewaySchools,
-    ]);
+        return { cols, rows };
+    }, [graphDataset, filters.measuredAs, filters.groupBy]);
 
     // Calculate filtered count (based on selected 'measured by' category)
     const filteredProjectCount = useMemo(() => {
@@ -771,6 +553,52 @@ export default function ChartPage() {
         new Set(allProjects.map((p) => p.category)),
     ).sort();
 
+    const normalizeDivision = (d: string): string => {
+        const lower = d.toLowerCase();
+        if (lower.startsWith("junior")) return "Junior";
+        if (lower.startsWith("senior")) return "Senior";
+        if (lower.startsWith("young")) return "Young Historian";
+        return d;
+    };
+    const divisions = (() => {
+        const set = new Set<string>();
+        let hasMissing = false;
+        for (const p of allProjects) {
+            if (!p.schoolDivisions || p.schoolDivisions.length === 0) {
+                hasMissing = true;
+                continue;
+            }
+            for (const d of p.schoolDivisions) set.add(normalizeDivision(d));
+        }
+        const list = Array.from(set).sort();
+        if (hasMissing) list.push("Unassigned");
+        return list;
+    })();
+    const withUnassigned = (values: (string | null | undefined)[]) => {
+        const set = new Set<string>();
+        let hasMissing = false;
+        for (const v of values) {
+            if (v === null || v === undefined || v === "") hasMissing = true;
+            else set.add(v);
+        }
+        const list = Array.from(set).sort();
+        if (hasMissing) list.push("Unassigned");
+        return list;
+    };
+    const schoolTypes = withUnassigned(
+        allProjects.map((p) => p.schoolSchoolType),
+    );
+    const regions = withUnassigned(allProjects.map((p) => p.schoolRegion));
+    const implementationTypes = withUnassigned(
+        allProjects.map((p) => p.schoolImplementationModel),
+    );
+    const parsedStart = parseInt(startDraft, 10);
+    const parsedEnd = parseInt(endDraft, 10);
+    const startInvalid = startDraft.length === 4 && !isYearInRange(parsedStart);
+    const endInvalid = endDraft.length === 4 && !isYearInRange(parsedEnd);
+    const rangeInvalid =
+        !isYearInRange(parsedStart) || !isYearInRange(parsedEnd);
+
     return (
         <div className="w-full min-h-screen flex bg-background">
             <Sheet open={filterOpen} onOpenChange={setFilterOpen}>
@@ -783,6 +611,10 @@ export default function ChartPage() {
                             schools={schools}
                             cities={cities}
                             projectTypes={projectTypes}
+                            divisions={divisions}
+                            schoolTypes={schoolTypes}
+                            regions={regions}
+                            implementationTypes={implementationTypes}
                             gatewaySchools={gatewaySchools}
                             filters={filters}
                             onFiltersChange={(newFilters) => {
@@ -790,6 +622,16 @@ export default function ChartPage() {
                                 setSelectedCities(newFilters.selectedCities);
                                 setSelectedProjectTypes(
                                     newFilters.selectedProjectTypes,
+                                );
+                                setSelectedDivisions(
+                                    newFilters.selectedDivisions,
+                                );
+                                setSelectedSchoolTypes(
+                                    newFilters.selectedSchoolTypes,
+                                );
+                                setSelectedRegions(newFilters.selectedRegions);
+                                setSelectedImplementationTypes(
+                                    newFilters.selectedImplementationTypes,
                                 );
                                 setGroupBy(newFilters.groupBy);
                                 setMeasuredAs(newFilters.measuredAs);
@@ -817,6 +659,10 @@ export default function ChartPage() {
                     schools={schools}
                     cities={cities}
                     projectTypes={projectTypes}
+                    divisions={divisions}
+                    schoolTypes={schoolTypes}
+                    regions={regions}
+                    implementationTypes={implementationTypes}
                     gatewaySchools={gatewaySchools}
                     filters={filters}
                     onFiltersChange={(newFilters) => {
@@ -824,6 +670,12 @@ export default function ChartPage() {
                         setSelectedCities(newFilters.selectedCities);
                         setSelectedProjectTypes(
                             newFilters.selectedProjectTypes,
+                        );
+                        setSelectedDivisions(newFilters.selectedDivisions);
+                        setSelectedSchoolTypes(newFilters.selectedSchoolTypes);
+                        setSelectedRegions(newFilters.selectedRegions);
+                        setSelectedImplementationTypes(
+                            newFilters.selectedImplementationTypes,
                         );
                         setGroupBy(newFilters.groupBy);
                         setMeasuredAs(newFilters.measuredAs);
@@ -834,6 +686,23 @@ export default function ChartPage() {
                         setTeacherYearsValue2(
                             newFilters.teacherYearsValue2 ?? "",
                         );
+
+                        if (teacherYearsValue2 !== undefined) {
+                            const min = parseInt(
+                                newFilters.teacherYearsValue,
+                                10,
+                            );
+                            const max = parseInt(
+                                newFilters.teacherYearsValue2 ?? "",
+                                10,
+                            );
+
+                            if (max <= min) {
+                                setTeacherYearsValue2(
+                                    newFilters.teacherYearsValue,
+                                );
+                            }
+                        }
                         setOnlyGatewaySchools(newFilters.onlyGatewaySchools);
                     }}
                 />
@@ -844,7 +713,7 @@ export default function ChartPage() {
                 <div className="flex flex-col gap-5 h-full overflow-hidden">
                     {/* Header - title and actions */}
                     <div className="flex items-center justify-between px-8 pt-8 shrink-0 gap-4">
-                        <div className="relative">
+                        <div className="min-w-0 flex-1">
                             <AnimatePresence initial={false} mode="popLayout">
                                 <motion.h1
                                     key={chartType}
@@ -874,6 +743,12 @@ export default function ChartPage() {
                                             cities: selectedCities.length,
                                             projectTypes:
                                                 selectedProjectTypes.length,
+                                            divisions: selectedDivisions.length,
+                                            schoolTypes:
+                                                selectedSchoolTypes.length,
+                                            regions: selectedRegions.length,
+                                            implementationTypes:
+                                                selectedImplementationTypes.length,
                                             hasTeacherYearsFilter:
                                                 teacherYearsValue !== "",
                                             onlyGatewaySchools:
@@ -926,8 +801,18 @@ export default function ChartPage() {
                                                 setExportDialogOpen(false);
                                                 setIsExporting(true);
                                                 await downloadSingleGraph(
-                                                    chartRef,
+                                                    chartType as "bar" | "line",
+                                                    graphDataset,
+                                                    measuredAsLabels[
+                                                        filters.measuredAs
+                                                    ],
+                                                    filters.groupBy === "none"
+                                                        ? undefined
+                                                        : groupByLabels[
+                                                              filters.groupBy
+                                                          ],
                                                     filterName,
+                                                    filterDetails,
                                                 );
                                                 setIsExporting(false);
                                                 toast.success(
@@ -948,14 +833,22 @@ export default function ChartPage() {
                                     if (chartInCart) {
                                         removeByName(filterName);
                                     } else {
-                                        addChartItem(filterName, {
-                                            chartType: chartType as
-                                                | "bar"
-                                                | "line",
-                                            filters,
-                                            yearStart: yearRange.start,
-                                            yearEnd: yearRange.end,
-                                        });
+                                        addChartItem(
+                                            filterName,
+                                            {
+                                                chartType: chartType as
+                                                    | "bar"
+                                                    | "line",
+                                                filters,
+                                                yearStart: yearRange.start,
+                                                yearEnd: yearRange.end,
+                                                tableData: {
+                                                    cols,
+                                                    rows,
+                                                },
+                                            },
+                                            filterDetails,
+                                        );
                                     }
                                 }}
                             >
@@ -1026,8 +919,18 @@ export default function ChartPage() {
                                         onClick={async () => {
                                             setIsExporting(true);
                                             await downloadSingleGraph(
-                                                chartRef,
+                                                chartType as "bar" | "line",
+                                                graphDataset,
+                                                measuredAsLabels[
+                                                    filters.measuredAs
+                                                ],
+                                                filters.groupBy === "none"
+                                                    ? undefined
+                                                    : groupByLabels[
+                                                          filters.groupBy
+                                                      ],
                                                 filterName,
+                                                filterDetails,
                                             );
                                             setIsExporting(false);
                                             toast.success(
@@ -1050,14 +953,23 @@ export default function ChartPage() {
                                             if (chartInCart) {
                                                 removeByName(filterName);
                                             } else {
-                                                addChartItem(filterName, {
-                                                    chartType: chartType as
-                                                        | "bar"
-                                                        | "line",
-                                                    filters,
-                                                    yearStart: yearRange.start,
-                                                    yearEnd: yearRange.end,
-                                                });
+                                                addChartItem(
+                                                    filterName,
+                                                    {
+                                                        chartType: chartType as
+                                                            | "bar"
+                                                            | "line",
+                                                        filters,
+                                                        yearStart:
+                                                            yearRange.start,
+                                                        yearEnd: yearRange.end,
+                                                        tableData: {
+                                                            cols,
+                                                            rows,
+                                                        },
+                                                    },
+                                                    filterDetails,
+                                                );
                                             }
                                         }}
                                     >
@@ -1211,21 +1123,30 @@ export default function ChartPage() {
                                                     Start Year
                                                 </label>
                                                 <input
-                                                    type="number"
-                                                    value={tempYearRange.start}
-                                                    onChange={(e) =>
-                                                        setTempYearRange({
-                                                            ...tempYearRange,
-                                                            start:
-                                                                parseInt(
-                                                                    e.target
-                                                                        .value,
-                                                                ) || 2020,
-                                                        })
-                                                    }
-                                                    className="w-full px-3 py-2 border border-input rounded-md text-sm"
-                                                    min="2000"
-                                                    max={tempYearRange.end}
+                                                    type="text"
+                                                    inputMode="numeric"
+                                                    maxLength={4}
+                                                    value={startDraft}
+                                                    onChange={(e) => {
+                                                        const v = e.target.value
+                                                            .replace(/\D/g, "")
+                                                            .slice(0, 4);
+                                                        setStartDraft(v);
+                                                    }}
+                                                    onBlur={() => {
+                                                        if (
+                                                            !isYearInRange(
+                                                                parsedStart,
+                                                            )
+                                                        ) {
+                                                            setStartDraft(
+                                                                String(
+                                                                    yearRange.start,
+                                                                ),
+                                                            );
+                                                        }
+                                                    }}
+                                                    className={`w-full px-3 py-2 border rounded-md text-sm outline-none focus:ring-2 ${startInvalid ? "border-red-500 focus:ring-red-500/30" : "border-input focus:ring-ring/30"}`}
                                                 />
                                             </div>
                                             <div>
@@ -1233,50 +1154,59 @@ export default function ChartPage() {
                                                     End Year
                                                 </label>
                                                 <input
-                                                    type="number"
-                                                    value={tempYearRange.end}
-                                                    onChange={(e) =>
-                                                        setTempYearRange({
-                                                            ...tempYearRange,
-                                                            end:
-                                                                parseInt(
-                                                                    e.target
-                                                                        .value,
-                                                                ) || 2025,
-                                                        })
-                                                    }
-                                                    className="w-full px-3 py-2 border border-input rounded-md text-sm"
-                                                    min={tempYearRange.start}
-                                                    max="2100"
+                                                    type="text"
+                                                    inputMode="numeric"
+                                                    maxLength={4}
+                                                    value={endDraft}
+                                                    onChange={(e) => {
+                                                        const v = e.target.value
+                                                            .replace(/\D/g, "")
+                                                            .slice(0, 4);
+                                                        setEndDraft(v);
+                                                    }}
+                                                    onBlur={() => {
+                                                        if (
+                                                            !isYearInRange(
+                                                                parsedEnd,
+                                                            )
+                                                        ) {
+                                                            setEndDraft(
+                                                                String(
+                                                                    yearRange.end,
+                                                                ),
+                                                            );
+                                                        }
+                                                    }}
+                                                    className={`w-full px-3 py-2 border rounded-md text-sm outline-none focus:ring-2 ${endInvalid ? "border-red-500 focus:ring-red-500/30" : "border-input focus:ring-ring/30"}`}
                                                 />
                                             </div>
                                         </div>
-                                        <div className="flex gap-2 justify-end">
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() =>
-                                                    setYearRangeOpen(false)
-                                                }
-                                            >
-                                                Cancel
-                                            </Button>
-                                            <Button
-                                                size="sm"
-                                                onClick={() => {
-                                                    setStartYear(
-                                                        tempYearRange.start,
-                                                    );
-                                                    setEndYear(
-                                                        tempYearRange.end,
-                                                    );
-                                                    setTimePeriod("custom");
-                                                    setYearRangeOpen(false);
-                                                }}
-                                            >
-                                                Apply
-                                            </Button>
-                                        </div>
+                                    </div>
+                                    <div className="flex gap-2 justify-end mt-2">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() =>
+                                                setYearRangeOpen(false)
+                                            }
+                                        >
+                                            Cancel
+                                        </Button>
+                                        <Button
+                                            size="sm"
+                                            disabled={rangeInvalid}
+                                            onClick={() => {
+                                                updateYearRange(
+                                                    parsedStart,
+                                                    parsedEnd,
+                                                    { notifyIfSwapped: true },
+                                                );
+                                                setTimePeriod("custom");
+                                                setYearRangeOpen(false);
+                                            }}
+                                        >
+                                            Apply
+                                        </Button>
                                     </div>
                                 </PopoverContent>
                             </Popover>
@@ -1389,14 +1319,20 @@ export default function ChartPage() {
                         )}
                     </div>
 
+                    <div className="px-8 overflow-x-auto max-h-64 overflow-y-auto border-border">
+                        <DataTable data={rows} columns={cols} />
+                    </div>
+
                     {/* Footer */}
                     <div className="flex flex-col justify-center items-end gap-3 px-8 pb-4 text-xs text-foreground shrink-0">
-                        <p className="font-medium">
-                            <span className="font-mono bg-gray/4 border rounded-sm border-gray/2 py-1 px-2">
-                                {Math.round(filteredProjectCount)}
-                            </span>{" "}
-                            data rows total
-                        </p>
+                        {isLoaded && (
+                            <p className="font-medium">
+                                <span className="font-mono bg-gray/4 border rounded-sm border-gray/2 py-1 px-2">
+                                    {Math.round(filteredProjectCount)}
+                                </span>{" "}
+                                data rows total
+                            </p>
+                        )}
                         {dataLastUpdated && (
                             <p>
                                 <span className="font-mono bg-gray/4 border rounded-sm border-gray/2 py-1 px-2">

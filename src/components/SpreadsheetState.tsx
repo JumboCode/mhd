@@ -178,21 +178,29 @@ export default function SpreadsheetState() {
         fetchKnownSchools();
     }, []);
 
-    // Set default year to most recent year without data once yearsWithData loads
+    // Set default year to current year once yearsWithData loads
     useEffect(() => {
         if (yearsWithData.size === 0) return;
-        const currentYear = new Date().getFullYear();
-        let defaultYear = currentYear;
-        while (defaultYear > 2000 && yearsWithData.has(defaultYear)) {
-            defaultYear--;
-        }
-        setYear(defaultYear);
+        setYear(new Date().getFullYear());
     }, [yearsWithData]);
 
     // Check if selected year has data whenever year changes
     useEffect(() => {
         setYearHasData(year !== null && yearsWithData.has(year));
     }, [year, yearsWithData]);
+
+    // Keep the upload tab's year/file props fresh (initial JSX state captures stale closure)
+    useEffect(() => {
+        if (tabIndex !== STEP_UPLOAD) return;
+        setTab(
+            <SpreadsheetUpload
+                file={file}
+                setFile={setFile}
+                year={year}
+                setYear={setYear}
+            />,
+        );
+    }, [year, file, tabIndex]);
 
     // Enable Next on upload step only when student file and year are set
     useEffect(() => {
@@ -299,7 +307,7 @@ export default function SpreadsheetState() {
                 return true;
             } else {
                 const errorData = await response.json();
-                throw new Error(errorData.message || "Failed to upload data");
+                throw new Error(errorData.error || "Failed to upload data");
             }
         } catch (error) {
             toast.error(
@@ -645,7 +653,7 @@ export default function SpreadsheetState() {
                             <div className="flex flex-col gap-2 mt-4 w-full max-w-lg">
                                 <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
                                     <div
-                                        className="bg-primary h-2 rounded-full transition-all duration-300"
+                                        className="bg-primary h-2 rounded-full transition-[width] duration-300"
                                         style={{ width: `${progress}%` }}
                                     />
                                 </div>

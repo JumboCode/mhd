@@ -38,7 +38,7 @@ export default function MultiLineGraph({
     } | null>(null);
     const instanceId = useId();
 
-    const height = config?.height ?? 400;
+    const height = config?.height ?? 350;
     const mTop = config?.margin?.top ?? 6;
     const mRight = config?.margin?.right ?? 8;
     const mBottom = config?.margin?.bottom ?? 80;

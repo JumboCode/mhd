@@ -18,6 +18,7 @@ import {
     yearlySchoolParticipation,
 } from "@/lib/schema";
 import { and, eq } from "drizzle-orm";
+import { internalError } from "@/lib/api-utils";
 
 export async function GET() {
     try {
@@ -42,6 +43,8 @@ export async function GET() {
                 schoolImplementationModel:
                     yearlySchoolParticipation.implementationModel,
                 schoolSchoolType: yearlySchoolParticipation.schoolType,
+                schoolCompetingStudents:
+                    yearlySchoolParticipation.competingStudents,
             })
             .from(projects)
             .innerJoin(schools, eq(schools.id, projects.schoolId))
@@ -55,10 +58,7 @@ export async function GET() {
             );
 
         return NextResponse.json(allProjects);
-    } catch (error) {
-        return NextResponse.json(
-            { error: "Internal server error: " + (error as Error).message },
-            { status: 500 },
-        );
+    } catch {
+        return internalError();
     }
 }

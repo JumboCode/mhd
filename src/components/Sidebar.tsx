@@ -111,17 +111,19 @@ export default function Sidebar() {
         });
     };
 
+    const currentYear: number = new Date().getFullYear();
+
     const sections = [
         {
             title: "ANALYSIS",
             items: [
                 {
-                    href: "/map",
+                    href: "/map?metric=projects&regionView=default",
                     label: "Map",
                     icon: <Map size={20} />,
                 },
                 {
-                    href: "/chart",
+                    href: `/chart?startYear=${currentYear - 5}&endYear=${currentYear}&measuredAs=total-school-count&groupBy=none&type=bar`,
                     label: "Chart",
                     icon: <BarChart3 size={20} />,
                 },
@@ -183,15 +185,15 @@ export default function Sidebar() {
                 >
                     {/* Sliding selector */}
                     <div
-                        className="absolute bg-accent rounded-lg pointer-events-none z-0"
+                        className="absolute top-0 left-0 bg-accent rounded-lg pointer-events-none z-0"
                         style={{
-                            top: selectorStyle.top,
-                            left: selectorStyle.left,
+                            transform: `translate3d(${selectorStyle.left}px, ${selectorStyle.top}px, 0)`,
                             height: selectorStyle.height,
                             width: selectorStyle.width,
                             opacity: selectorStyle.opacity,
+                            willChange: "transform",
                             transition:
-                                "top 150ms cubic-bezier(0.4, 0, 0.2, 1), left 350ms cubic-bezier(0.4, 0, 0.2, 1), height 350ms cubic-bezier(0.4, 0, 0.2, 1), width 350ms cubic-bezier(0.4, 0, 0.2, 1), opacity 350ms cubic-bezier(0.4, 0, 0.2, 1)",
+                                "transform 300ms cubic-bezier(0.4, 0, 0.2, 1), height 300ms cubic-bezier(0.4, 0, 0.2, 1), width 300ms cubic-bezier(0.4, 0, 0.2, 1), opacity 300ms cubic-bezier(0.4, 0, 0.2, 1)",
                         }}
                     />
 
@@ -203,7 +205,8 @@ export default function Sidebar() {
 
                             <nav className="flex flex-col space-y-1">
                                 {section.items.map((item) => {
-                                    const isActive = pathname === item.href;
+                                    const isActive =
+                                        pathname === item.href.split("?")[0];
 
                                     return (
                                         <Link
@@ -247,7 +250,7 @@ export default function Sidebar() {
                         <PopoverTrigger asChild>
                             <button
                                 suppressHydrationWarning
-                                className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-foreground overflow-hidden whitespace-nowrap hover:bg-accent cursor-pointer w-full"
+                                className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-foreground overflow-hidden whitespace-nowrap hover:bg-accent cursor-pointer w-full transition-[background-color,scale] duration-150 active:scale-[0.96]"
                             >
                                 <span className="flex-1 overflow-hidden whitespace-nowrap text-left">
                                     {session?.user?.email || "Loading..."}
@@ -262,7 +265,7 @@ export default function Sidebar() {
                             <div className="flex flex-col space-y-2">
                                 <button
                                     onClick={handleSignOut}
-                                    className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-accent text-sm font-medium w-full text-left hover:text-destructive hover:cursor-pointer"
+                                    className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-accent text-sm font-medium w-full text-left hover:text-destructive hover:cursor-pointer transition-[background-color,color,scale] duration-150 active:scale-[0.96]"
                                 >
                                     <LogOut size={16} />
                                     Sign Out

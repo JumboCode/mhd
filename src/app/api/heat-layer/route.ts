@@ -11,23 +11,27 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { schools, projects, yearlyTeacherParticipation } from "@/lib/schema";
-import { eq, isNotNull } from "drizzle-orm";
+import {
+    schools,
+    projects,
+    yearlyTeacherParticipation,
+    yearlySchoolParticipation,
+} from "@/lib/schema";
+import { and, eq, isNotNull } from "drizzle-orm";
+import { yearQuerySchema } from "@/lib/api-schemas";
+import {
+    parseOrError,
+    searchParamsToObject,
+    internalError,
+} from "@/lib/api-utils";
 
 export async function GET(req: NextRequest) {
     try {
-        const { searchParams } = new URL(req.url);
-        const yearString = searchParams.get("year");
-        const currentYear = Number(yearString);
+        const parsed = parseOrError(yearQuerySchema, searchParamsToObject(req));
+        if (!parsed.success) return parsed.response;
 
-        if (!currentYear || isNaN(currentYear)) {
-            return NextResponse.json(
-                { message: "Invalid year parameter" },
-                { status: 400 },
-            );
-        }
+        const { year } = parsed.data;
 
-        // Fetch all schools with latitude and longitude
         const schoolsPerYear = await db
             .select({
                 id: schools.id,
@@ -38,27 +42,40 @@ export async function GET(req: NextRequest) {
             .from(schools)
             .where(isNotNull(schools.latitude));
 
-        // Fetch all projects with corresponding school, year, # students
         const projectsPerYear = await db
             .select({
                 schoolId: projects.schoolId,
                 num_students: projects.numStudents,
             })
             .from(projects)
-            .where(eq(projects.year, currentYear));
+            .where(eq(projects.year, year));
 
-        // Fetch all teachers with corresponding school and year, ID extra
         const teachersPerYear = await db
             .select({
                 schoolId: yearlyTeacherParticipation.schoolId,
                 teacherId: yearlyTeacherParticipation.teacherId,
             })
             .from(yearlyTeacherParticipation)
-            .where(eq(yearlyTeacherParticipation.year, currentYear));
+            .where(eq(yearlyTeacherParticipation.year, year));
+
+        const competingPerYear = await db
+            .select({
+                schoolId: yearlySchoolParticipation.schoolId,
+                competingStudents: yearlySchoolParticipation.competingStudents,
+            })
+            .from(yearlySchoolParticipation)
+            .where(
+                and(
+                    eq(yearlySchoolParticipation.year, year),
+                    isNotNull(yearlySchoolParticipation.competingStudents),
+                ),
+            );
+        const competingMap = new Map(
+            competingPerYear.map((r) => [r.schoolId, r.competingStudents ?? 0]),
+        );
 
         const mapData: GeoJSON.Feature[] = [];
 
-        // Calculate counts, populate geoJSON for that year
         schoolsPerYear.forEach((school) => {
             const currentID = school.id;
             let totalProjects = 0;
@@ -78,8 +95,6 @@ export async function GET(req: NextRequest) {
                 }
             });
 
-            // Assuming longitude and latitude always exist as an invariant,
-            // consolidate the sums into a geoJSON feature
             if (school.latitude && school.longitude) {
                 mapData.push({
                     type: "Feature",
@@ -92,7 +107,10 @@ export async function GET(req: NextRequest) {
                         name: school.name,
                         Teachers: totalTeachers,
                         Projects: totalProjects,
+                        // Legacy key — participating students (row count).
                         Students: totalStudents,
+                        Participating: totalStudents,
+                        Competing: competingMap.get(school.id) ?? 0,
                     },
                 });
             }
@@ -110,10 +128,7 @@ export async function GET(req: NextRequest) {
         };
 
         return NextResponse.json(collection);
-    } catch (error) {
-        return NextResponse.json(
-            { message: "Internal server error" },
-            { status: 500 },
-        );
+    } catch {
+        return internalError();
     }
 }

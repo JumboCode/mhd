@@ -14,6 +14,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import {
     schools,
+    schoolHistoricNames,
     projects,
     teachers,
     yearlyTeacherParticipation,
@@ -21,6 +22,8 @@ import {
 } from "@/lib/schema";
 import { eq, sql, and, sum } from "drizzle-orm";
 import { findRegionOf } from "@/lib/region-finder";
+import { schoolPatchBodySchema } from "@/lib/api-schemas";
+import { parseOrError, internalError } from "@/lib/api-utils";
 
 type YearlySchoolFields = {
     division?: string[];
@@ -61,6 +64,9 @@ export async function PATCH(
         const { name } = await params;
 
         const body = await req.json();
+        const parsed = parseOrError(schoolPatchBodySchema, body);
+        if (!parsed.success) return parsed.response;
+
         const {
             latitude,
             longitude,
@@ -70,7 +76,7 @@ export async function PATCH(
             schoolType,
             division,
             year,
-        } = body;
+        } = parsed.data;
 
         const schoolResult = await db
             .select({ id: schools.id })
@@ -87,49 +93,25 @@ export async function PATCH(
 
         const schoolId = schoolResult[0].id;
 
-        // Handle city update
         if (city !== undefined) {
-            if (typeof city !== "string" || city.trim() === "") {
-                return NextResponse.json(
-                    { error: "city must be a non-empty string" },
-                    { status: 400 },
-                );
-            }
             await db
                 .update(schools)
-                .set({ town: city.trim() })
+                .set({ town: city })
                 .where(eq(schools.id, schoolId));
             return NextResponse.json({ message: "City updated successfully" });
         }
 
-        // Handle school name update
         if (newName !== undefined) {
-            if (typeof newName !== "string" || newName.trim() === "") {
-                return NextResponse.json(
-                    { error: "name must be a non-empty string" },
-                    { status: 400 },
-                );
-            }
             await db
                 .update(schools)
-                .set({ name: newName.trim() })
+                .set({ name: newName })
                 .where(eq(schools.id, schoolId));
             return NextResponse.json({
                 message: "School name updated successfully",
             });
         }
 
-        // Handle division update
         if (division !== undefined) {
-            if (
-                !Array.isArray(division) ||
-                division.some((d: unknown) => typeof d !== "string")
-            ) {
-                return NextResponse.json(
-                    { error: "division must be an array of strings" },
-                    { status: 400 },
-                );
-            }
             if (!year) {
                 return NextResponse.json(
                     { error: "year is required for division updates" },
@@ -142,14 +124,7 @@ export async function PATCH(
             });
         }
 
-        // Handle implementation model update
         if (implementationModel !== undefined) {
-            if (typeof implementationModel !== "string") {
-                return NextResponse.json(
-                    { error: "implementationModel must be a string" },
-                    { status: 400 },
-                );
-            }
             if (!year) {
                 return NextResponse.json(
                     {
@@ -166,14 +141,7 @@ export async function PATCH(
             });
         }
 
-        // Handle schoolType update
         if (schoolType !== undefined) {
-            if (typeof schoolType !== "string") {
-                return NextResponse.json(
-                    { error: "schoolType must be a string" },
-                    { status: 400 },
-                );
-            }
             if (!year) {
                 return NextResponse.json(
                     { error: "year is required for schoolType updates" },
@@ -188,13 +156,7 @@ export async function PATCH(
             });
         }
 
-        // Handle location update
-        if (
-            typeof latitude !== "number" ||
-            typeof longitude !== "number" ||
-            isNaN(latitude) ||
-            isNaN(longitude)
-        ) {
+        if (typeof latitude !== "number" || typeof longitude !== "number") {
             return NextResponse.json(
                 { error: "Invalid latitude or longitude" },
                 { status: 400 },
@@ -213,11 +175,8 @@ export async function PATCH(
             latitude,
             longitude,
         });
-    } catch (error) {
-        return NextResponse.json(
-            { error: "Internal server error: " + (error as Error).message },
-            { status: 500 },
-        );
+    } catch {
+        return internalError();
     }
 }
 
@@ -237,8 +196,31 @@ export async function GET(
             .where(eq(schools.standardizedName, name))
             .limit(1);
 
-        // Check if school exists
+        // Check if school exists; if not, check if it's a historic name (merged away)
         if (!schoolResult || schoolResult.length === 0) {
+            const historic = await db
+                .select({
+                    absorbingSchoolId: schoolHistoricNames.absorbingSchoolId,
+                })
+                .from(schoolHistoricNames)
+                .where(eq(schoolHistoricNames.mergedStandardizedName, name))
+                .limit(1);
+
+            if (historic.length > 0) {
+                const absorbing = await db
+                    .select({ standardizedName: schools.standardizedName })
+                    .from(schools)
+                    .where(eq(schools.id, historic[0].absorbingSchoolId))
+                    .limit(1);
+
+                if (absorbing.length > 0) {
+                    return NextResponse.json(
+                        { redirectTo: absorbing[0].standardizedName },
+                        { status: 301 },
+                    );
+                }
+            }
+
             return NextResponse.json(
                 { error: "School not found" },
                 { status: 404 },
@@ -291,11 +273,28 @@ export async function GET(
                 and(eq(projects.schoolId, school.id), eq(projects.year, year)),
             );
 
-        // First year would be minimum year found in a school's projects
-        const firstYearData = await db
+        // First year would be minimum of first time there are projects, school info, or teachers
+        const firstYearProjects = await db
             .select({ year: sql<number>`min(${projects.year})` })
             .from(projects)
             .where(eq(projects.schoolId, school.id));
+        const firstYearTeachers = await db
+            .select({
+                year: sql<number>`min(${yearlyTeacherParticipation.year})`,
+            })
+            .from(yearlyTeacherParticipation)
+            .where(eq(yearlyTeacherParticipation.schoolId, school.id));
+        const firstYearSchools = await db
+            .select({
+                year: sql<number>`min(${yearlySchoolParticipation.year})`,
+            })
+            .from(yearlySchoolParticipation)
+            .where(eq(yearlySchoolParticipation.schoolId, school.id));
+        const firstYearData = Math.min(
+            firstYearProjects[0].year,
+            firstYearTeachers[0].year,
+            firstYearSchools[0].year,
+        );
 
         const yearlyData = await db.query.yearlySchoolParticipation.findFirst({
             where: and(
@@ -304,27 +303,30 @@ export async function GET(
             ),
         });
 
+        const participatingStudentCount = studentCount[0]?.total
+            ? Number(studentCount[0].total)
+            : 0;
+
         return NextResponse.json({
+            id: school.id,
             name: school.name,
             town: school.town,
             region: school.region,
             latitude: school.latitude,
             longitude: school.longitude,
-            studentCount: studentCount[0]?.total
-                ? Number(studentCount[0].total)
-                : 0,
+            // `studentCount` is kept as a back-compat alias for participating.
+            studentCount: participatingStudentCount,
+            participatingStudentCount,
+            competingStudents: yearlyData?.competingStudents ?? null,
             teacherCount: teacherCount[0]?.count ?? 0,
             projectCount: projectCount[0]?.count ?? 0,
-            firstYear: firstYearData[0]?.year ?? null,
+            firstYear: firstYearData ?? null,
             projects: projectRows,
             division: yearlyData?.division ?? [],
             implementationModel: yearlyData?.implementationModel ?? "",
             schoolType: yearlyData?.schoolType ?? "",
         });
-    } catch (error) {
-        return NextResponse.json(
-            { error: "Internal server error: " + (error as Error).message },
-            { status: 500 },
-        );
+    } catch {
+        return internalError();
     }
 }

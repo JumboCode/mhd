@@ -33,7 +33,7 @@ import {
     parseAsBoolean,
 } from "nuqs";
 
-const VALID_METRICS = ["students", "projects", "teachers"];
+const VALID_METRICS = ["competing", "participating", "projects", "teachers"];
 
 import "maplibre-gl/dist/maplibre-gl.css";
 
@@ -71,6 +71,8 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+
+import type { FilterDetail } from "@/lib/export-to-pdf";
 
 type Region = {
     center: [number, number];
@@ -130,7 +132,9 @@ function HeatMapPage() {
     // totalStudents | totalProjects | totalTeachers (lowercase in URL)
     const [rawMetric, setRawMetric] = useQueryState(
         "metric",
-        parseAsString.withDefault("projects"),
+        parseAsString
+            .withDefault("projects")
+            .withOptions({ clearOnDefault: false }),
     );
 
     // gateway school toggle variable
@@ -141,7 +145,9 @@ function HeatMapPage() {
 
     const [rawRegionView, setRegionView] = useQueryState(
         "regionView",
-        parseAsString.withDefault("default"),
+        parseAsString
+            .withDefault("default")
+            .withOptions({ clearOnDefault: false }),
     );
     const regionView = rawRegionView.toLowerCase();
 
@@ -250,6 +256,7 @@ function HeatMapPage() {
         mapRef,
         filteredSchoolPoints,
         metric,
+        year,
         showSchools,
         showHeatmap,
         showRegions,
@@ -289,6 +296,52 @@ function HeatMapPage() {
 
     const mapInCart = hasItem(filterName);
 
+    const currentFilterDetails = useMemo<FilterDetail[]>(
+        () => [
+            { label: "Metric", values: [metric] },
+            { label: "Year", values: [year ? String(year) : "All Years"] },
+            {
+                label: "Region",
+                values: [
+                    regionView === "default"
+                        ? "All of MA"
+                        : `${capitalize(regionView)} Region`,
+                ],
+            },
+            ...(onlyGatewaySchools
+                ? [
+                      {
+                          label: "Gateway Schools",
+                          values: ["Only Gateway Schools"],
+                      },
+                  ]
+                : []),
+            {
+                label: "Layers",
+                values: [
+                    ...(showSchools ? ["Schools"] : []),
+                    ...(showHeatmap ? ["Heatmap"] : []),
+                    ...(showRegions ? ["Regions"] : []),
+                ].length
+                    ? [
+                          ...(showSchools ? ["Schools"] : []),
+                          ...(showHeatmap ? ["Heatmap"] : []),
+                          ...(showRegions ? ["Regions"] : []),
+                      ]
+                    : ["None"],
+            },
+        ],
+        [
+            metric,
+            year,
+            regionView,
+            onlyGatewaySchools,
+            showSchools,
+            showHeatmap,
+            showRegions,
+        ],
+    );
+
     // Cmd+S to open export dialog, Cmd+P to print PDF
     useHotkey(
         "s",
@@ -302,7 +355,7 @@ function HeatMapPage() {
         () => {
             const map = mapRef.current;
             if (!map) return;
-            exportMapToPDF(map, filterName, true);
+            exportMapToPDF(map, filterName, currentFilterDetails, true);
         },
         { meta: true },
     );
@@ -345,7 +398,11 @@ function HeatMapPage() {
                                     onClick={() => {
                                         const mapCurrent = mapRef.current;
                                         if (!mapCurrent) return;
-                                        exportMapToPDF(mapCurrent, filterName);
+                                        exportMapToPDF(
+                                            mapCurrent,
+                                            filterName,
+                                            currentFilterDetails,
+                                        );
                                     }}
                                 >
                                     Download
@@ -366,7 +423,11 @@ function HeatMapPage() {
                                 const mapImageData = map
                                     .getCanvas()
                                     .toDataURL("image/jpeg", 0.5);
-                                addMapItem(filterName, mapImageData);
+                                addMapItem(
+                                    filterName,
+                                    mapImageData,
+                                    currentFilterDetails,
+                                );
                             }
                         }}
                     >
@@ -439,6 +500,7 @@ function HeatMapPage() {
                                     const exported = await exportMapToPDF(
                                         mapCurrent,
                                         filterName,
+                                        currentFilterDetails,
                                     );
                                     if (exported) {
                                         toast.success(
@@ -463,7 +525,11 @@ function HeatMapPage() {
                                         const mapImageData = map
                                             .getCanvas()
                                             .toDataURL("image/jpeg", 0.5);
-                                        addMapItem(filterName, mapImageData);
+                                        addMapItem(
+                                            filterName,
+                                            mapImageData,
+                                            currentFilterDetails,
+                                        );
                                     }
                                 }}
                             >
@@ -541,6 +607,7 @@ function HeatMapPage() {
                     <YearDropdown
                         selectedYear={year}
                         onYearChange={(y) => setYear(y)}
+                        enableArrowHotkeys={true}
                         showDataIndicator={true}
                     />
                 </div>

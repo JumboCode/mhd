@@ -28,6 +28,7 @@ export type Project = {
     teacherName: string;
     teacherEmail: string;
     numStudents: number;
+    schoolCompetingStudents: number | null;
     schoolDivisions: string[] | null;
     schoolImplementationModel: string | null;
     schoolSchoolType: string | null;
@@ -35,12 +36,23 @@ export type Project = {
 
 export const measuredAsLabels: Record<string, string> = {
     "total-school-count": "Total Schools",
+    "total-competing-student-count": "Total Competing Students",
+    "total-participating-student-count": "Total Participating Students",
+    // Legacy label kept for any stored URLs pointing at the old key.
     "total-student-count": "Total Students",
     "total-city-count": "Total Cities",
     "total-project-count": "Total Projects",
     "total-teacher-count": "Total Teachers",
     "school-return-rate": "School Return Rate",
 };
+
+/** Normalize legacy `total-student-count` to `total-participating-student-count`. */
+export function normalizeMeasuredAs(metric: string): string {
+    if (metric === "total-student-count") {
+        return "total-participating-student-count";
+    }
+    return metric;
+}
 
 export const groupByLabels: Record<string, string> = {
     "none": "None",
@@ -117,6 +129,49 @@ export function computeGraphDataset(
         )
             return false;
 
+        // Selected Divisions (array field on project; match if ANY overlap)
+        if (filters.selectedDivisions && filters.selectedDivisions.length > 0) {
+            const divs = p.schoolDivisions;
+            if (!divs || divs.length === 0) {
+                if (!filters.selectedDivisions.includes("Unassigned"))
+                    return false;
+            } else {
+                const normalize = (d: string): string => {
+                    const lower = d.toLowerCase();
+                    if (lower.startsWith("junior")) return "Junior";
+                    if (lower.startsWith("senior")) return "Senior";
+                    if (lower.startsWith("young")) return "Young Historian";
+                    return d;
+                };
+                const normalized = divs.map(normalize);
+                const hasMatch = normalized.some((d) =>
+                    filters.selectedDivisions.includes(d),
+                );
+                if (!hasMatch) return false;
+            }
+        }
+
+        if (
+            filters.selectedSchoolTypes &&
+            filters.selectedSchoolTypes.length > 0
+        ) {
+            const v = p.schoolSchoolType || "Unassigned";
+            if (!filters.selectedSchoolTypes.includes(v)) return false;
+        }
+
+        if (filters.selectedRegions && filters.selectedRegions.length > 0) {
+            const v = p.schoolRegion || "Unassigned";
+            if (!filters.selectedRegions.includes(v)) return false;
+        }
+
+        if (
+            filters.selectedImplementationTypes &&
+            filters.selectedImplementationTypes.length > 0
+        ) {
+            const v = p.schoolImplementationModel || "Unassigned";
+            if (!filters.selectedImplementationTypes.includes(v)) return false;
+        }
+
         if (filters.teacherYearsValue) {
             const yearsActive = teacherYearsMap.get(p.teacherId) || 0;
             const op = filters.teacherYearsOperator;
@@ -184,10 +239,24 @@ export function computeGraphDataset(
             case "total-school-count":
                 return new Set(projects.map((p) => p.schoolName)).size;
             case "total-student-count":
+            case "total-participating-student-count":
                 return projects.reduce(
                     (sum, p) => sum + (p.numStudents || 0),
                     0,
                 );
+            case "total-competing-student-count": {
+                // Sum competing students once per (school, year) pair to
+                // avoid double-counting across projects.
+                const seen = new Set<string>();
+                let total = 0;
+                for (const p of projects) {
+                    const key = `${p.schoolId}-${p.year}`;
+                    if (seen.has(key)) continue;
+                    seen.add(key);
+                    total += p.schoolCompetingStudents ?? 0;
+                }
+                return total;
+            }
             case "total-teacher-count":
                 return new Set(projects.map((p) => p.teacherId)).size;
             case "total-city-count":
@@ -198,7 +267,8 @@ export function computeGraphDataset(
                 );
                 const year = projects[0].year;
                 const priorParticipation = allProjects.filter(
-                    (x) => schoolsThisYear.has(x.schoolId) && x.year < year,
+                    (x) =>
+                        schoolsThisYear.has(x.schoolId) && x.year === year - 1,
                 );
                 const returningSchools = new Set(
                     priorParticipation.map((p) => p.schoolId),
