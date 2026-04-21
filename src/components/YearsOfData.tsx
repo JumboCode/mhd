@@ -20,7 +20,7 @@ import {
     useRef,
 } from "react";
 import { toast } from "sonner";
-import { AlertTriangle, Check, Trash, Upload, X } from "lucide-react";
+import { AlertTriangle, Check, Trash, Undo2, Upload, X } from "lucide-react";
 import Link from "next/link";
 import {
     Dialog,
@@ -53,8 +53,8 @@ function formatDate(iso: string | null): string {
 
 const YearsOfData = forwardRef<
     YearsOfDataHandle,
-    { onUnsavedChange?: () => void }
->(function YearsOfData({ onUnsavedChange }, ref) {
+    { onUnsavedChange?: () => void; onAllChangesReverted?: () => void }
+>(function YearsOfData({ onUnsavedChange, onAllChangesReverted }, ref) {
     const [entries, setEntries] = useState<YearEntry[]>([]);
     const [yearsWithData, setYearsWithData] = useState<Set<number>>(new Set());
     const [pendingRemovals, setPendingRemovals] = useState<number[]>([]);
@@ -113,14 +113,14 @@ const YearsOfData = forwardRef<
     }, []);
 
     const handleRemoveYear = (year: number) => {
-        setEntries((prev) => prev.filter((e) => e.year !== year));
-        setYearsWithData((prev) => {
-            const newSet = new Set(prev);
-            newSet.delete(year);
-            return newSet;
-        });
         setPendingRemovals((prev) => [...prev, year]);
         onUnsavedChange?.();
+    };
+
+    const handleUndoRemoval = (year: number) => {
+        const next = pendingRemovals.filter((y) => y !== year);
+        setPendingRemovals(next);
+        if (next.length === 0) onAllChangesReverted?.();
     };
 
     useImperativeHandle(ref, () => ({
@@ -163,9 +163,18 @@ const YearsOfData = forwardRef<
                     ),
                 );
                 const hadChanges = pendingRemovals.length > 0;
+                const removedSet = new Set(pendingRemovals);
+                const remainingEntries = entries.filter(
+                    (e) => !removedSet.has(e.year),
+                );
+                const remainingYearsWithData = new Set(
+                    [...yearsWithData].filter((y) => !removedSet.has(y)),
+                );
                 setPendingRemovals([]);
-                setOriginalEntries(entries);
-                setOriginalYearsWithData(new Set(yearsWithData));
+                setEntries(remainingEntries);
+                setYearsWithData(remainingYearsWithData);
+                setOriginalEntries(remainingEntries);
+                setOriginalYearsWithData(remainingYearsWithData);
                 if (hadChanges) toast.success("Years saved");
             } catch (e) {
                 if ((e as Error).message !== "cancelled") {
@@ -212,66 +221,103 @@ const YearsOfData = forwardRef<
                     </thead>
                     <tbody className="divide-y divide-gray-200 bg-white">
                         {entries.length > 0 ? (
-                            entries.map((entry) => (
-                                <tr
-                                    key={entry.year}
-                                    className="hover:bg-gray-50"
-                                >
-                                    <td className="px-4 py-3 text-sm text-center">
-                                        {entry.year}
-                                    </td>
-                                    <td className="px-4 py-3 text-sm text-center">
-                                        <div className="flex items-center justify-center">
-                                            {yearsWithData.has(entry.year) &&
-                                            entry.uploadedAt !== null ? (
-                                                <span className="inline-flex items-center justify-center gap-1.5 w-24 px-3 py-1 rounded-sm text-xs font-medium bg-green-100 text-green-700 border border-green-300">
-                                                    <Check className="w-3 h-3" />
-                                                    Uploaded
-                                                </span>
+                            entries.map((entry) => {
+                                const isPendingDelete =
+                                    pendingRemovals.includes(entry.year);
+                                return (
+                                    <tr
+                                        key={entry.year}
+                                        className={
+                                            isPendingDelete
+                                                ? "bg-red-50"
+                                                : "hover:bg-gray-50"
+                                        }
+                                    >
+                                        <td
+                                            className={`px-4 py-3 text-sm text-center ${isPendingDelete ? "line-through text-gray-400" : ""}`}
+                                        >
+                                            {entry.year}
+                                        </td>
+                                        <td className="px-4 py-3 text-sm text-center">
+                                            <div className="flex items-center justify-center">
+                                                {isPendingDelete ? (
+                                                    <span className="inline-flex items-center justify-center gap-1.5 w-24 px-3 py-1 rounded-sm text-xs font-medium bg-red-100 text-red-600 border border-red-300">
+                                                        <Trash className="w-3 h-3" />
+                                                        Deleting
+                                                    </span>
+                                                ) : yearsWithData.has(
+                                                      entry.year,
+                                                  ) &&
+                                                  entry.uploadedAt !== null ? (
+                                                    <span className="inline-flex items-center justify-center gap-1.5 w-24 px-3 py-1 rounded-sm text-xs font-medium bg-green-100 text-green-700 border border-green-300">
+                                                        <Check className="w-3 h-3" />
+                                                        Uploaded
+                                                    </span>
+                                                ) : yearsWithData.has(
+                                                      entry.year,
+                                                  ) ? (
+                                                    <span className="inline-flex items-center justify-center gap-1.5 w-28 px-3 py-1 rounded-sm text-xs font-medium bg-amber-100 text-amber-700 border border-amber-300">
+                                                        <AlertTriangle className="w-3 h-3" />
+                                                        Incomplete
+                                                    </span>
+                                                ) : (
+                                                    <span className="inline-flex items-center justify-center gap-1.5 w-24 px-3 py-1 rounded-sm text-xs font-medium bg-red-100 text-red-600 border border-red-300">
+                                                        <X className="w-3 h-3" />
+                                                        Missing
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </td>
+                                        <td
+                                            className={`px-4 py-3 text-sm text-center ${isPendingDelete ? "line-through text-gray-400" : "text-gray-600"}`}
+                                        >
+                                            {formatDate(entry.uploadedAt)}
+                                        </td>
+                                        <td
+                                            className={`px-4 py-3 text-sm text-center ${isPendingDelete ? "line-through text-gray-400" : "text-gray-600"}`}
+                                        >
+                                            {formatDate(entry.lastUpdatedAt)}
+                                        </td>
+                                        <td className="text-sm p-0">
+                                            {isPendingDelete ? (
+                                                <button
+                                                    onClick={() =>
+                                                        handleUndoRemoval(
+                                                            entry.year,
+                                                        )
+                                                    }
+                                                    className="w-full h-full px-4 py-3 flex items-center justify-center text-red-400 hover:text-gray-500 transition-colors cursor-pointer"
+                                                    aria-label={`Undo delete ${entry.year}`}
+                                                >
+                                                    <Undo2 className="w-4 h-4" />
+                                                </button>
                                             ) : yearsWithData.has(
                                                   entry.year,
                                               ) ? (
-                                                <span className="inline-flex items-center justify-center gap-1.5 w-28 px-3 py-1 rounded-sm text-xs font-medium bg-amber-100 text-amber-700 border border-amber-300">
-                                                    <AlertTriangle className="w-3 h-3" />
-                                                    Incomplete
-                                                </span>
+                                                <button
+                                                    onClick={() =>
+                                                        handleRemoveYear(
+                                                            entry.year,
+                                                        )
+                                                    }
+                                                    className="w-full h-full px-4 py-3 flex items-center justify-center text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
+                                                    aria-label={`Delete ${entry.year}`}
+                                                >
+                                                    <Trash className="w-4 h-4" />
+                                                </button>
                                             ) : (
-                                                <span className="inline-flex items-center justify-center gap-1.5 w-24 px-3 py-1 rounded-sm text-xs font-medium bg-red-100 text-red-600 border border-red-300">
-                                                    <X className="w-3 h-3" />
-                                                    Missing
-                                                </span>
+                                                <Link
+                                                    href={`/upload?year=${entry.year}`}
+                                                    className="w-full h-full px-4 py-3 flex items-center justify-center text-gray-400 hover:text-blue-500 transition-colors"
+                                                    aria-label={`Upload ${entry.year}`}
+                                                >
+                                                    <Upload className="w-4 h-4" />
+                                                </Link>
                                             )}
-                                        </div>
-                                    </td>
-                                    <td className="px-4 py-3 text-sm text-center text-gray-600">
-                                        {formatDate(entry.uploadedAt)}
-                                    </td>
-                                    <td className="px-4 py-3 text-sm text-center text-gray-600">
-                                        {formatDate(entry.lastUpdatedAt)}
-                                    </td>
-                                    <td className="text-sm p-0">
-                                        {yearsWithData.has(entry.year) ? (
-                                            <button
-                                                onClick={() =>
-                                                    handleRemoveYear(entry.year)
-                                                }
-                                                className="w-full h-full px-4 py-3 flex items-center justify-center text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
-                                                aria-label={`Delete ${entry.year}`}
-                                            >
-                                                <Trash className="w-4 h-4" />
-                                            </button>
-                                        ) : (
-                                            <Link
-                                                href="/upload"
-                                                className="w-full h-full px-4 py-3 flex items-center justify-center text-gray-400 hover:text-blue-500 transition-colors"
-                                                aria-label={`Upload ${entry.year}`}
-                                            >
-                                                <Upload className="w-4 h-4" />
-                                            </Link>
-                                        )}
-                                    </td>
-                                </tr>
-                            ))
+                                        </td>
+                                    </tr>
+                                );
+                            })
                         ) : (
                             <tr>
                                 <td

@@ -41,6 +41,8 @@ type ComboBoxProps = {
     value: string;
     onChange: (value: string) => void;
     placeholder?: string;
+    /** Values that should display a checkmark, independent of the selected value. */
+    checkedValues?: string[];
 };
 
 export function Combobox({
@@ -48,6 +50,7 @@ export function Combobox({
     value,
     onChange,
     placeholder,
+    checkedValues,
 }: ComboBoxProps) {
     const [open, setOpen] = React.useState(false);
 
@@ -87,7 +90,13 @@ export function Combobox({
                                     <Check
                                         className={cn(
                                             "mr-2 h-4 w-4",
-                                            opt.value === value
+                                            (
+                                                checkedValues
+                                                    ? checkedValues.includes(
+                                                          opt.value,
+                                                      )
+                                                    : opt.value === value
+                                            )
                                                 ? "opacity-100"
                                                 : "opacity-0",
                                         )}
