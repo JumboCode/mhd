@@ -11,7 +11,7 @@
  **************************************************************/
 
 import { NextRequest, NextResponse } from "next/server";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and, sum, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
     schools,
@@ -466,6 +466,28 @@ export async function POST(req: NextRequest) {
 
         currentProgress.progress = 100;
         currentProgress.complete = true;
+
+        // Default competingStudents to total participating students per school
+        const studentCounts = await db
+            .select({
+                schoolId: projects.schoolId,
+                total: sum(projects.numStudents).mapWith(Number),
+            })
+            .from(projects)
+            .where(eq(projects.year, year))
+            .groupBy(projects.schoolId);
+
+        for (const { schoolId, total } of studentCounts) {
+            await db
+                .update(yearlySchoolParticipation)
+                .set({ competingStudents: total })
+                .where(
+                    and(
+                        eq(yearlySchoolParticipation.schoolId, schoolId),
+                        eq(yearlySchoolParticipation.year, year),
+                    ),
+                );
+        }
 
         const now = new Date();
         await db

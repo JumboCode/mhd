@@ -38,13 +38,6 @@ export async function GET(req: Request) {
                                 prevYearStats.total_teachers) *
                             100
                           : null,
-                  students:
-                      prevYearStats.total_students > 0
-                          ? ((yearlyStats.totals.total_students -
-                                prevYearStats.total_students) /
-                                prevYearStats.total_students) *
-                            100
-                          : null,
                   competing_students:
                       prevYearStats.total_competing_students > 0
                           ? ((yearlyStats.totals.total_competing_students -

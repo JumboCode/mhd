@@ -178,15 +178,10 @@ export default function SpreadsheetState() {
         fetchKnownSchools();
     }, []);
 
-    // Set default year to most recent year without data once yearsWithData loads
+    // Set default year to current year once yearsWithData loads
     useEffect(() => {
         if (yearsWithData.size === 0) return;
-        const currentYear = new Date().getFullYear();
-        let defaultYear = currentYear;
-        while (defaultYear > 2000 && yearsWithData.has(defaultYear)) {
-            defaultYear--;
-        }
-        setYear(defaultYear);
+        setYear(new Date().getFullYear());
     }, [yearsWithData]);
 
     // Check if selected year has data whenever year changes

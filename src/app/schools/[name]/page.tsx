@@ -343,7 +343,7 @@ export default function SchoolProfilePage() {
 
     if (!schoolData) {
         return (
-            <div className="h-screen w-full bg-background overflow-y-auto flex justify-center">
+            <div className="w-full bg-background overflow-y-auto flex justify-center">
                 <div className="w-full flex flex-col gap-6 py-8 max-w-5xl px-6">
                     <div className="flex flex-row items-center w-full">
                         <Skeleton className="h-8 w-64" />

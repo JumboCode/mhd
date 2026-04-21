@@ -358,7 +358,8 @@ export default function ChartPage() {
             new Set(graphDataset.flatMap((ds) => ds.data.map((d) => d.x))),
         ).sort((a, b) => Number(a) - Number(b));
 
-        // Build columns: Year, then for each dataset: value | Δ | Trend
+        // Build columns: Year, then for each dataset: value (and Δ | Trend only when no groupBy)
+        const hasGroupBy = filters.groupBy !== "none";
         const cols = [
             { id: "year", accessorKey: "year", header: "Year" },
             ...graphDataset.flatMap((ds) => {
@@ -368,12 +369,21 @@ export default function ChartPage() {
                         : ds.label;
                 const prefix = graphDataset.length === 1 ? "" : `${ds.label} `;
                 const pctRawKey = `${ds.label}__pctRaw`;
-                return [
+
+                // Base value column
+                const valueCols = [
                     {
                         id: ds.label,
                         accessorKey: ds.label,
                         header: valueHeader,
                     },
+                ];
+
+                // Skip delta/% change columns when there's a groupBy
+                if (hasGroupBy) return valueCols;
+
+                return [
+                    ...valueCols,
                     {
                         id: `${ds.label}__delta`,
                         accessorKey: `${ds.label}__delta`,
@@ -501,7 +511,7 @@ export default function ChartPage() {
         });
 
         return { cols, rows };
-    }, [graphDataset, filters.measuredAs]);
+    }, [graphDataset, filters.measuredAs, filters.groupBy]);
 
     // Calculate filtered count (based on selected 'measured by' category)
     const filteredProjectCount = useMemo(() => {
@@ -1315,12 +1325,14 @@ export default function ChartPage() {
 
                     {/* Footer */}
                     <div className="flex flex-col justify-center items-end gap-3 px-8 pb-4 text-xs text-foreground shrink-0">
-                        <p className="font-medium">
-                            <span className="font-mono bg-gray/4 border rounded-sm border-gray/2 py-1 px-2">
-                                {Math.round(filteredProjectCount)}
-                            </span>{" "}
-                            data rows total
-                        </p>
+                        {isLoaded && (
+                            <p className="font-medium">
+                                <span className="font-mono bg-gray/4 border rounded-sm border-gray/2 py-1 px-2">
+                                    {Math.round(filteredProjectCount)}
+                                </span>{" "}
+                                data rows total
+                            </p>
+                        )}
                         {dataLastUpdated && (
                             <p>
                                 <span className="font-mono bg-gray/4 border rounded-sm border-gray/2 py-1 px-2">
