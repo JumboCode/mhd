@@ -36,7 +36,7 @@ import {
 } from "@/components/EditableProjectsTable";
 import PieChart from "@/components/charts/PieChart";
 import { projectCategoryDistribution } from "@/lib/utils";
-import { AlertCircle, X, EllipsisVertical, Merge } from "lucide-react";
+import { AlertCircle, X, Users, EllipsisVertical, Merge } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
     DropdownMenu,
@@ -608,6 +608,30 @@ export default function SchoolProfilePage() {
                                 emptyMessage="No project data"
                             />
                         </div>
+                        <div className="relative flex flex-col items-center justify-center rounded-lg border border-border bg-card overflow-hidden p-6">
+                            <div className="relative flex flex-col items-center gap-2">
+                                <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                                    <Users className="h-4 w-4" />
+                                    Team Projects
+                                </span>
+                                <span className="tabular-nums text-5xl font-bold leading-none -mb-1.5">
+                                    {Math.round(
+                                        (projects.filter((p) => p.teamProject)
+                                            .length /
+                                            projects.length) *
+                                            100,
+                                    )}
+                                    %
+                                </span>
+                                <span className="text-sm text-muted-foreground">
+                                    {
+                                        projects.filter((p) => p.teamProject)
+                                            .length
+                                    }{" "}
+                                    of {projects.length} projects
+                                </span>
+                            </div>
+                        </div>
                     </div>
                 )}
 
@@ -625,7 +649,7 @@ export default function SchoolProfilePage() {
                 <div>
                     <div className="flex items-center gap-2 mb-4">
                         <h2 className="text-xl font-semibold text-foreground">
-                            View and Edit Data
+                            Project Data
                         </h2>
                         <Tooltip>
                             <TooltipTrigger>
