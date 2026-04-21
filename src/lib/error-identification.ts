@@ -365,6 +365,15 @@ function checkRequiredColumnTypes(
                     break;
                 case "optional_number":
                     isValid = !isNaN(Number(cell));
+                    if (!isValid) {
+                        typeErrorCoords.push({
+                            coord: coords,
+                            value: String(cell),
+                            expected: expectedType,
+                            allowedValues: ["Number or empty cell"],
+                        });
+                        continue;
+                    }
                     break;
                 case "enum": {
                     const allowed = enumValues?.[colName];
