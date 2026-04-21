@@ -1115,12 +1115,14 @@ export default function ChartPage() {
 
                     {/* Footer */}
                     <div className="flex flex-col justify-center items-end gap-3 px-8 pb-4 text-xs text-foreground shrink-0">
-                        <p className="font-medium">
-                            <span className="font-mono bg-gray/4 border rounded-sm border-gray/2 py-1 px-2">
-                                {Math.round(filteredProjectCount)}
-                            </span>{" "}
-                            data rows total
-                        </p>
+                        {isLoaded && (
+                            <p className="font-medium">
+                                <span className="font-mono bg-gray/4 border rounded-sm border-gray/2 py-1 px-2">
+                                    {Math.round(filteredProjectCount)}
+                                </span>{" "}
+                                data rows total
+                            </p>
+                        )}
                         {dataLastUpdated && (
                             <p>
                                 <span className="font-mono bg-gray/4 border rounded-sm border-gray/2 py-1 px-2">

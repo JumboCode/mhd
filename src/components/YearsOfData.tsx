@@ -21,6 +21,7 @@ import {
 } from "react";
 import { toast } from "sonner";
 import { Check, Trash, Upload, X } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import {
     Dialog,
@@ -62,6 +63,7 @@ const YearsOfData = forwardRef<
     const [originalYearsWithData, setOriginalYearsWithData] = useState<
         Set<number>
     >(new Set());
+    const [isLoading, setIsLoading] = useState(true);
 
     // Confirmation dialog for destructive saves
     const [showSaveConfirm, setShowSaveConfirm] = useState(false);
@@ -106,6 +108,8 @@ const YearsOfData = forwardRef<
                 setOriginalYearsWithData(new Set(existingYears));
             } catch {
                 toast.error("Failed to load years");
+            } finally {
+                setIsLoading(false);
             }
         }
 

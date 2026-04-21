@@ -9,13 +9,13 @@ import {
 } from "@/components/ui/table";
 
 const COLUMN_SIZES = [200, 150, 150, 185, 210, 135, 135, 130] as const;
-const ROW_COUNT = 12;
+const ROW_COUNT = 20;
 
 export function SchoolsTableSkeleton() {
     const totalWidth = COLUMN_SIZES.reduce((a, b) => a + b, 0);
 
     return (
-        <div className="h-full w-full min-w-0 overflow-auto border text-center">
+        <div className="h-full w-full min-w-0 overflow-hidden border text-center">
             <Table
                 className="caption-bottom text-sm border-separate border-spacing-0"
                 style={{

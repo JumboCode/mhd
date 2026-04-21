@@ -3,7 +3,14 @@ import { StatCardSkeleton } from "./StatCardSkeleton";
 
 export function DashboardSkeleton() {
     return (
-        <div className="flex flex-col gap-5 w-full">
+        <div className="flex flex-col gap-5 w-full p-8 h-full overflow-hidden">
+            {/* Title + year dropdown */}
+            <div className="flex flex-row items-center">
+                <Skeleton className="h-8 w-56" />
+                <div className="ml-auto">
+                    <Skeleton className="h-10 w-[180px] rounded-md" />
+                </div>
+            </div>
             {/* Stats cards - 4 cards in grid */}
             <div className="grid grid-cols-4 gap-5">
                 <StatCardSkeleton />
