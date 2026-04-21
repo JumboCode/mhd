@@ -239,7 +239,7 @@ export const MapPlacer = ({
 
     return (
         <>
-            <div className="relative w-full h-full">
+            <div className="relative w-full h-full overflow-hidden rounded-lg">
                 <Map
                     ref={mapRef}
                     key={mapKey}
