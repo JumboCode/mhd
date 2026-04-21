@@ -239,6 +239,14 @@ const GatewaySchools = forwardRef<
                             value={selectedSchoolId}
                             onChange={handleAddSchool}
                             placeholder="Search for a school..."
+                            checkedValues={gatewaySchools
+                                .filter(
+                                    (s) =>
+                                        !pendingRemovals.some(
+                                            (r) => r.id === s.id,
+                                        ),
+                                )
+                                .map((s) => String(s.id))}
                         />
                     </div>
 
