@@ -33,7 +33,9 @@ import {
 } from "@/components/ui/dialog";
 
 export default function Settings() {
-    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+    const [otherHasChanges, setOtherHasChanges] = useState(false);
+    const [yearsHasChanges, setYearsHasChanges] = useState(false);
+    const hasUnsavedChanges = otherHasChanges || yearsHasChanges;
     const router = useRouter();
     const gatewaySchoolsRef = useRef<GatewaySchoolsHandle>(null);
     const yearsOfDataRef = useRef<YearsOfDataHandle>(null);
@@ -52,7 +54,8 @@ export default function Settings() {
                 yearsOfDataRef.current?.save(),
                 schoolLocationRef.current?.save(),
             ]);
-            setHasUnsavedChanges(false);
+            setOtherHasChanges(false);
+            setYearsHasChanges(false);
         } catch {
             // save was cancelled (e.g. user dismissed a confirmation dialog)
         }
@@ -62,7 +65,8 @@ export default function Settings() {
         gatewaySchoolsRef.current?.discard();
         yearsOfDataRef.current?.discard();
         schoolLocationRef.current?.discard();
-        setHasUnsavedChanges(false);
+        setOtherHasChanges(false);
+        setYearsHasChanges(false);
     };
 
     const handleNavigationAttempt = useCallback(
@@ -125,18 +129,19 @@ export default function Settings() {
                     </h4>
                     <GatewaySchools
                         ref={gatewaySchoolsRef}
-                        onUnsavedChange={() => setHasUnsavedChanges(true)}
+                        onUnsavedChange={() => setOtherHasChanges(true)}
                     />
                 </div>
                 <SchoolLocationEditor
                     ref={schoolLocationRef}
-                    onUnsavedChange={() => setHasUnsavedChanges(true)}
+                    onUnsavedChange={() => setOtherHasChanges(true)}
                 />
                 <div className="space-y-3">
                     <h3 className="font-bold">Available Data</h3>
                     <YearsOfData
                         ref={yearsOfDataRef}
-                        onUnsavedChange={() => setHasUnsavedChanges(true)}
+                        onUnsavedChange={() => setYearsHasChanges(true)}
+                        onAllChangesReverted={() => setYearsHasChanges(false)}
                     />
                 </div>
             </div>

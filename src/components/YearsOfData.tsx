@@ -53,8 +53,8 @@ function formatDate(iso: string | null): string {
 
 const YearsOfData = forwardRef<
     YearsOfDataHandle,
-    { onUnsavedChange?: () => void }
->(function YearsOfData({ onUnsavedChange }, ref) {
+    { onUnsavedChange?: () => void; onAllChangesReverted?: () => void }
+>(function YearsOfData({ onUnsavedChange, onAllChangesReverted }, ref) {
     const [entries, setEntries] = useState<YearEntry[]>([]);
     const [yearsWithData, setYearsWithData] = useState<Set<number>>(new Set());
     const [pendingRemovals, setPendingRemovals] = useState<number[]>([]);
@@ -118,7 +118,9 @@ const YearsOfData = forwardRef<
     };
 
     const handleUndoRemoval = (year: number) => {
-        setPendingRemovals((prev) => prev.filter((y) => y !== year));
+        const next = pendingRemovals.filter((y) => y !== year);
+        setPendingRemovals(next);
+        if (next.length === 0) onAllChangesReverted?.();
     };
 
     useImperativeHandle(ref, () => ({
