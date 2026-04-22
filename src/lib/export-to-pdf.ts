@@ -38,7 +38,7 @@ export async function downloadGraphs(
         return;
     }
 
-    const pdf = new jsPDF();
+    const pdf = new jsPDF({ compress: true });
 
     for (let idx = 0; idx < cart.length; idx++) {
         const canvas = cart[idx];
@@ -72,6 +72,8 @@ export async function downloadGraphs(
                     afterTitle,
                     finalW,
                     finalH,
+                    undefined,
+                    "FAST",
                 );
 
                 const afterChart = afterTitle + finalH + 10;

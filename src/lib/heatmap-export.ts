@@ -34,9 +34,9 @@ export async function exportMapToPDF(
 
     try {
         const canvas = map.getCanvas();
-        const dataURL = canvas.toDataURL("image/jpeg", 1.0);
+        const dataURL = canvas.toDataURL("image/jpeg", 0.75);
 
-        const pdf = new jsPDF();
+        const pdf = new jsPDF({ compress: true });
         const pageWidth = pdf.internal.pageSize.getWidth();
         const margin = PAGE_MARGIN;
 
@@ -50,7 +50,16 @@ export async function exportMapToPDF(
         const finalH = finalW * aspectRatio;
         const imgX = (pageWidth - finalW) / 2;
 
-        pdf.addImage(dataURL, "JPEG", imgX, afterTitle, finalW, finalH);
+        pdf.addImage(
+            dataURL,
+            "JPEG",
+            imgX,
+            afterTitle,
+            finalW,
+            finalH,
+            undefined,
+            "FAST",
+        );
 
         const afterImg = afterTitle + finalH + 10;
         drawFilters(pdf, filterDetails, afterImg);
