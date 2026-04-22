@@ -187,7 +187,6 @@ export default function SpreadsheetState() {
         return () => {
             setOnNavigationAttempt(() => (href: string) => router.push(href));
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [setOnNavigationAttempt]);
 
     const handleLeaveAnyway = () => {
