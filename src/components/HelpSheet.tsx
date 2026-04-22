@@ -67,7 +67,7 @@ function TrendLegend() {
 
 function CartBadge() {
     return (
-        <span className="relative inline-flex align-middle mx-0.5">
+        <span className="relative inline-flex align-middle mx-0.5 mr-2">
             <ShoppingBasket className="inline h-3.5 w-3.5" />
             <span className="absolute -top-1.5 -right-1.5 h-3.5 w-3.5 rounded-full bg-primary text-[8px] font-medium text-primary-foreground flex items-center justify-center leading-none">
                 2
@@ -155,6 +155,7 @@ const pages: Page[] = [
                 export.
             </>,
             "Keyboard: ⌘S opens the export dialog, ⌘P downloads a PDF directly, B switches to bar chart, L switches to line chart.",
+            "Certain combinations of chart customizations do not make sense. For example, measuring total school count grouped by project type is such a combination. Such charts may yield nonsensical data or no data at all.",
         ],
     },
     {
@@ -198,7 +199,7 @@ const pages: Page[] = [
             </>,
             "The student count line graph shows enrollment history over the past 5 years. Click it to open the Chart page filtered to this school.",
             "The project type distribution pie chart breaks down projects by category for the selected year.",
-            "School Location shows the school's pin on a map. Drag the pin to update its coordinates. Regions are automatically updated based on the new coordinates.",
+            "School Location shows the school's pin on a map. Click anywhere on the map to update its coordinates. Regions are automatically updated based on the new coordinates.",
             "The View and Edit Data table lists all project records for the selected year. Double-click any cell to edit it. Teacher changes apply globally across all of that teacher's projects.",
             "Double-click the school name at the top of the page to rename the school.",
             "Use the ⋮ menu to access Merge School, which combines this school's records with another school.",
@@ -215,7 +216,7 @@ const pages: Page[] = [
             "Step 2 — Validation checks the student spreadsheet format and data types. Any errors are highlighted so you can correct the source file and re-upload.",
             "Step 3 — Upload the school spreadsheet in the same way. Another template is available for this file as well.",
             "Step 4 — Validation checks the school spreadsheet, then schools are matched to their locations on the map based on previously known schools.",
-            "Step 5 — Any schools whose locations could not be matched must be placed manually. Drag a pin onto the map for each unmatched school.",
+            "Step 5 — Any schools whose locations could not be matched must be placed manually. Click anywhere on the map to place each unmatched school. Regions are automatically set for both matched and unmatched schools.",
             "Step 6 — Review a summary and confirm the upload to commit all data to the database.",
         ],
     },
