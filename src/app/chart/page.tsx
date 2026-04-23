@@ -885,7 +885,6 @@ export default function ChartPage() {
                                     onClick={copyURLtoClipboard}
                                     defaultContent={
                                         <>
-                                            ``
                                             <Link className="w-4 h-4" />
                                             Copy link
                                         </>

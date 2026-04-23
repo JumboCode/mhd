@@ -341,7 +341,62 @@ export function buildFilterPipeline(
         });
     }
 
-    // Step 7: Teacher years participation
+    // Step 7: Selected divisions
+    if (filters.selectedDivisions.length > 0) {
+        const selected = filters.selectedDivisions;
+        current = current.filter((p) => {
+            const divs = p.schoolDivisions;
+            if (!divs || divs.length === 0)
+                return selected.includes("Unassigned");
+            return divs.some((d) => selected.includes(normalizeDivision(d)));
+        });
+        steps.push({
+            id: "division",
+            label: `Division filter (${selected.length} division${selected.length > 1 ? "s" : ""})`,
+            projects: current,
+        });
+    }
+
+    // Step 8: Selected school types
+    if (filters.selectedSchoolTypes.length > 0) {
+        const selected = filters.selectedSchoolTypes;
+        current = current.filter((p) =>
+            selected.includes(p.schoolSchoolType || "Unassigned"),
+        );
+        steps.push({
+            id: "school-type",
+            label: `School type filter (${selected.length} type${selected.length > 1 ? "s" : ""})`,
+            projects: current,
+        });
+    }
+
+    // Step 9: Selected regions
+    if (filters.selectedRegions.length > 0) {
+        const selected = filters.selectedRegions;
+        current = current.filter((p) =>
+            selected.includes(p.schoolRegion || "Unassigned"),
+        );
+        steps.push({
+            id: "region",
+            label: `Region filter (${selected.length} region${selected.length > 1 ? "s" : ""})`,
+            projects: current,
+        });
+    }
+
+    // Step 10: Selected implementation types
+    if (filters.selectedImplementationTypes.length > 0) {
+        const selected = filters.selectedImplementationTypes;
+        current = current.filter((p) =>
+            selected.includes(p.schoolImplementationModel || "Unassigned"),
+        );
+        steps.push({
+            id: "implementation-type",
+            label: `Implementation model filter (${selected.length} type${selected.length > 1 ? "s" : ""})`,
+            projects: current,
+        });
+    }
+
+    // Step 11: Teacher years participation
     if (filters.teacherYearsValue) {
         const op = filters.teacherYearsOperator;
         const v1 = parseInt(filters.teacherYearsValue, 10);
