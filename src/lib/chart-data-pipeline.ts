@@ -1,7 +1,14 @@
-/**
- * Pure functions for chart data transformation.
- * No React, no side effects.
- */
+/***************************************************************
+ *
+ *                chart-data-pipeline.ts
+ *
+ *         Author: Tika, Zander
+ *           Date: 4/19/2026
+ *
+ *        Summary: Pure functions for filtering and aggregating
+ *                 project data into chart datasets.
+ *
+ **************************************************************/
 
 import { type Project } from "@/lib/compute-chart-data";
 import { type ChartDataset } from "@/components/charts/chartTypes";
@@ -32,127 +39,6 @@ export function buildTeacherYearsMap(
         result.set(Number(tId), yearsSet.size);
     }
     return result;
-}
-
-/**
- * Filter projects based on active filters and year range.
- */
-export function filterProjects(
-    allProjects: Project[],
-    filters: Filters | null,
-    yearRange: YearRange,
-    teacherYearsMap: Map<number, number>,
-): Project[] {
-    if (!filters) return allProjects;
-
-    return allProjects.filter((p) => {
-        // Year range filter
-        if (p.year < yearRange.start || p.year > yearRange.end) {
-            return false;
-        }
-
-        // Individual vs Group Projects
-        if (
-            filters.individualProjects &&
-            !filters.groupProjects &&
-            p.teamProject
-        )
-            return false;
-        if (
-            filters.groupProjects &&
-            !filters.individualProjects &&
-            !p.teamProject
-        )
-            return false;
-
-        // Selected Schools
-        if (
-            filters.selectedSchools.length > 0 &&
-            !filters.selectedSchools.includes(p.schoolName)
-        )
-            return false;
-
-        // Gateway schools filter
-        if (filters.onlyGatewaySchools && p.gatewaySchool !== "Gateway") {
-            return false;
-        }
-
-        // Selected Cities
-        if (
-            filters.selectedCities.length > 0 &&
-            !filters.selectedCities.includes(p.schoolTown)
-        )
-            return false;
-
-        // Selected Project Types
-        if (
-            filters.selectedProjectTypes.length > 0 &&
-            !filters.selectedProjectTypes.includes(p.category)
-        )
-            return false;
-
-        // Selected Divisions (schoolDivisions is an array; match if ANY overlap)
-        if (filters.selectedDivisions && filters.selectedDivisions.length > 0) {
-            const divs = p.schoolDivisions;
-            if (!divs || divs.length === 0) {
-                if (!filters.selectedDivisions.includes("Unassigned"))
-                    return false;
-            } else {
-                const normalized = divs.map(normalizeDivision);
-                const hasMatch = normalized.some((d) =>
-                    filters.selectedDivisions.includes(d),
-                );
-                if (!hasMatch) return false;
-            }
-        }
-
-        // Selected School Types
-        if (
-            filters.selectedSchoolTypes &&
-            filters.selectedSchoolTypes.length > 0
-        ) {
-            const v = p.schoolSchoolType || "Unassigned";
-            if (!filters.selectedSchoolTypes.includes(v)) return false;
-        }
-
-        // Selected Regions
-        if (filters.selectedRegions && filters.selectedRegions.length > 0) {
-            const v = p.schoolRegion || "Unassigned";
-            if (!filters.selectedRegions.includes(v)) return false;
-        }
-
-        // Selected Implementation Types
-        if (
-            filters.selectedImplementationTypes &&
-            filters.selectedImplementationTypes.length > 0
-        ) {
-            const v = p.schoolImplementationModel || "Unassigned";
-            if (!filters.selectedImplementationTypes.includes(v)) return false;
-        }
-
-        // Teacher Years Participation
-        if (filters.teacherYearsValue) {
-            const yearsActive = teacherYearsMap.get(p.teacherId) || 0;
-            const op = filters.teacherYearsOperator;
-
-            if (op === "=") {
-                const target = parseInt(filters.teacherYearsValue, 10);
-                if (yearsActive !== target) return false;
-            } else if (op === ">") {
-                const target = parseInt(filters.teacherYearsValue, 10);
-                if (yearsActive <= target) return false;
-            } else if (op === "<") {
-                const target = parseInt(filters.teacherYearsValue, 10);
-                if (yearsActive >= target) return false;
-            } else if (op === "between" && filters.teacherYearsValue2) {
-                const min = parseInt(filters.teacherYearsValue, 10);
-                const max = parseInt(filters.teacherYearsValue2, 10);
-                if (yearsActive < min || yearsActive > max) return false;
-            }
-        }
-
-        return true;
-    });
 }
 
 /**
@@ -345,6 +231,145 @@ export function getProjectsInGroup(
     );
 }
 
+export type FilterPipelineStep = {
+    /** Stable identifier for this step */
+    id: string;
+    /** Human-readable label */
+    label: string;
+    /** Projects remaining after this step is applied */
+    projects: Project[];
+};
+
+/**
+ * Apply filters one at a time, capturing intermediate project sets.
+ * Steps are only included when the corresponding filter is active.
+ * Always starts with year-range as the first step.
+ */
+export function buildFilterPipeline(
+    allProjects: Project[],
+    filters: Filters,
+    yearRange: YearRange,
+): FilterPipelineStep[] {
+    const steps: FilterPipelineStep[] = [];
+
+    // Pre-compute teacher years map once (needed for teacher-years step)
+    const teacherYearsMap = filters.teacherYearsValue
+        ? buildTeacherYearsMap(allProjects)
+        : new Map<number, number>();
+
+    // Step 1: Year range (always active)
+    const afterYearRange = allProjects.filter(
+        (p) => p.year >= yearRange.start && p.year <= yearRange.end,
+    );
+    steps.push({
+        id: "year-range",
+        label: `Year range: ${yearRange.start}–${yearRange.end}`,
+        projects: afterYearRange,
+    });
+
+    let current = afterYearRange;
+
+    // Step 2: Individual/Group scope (only when one is excluded)
+    if (!(filters.individualProjects && filters.groupProjects)) {
+        const label =
+            filters.individualProjects && !filters.groupProjects
+                ? "Individual projects only"
+                : !filters.individualProjects && filters.groupProjects
+                  ? "Group projects only"
+                  : "No projects (conflicting scope)";
+        current = current.filter((p) => {
+            if (
+                filters.individualProjects &&
+                !filters.groupProjects &&
+                p.teamProject
+            )
+                return false;
+            if (
+                filters.groupProjects &&
+                !filters.individualProjects &&
+                !p.teamProject
+            )
+                return false;
+            return true;
+        });
+        steps.push({ id: "project-scope", label, projects: current });
+    }
+
+    // Step 3: Gateway schools
+    if (filters.onlyGatewaySchools) {
+        current = current.filter((p) => p.gatewaySchool === "Gateway");
+        steps.push({
+            id: "gateway",
+            label: "Gateway schools only",
+            projects: current,
+        });
+    }
+
+    // Step 4: Selected schools
+    if (filters.selectedSchools.length > 0) {
+        current = current.filter((p) =>
+            filters.selectedSchools.includes(p.schoolName),
+        );
+        steps.push({
+            id: "school",
+            label: `School filter (${filters.selectedSchools.length} school${filters.selectedSchools.length > 1 ? "s" : ""})`,
+            projects: current,
+        });
+    }
+
+    // Step 5: Selected cities
+    if (filters.selectedCities.length > 0) {
+        current = current.filter((p) =>
+            filters.selectedCities.includes(p.schoolTown),
+        );
+        steps.push({
+            id: "city",
+            label: `City filter (${filters.selectedCities.length} cit${filters.selectedCities.length > 1 ? "ies" : "y"})`,
+            projects: current,
+        });
+    }
+
+    // Step 6: Selected project types
+    if (filters.selectedProjectTypes.length > 0) {
+        current = current.filter((p) =>
+            filters.selectedProjectTypes.includes(p.category),
+        );
+        steps.push({
+            id: "project-type",
+            label: `Project type filter (${filters.selectedProjectTypes.length} type${filters.selectedProjectTypes.length > 1 ? "s" : ""})`,
+            projects: current,
+        });
+    }
+
+    // Step 7: Teacher years participation
+    if (filters.teacherYearsValue) {
+        const op = filters.teacherYearsOperator;
+        const v1 = parseInt(filters.teacherYearsValue, 10);
+        const v2 = filters.teacherYearsValue2
+            ? parseInt(filters.teacherYearsValue2, 10)
+            : 0;
+
+        current = current.filter((p) => {
+            const yearsActive = teacherYearsMap.get(p.teacherId) || 0;
+            if (op === "=") return yearsActive === v1;
+            if (op === ">") return yearsActive > v1;
+            if (op === "<") return yearsActive < v1;
+            if (op === "between") return yearsActive >= v1 && yearsActive <= v2;
+            return true;
+        });
+
+        const opLabel =
+            op === "between" ? `between ${v1}–${v2}` : `${op} ${v1}`;
+        steps.push({
+            id: "teacher-years",
+            label: `Teacher participation: ${opLabel} years`,
+            projects: current,
+        });
+    }
+
+    return steps;
+}
+
 /**
  * Main entry point: compute chart datasets from projects and filters.
  * Returns both the datasets and the resolved metric.
@@ -358,16 +383,8 @@ export function computeChartDatasets(
         return { datasets: [], metric: filters.measuredAs };
     }
 
-    const teacherYearsMap = filters.teacherYearsValue
-        ? buildTeacherYearsMap(allProjects)
-        : new Map<number, number>();
-
-    const filteredProjects = filterProjects(
-        allProjects,
-        filters,
-        yearRange,
-        teacherYearsMap,
-    );
+    const pipeline = buildFilterPipeline(allProjects, filters, yearRange);
+    const filteredProjects = pipeline.at(-1)!.projects;
 
     const metric = filters.measuredAs;
 

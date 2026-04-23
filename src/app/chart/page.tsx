@@ -20,13 +20,10 @@ import {
     LineChart,
     Link,
     Loader2,
-    Minus,
     PlusCircle,
     Share,
     ShoppingBasket,
     SlidersHorizontal,
-    TrendingDown,
-    TrendingUp,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -76,14 +73,14 @@ import {
     measuredAsLabels,
     groupByLabels,
 } from "@/lib/chart-title";
-import { DataTable } from "@/components/DataTable";
-import { CellValue } from "@/types/spreadsheet";
+import { DataLineagePopup } from "@/components/DataLineagePopup";
 
 export default function ChartPage() {
     const [isExporting, setIsExporting] = useState(false);
     const [exportDialogOpen, setExportDialogOpen] = useState(false);
     const [cartOpen, setCartOpen] = useState(false);
     const [filterOpen, setFilterOpen] = useState(false);
+    const [dataLineageOpen, setDataLineageOpen] = useState(false);
 
     // All chart filters and URL state from single hook
     const {
@@ -136,6 +133,10 @@ export default function ChartPage() {
 
     const [startDraft, setStartDraft] = useState(String(yearRange.start));
     const [endDraft, setEndDraft] = useState(String(yearRange.end));
+    const [tempYearRange, setTempYearRange] = useState({
+        start: yearRange.start,
+        end: yearRange.end,
+    });
 
     // Chart type animation direction
     const slideDirection = useRef(0);
@@ -154,6 +155,7 @@ export default function ChartPage() {
     // Keyboard shortcuts for chart type
     useHotkey("b", () => handleChartTypeChange("bar"));
     useHotkey("l", () => handleChartTypeChange("line"));
+    useHotkey("?", () => setDataLineageOpen((v) => !v));
 
     const chartRef = useRef<HTMLDivElement | null>(null);
 
@@ -312,6 +314,13 @@ export default function ChartPage() {
         }
     }, [yearRangeOpen, timePeriod, yearRange]);
 
+    // Sync tempYearRange with yearRange when the popover opens
+    useEffect(() => {
+        if (yearRangeOpen) {
+            setTempYearRange({ start: yearRange.start, end: yearRange.end });
+        }
+    }, [yearRangeOpen, yearRange]);
+
     // Keep query params normalized if an invalid range is loaded from URL.
     useEffect(() => {
         if (startYear <= endYear) return;
@@ -347,171 +356,6 @@ export default function ChartPage() {
         const minYear = Math.min(...allYears);
         updateYearRange(minYear, maxYear);
     }, [timePeriod, allProjects, updateYearRange]);
-
-    const { cols, rows } = useMemo(() => {
-        if (!graphDataset.length) return { cols: [], rows: [] };
-
-        const isReturnRate = filters.measuredAs === "school-return-rate";
-
-        // Collect all unique years across all datasets, sorted ascending
-        const allYears = Array.from(
-            new Set(graphDataset.flatMap((ds) => ds.data.map((d) => d.x))),
-        ).sort((a, b) => Number(a) - Number(b));
-
-        // Build columns: Year, then for each dataset: value (and Δ | Trend only when no groupBy)
-        const hasGroupBy = filters.groupBy !== "none";
-        const cols = [
-            { id: "year", accessorKey: "year", header: "Year" },
-            ...graphDataset.flatMap((ds) => {
-                const valueHeader =
-                    ds.label === "All"
-                        ? (measuredAsLabels[filters.measuredAs] ?? ds.label)
-                        : ds.label;
-                const prefix = graphDataset.length === 1 ? "" : `${ds.label} `;
-                const pctRawKey = `${ds.label}__pctRaw`;
-
-                // Base value column
-                const valueCols = [
-                    {
-                        id: ds.label,
-                        accessorKey: ds.label,
-                        header: valueHeader,
-                    },
-                ];
-
-                // Skip delta/% change columns when there's a groupBy
-                if (hasGroupBy) return valueCols;
-
-                return [
-                    ...valueCols,
-                    {
-                        id: `${ds.label}__delta`,
-                        accessorKey: `${ds.label}__delta`,
-                        header: `${prefix}Δ`,
-                        cell: ({
-                            row,
-                        }: {
-                            row: { original: Record<string, CellValue> };
-                        }) => {
-                            const formatted = row.original[
-                                `${ds.label}__delta`
-                            ] as string;
-                            if (formatted === "—")
-                                return (
-                                    <span className="text-muted-foreground">
-                                        —
-                                    </span>
-                                );
-                            const color = formatted.startsWith("+")
-                                ? "text-[#46A758]"
-                                : formatted.startsWith("-")
-                                  ? "text-[#E5484D]"
-                                  : "text-[#808080]";
-                            return <span className={color}>{formatted}</span>;
-                        },
-                    },
-                    {
-                        id: `${ds.label}__pct`,
-                        accessorKey: `${ds.label}__pct`,
-                        header: `${prefix}% Change`,
-                        cell: ({
-                            row,
-                        }: {
-                            row: { original: Record<string, CellValue> };
-                        }) => {
-                            const raw = row.original[pctRawKey];
-                            const formatted = row.original[
-                                `${ds.label}__pct`
-                            ] as string;
-                            if (
-                                raw === null ||
-                                raw === undefined ||
-                                formatted === "—"
-                            ) {
-                                return (
-                                    <span className="text-muted-foreground">
-                                        —
-                                    </span>
-                                );
-                            }
-                            const pct = raw as number;
-                            const absStr = `${Math.abs(pct).toFixed(1)}%`;
-                            if (Math.abs(pct) < 0.5) {
-                                return (
-                                    <div className="flex items-center gap-1 text-[#808080]">
-                                        <Minus size={14} />
-                                        {absStr}
-                                    </div>
-                                );
-                            }
-                            if (pct > 0) {
-                                return (
-                                    <div className="flex items-center gap-1 text-[#46A758]">
-                                        <TrendingUp size={14} />
-                                        {absStr}
-                                    </div>
-                                );
-                            }
-                            return (
-                                <div className="flex items-center gap-1 text-[#E5484D]">
-                                    <TrendingDown size={14} />
-                                    {absStr}
-                                </div>
-                            );
-                        },
-                    },
-                ];
-            }),
-        ];
-
-        // One row per year
-        const rows = allYears.map((year, yearIdx) => {
-            const row: Record<string, CellValue> = { year };
-            graphDataset.forEach((ds) => {
-                const point = ds.data.find((d) => d.x === year);
-                const prevPoint =
-                    yearIdx > 0
-                        ? ds.data.find((d) => d.x === allYears[yearIdx - 1])
-                        : undefined;
-
-                if (point !== undefined) {
-                    row[ds.label] = isReturnRate
-                        ? `${(point.y * 100).toFixed(1)}%`
-                        : Math.round(point.y);
-
-                    if (prevPoint !== undefined) {
-                        const delta = point.y - prevPoint.y;
-                        const pct =
-                            prevPoint.y !== 0
-                                ? (delta / prevPoint.y) * 100
-                                : null;
-
-                        row[`${ds.label}__delta`] = isReturnRate
-                            ? `${delta >= 0 ? "+" : ""}${(delta * 100).toFixed(1)}pp`
-                            : `${delta >= 0 ? "+" : ""}${Math.round(delta)}`;
-
-                        row[`${ds.label}__pct`] =
-                            pct !== null
-                                ? `${pct >= 0 ? "+" : ""}${pct.toFixed(1)}%`
-                                : "—";
-                        row[`${ds.label}__pctRaw`] = pct;
-                    } else {
-                        row[`${ds.label}__delta`] = "—";
-                        row[`${ds.label}__pct`] = "—";
-                        row[`${ds.label}__pctRaw`] = null;
-                    }
-                } else {
-                    row[ds.label] = "—";
-                    row[`${ds.label}__delta`] = "—";
-                    row[`${ds.label}__pct`] = "—";
-                    row[`${ds.label}__pctRaw`] = null;
-                }
-            });
-            return row;
-        });
-
-        return { cols, rows };
-    }, [graphDataset, filters.measuredAs, filters.groupBy]);
 
     // Calculate filtered count (based on selected 'measured by' category)
     const filteredProjectCount = useMemo(() => {
@@ -600,205 +444,287 @@ export default function ChartPage() {
         !isYearInRange(parsedStart) || !isYearInRange(parsedEnd);
 
     return (
-        <div className="w-full min-h-screen flex bg-background">
-            <Sheet open={filterOpen} onOpenChange={setFilterOpen}>
-                <SheetContent side="left" className="w-80 overflow-y-auto">
-                    <SheetHeader>
-                        <SheetTitle>Filters</SheetTitle>
-                    </SheetHeader>
-                    <div className="mt-6">
-                        <GraphFilters
-                            schools={schools}
-                            cities={cities}
-                            projectTypes={projectTypes}
-                            divisions={divisions}
-                            schoolTypes={schoolTypes}
-                            regions={regions}
-                            implementationTypes={implementationTypes}
-                            gatewaySchools={gatewaySchools}
-                            filters={filters}
-                            onFiltersChange={(newFilters) => {
-                                setSelectedSchools(newFilters.selectedSchools);
-                                setSelectedCities(newFilters.selectedCities);
-                                setSelectedProjectTypes(
-                                    newFilters.selectedProjectTypes,
-                                );
-                                setSelectedDivisions(
-                                    newFilters.selectedDivisions,
-                                );
-                                setSelectedSchoolTypes(
-                                    newFilters.selectedSchoolTypes,
-                                );
-                                setSelectedRegions(newFilters.selectedRegions);
-                                setSelectedImplementationTypes(
-                                    newFilters.selectedImplementationTypes,
-                                );
-                                setGroupBy(newFilters.groupBy);
-                                setMeasuredAs(newFilters.measuredAs);
-                                setTeacherYearsValue(
-                                    newFilters.teacherYearsValue,
-                                );
-                                setTeacherYearsOperator(
-                                    newFilters.teacherYearsOperator,
-                                );
-                                setTeacherYearsValue2(
-                                    newFilters.teacherYearsValue2 ?? "",
-                                );
-                                setOnlyGatewaySchools(
-                                    newFilters.onlyGatewaySchools,
-                                );
-                            }}
-                        />
-                    </div>
-                </SheetContent>
-            </Sheet>
+        <>
+            <div className="w-full min-h-screen flex bg-background">
+                <Sheet open={filterOpen} onOpenChange={setFilterOpen}>
+                    <SheetContent side="left" className="w-80 overflow-y-auto">
+                        <SheetHeader>
+                            <SheetTitle>Filters</SheetTitle>
+                        </SheetHeader>
+                        <div className="mt-6">
+                            <GraphFilters
+                                schools={schools}
+                                cities={cities}
+                                projectTypes={projectTypes}
+                                gatewaySchools={gatewaySchools}
+                                filters={filters}
+                                onFiltersChange={(newFilters) => {
+                                    setSelectedSchools(
+                                        newFilters.selectedSchools,
+                                    );
+                                    setSelectedCities(
+                                        newFilters.selectedCities,
+                                    );
+                                    setSelectedProjectTypes(
+                                        newFilters.selectedProjectTypes,
+                                    );
+                                    setGroupBy(newFilters.groupBy);
+                                    setMeasuredAs(newFilters.measuredAs);
+                                    setTeacherYearsValue(
+                                        newFilters.teacherYearsValue,
+                                    );
+                                    setTeacherYearsOperator(
+                                        newFilters.teacherYearsOperator,
+                                    );
+                                    setTeacherYearsValue2(
+                                        newFilters.teacherYearsValue2 ?? "",
+                                    );
+                                    setOnlyGatewaySchools(
+                                        newFilters.onlyGatewaySchools,
+                                    );
+                                }}
+                            />
+                        </div>
+                    </SheetContent>
+                </Sheet>
 
-            {/* Large screens: Always show sidebar */}
-            <div className="hidden lg:flex flex-col border-r border-border p-8 bg-card w-70 h-screen overflow-y-auto sticky top-0 gap-12">
-                <GraphFilters
-                    schools={schools}
-                    cities={cities}
-                    projectTypes={projectTypes}
-                    divisions={divisions}
-                    schoolTypes={schoolTypes}
-                    regions={regions}
-                    implementationTypes={implementationTypes}
-                    gatewaySchools={gatewaySchools}
-                    filters={filters}
-                    onFiltersChange={(newFilters) => {
-                        setSelectedSchools(newFilters.selectedSchools);
-                        setSelectedCities(newFilters.selectedCities);
-                        setSelectedProjectTypes(
-                            newFilters.selectedProjectTypes,
-                        );
-                        setSelectedDivisions(newFilters.selectedDivisions);
-                        setSelectedSchoolTypes(newFilters.selectedSchoolTypes);
-                        setSelectedRegions(newFilters.selectedRegions);
-                        setSelectedImplementationTypes(
-                            newFilters.selectedImplementationTypes,
-                        );
-                        setGroupBy(newFilters.groupBy);
-                        setMeasuredAs(newFilters.measuredAs);
-                        setTeacherYearsValue(newFilters.teacherYearsValue);
-                        setTeacherYearsOperator(
-                            newFilters.teacherYearsOperator,
-                        );
-                        setTeacherYearsValue2(
-                            newFilters.teacherYearsValue2 ?? "",
-                        );
-
-                        if (teacherYearsValue2 !== undefined) {
-                            const min = parseInt(
-                                newFilters.teacherYearsValue,
-                                10,
+                {/* Large screens: Always show sidebar */}
+                <div className="hidden lg:flex flex-col border-r border-border p-8 bg-card w-70 h-screen overflow-y-auto sticky top-0 gap-12">
+                    <GraphFilters
+                        schools={schools}
+                        cities={cities}
+                        projectTypes={projectTypes}
+                        gatewaySchools={gatewaySchools}
+                        filters={filters}
+                        onFiltersChange={(newFilters) => {
+                            setSelectedSchools(newFilters.selectedSchools);
+                            setSelectedCities(newFilters.selectedCities);
+                            setSelectedProjectTypes(
+                                newFilters.selectedProjectTypes,
                             );
-                            const max = parseInt(
+                            setGroupBy(newFilters.groupBy);
+                            setMeasuredAs(newFilters.measuredAs);
+                            setTeacherYearsValue(newFilters.teacherYearsValue);
+                            setTeacherYearsOperator(
+                                newFilters.teacherYearsOperator,
+                            );
+                            setTeacherYearsValue2(
                                 newFilters.teacherYearsValue2 ?? "",
-                                10,
                             );
+                            setOnlyGatewaySchools(
+                                newFilters.onlyGatewaySchools,
+                            );
+                        }}
+                    />
+                </div>
 
-                            if (max <= min) {
-                                setTeacherYearsValue2(
-                                    newFilters.teacherYearsValue,
-                                );
-                            }
-                        }
-                        setOnlyGatewaySchools(newFilters.onlyGatewaySchools);
-                    }}
-                />
-            </div>
+                {/* Main Content Area */}
+                <div className="flex-1 flex flex-col h-screen overflow-hidden">
+                    <div className="flex flex-col gap-5 h-full overflow-hidden">
+                        {/* Header - title and actions */}
+                        <div className="flex items-center justify-between px-8 pt-8 shrink-0 gap-4">
+                            <div className="min-w-0 flex-1">
+                                <AnimatePresence
+                                    initial={false}
+                                    mode="popLayout"
+                                >
+                                    <motion.h1
+                                        key={chartType}
+                                        className="text-xl font-semibold text-foreground"
+                                        transition={{
+                                            duration: 0.15,
+                                            ease: "easeOut",
+                                        }}
+                                        initial={{
+                                            opacity: 0,
+                                            x: slideDirection.current * -20,
+                                        }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        exit={{
+                                            opacity: 0,
+                                            x: slideDirection.current * -20,
+                                        }}
+                                    >
+                                        {generateChartTitle(
+                                            chartType,
+                                            measuredAs,
+                                            groupBy,
+                                            yearRange.start,
+                                            yearRange.end,
+                                            {
+                                                schools: selectedSchools.length,
+                                                cities: selectedCities.length,
+                                                projectTypes:
+                                                    selectedProjectTypes.length,
+                                                hasTeacherYearsFilter:
+                                                    teacherYearsValue !== "",
+                                                onlyGatewaySchools:
+                                                    onlyGatewaySchools,
+                                            },
+                                        )}
+                                    </motion.h1>
+                                </AnimatePresence>
+                            </div>
 
-            {/* Main Content Area */}
-            <div className="flex-1 flex flex-col h-screen overflow-hidden">
-                <div className="flex flex-col gap-5 h-full overflow-hidden">
-                    {/* Header - title and actions */}
-                    <div className="flex items-center justify-between px-8 pt-8 shrink-0 gap-4">
-                        <div className="min-w-0 flex-1">
-                            <AnimatePresence initial={false} mode="popLayout">
-                                <motion.h1
-                                    key={chartType}
-                                    className="text-xl font-semibold text-foreground"
-                                    transition={{
-                                        duration: 0.15,
-                                        ease: "easeOut",
-                                    }}
-                                    initial={{
-                                        opacity: 0,
-                                        x: slideDirection.current * -20,
-                                    }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    exit={{
-                                        opacity: 0,
-                                        x: slideDirection.current * -20,
+                            {/* Actions - hidden when sidebar is collapsed */}
+                            <div className="hidden xl:flex gap-3">
+                                <AlertDialog
+                                    open={exportDialogOpen}
+                                    onOpenChange={setExportDialogOpen}
+                                >
+                                    <AlertDialogTrigger asChild>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="flex items-center gap-2"
+                                            disabled={isExporting}
+                                        >
+                                            {isExporting ? (
+                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                            ) : (
+                                                <>
+                                                    <Share className="w-4 h-4" />
+                                                    Export
+                                                </>
+                                            )}
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>
+                                                Export graph to PDF?
+                                            </AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                This will download a PDF of the
+                                                current graph to your computer.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>
+                                                Cancel
+                                            </AlertDialogCancel>
+                                            <AlertDialogAction
+                                                onClick={async () => {
+                                                    setExportDialogOpen(false);
+                                                    setIsExporting(true);
+                                                    await downloadSingleGraph(
+                                                        chartType as
+                                                            | "bar"
+                                                            | "line",
+                                                        graphDataset,
+                                                        measuredAsLabels[
+                                                            filters.measuredAs
+                                                        ],
+                                                        filters.groupBy ===
+                                                            "none"
+                                                            ? undefined
+                                                            : groupByLabels[
+                                                                  filters
+                                                                      .groupBy
+                                                              ],
+                                                        filterName,
+                                                        filterDetails,
+                                                    );
+                                                    setIsExporting(false);
+                                                    toast.success(
+                                                        "Chart exported successfully!",
+                                                    );
+                                                }}
+                                            >
+                                                Download
+                                            </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="flex items-center gap-2"
+                                    onClick={() => {
+                                        if (chartInCart) {
+                                            removeByName(filterName);
+                                        } else {
+                                            addChartItem(
+                                                filterName,
+                                                {
+                                                    chartType: chartType as
+                                                        | "bar"
+                                                        | "line",
+                                                    filters,
+                                                    yearStart: yearRange.start,
+                                                    yearEnd: yearRange.end,
+                                                },
+                                                filterDetails,
+                                            );
+                                        }
                                     }}
                                 >
-                                    {generateChartTitle(
-                                        chartType,
-                                        measuredAs,
-                                        groupBy,
-                                        yearRange.start,
-                                        yearRange.end,
-                                        {
-                                            schools: selectedSchools.length,
-                                            cities: selectedCities.length,
-                                            projectTypes:
-                                                selectedProjectTypes.length,
-                                            divisions: selectedDivisions.length,
-                                            schoolTypes:
-                                                selectedSchoolTypes.length,
-                                            regions: selectedRegions.length,
-                                            implementationTypes:
-                                                selectedImplementationTypes.length,
-                                            hasTeacherYearsFilter:
-                                                teacherYearsValue !== "",
-                                            onlyGatewaySchools:
-                                                onlyGatewaySchools,
-                                        },
+                                    {chartInCart ? (
+                                        <>
+                                            <CheckCircle2 className="w-4 h-4" />
+                                            Remove
+                                        </>
+                                    ) : (
+                                        <>
+                                            <PlusCircle className="w-4 h-4" />
+                                            Add to cart
+                                        </>
                                     )}
-                                </motion.h1>
-                            </AnimatePresence>
-                        </div>
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="flex items-center gap-2 relative"
+                                    onClick={() => setCartOpen(true)}
+                                >
+                                    <ShoppingBasket className="w-4 h-4" />
+                                    Cart
+                                    <CartIndicator
+                                        count={items.length}
+                                        className="absolute -top-2 -right-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground"
+                                    />
+                                </Button>
+                                <AnimatedToggleButton
+                                    variant="outline"
+                                    size="sm"
+                                    className="flex items-center gap-2"
+                                    onClick={copyURLtoClipboard}
+                                    defaultContent={
+                                        <>
+                                            ``
+                                            <Link className="w-4 h-4" />
+                                            Copy link
+                                        </>
+                                    }
+                                    activeContent={
+                                        <>
+                                            <Check className="w-4 h-4" />
+                                            Copy link
+                                        </>
+                                    }
+                                />
+                            </div>
 
-                        {/* Actions - hidden when sidebar is collapsed */}
-                        <div className="hidden xl:flex gap-3">
-                            <AlertDialog
-                                open={exportDialogOpen}
-                                onOpenChange={setExportDialogOpen}
-                            >
-                                <AlertDialogTrigger asChild>
+                            {/* Share popover - visible when sidebar is collapsed */}
+                            <Popover>
+                                <PopoverTrigger asChild>
                                     <Button
                                         variant="outline"
                                         size="sm"
-                                        className="flex items-center gap-2"
-                                        disabled={isExporting}
+                                        className="xl:hidden flex items-center gap-2"
                                     >
-                                        {isExporting ? (
-                                            <Loader2 className="h-4 w-4 animate-spin" />
-                                        ) : (
-                                            <>
-                                                <Share className="w-4 h-4" />
-                                                Export
-                                            </>
-                                        )}
+                                        <Share className="w-4 h-4" />
+                                        Share
                                     </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                        <AlertDialogTitle>
-                                            Export graph to PDF?
-                                        </AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                            This will download a PDF of the
-                                            current graph to your computer.
-                                        </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                        <AlertDialogCancel>
-                                            Cancel
-                                        </AlertDialogCancel>
-                                        <AlertDialogAction
+                                </PopoverTrigger>
+                                <PopoverContent className="w-56" align="end">
+                                    <div className="flex flex-col gap-2">
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="justify-start"
+                                            disabled={isExporting}
                                             onClick={async () => {
-                                                setExportDialogOpen(false);
                                                 setIsExporting(true);
                                                 await downloadSingleGraph(
                                                     chartType as "bar" | "line",
@@ -820,537 +746,432 @@ export default function ChartPage() {
                                                 );
                                             }}
                                         >
-                                            Download
-                                        </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                className="flex items-center gap-2"
-                                onClick={() => {
-                                    if (chartInCart) {
-                                        removeByName(filterName);
-                                    } else {
-                                        addChartItem(
-                                            filterName,
-                                            {
-                                                chartType: chartType as
-                                                    | "bar"
-                                                    | "line",
-                                                filters,
-                                                yearStart: yearRange.start,
-                                                yearEnd: yearRange.end,
-                                                tableData: {
-                                                    cols,
-                                                    rows,
-                                                },
-                                            },
-                                            filterDetails,
-                                        );
-                                    }
-                                }}
-                            >
-                                {chartInCart ? (
-                                    <>
-                                        <CheckCircle2 className="w-4 h-4" />
-                                        Remove
-                                    </>
-                                ) : (
-                                    <>
-                                        <PlusCircle className="w-4 h-4" />
-                                        Add to cart
-                                    </>
-                                )}
-                            </Button>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                className="flex items-center gap-2 relative"
-                                onClick={() => setCartOpen(true)}
-                            >
-                                <ShoppingBasket className="w-4 h-4" />
-                                Cart
-                                <CartIndicator
-                                    count={items.length}
-                                    className="absolute -top-2 -right-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground"
-                                />
-                            </Button>
-                            <AnimatedToggleButton
-                                variant="outline"
-                                size="sm"
-                                className="flex items-center gap-2"
-                                onClick={copyURLtoClipboard}
-                                defaultContent={
-                                    <>
-                                        <Link className="w-4 h-4" />
-                                        Copy link
-                                    </>
-                                }
-                                activeContent={
-                                    <>
-                                        <Check className="w-4 h-4" />
-                                        Copy link
-                                    </>
-                                }
-                            />
-                        </div>
-
-                        {/* Share popover - visible when sidebar is collapsed */}
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="xl:hidden flex items-center gap-2"
-                                >
-                                    <Share className="w-4 h-4" />
-                                    Share
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-56" align="end">
-                                <div className="flex flex-col gap-2">
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="justify-start"
-                                        disabled={isExporting}
-                                        onClick={async () => {
-                                            setIsExporting(true);
-                                            await downloadSingleGraph(
-                                                chartType as "bar" | "line",
-                                                graphDataset,
-                                                measuredAsLabels[
-                                                    filters.measuredAs
-                                                ],
-                                                filters.groupBy === "none"
-                                                    ? undefined
-                                                    : groupByLabels[
-                                                          filters.groupBy
-                                                      ],
-                                                filterName,
-                                                filterDetails,
-                                            );
-                                            setIsExporting(false);
-                                            toast.success(
-                                                "Chart exported successfully!",
-                                            );
-                                        }}
-                                    >
-                                        {isExporting ? (
-                                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                                        ) : (
-                                            <Share className="w-4 h-4 mr-2" />
-                                        )}
-                                        Export to PDF
-                                    </Button>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="justify-start"
-                                        onClick={() => {
-                                            if (chartInCart) {
-                                                removeByName(filterName);
-                                            } else {
-                                                addChartItem(
-                                                    filterName,
-                                                    {
-                                                        chartType: chartType as
-                                                            | "bar"
-                                                            | "line",
-                                                        filters,
-                                                        yearStart:
-                                                            yearRange.start,
-                                                        yearEnd: yearRange.end,
-                                                        tableData: {
-                                                            cols,
-                                                            rows,
-                                                        },
-                                                    },
-                                                    filterDetails,
-                                                );
-                                            }
-                                        }}
-                                    >
-                                        {chartInCart ? (
-                                            <>
-                                                <CheckCircle2 className="w-4 h-4 mr-2" />
-                                                Remove from cart
-                                            </>
-                                        ) : (
-                                            <>
-                                                <PlusCircle className="w-4 h-4 mr-2" />
-                                                Add to cart
-                                            </>
-                                        )}
-                                    </Button>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="justify-start relative"
-                                        onClick={() => setCartOpen(true)}
-                                    >
-                                        <ShoppingBasket className="w-4 h-4 mr-2" />
-                                        View cart
-                                        <CartIndicator
-                                            count={items.length}
-                                            className="ml-auto inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground"
-                                        />
-                                    </Button>
-                                    <AnimatedToggleButton
-                                        variant="ghost"
-                                        size="sm"
-                                        className="justify-start"
-                                        onClick={copyURLtoClipboard}
-                                        defaultContent={
-                                            <>
-                                                <Link className="w-4 h-4 mr-2" />
-                                                Copy link
-                                            </>
-                                        }
-                                        activeContent={
-                                            <>
-                                                <Check className="w-4 h-4 mr-2" />
-                                                Copy link
-                                            </>
-                                        }
-                                    />
-                                </div>
-                            </PopoverContent>
-                        </Popover>
-
-                        <Sheet open={cartOpen} onOpenChange={setCartOpen}>
-                            <SheetContent>
-                                <SheetHeader>
-                                    <SheetTitle>Cart</SheetTitle>
-                                </SheetHeader>
-                                <Cart />
-                            </SheetContent>
-                        </Sheet>
-                    </div>
-
-                    {/* Controls row */}
-                    <div className="flex items-center justify-between px-8 shrink-0">
-                        <div className="flex items-center gap-3">
-                            {/* Filters button (lg and below) */}
-                            <Button
-                                onClick={() => setFilterOpen(true)}
-                                size="sm"
-                                variant="outline"
-                                className="lg:hidden flex items-center gap-2"
-                            >
-                                <SlidersHorizontal className="w-4 h-4" />
-                            </Button>
-
-                            {/* Bar/Line tabs */}
-                            <Tabs
-                                value={chartType}
-                                onValueChange={handleChartTypeChange}
-                            >
-                                <TabsList>
-                                    <TabsTrigger value="bar" className="gap-2">
-                                        <ChartColumn className="w-4 h-4" />
-                                        Bar
-                                        <Kbd>B</Kbd>
-                                    </TabsTrigger>
-                                    <TabsTrigger value="line" className="gap-2">
-                                        <LineChart className="w-4 h-4" />
-                                        Line
-                                        <Kbd>L</Kbd>
-                                    </TabsTrigger>
-                                </TabsList>
-                            </Tabs>
-                        </div>
-
-                        {/* Time range */}
-                        <div className="flex items-center">
-                            <Button
-                                type="button"
-                                variant={
-                                    timePeriod === "3y" ? "default" : "outline"
-                                }
-                                size="sm"
-                                onClick={() => setTimePeriod("3y")}
-                                className="rounded-l-md rounded-r-none border-r-0"
-                            >
-                                3y
-                            </Button>
-                            <Button
-                                type="button"
-                                variant={
-                                    timePeriod === "5y" ? "default" : "outline"
-                                }
-                                size="sm"
-                                onClick={() => setTimePeriod("5y")}
-                                className="rounded-none border-l-0 border-r-0 -ml-px"
-                            >
-                                5y
-                            </Button>
-                            <Popover
-                                open={yearRangeOpen}
-                                onOpenChange={setYearRangeOpen}
-                            >
-                                <PopoverTrigger asChild>
-                                    <Button
-                                        type="button"
-                                        variant={
-                                            timePeriod === "custom"
-                                                ? "default"
-                                                : "outline"
-                                        }
-                                        size="sm"
-                                        onClick={() => {
-                                            if (timePeriod !== "custom") {
-                                                setTimePeriod("custom");
-                                            }
-                                        }}
-                                        className="rounded-r-md rounded-l-none border-l-0 -ml-px flex items-center gap-2"
-                                    >
-                                        <CalendarDays />
-                                        {yearRange.start} - {yearRange.end}
-                                        <ChevronDown />
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-80">
-                                    <div className="space-y-4">
-                                        <h4 className="font-semibold text-sm">
-                                            Select Year Range
-                                        </h4>
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div>
-                                                <label className="text-xs text-muted-foreground mb-1 block">
-                                                    Start Year
-                                                </label>
-                                                <input
-                                                    type="text"
-                                                    inputMode="numeric"
-                                                    maxLength={4}
-                                                    value={startDraft}
-                                                    onChange={(e) => {
-                                                        const v = e.target.value
-                                                            .replace(/\D/g, "")
-                                                            .slice(0, 4);
-                                                        setStartDraft(v);
-                                                    }}
-                                                    onBlur={() => {
-                                                        if (
-                                                            !isYearInRange(
-                                                                parsedStart,
-                                                            )
-                                                        ) {
-                                                            setStartDraft(
-                                                                String(
-                                                                    yearRange.start,
-                                                                ),
-                                                            );
-                                                        }
-                                                    }}
-                                                    className={`w-full px-3 py-2 border rounded-md text-sm outline-none focus:ring-2 ${startInvalid ? "border-red-500 focus:ring-red-500/30" : "border-input focus:ring-ring/30"}`}
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="text-xs text-muted-foreground mb-1 block">
-                                                    End Year
-                                                </label>
-                                                <input
-                                                    type="text"
-                                                    inputMode="numeric"
-                                                    maxLength={4}
-                                                    value={endDraft}
-                                                    onChange={(e) => {
-                                                        const v = e.target.value
-                                                            .replace(/\D/g, "")
-                                                            .slice(0, 4);
-                                                        setEndDraft(v);
-                                                    }}
-                                                    onBlur={() => {
-                                                        if (
-                                                            !isYearInRange(
-                                                                parsedEnd,
-                                                            )
-                                                        ) {
-                                                            setEndDraft(
-                                                                String(
-                                                                    yearRange.end,
-                                                                ),
-                                                            );
-                                                        }
-                                                    }}
-                                                    className={`w-full px-3 py-2 border rounded-md text-sm outline-none focus:ring-2 ${endInvalid ? "border-red-500 focus:ring-red-500/30" : "border-input focus:ring-ring/30"}`}
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="flex gap-2 justify-end mt-2">
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() =>
-                                                setYearRangeOpen(false)
-                                            }
-                                        >
-                                            Cancel
+                                            {isExporting ? (
+                                                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                            ) : (
+                                                <Share className="w-4 h-4 mr-2" />
+                                            )}
+                                            Export to PDF
                                         </Button>
                                         <Button
+                                            variant="ghost"
                                             size="sm"
-                                            disabled={rangeInvalid}
+                                            className="justify-start"
                                             onClick={() => {
-                                                updateYearRange(
-                                                    parsedStart,
-                                                    parsedEnd,
-                                                    { notifyIfSwapped: true },
-                                                );
-                                                setTimePeriod("custom");
-                                                setYearRangeOpen(false);
+                                                if (chartInCart) {
+                                                    removeByName(filterName);
+                                                } else {
+                                                    addChartItem(
+                                                        filterName,
+                                                        {
+                                                            chartType:
+                                                                chartType as
+                                                                    | "bar"
+                                                                    | "line",
+                                                            filters,
+                                                            yearStart:
+                                                                yearRange.start,
+                                                            yearEnd:
+                                                                yearRange.end,
+                                                        },
+                                                        filterDetails,
+                                                    );
+                                                }
                                             }}
                                         >
-                                            Apply
+                                            {chartInCart ? (
+                                                <>
+                                                    <CheckCircle2 className="w-4 h-4 mr-2" />
+                                                    Remove from cart
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <PlusCircle className="w-4 h-4 mr-2" />
+                                                    Add to cart
+                                                </>
+                                            )}
                                         </Button>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="justify-start relative"
+                                            onClick={() => setCartOpen(true)}
+                                        >
+                                            <ShoppingBasket className="w-4 h-4 mr-2" />
+                                            View cart
+                                            <CartIndicator
+                                                count={items.length}
+                                                className="ml-auto inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground"
+                                            />
+                                        </Button>
+                                        <AnimatedToggleButton
+                                            variant="ghost"
+                                            size="sm"
+                                            className="justify-start"
+                                            onClick={copyURLtoClipboard}
+                                            defaultContent={
+                                                <>
+                                                    <Link className="w-4 h-4 mr-2" />
+                                                    Copy link
+                                                </>
+                                            }
+                                            activeContent={
+                                                <>
+                                                    <Check className="w-4 h-4 mr-2" />
+                                                    Copy link
+                                                </>
+                                            }
+                                        />
                                     </div>
                                 </PopoverContent>
                             </Popover>
+
+                            <Sheet open={cartOpen} onOpenChange={setCartOpen}>
+                                <SheetContent>
+                                    <SheetHeader>
+                                        <SheetTitle>Cart</SheetTitle>
+                                    </SheetHeader>
+                                    <Cart />
+                                </SheetContent>
+                            </Sheet>
                         </div>
-                    </div>
 
-                    {/* Chart Area */}
-                    <div className="relative flex-1 overflow-hidden">
-                        {projectDataError ? (
-                            <LoadError
-                                message={projectDataError}
-                                onRetry={fetchProjects}
-                                className="h-full"
-                            />
-                        ) : (
-                            <>
-                                {/* Loading overlay */}
-                                {!isLoaded && (
-                                    <div className="absolute inset-0 z-50 flex items-center justify-center bg-white backdrop-blur-sm">
-                                        <Loader2 className="h-12 w-12 animate-spin text-slate-800" />
-                                    </div>
-                                )}
+                        {/* Controls row */}
+                        <div className="flex items-center justify-between px-8 shrink-0">
+                            <div className="flex items-center gap-3">
+                                {/* Filters button (lg and below) */}
+                                <Button
+                                    onClick={() => setFilterOpen(true)}
+                                    size="sm"
+                                    variant="outline"
+                                    className="lg:hidden flex items-center gap-2"
+                                >
+                                    <SlidersHorizontal className="w-4 h-4" />
+                                </Button>
 
-                                {Math.round(filteredProjectCount) !== 0 ? (
-                                    <div
-                                        ref={chartRef}
-                                        className="h-full w-full"
-                                    >
-                                        <AnimatePresence initial={false}>
-                                            <motion.div
-                                                key={chartType}
-                                                className="flex h-full w-full items-center justify-center px-8 bg-background overflow-auto"
-                                                initial={{
-                                                    opacity: 0,
-                                                    x:
-                                                        slideDirection.current *
-                                                        -50,
-                                                }}
-                                                animate={{ opacity: 1, x: 0 }}
-                                                exit={{
-                                                    opacity: 0,
-                                                    x:
-                                                        slideDirection.current *
-                                                        -50,
-                                                    position: "absolute",
-                                                    inset: 0,
-                                                }}
-                                                transition={{
-                                                    duration: 0.15,
-                                                    ease: "easeInOut",
-                                                }}
-                                            >
-                                                {chartType === "bar" ? (
-                                                    <BarGraph
-                                                        dataset={graphDataset}
-                                                        yAxisLabel={
-                                                            measuredAsLabels[
-                                                                filters
-                                                                    .measuredAs
-                                                            ]
+                                {/* Bar/Line tabs */}
+                                <Tabs
+                                    value={chartType}
+                                    onValueChange={handleChartTypeChange}
+                                >
+                                    <TabsList>
+                                        <TabsTrigger
+                                            value="bar"
+                                            className="gap-2"
+                                        >
+                                            <ChartColumn className="w-4 h-4" />
+                                            Bar
+                                            <Kbd>B</Kbd>
+                                        </TabsTrigger>
+                                        <TabsTrigger
+                                            value="line"
+                                            className="gap-2"
+                                        >
+                                            <LineChart className="w-4 h-4" />
+                                            Line
+                                            <Kbd>L</Kbd>
+                                        </TabsTrigger>
+                                    </TabsList>
+                                </Tabs>
+                            </div>
+
+                            {/* Time range */}
+                            <div className="flex items-center">
+                                <Button
+                                    type="button"
+                                    variant={
+                                        timePeriod === "3y"
+                                            ? "default"
+                                            : "outline"
+                                    }
+                                    size="sm"
+                                    onClick={() => setTimePeriod("3y")}
+                                    className="rounded-l-md rounded-r-none border-r-0"
+                                >
+                                    3y
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant={
+                                        timePeriod === "5y"
+                                            ? "default"
+                                            : "outline"
+                                    }
+                                    size="sm"
+                                    onClick={() => setTimePeriod("5y")}
+                                    className="rounded-none border-l-0 border-r-0 -ml-px"
+                                >
+                                    5y
+                                </Button>
+                                <Popover
+                                    open={yearRangeOpen}
+                                    onOpenChange={setYearRangeOpen}
+                                >
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            type="button"
+                                            variant={
+                                                timePeriod === "custom"
+                                                    ? "default"
+                                                    : "outline"
+                                            }
+                                            size="sm"
+                                            onClick={() => {
+                                                if (timePeriod !== "custom") {
+                                                    setTimePeriod("custom");
+                                                }
+                                            }}
+                                            className="rounded-r-md rounded-l-none border-l-0 -ml-px flex items-center gap-2"
+                                        >
+                                            <CalendarDays />
+                                            {yearRange.start} - {yearRange.end}
+                                            <ChevronDown />
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-80">
+                                        <div className="space-y-4">
+                                            <h4 className="font-semibold text-sm">
+                                                Select Year Range
+                                            </h4>
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div>
+                                                    <label className="text-xs text-muted-foreground mb-1 block">
+                                                        Start Year
+                                                    </label>
+                                                    <input
+                                                        type="number"
+                                                        value={
+                                                            tempYearRange.start
                                                         }
-                                                        xAxisLabel="Year"
-                                                        legendTitle={
-                                                            filters.groupBy ===
-                                                            "none"
-                                                                ? undefined
-                                                                : groupByLabels[
-                                                                      filters
-                                                                          .groupBy
-                                                                  ]
+                                                        onChange={(e) =>
+                                                            setTempYearRange({
+                                                                ...tempYearRange,
+                                                                start:
+                                                                    parseInt(
+                                                                        e.target
+                                                                            .value,
+                                                                    ) || 2020,
+                                                            })
                                                         }
-                                                        tooltipFormatter={
-                                                            tooltipFormatter
-                                                        }
+                                                        className="w-full px-3 py-2 border border-input rounded-md text-sm"
+                                                        min="2000"
+                                                        max={tempYearRange.end}
                                                     />
-                                                ) : (
-                                                    <LineGraph
-                                                        datasets={graphDataset}
-                                                        yAxisLabel={
-                                                            measuredAsLabels[
-                                                                filters
-                                                                    .measuredAs
-                                                            ]
+                                                </div>
+                                                <div>
+                                                    <label className="text-xs text-muted-foreground mb-1 block">
+                                                        End Year
+                                                    </label>
+                                                    <input
+                                                        type="number"
+                                                        value={
+                                                            tempYearRange.end
                                                         }
-                                                        xAxisLabel="Year"
-                                                        legendTitle={
-                                                            filters.groupBy ===
-                                                            "none"
-                                                                ? undefined
-                                                                : groupByLabels[
-                                                                      filters
-                                                                          .groupBy
-                                                                  ]
+                                                        onChange={(e) =>
+                                                            setTempYearRange({
+                                                                ...tempYearRange,
+                                                                end:
+                                                                    parseInt(
+                                                                        e.target
+                                                                            .value,
+                                                                    ) || 2025,
+                                                            })
                                                         }
-                                                        tooltipFormatter={
-                                                            tooltipFormatter
+                                                        className="w-full px-3 py-2 border border-input rounded-md text-sm"
+                                                        min={
+                                                            tempYearRange.start
                                                         }
+                                                        max="2100"
                                                     />
-                                                )}
-                                            </motion.div>
-                                        </AnimatePresence>
-                                    </div>
-                                ) : (
-                                    /*  No data found */
-                                    <div className="flex h-full w-full items-center justify-center px-8 bg-background">
-                                        {isLoaded ? "No Data Found" : ""}
-                                    </div>
-                                )}
-                            </>
-                        )}
-                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="flex gap-2 justify-end">
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() =>
+                                                        setYearRangeOpen(false)
+                                                    }
+                                                >
+                                                    Cancel
+                                                </Button>
+                                                <Button
+                                                    size="sm"
+                                                    onClick={() => {
+                                                        updateYearRange(
+                                                            tempYearRange.start,
+                                                            tempYearRange.end,
+                                                            {
+                                                                notifyIfSwapped: true,
+                                                            },
+                                                        );
+                                                        setTimePeriod("custom");
+                                                        setYearRangeOpen(false);
+                                                    }}
+                                                >
+                                                    Apply
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
+                        </div>
 
-                    <div className="px-8 overflow-x-auto max-h-64 overflow-y-auto border-border">
-                        <DataTable data={rows} columns={cols} />
-                    </div>
+                        {/* Chart Area */}
+                        <div className="relative flex-1 overflow-hidden">
+                            {projectDataError ? (
+                                <LoadError
+                                    message={projectDataError}
+                                    onRetry={fetchProjects}
+                                    className="h-full"
+                                />
+                            ) : (
+                                <>
+                                    {/* Loading overlay */}
+                                    {!isLoaded && (
+                                        <div className="absolute inset-0 z-50 flex items-center justify-center bg-white backdrop-blur-sm">
+                                            <Loader2 className="h-12 w-12 animate-spin text-slate-800" />
+                                        </div>
+                                    )}
 
-                    {/* Footer */}
-                    <div className="flex flex-col justify-center items-end gap-3 px-8 pb-4 text-xs text-foreground shrink-0">
-                        {isLoaded && (
+                                    {Math.round(filteredProjectCount) !== 0 ? (
+                                        <div
+                                            ref={chartRef}
+                                            className="h-full w-full"
+                                        >
+                                            <AnimatePresence initial={false}>
+                                                <motion.div
+                                                    key={chartType}
+                                                    className="flex h-full w-full items-center justify-center px-8 bg-background overflow-auto"
+                                                    initial={{
+                                                        opacity: 0,
+                                                        x:
+                                                            slideDirection.current *
+                                                            -50,
+                                                    }}
+                                                    animate={{
+                                                        opacity: 1,
+                                                        x: 0,
+                                                    }}
+                                                    exit={{
+                                                        opacity: 0,
+                                                        x:
+                                                            slideDirection.current *
+                                                            -50,
+                                                        position: "absolute",
+                                                        inset: 0,
+                                                    }}
+                                                    transition={{
+                                                        duration: 0.15,
+                                                        ease: "easeInOut",
+                                                    }}
+                                                >
+                                                    {chartType === "bar" ? (
+                                                        <BarGraph
+                                                            dataset={
+                                                                graphDataset
+                                                            }
+                                                            yAxisLabel={
+                                                                measuredAsLabels[
+                                                                    filters
+                                                                        .measuredAs
+                                                                ]
+                                                            }
+                                                            xAxisLabel="Year"
+                                                            legendTitle={
+                                                                filters.groupBy ===
+                                                                "none"
+                                                                    ? undefined
+                                                                    : groupByLabels[
+                                                                          filters
+                                                                              .groupBy
+                                                                      ]
+                                                            }
+                                                            tooltipFormatter={
+                                                                tooltipFormatter
+                                                            }
+                                                        />
+                                                    ) : (
+                                                        <LineGraph
+                                                            datasets={
+                                                                graphDataset
+                                                            }
+                                                            yAxisLabel={
+                                                                measuredAsLabels[
+                                                                    filters
+                                                                        .measuredAs
+                                                                ]
+                                                            }
+                                                            xAxisLabel="Year"
+                                                            legendTitle={
+                                                                filters.groupBy ===
+                                                                "none"
+                                                                    ? undefined
+                                                                    : groupByLabels[
+                                                                          filters
+                                                                              .groupBy
+                                                                      ]
+                                                            }
+                                                            tooltipFormatter={
+                                                                tooltipFormatter
+                                                            }
+                                                        />
+                                                    )}
+                                                </motion.div>
+                                            </AnimatePresence>
+                                        </div>
+                                    ) : (
+                                        /*  No data found */
+                                        <div className="flex h-full w-full items-center justify-center px-8 bg-background">
+                                            {isLoaded ? "No Data Found" : ""}
+                                        </div>
+                                    )}
+                                </>
+                            )}
+                        </div>
+
+                        {/* Footer */}
+                        <div className="flex flex-col items-end gap-3 px-8 pb-4 text-xs text-foreground shrink-0">
                             <p className="font-medium">
                                 <span className="font-mono bg-gray/4 border rounded-sm border-gray/2 py-1 px-2">
                                     {Math.round(filteredProjectCount)}
                                 </span>{" "}
                                 data rows total
                             </p>
-                        )}
-                        {dataLastUpdated && (
-                            <p>
-                                <span className="font-mono bg-gray/4 border rounded-sm border-gray/2 py-1 px-2">
-                                    {dataLastUpdated.toLocaleDateString(
-                                        "en-US",
-                                        {
-                                            month: "2-digit",
-                                            day: "2-digit",
-                                            year: "numeric",
-                                        },
-                                    )}
-                                </span>{" "}
-                                data last updated
-                            </p>
-                        )}
+                            {dataLastUpdated && (
+                                <p>
+                                    <span className="font-mono bg-gray/4 border rounded-sm border-gray/2 py-1 px-2">
+                                        {dataLastUpdated.toLocaleDateString(
+                                            "en-US",
+                                            {
+                                                month: "2-digit",
+                                                day: "2-digit",
+                                                year: "numeric",
+                                            },
+                                        )}
+                                    </span>{" "}
+                                    data last updated
+                                </p>
+                            )}
+                            <button
+                                onClick={() => setDataLineageOpen((v) => !v)}
+                                className="font-medium hover:underline cursor-pointer"
+                            >
+                                Where does this data come from?
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+
+            <DataLineagePopup
+                open={dataLineageOpen}
+                onOpenChange={setDataLineageOpen}
+                filters={filters}
+                yearRange={yearRange}
+                allProjects={allProjects}
+            />
+        </>
     );
 }

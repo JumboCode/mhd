@@ -46,6 +46,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import MergeSchoolDialog from "@/components/MergeSchoolDialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { type MeasuredAs } from "@/components/GraphFilters/GraphFilters";
 
 // interface such that data can be blank if API is loading
 type SchoolData = {
@@ -270,25 +271,10 @@ export default function SchoolProfilePage() {
         data: graphSeries,
     };
 
-    const measuredAsForMetric =
-        graphMetric === "competing-students"
-            ? "total-competing-student-count"
-            : graphMetric === "participating-students"
-              ? "total-participating-student-count"
-              : graphMetric === "projects"
-                ? "total-project-count"
-                : "total-teacher-count";
-
-    const trendChartHref =
-        year !== null && schoolData
-            ? `/chart?type=line&startYear=${year - 5}&endYear=${year}&measuredAs=${measuredAsForMetric}&schools=${encodeURIComponent(schoolData.name)}`
-            : schoolData
-              ? `/chart?measuredAs=${measuredAsForMetric}&type=line&schools=${encodeURIComponent(schoolData.name)}`
-              : "#";
-    const projectsChartHref = `/chart?measuredAs=total-project-count&type=line&schools=${encodeURIComponent(schoolData?.name ?? "")}`;
-    const teachersChartHref = `/chart?measuredAs=total-teacher-count&type=line&schools=${encodeURIComponent(schoolData?.name ?? "")}`;
-    const competingStudentsChartHref = `/chart?measuredAs=total-competing-student-count&type=line&schools=${encodeURIComponent(schoolData?.name ?? "")}`;
-    const participatingStudentsChartHref = `/chart?measuredAs=total-participating-student-count&type=line&schools=${encodeURIComponent(schoolData?.name ?? "")}`;
+    const chartHref = (measuredAs: MeasuredAs) =>
+        year !== null
+            ? `/chart?type=line&startYear=${year - 5}&endYear=${year}&measuredAs=${measuredAs}&schools=${encodeURIComponent(schoolData?.name ?? "")}`
+            : "#";
 
     // Calculate sparkline data arrays from allYearsData
     const projectsSparkline = allYearsData.map((d) =>
@@ -463,7 +449,7 @@ export default function SchoolProfilePage() {
                         percentChange={projectsPercentChange}
                         showTrend={true}
                         variant="with-aspect"
-                        href={projectsChartHref}
+                        href={chartHref("total-project-count")}
                     />
                     <StatCard
                         label={ENTITY_CONFIG.teachers.label}
@@ -476,7 +462,7 @@ export default function SchoolProfilePage() {
                         percentChange={teachersPercentChange}
                         showTrend={true}
                         variant="with-aspect"
-                        href={teachersChartHref}
+                        href={chartHref("total-teacher-count")}
                     />
                     <StatCard
                         label="Total # Competing"
@@ -493,7 +479,7 @@ export default function SchoolProfilePage() {
                         percentChange={competingStudentsPercentChange}
                         showTrend={true}
                         variant="with-aspect"
-                        href={competingStudentsChartHref}
+                        href={chartHref("total-competing-student-count")}
                     />
                     <StatCard
                         label="Total # Participating"
@@ -510,7 +496,7 @@ export default function SchoolProfilePage() {
                         percentChange={participatingStudentsPercentChange}
                         showTrend={true}
                         variant="with-aspect"
-                        href={participatingStudentsChartHref}
+                        href={chartHref("total-participating-student-count")}
                     />
                 </div>
 
@@ -587,7 +573,15 @@ export default function SchoolProfilePage() {
                     </div>
 
                     <Link
-                        href={trendChartHref}
+                        href={chartHref(
+                            graphMetric === "competing-students"
+                                ? "total-competing-student-count"
+                                : graphMetric === "participating-students"
+                                  ? "total-participating-student-count"
+                                  : graphMetric === "projects"
+                                    ? "total-project-count"
+                                    : "total-teacher-count",
+                        )}
                         className="block -mx-2 px-2 rounded-md hover:bg-muted/40 transition-colors"
                     >
                         <MultiLineGraph
