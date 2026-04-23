@@ -35,6 +35,12 @@ import {
 
 const VALID_METRICS = ["competing", "participating", "projects", "teachers"];
 
+function metricLabel(m: string): string {
+    if (m === "Competing") return "Competing Students";
+    if (m === "Participating") return "Participating Students";
+    return m;
+}
+
 import "maplibre-gl/dist/maplibre-gl.css";
 
 import YearDropdown from "@/components/YearDropdown";
@@ -178,8 +184,17 @@ function HeatMapPage() {
             : "projects",
     );
 
-    /** Wrapper so CountDropdown can set lowercase metric in URL */
-    const setMetric = (value: string) => setRawMetric(value.toLowerCase());
+    /** Wrapper so CountDropdown can set lowercase metric in URL.
+     *  The dropdown passes display labels, so we reverse-map before storing. */
+    const setMetric = (displayValue: string) => {
+        const key =
+            displayValue === "Competing Students"
+                ? "competing"
+                : displayValue === "Participating Students"
+                  ? "participating"
+                  : displayValue.toLowerCase();
+        setRawMetric(key);
+    };
 
     // Reference to the map, needed for updating the heat layer
     const mapRef = useRef<import("maplibre-gl").Map | null>(null);
@@ -291,14 +306,14 @@ function HeatMapPage() {
     const { items, addMapItem, hasItem, removeByName } = useCart();
 
     const filterName = year
-        ? `Heatmap \u2013 ${metric}${onlyGatewaySchools ? " for Schools Representing Gateway Cities" : ""} in ${regionView === "default" ? "MA" : capitalize(regionView) + " Region"} (${year})`
-        : `Heatmap \u2013 ${metric}${onlyGatewaySchools ? " for Schools Representing Gateway Cities" : ""} in ${regionView === "default" ? "MA" : capitalize(regionView) + " Region"}`;
+        ? `Heatmap \u2013 ${metricLabel(metric)}${onlyGatewaySchools ? " for Schools Representing Gateway Cities" : ""} in ${regionView === "default" ? "MA" : capitalize(regionView) + " Region"} (${year})`
+        : `Heatmap \u2013 ${metricLabel(metric)}${onlyGatewaySchools ? " for Schools Representing Gateway Cities" : ""} in ${regionView === "default" ? "MA" : capitalize(regionView) + " Region"}`;
 
     const mapInCart = hasItem(filterName);
 
     const currentFilterDetails = useMemo<FilterDetail[]>(
         () => [
-            { label: "Metric", values: [metric] },
+            { label: "Metric", values: [metricLabel(metric)] },
             { label: "Year", values: [year ? String(year) : "All Years"] },
             {
                 label: "Region",
@@ -595,9 +610,11 @@ function HeatMapPage() {
                         Counts
                     </label>
                     <CountDropdown
-                        selectedCount={metric}
+                        selectedCount={metricLabel(metric)}
                         onCountChange={setMetric}
-                        options={VALID_METRICS.map(capitalize)}
+                        options={VALID_METRICS.map((m) =>
+                            metricLabel(capitalize(m)),
+                        )}
                     />
                 </div>
                 <div className="flex flex-col gap-1.5 w-48">
