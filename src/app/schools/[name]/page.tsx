@@ -272,9 +272,11 @@ export default function SchoolProfilePage() {
     };
 
     const chartHref = (measuredAs: MeasuredAs) =>
-        year !== null
-            ? `/chart?type=line&startYear=${year - 5}&endYear=${year}&measuredAs=${measuredAs}&schools=${encodeURIComponent(schoolData?.name ?? "")}`
-            : "#";
+        year !== null && schoolData
+            ? `/chart?type=line&startYear=${year - 5}&endYear=${year}&measuredAs=${measuredAs}&schools=${encodeURIComponent(schoolData.name)}`
+            : schoolData
+              ? `/chart?measuredAs=${measuredAs}&type=line&schools=${encodeURIComponent(schoolData.name)}`
+              : "#";
 
     // Calculate sparkline data arrays from allYearsData
     const projectsSparkline = allYearsData.map((d) =>

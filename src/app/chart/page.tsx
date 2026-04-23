@@ -70,6 +70,7 @@ import { CartIndicator } from "@/components/ui/cart-indicator";
 import { Kbd } from "@/components/ui/kbd";
 import { useHotkey } from "@/hooks/useHotkey";
 import { computeChartDatasets } from "@/lib/chart-data-pipeline";
+import { isYearInRange } from "@/lib/year-validation";
 import {
     generateChartTitle,
     measuredAsLabels,
@@ -590,6 +591,11 @@ export default function ChartPage() {
         allProjects.map((p) => p.schoolImplementationModel),
     );
 
+    const rangeInvalid =
+        !isYearInRange(tempYearRange.start) ||
+        !isYearInRange(tempYearRange.end) ||
+        tempYearRange.start > tempYearRange.end;
+
     return (
         <>
             <div className="w-full min-h-screen flex bg-background">
@@ -686,6 +692,21 @@ export default function ChartPage() {
                             setTeacherYearsValue2(
                                 newFilters.teacherYearsValue2 ?? "",
                             );
+                            if (teacherYearsValue2 !== undefined) {
+                                const min = parseInt(
+                                    newFilters.teacherYearsValue,
+                                    10,
+                                );
+                                const max = parseInt(
+                                    newFilters.teacherYearsValue2 ?? "",
+                                    10,
+                                );
+                                if (max <= min) {
+                                    setTeacherYearsValue2(
+                                        newFilters.teacherYearsValue,
+                                    );
+                                }
+                            }
                             setOnlyGatewaySchools(
                                 newFilters.onlyGatewaySchools,
                             );
@@ -1176,6 +1197,7 @@ export default function ChartPage() {
                                                 </Button>
                                                 <Button
                                                     size="sm"
+                                                    disabled={rangeInvalid}
                                                     onClick={() => {
                                                         updateYearRange(
                                                             tempYearRange.start,
@@ -1317,12 +1339,14 @@ export default function ChartPage() {
 
                         {/* Footer */}
                         <div className="flex flex-col items-end gap-3 px-8 pb-4 text-xs text-foreground shrink-0">
-                            <p className="font-medium">
-                                <span className="font-mono bg-gray/4 border rounded-sm border-gray/2 py-1 px-2">
-                                    {Math.round(filteredProjectCount)}
-                                </span>{" "}
-                                data rows total
-                            </p>
+                            {isLoaded && (
+                                <p className="font-medium">
+                                    <span className="font-mono bg-gray/4 border rounded-sm border-gray/2 py-1 px-2">
+                                        {Math.round(filteredProjectCount)}
+                                    </span>{" "}
+                                    data rows total
+                                </p>
+                            )}
                             {dataLastUpdated && (
                                 <p>
                                     <span className="font-mono bg-gray/4 border rounded-sm border-gray/2 py-1 px-2">
