@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import { createRoot } from "react-dom/client";
 import html2canvas from "html2canvas-pro";
 import BarGraph from "@/components/charts/BarGraph";
@@ -45,6 +44,15 @@ export async function renderChartToDataUrl(
     }
 
     await new Promise((resolve) => setTimeout(resolve, 100));
+
+    // Measure actual visual bottom (absolute children overflow the chart root div)
+    const containerTop = container.getBoundingClientRect().top;
+    let maxBottom = container.offsetHeight;
+    container.querySelectorAll("*").forEach((el) => {
+        const bottom = el.getBoundingClientRect().bottom - containerTop;
+        if (bottom > maxBottom) maxBottom = bottom;
+    });
+    container.style.height = `${maxBottom + 20}px`;
 
     const canvas = await html2canvas(container, {
         backgroundColor: "#fff",

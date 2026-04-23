@@ -69,7 +69,6 @@ import { Cart } from "@/components/Cart";
 import { CartIndicator } from "@/components/ui/cart-indicator";
 import { Kbd } from "@/components/ui/kbd";
 import { useHotkey } from "@/hooks/useHotkey";
-import { isYearInRange } from "@/lib/year-validation";
 import { computeChartDatasets } from "@/lib/chart-data-pipeline";
 import {
     generateChartTitle,
@@ -135,9 +134,6 @@ export default function ChartPage() {
     } = useChartFilters();
 
     const { items, addChartItem, hasItem, removeByName } = useCart();
-
-    const [startDraft, setStartDraft] = useState(String(yearRange.start));
-    const [endDraft, setEndDraft] = useState(String(yearRange.end));
     const [tempYearRange, setTempYearRange] = useState({
         start: yearRange.start,
         end: yearRange.end,
@@ -310,14 +306,6 @@ export default function ChartPage() {
         },
         { meta: true },
     );
-
-    // Sync drafts with yearRange only when popover opens in custom mode
-    useEffect(() => {
-        if (yearRangeOpen && timePeriod === "custom") {
-            setStartDraft(String(yearRange.start));
-            setEndDraft(String(yearRange.end));
-        }
-    }, [yearRangeOpen, timePeriod, yearRange]);
 
     // Sync tempYearRange with yearRange when the popover opens
     useEffect(() => {
@@ -601,12 +589,6 @@ export default function ChartPage() {
     const implementationTypes = withUnassigned(
         allProjects.map((p) => p.schoolImplementationModel),
     );
-    const parsedStart = parseInt(startDraft, 10);
-    const parsedEnd = parseInt(endDraft, 10);
-    const startInvalid = startDraft.length === 4 && !isYearInRange(parsedStart);
-    const endInvalid = endDraft.length === 4 && !isYearInRange(parsedEnd);
-    const rangeInvalid =
-        !isYearInRange(parsedStart) || !isYearInRange(parsedEnd);
 
     return (
         <>
@@ -1216,7 +1198,7 @@ export default function ChartPage() {
                         </div>
 
                         {/* Chart Area */}
-                        <div className="relative flex-1 overflow-hidden">
+                        <div className="relative flex-1 mb-4">
                             {projectDataError ? (
                                 <LoadError
                                     message={projectDataError}
@@ -1240,7 +1222,7 @@ export default function ChartPage() {
                                             <AnimatePresence initial={false}>
                                                 <motion.div
                                                     key={chartType}
-                                                    className="flex h-full w-full items-center justify-center px-8 bg-background overflow-auto"
+                                                    className="flex h-full w-full items-center justify-center px-8 bg-background"
                                                     initial={{
                                                         opacity: 0,
                                                         x:
