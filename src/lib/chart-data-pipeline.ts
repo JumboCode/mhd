@@ -6,9 +6,7 @@
  *           Date: 4/19/2026
  *
  *        Summary: Pure functions for filtering and aggregating
- *                 project data into chart datasets. No React,
- *                 no side effects. Single source of truth for
- *                 all chart metric calculations.
+ *                 project data into chart datasets.
  *
  **************************************************************/
 

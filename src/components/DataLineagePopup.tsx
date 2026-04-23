@@ -362,7 +362,6 @@ function buildLineageSections(
                     (p) => p.year === year,
                 );
 
-                // Use Set.has() to match computeMetric exactly (avoids O(n²) .some())
                 const schoolsBefore = new Set(
                     prevYearProjs.map((p) => p.schoolId),
                 );
