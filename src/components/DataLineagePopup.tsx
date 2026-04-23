@@ -131,6 +131,30 @@ const DATA_ORIGIN_STEPS: Record<MeasuredAs, DataLineageItem[]> = {
                 "Every row is stored as a project record with title, category, year, school, and teacher references.",
         },
     ],
+    "total-participating-student-count": [
+        {
+            title: 'CSV "numStudents" field',
+            description:
+                "Each project row in the CSV declares how many students worked on it.",
+        },
+        {
+            title: "Projects table stores numStudents",
+            description:
+                "The student count is stored directly on the project record and summed at query time.",
+        },
+    ],
+    "total-competing-student-count": [
+        {
+            title: 'School info spreadsheet "# students who began project at the school level"',
+            description:
+                "Uploaded separately via the school info spreadsheet. Defaults to sum of numStudents if not provided.",
+        },
+        {
+            title: "yearlySchoolParticipation.competingStudents",
+            description:
+                "Stored on the yearly school participation record and summed across schools per year.",
+        },
+    ],
     "total-school-count": [
         {
             title: 'CSV "schoolName" field',
@@ -218,6 +242,9 @@ const COUNT_STEP_TITLE: Record<MeasuredAs, string> = {
     "total-school-count": "COUNT(DISTINCT schoolId) per year",
     "total-teacher-count": "COUNT(DISTINCT teacherId) per year",
     "total-student-count": "SUM(numStudents) per year",
+    "total-participating-student-count": "SUM(numStudents) per year",
+    "total-competing-student-count":
+        "SUM(competingStudents) per school per year",
     "total-city-count": "COUNT(DISTINCT schoolTown) per year",
     "school-return-rate": "returningSchools / totalSchools per year",
 };
@@ -231,6 +258,10 @@ const COUNT_STEP_DESCRIPTION: Record<MeasuredAs, string> = {
         "Distinct teachers with at least one project that year, before filters.",
     "total-student-count":
         "Sum of numStudents across all projects that year, before filters.",
+    "total-participating-student-count":
+        "Sum of numStudents across all projects that year, before filters.",
+    "total-competing-student-count":
+        "Sum of competingStudents from yearlySchoolParticipation records that year, before filters.",
     "total-city-count":
         "Distinct school towns with at least one project that year, before filters.",
     "school-return-rate":
@@ -242,6 +273,8 @@ const METRIC_UNIT_LABEL: Record<MeasuredAs, string> = {
     "total-school-count": "Schools",
     "total-teacher-count": "Teachers",
     "total-student-count": "Students",
+    "total-participating-student-count": "Participating Students",
+    "total-competing-student-count": "Competing Students",
     "total-city-count": "Cities",
     "school-return-rate": "Return Rate",
 };
