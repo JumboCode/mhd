@@ -11,7 +11,7 @@
  **************************************************************/
 
 import { NextRequest, NextResponse } from "next/server";
-import { eq, and, sum, sql } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
     schools,
@@ -22,13 +22,9 @@ import {
     yearMetadata,
 } from "@/lib/schema";
 import { standardize, toTitleCase } from "@/lib/string-standardize";
-import {
-    studentRequiredColumns,
-    schoolRequiredColumns,
-} from "@/lib/required-spreadsheet-columns";
+import { studentRequiredColumns } from "@/lib/required-spreadsheet-columns";
 import { findRegionOf } from "@/lib/region-finder";
 import { yearSchema, MIN_YEAR, MAX_YEAR } from "@/lib/year-validation";
-import { internalError } from "@/lib/api-utils";
 
 type RowData = Array<string | number | boolean | null>;
 
@@ -44,12 +40,10 @@ let currentProgress = {
 };
 
 type SchoolInfoEntry = {
-    /** A school may participate in multiple divisions. */
     division: string[];
     implementationModel: string;
     schoolType: string;
-    /** Null means the cell was empty so fall back to sum of project numStudents. */
-    competingStudents: number | null;
+    competingStudents: number;
 };
 
 /**
@@ -95,9 +89,12 @@ function buildSchoolInfoMap(rawData: RowData[]): Map<string, SchoolInfoEntry> {
     const schoolTypeIdx =
         headerMap.get(normalize("schoolType")) ??
         headerMap.get(normalize("School Type"));
-    const competingStudentsIdx = headerMap.get(
-        normalize("# students who began project at the school level"),
-    );
+    const competingStudentsIdx =
+        headerMap.get(
+            normalize("# students who began project at the school level"),
+        ) ??
+        headerMap.get(normalize("competingStudents")) ??
+        headerMap.get(normalize("competing students"));
 
     if (schoolIdIdx === undefined) return map;
 
@@ -120,17 +117,10 @@ function buildSchoolInfoMap(rawData: RowData[]): Map<string, SchoolInfoEntry> {
             schoolTypeIdx !== undefined
                 ? normalizeSlashes(String(row[schoolTypeIdx] ?? ""))
                 : "";
-
-        const rawCompeting =
-            competingStudentsIdx !== undefined
-                ? row[competingStudentsIdx]
-                : null;
         const competingStudents =
-            rawCompeting !== null &&
-            rawCompeting !== undefined &&
-            rawCompeting !== ""
-                ? Number(rawCompeting)
-                : null;
+            competingStudentsIdx !== undefined
+                ? Number(row[competingStudentsIdx] ?? 0) || 0
+                : 0;
 
         const existing = map.get(schoolId);
         if (existing) {
@@ -139,6 +129,10 @@ function buildSchoolInfoMap(rawData: RowData[]): Map<string, SchoolInfoEntry> {
                 if (!existing.division.includes(div)) {
                     existing.division.push(div);
                 }
+            }
+            // Take the first non-zero competingStudents value
+            if (existing.competingStudents === 0 && competingStudents > 0) {
+                existing.competingStudents = competingStudents;
             }
         } else {
             map.set(schoolId, {
@@ -153,6 +147,14 @@ function buildSchoolInfoMap(rawData: RowData[]): Map<string, SchoolInfoEntry> {
     return map;
 }
 
+function chunkArray<T>(arr: T[], size: number): T[][] {
+    const chunks: T[][] = [];
+    for (let i = 0; i < arr.length; i += size) {
+        chunks.push(arr.slice(i, i + size));
+    }
+    return chunks;
+}
+
 export async function POST(req: NextRequest) {
     currentProgress = { progress: 0, complete: false };
     try {
@@ -161,7 +163,7 @@ export async function POST(req: NextRequest) {
         if (!yearResult.success) {
             return NextResponse.json(
                 {
-                    error: `Year must be between ${MIN_YEAR} and ${MAX_YEAR}.`,
+                    message: `Year must be between ${MIN_YEAR} and ${MAX_YEAR}.`,
                 },
                 { status: 400 },
             );
@@ -171,33 +173,11 @@ export async function POST(req: NextRequest) {
         const schoolCoordinates: SchoolCoordinateData[] =
             jsonReq.schoolCoordinates || [];
 
-        if (!jsonReq.schoolInfoData) {
-            return NextResponse.json(
-                { error: "School info spreadsheet is required." },
-                { status: 400 },
-            );
-        }
+        const schoolInfoMap: Map<string, SchoolInfoEntry> =
+            jsonReq.schoolInfoData
+                ? buildSchoolInfoMap(JSON.parse(jsonReq.schoolInfoData))
+                : new Map();
 
-        const schoolInfoRaw: RowData[] = JSON.parse(jsonReq.schoolInfoData);
-        const normalizeCol = (s: string) => s.toLowerCase().replace(/\s+/g, "");
-        const schoolInfoHeaders = (schoolInfoRaw[0] as string[]).map(
-            normalizeCol,
-        );
-        const missingSchoolInfoColumns = schoolRequiredColumns.filter(
-            (col) => !schoolInfoHeaders.includes(normalizeCol(col)),
-        );
-        if (missingSchoolInfoColumns.length > 0) {
-            return NextResponse.json(
-                {
-                    error: `School info spreadsheet missing required columns: ${missingSchoolInfoColumns.join(", ")}`,
-                },
-                { status: 400 },
-            );
-        }
-
-        const schoolInfoMap = buildSchoolInfoMap(schoolInfoRaw);
-
-        // Build coordinates lookup
         const coordsMap = new Map<
             string,
             { lat: number | null; long: number | null }
@@ -208,12 +188,11 @@ export async function POST(req: NextRequest) {
 
         if (rawData.length === 0) {
             return NextResponse.json(
-                { error: "No data provided" },
+                { message: "No data provided" },
                 { status: 400 },
             );
         }
 
-        // Get header row and normalize column names for lookup
         const headers = rawData[0] as string[];
         const normalizeColumnName = (name: string): string =>
             name.toLowerCase().replace(/\s+/g, "");
@@ -226,7 +205,6 @@ export async function POST(req: NextRequest) {
         const getColumnIndex = (columnName: string): number | undefined =>
             headerMap.get(normalizeColumnName(columnName));
 
-        // Build column indices dynamically from student required columns
         const COLUMN_INDICES: Record<string, number> = {};
         studentRequiredColumns.forEach((col) => {
             const index = getColumnIndex(col);
@@ -242,255 +220,275 @@ export async function POST(req: NextRequest) {
         if (missingColumns.length > 0) {
             return NextResponse.json(
                 {
-                    error: `Missing required columns: ${missingColumns.join(", ")}`,
+                    message: `Missing required columns: ${missingColumns.join(", ")}`,
                 },
                 { status: 400 },
             );
         }
 
-        // Remove header row and filter out empty rows
         const filteredRows = rawData.slice(1).filter((row) => row.length > 0);
 
-        // Delete any existing data before uploading new data
-        await db.delete(projects).where(eq(projects.year, year));
-        await db
-            .delete(yearlySchoolParticipation)
-            .where(eq(yearlySchoolParticipation.year, year));
-        await db
-            .delete(yearlyTeacherParticipation)
-            .where(eq(yearlyTeacherParticipation.year, year));
+        // Phase 1: Delete existing year data in parallel
+        await Promise.all([
+            db.delete(projects).where(eq(projects.year, year)),
+            db
+                .delete(yearlySchoolParticipation)
+                .where(eq(yearlySchoolParticipation.year, year)),
+            db
+                .delete(yearlyTeacherParticipation)
+                .where(eq(yearlyTeacherParticipation.year, year)),
+        ]);
 
-        // Maps integer school PK to string schoolId for post-processing
-        const schoolIntToStrId = new Map<number, string>();
+        currentProgress.progress = 10;
 
-        const total = filteredRows.length;
-        for (let i = 0; i < filteredRows.length; i++) {
-            const row = filteredRows[i];
-            // Find or create school using schoolId
+        // Phase 2: Pre-fetch all referenced schools and teachers in bulk
+        const allSchoolIds = [
+            ...new Set(
+                filteredRows.map((r) => String(r[COLUMN_INDICES.schoolId])),
+            ),
+        ];
+        const allTeacherIds = [
+            ...new Set(
+                filteredRows.map((r) => String(r[COLUMN_INDICES.teacherId])),
+            ),
+        ];
+
+        const [existingSchoolsArr, existingTeachersArr] = await Promise.all([
+            allSchoolIds.length > 0
+                ? db
+                      .select()
+                      .from(schools)
+                      .where(inArray(schools.schoolId, allSchoolIds))
+                : Promise.resolve([]),
+            allTeacherIds.length > 0
+                ? db
+                      .select()
+                      .from(teachers)
+                      .where(inArray(teachers.teacherId, allTeacherIds))
+                : Promise.resolve([]),
+        ]);
+
+        const schoolMap = new Map(
+            existingSchoolsArr.map((s) => [s.schoolId, s]),
+        );
+        const teacherMap = new Map(
+            existingTeachersArr.map((t) => [t.teacherId, t]),
+        );
+
+        currentProgress.progress = 20;
+
+        // Phase 3: Process all rows in memory — no DB calls
+        type ProjectAccumulator = {
+            schoolIdStr: string;
+            teacherIdStr: string;
+            projectId: string;
+            title: string;
+            division: string;
+            categoryId: string;
+            category: string;
+            teamProject: boolean;
+            numStudents: number;
+        };
+
+        const newSchoolsMap = new Map<
+            string,
+            {
+                schoolId: string;
+                name: string;
+                standardizedName: string;
+                town: string;
+                latitude: number | null;
+                longitude: number | null;
+                region: string;
+            }
+        >();
+        const coordUpdateMap = new Map<number, { lat: number; long: number }>();
+        const newTeachersMap = new Map<
+            string,
+            { teacherId: string; name: string; email: string }
+        >();
+        const projectDataMap = new Map<string, ProjectAccumulator>();
+        const yearlySchoolSet = new Set<string>();
+        // Null byte separator — can't appear in spreadsheet ID values
+        const yearlyTeacherMap = new Map<
+            string,
+            { schoolIdStr: string; teacherIdStr: string }
+        >();
+
+        for (const row of filteredRows) {
             const schoolIdValue = String(row[COLUMN_INDICES.schoolId]);
-            let school = await db.query.schools.findFirst({
-                where: eq(schools.schoolId, schoolIdValue),
-            });
-
-            const schoolName = row[COLUMN_INDICES.schoolName] as string;
-            const schoolTown = toTitleCase(row[COLUMN_INDICES.city] as string);
-            schoolIntToStrId.set(school!.id, schoolIdValue);
+            const teacherIdValue = String(row[COLUMN_INDICES.teacherId]);
+            const projectIdValue = String(row[COLUMN_INDICES.projectId]);
             const schoolInfo = schoolInfoMap.get(schoolIdValue);
 
-            if (!school) {
+            // School: collect new ones or flag existing for coord update
+            if (
+                !schoolMap.has(schoolIdValue) &&
+                !newSchoolsMap.has(schoolIdValue)
+            ) {
                 const coords = coordsMap.get(schoolIdValue);
                 const region = findRegionOf(coords?.lat, coords?.long);
-
-                const [inserted] = await db
-                    .insert(schools)
-                    .values({
-                        schoolId: schoolIdValue, // or "id: schoolIdValue" if table uses "id"
-                        name: schoolName,
-                        standardizedName: standardize(schoolName),
-                        town: schoolTown,
-                        latitude: coords?.lat ?? null,
-                        longitude: coords?.long ?? null,
-                        region: region,
-                    })
-                    .returning();
-                school = inserted;
+                newSchoolsMap.set(schoolIdValue, {
+                    schoolId: schoolIdValue,
+                    name: row[COLUMN_INDICES.schoolName] as string,
+                    standardizedName: standardize(
+                        row[COLUMN_INDICES.schoolName] as string,
+                    ),
+                    town: toTitleCase(row[COLUMN_INDICES.city] as string),
+                    latitude: coords?.lat ?? null,
+                    longitude: coords?.long ?? null,
+                    region: region ?? "",
+                });
             } else {
-                // Update coordinates if missing, and always update school info fields
-                const coords = coordsMap.get(schoolIdValue);
-                const needsCoordUpdate =
-                    (!school.latitude || !school.longitude) &&
-                    coords?.lat &&
-                    coords?.long;
-
-                if (needsCoordUpdate) {
-                    const [updated] = await db
-                        .update(schools)
-                        .set({
-                            latitude: coords!.lat,
-                            longitude: coords!.long,
-                        })
-                        .where(eq(schools.id, school.id))
-                        .returning();
-                    school = updated;
+                const existing = schoolMap.get(schoolIdValue);
+                if (existing && !existing.latitude && !existing.longitude) {
+                    const coords = coordsMap.get(schoolIdValue);
+                    if (
+                        coords?.lat &&
+                        coords?.long &&
+                        !coordUpdateMap.has(existing.id)
+                    ) {
+                        coordUpdateMap.set(existing.id, {
+                            lat: coords.lat,
+                            long: coords.long,
+                        });
+                    }
                 }
             }
 
-            // Find or create teacher
-            const teacherIdValue = String(row[COLUMN_INDICES.teacherId]);
-            let teacher = await db.query.teachers.findFirst({
-                where: eq(teachers.teacherId, teacherIdValue),
-            });
-
-            if (!teacher) {
-                const [inserted] = await db
-                    .insert(teachers)
-                    .values({
-                        teacherId: teacherIdValue,
-                        name: row[COLUMN_INDICES.teacherName] as string,
-                        email: row[COLUMN_INDICES.teacherEmail] as string,
-                    })
-                    .returning();
-                teacher = inserted;
-            }
-
-            // Find or create project using projectId
-            const projectIdValue = String(row[COLUMN_INDICES.projectId]);
-            let project = await db.query.projects.findFirst({
-                where: and(
-                    eq(projects.projectId, projectIdValue),
-                    eq(projects.year, year),
-                    eq(projects.schoolId, school.id),
-                ),
-            });
-
-            if (!project) {
-                const [inserted] = await db
-                    .insert(projects)
-                    .values({
-                        schoolId: school.id,
-                        teacherId: teacher.id,
-                        projectId: projectIdValue,
-                        title: row[COLUMN_INDICES.title] as string,
-                        division: (schoolInfo?.division ?? []).join(", "),
-                        categoryId: String(row[COLUMN_INDICES.categoryId]),
-                        category: row[COLUMN_INDICES.categoryName] as string,
-                        year: year,
-                        teamProject: row[COLUMN_INDICES.teamProject] === "True",
-                        numStudents: 1,
-                    })
-                    .returning();
-                project = inserted;
-            } else {
-                // Project exists: increment student count and mark as team project
-                const [updated] = await db
-                    .update(projects)
-                    .set({
-                        numStudents: project.numStudents + 1,
-                        teamProject: true,
-                    })
-                    .where(eq(projects.id, project.id))
-                    .returning();
-                project = updated;
-            }
-
-            // Track teacher participation for this year
-            const existingYearlyTeacher =
-                await db.query.yearlyTeacherParticipation.findFirst({
-                    where: and(
-                        eq(yearlyTeacherParticipation.year, year),
-                        eq(yearlyTeacherParticipation.teacherId, teacher.id),
-                        eq(yearlyTeacherParticipation.schoolId, school.id),
-                    ),
-                });
-
-            if (!existingYearlyTeacher) {
-                await db.insert(yearlyTeacherParticipation).values({
-                    year: year,
-                    teacherId: teacher.id,
-                    schoolId: school.id,
+            // Teacher: collect new ones
+            if (
+                !teacherMap.has(teacherIdValue) &&
+                !newTeachersMap.has(teacherIdValue)
+            ) {
+                newTeachersMap.set(teacherIdValue, {
+                    teacherId: teacherIdValue,
+                    name: row[COLUMN_INDICES.teacherName] as string,
+                    email: row[COLUMN_INDICES.teacherEmail] as string,
                 });
             }
 
-            // Track school participation for this year
-            const existingYearlySchool =
-                await db.query.yearlySchoolParticipation.findFirst({
-                    where: and(
-                        eq(yearlySchoolParticipation.year, year),
-                        eq(yearlySchoolParticipation.schoolId, school.id),
-                    ),
+            // Project: accumulate student count
+            if (!projectDataMap.has(projectIdValue)) {
+                projectDataMap.set(projectIdValue, {
+                    schoolIdStr: schoolIdValue,
+                    teacherIdStr: teacherIdValue,
+                    projectId: projectIdValue,
+                    title: row[COLUMN_INDICES.title] as string,
+                    division: (schoolInfo?.division ?? []).join(", "),
+                    categoryId: String(row[COLUMN_INDICES.categoryId]),
+                    category: row[COLUMN_INDICES.categoryName] as string,
+                    teamProject: row[COLUMN_INDICES.teamProject] === "True",
+                    numStudents: 0,
                 });
-
-            if (!existingYearlySchool) {
-                await db.insert(yearlySchoolParticipation).values({
-                    year: year,
-                    schoolId: school.id,
-                    division: schoolInfo?.division ?? [],
-                    implementationModel: schoolInfo?.implementationModel ?? "",
-                    schoolType: schoolInfo?.schoolType ?? "",
-                });
-            } else if (schoolInfo) {
-                await db
-                    .update(yearlySchoolParticipation)
-                    .set({
-                        division: schoolInfo.division,
-                        implementationModel: schoolInfo.implementationModel,
-                        schoolType: schoolInfo.schoolType,
-                    })
-                    .where(
-                        eq(
-                            yearlySchoolParticipation.id,
-                            existingYearlySchool.id,
-                        ),
-                    );
             }
+            projectDataMap.get(projectIdValue)!.numStudents++;
 
-            currentProgress.progress = Math.round(((i + 1) / total) * 100);
-            currentProgress.complete = false;
+            // Yearly participations
+            yearlySchoolSet.add(schoolIdValue);
+            const ytKey = `${schoolIdValue}\x00${teacherIdValue}`;
+            if (!yearlyTeacherMap.has(ytKey)) {
+                yearlyTeacherMap.set(ytKey, {
+                    schoolIdStr: schoolIdValue,
+                    teacherIdStr: teacherIdValue,
+                });
+            }
         }
-        // Set competingStudents for every school: explicit value from school info
-        // sheet, or fall back to sum of project numStudents for that school+year.
-        const yearlySchools = await db.query.yearlySchoolParticipation.findMany(
-            {
-                where: eq(yearlySchoolParticipation.year, year),
-            },
+
+        currentProgress.progress = 40;
+
+        // Phase 4: Batch insert new schools
+        if (newSchoolsMap.size > 0) {
+            for (const chunk of chunkArray([...newSchoolsMap.values()], 500)) {
+                const inserted = await db
+                    .insert(schools)
+                    .values(chunk)
+                    .returning();
+                for (const s of inserted) schoolMap.set(s.schoolId, s);
+            }
+        }
+
+        // Update coordinates for existing schools missing them (run in parallel per school, not per row)
+        if (coordUpdateMap.size > 0) {
+            await Promise.all(
+                [...coordUpdateMap.entries()].map(([id, { lat, long }]) =>
+                    db
+                        .update(schools)
+                        .set({ latitude: lat, longitude: long })
+                        .where(eq(schools.id, id)),
+                ),
+            );
+        }
+
+        currentProgress.progress = 55;
+
+        // Phase 5: Batch insert new teachers
+        if (newTeachersMap.size > 0) {
+            for (const chunk of chunkArray([...newTeachersMap.values()], 500)) {
+                const inserted = await db
+                    .insert(teachers)
+                    .values(chunk)
+                    .returning();
+                for (const t of inserted) teacherMap.set(t.teacherId, t);
+            }
+        }
+
+        currentProgress.progress = 65;
+
+        // Phase 6: Batch insert projects (year was deleted, so all are new)
+        const projectValues = [...projectDataMap.values()].map((p) => ({
+            schoolId: schoolMap.get(p.schoolIdStr)!.id,
+            teacherId: teacherMap.get(p.teacherIdStr)!.id,
+            projectId: p.projectId,
+            title: p.title,
+            division: p.division,
+            categoryId: p.categoryId,
+            category: p.category,
+            year,
+            teamProject: p.teamProject,
+            numStudents: p.numStudents,
+        }));
+
+        for (const chunk of chunkArray(projectValues, 500)) {
+            await db.insert(projects).values(chunk);
+        }
+
+        currentProgress.progress = 78;
+
+        // Phase 7: Batch insert yearly school participation (all new, year was deleted)
+        const yearlySchoolValues = [...yearlySchoolSet].map((schoolIdStr) => {
+            const school = schoolMap.get(schoolIdStr)!;
+            const info = schoolInfoMap.get(schoolIdStr);
+            return {
+                year,
+                schoolId: school.id,
+                division: info?.division ?? [],
+                implementationModel: info?.implementationModel ?? "",
+                schoolType: info?.schoolType ?? "",
+                competingStudents: info?.competingStudents ?? 0,
+            };
+        });
+
+        for (const chunk of chunkArray(yearlySchoolValues, 500)) {
+            await db.insert(yearlySchoolParticipation).values(chunk);
+        }
+
+        currentProgress.progress = 90;
+
+        // Phase 8: Batch insert yearly teacher participation (all new, year was deleted)
+        const yearlyTeacherValues = [...yearlyTeacherMap.values()].map(
+            ({ schoolIdStr, teacherIdStr }) => ({
+                year,
+                teacherId: teacherMap.get(teacherIdStr)!.id,
+                schoolId: schoolMap.get(schoolIdStr)!.id,
+            }),
         );
 
-        for (const ysp of yearlySchools) {
-            const schoolIdStr = schoolIntToStrId.get(ysp.schoolId);
-            const explicitValue =
-                schoolIdStr !== null && schoolIdStr !== undefined
-                    ? (schoolInfoMap.get(schoolIdStr)?.competingStudents ??
-                      null)
-                    : null;
-
-            let competingStudentsValue: number;
-            if (explicitValue !== null) {
-                competingStudentsValue = explicitValue;
-            } else {
-                const [result] = await db
-                    .select({
-                        total: sql<number>`COALESCE(SUM(${projects.numStudents}), 0)`,
-                    })
-                    .from(projects)
-                    .where(
-                        and(
-                            eq(projects.schoolId, ysp.schoolId),
-                            eq(projects.year, year),
-                        ),
-                    );
-                competingStudentsValue = result?.total ?? 0;
-            }
-
-            await db
-                .update(yearlySchoolParticipation)
-                .set({ competingStudents: competingStudentsValue })
-                .where(eq(yearlySchoolParticipation.id, ysp.id));
+        for (const chunk of chunkArray(yearlyTeacherValues, 500)) {
+            await db.insert(yearlyTeacherParticipation).values(chunk);
         }
 
-        currentProgress.progress = 100;
-        currentProgress.complete = true;
-
-        // Default competingStudents to total participating students per school
-        const studentCounts = await db
-            .select({
-                schoolId: projects.schoolId,
-                total: sum(projects.numStudents).mapWith(Number),
-            })
-            .from(projects)
-            .where(eq(projects.year, year))
-            .groupBy(projects.schoolId);
-
-        for (const { schoolId, total } of studentCounts) {
-            await db
-                .update(yearlySchoolParticipation)
-                .set({ competingStudents: total })
-                .where(
-                    and(
-                        eq(yearlySchoolParticipation.schoolId, schoolId),
-                        eq(yearlySchoolParticipation.year, year),
-                    ),
-                );
-        }
+        currentProgress.progress = 97;
 
         const now = new Date();
         await db
@@ -501,12 +499,18 @@ export async function POST(req: NextRequest) {
                 set: { uploadedAt: now, lastUpdatedAt: now },
             });
 
+        currentProgress.progress = 100;
+        currentProgress.complete = true;
+
         return NextResponse.json(
-            { message: "Upload started" },
+            { message: "Upload complete" },
             { status: 200 },
         );
-    } catch {
-        return internalError();
+    } catch (error) {
+        return NextResponse.json(
+            { message: "Import failed", error: String(error) },
+            { status: 500 },
+        );
     }
 }
 
@@ -517,7 +521,6 @@ export async function GET() {
         start(controller) {
             interval = setInterval(() => {
                 try {
-                    // Only enqueue if not complete
                     if (!currentProgress.complete) {
                         controller.enqueue(
                             `data: ${JSON.stringify(currentProgress)}\n\n`,
