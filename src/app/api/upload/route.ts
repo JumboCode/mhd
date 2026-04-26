@@ -44,6 +44,7 @@ type SchoolInfoEntry = {
     implementationModel: string;
     schoolType: string;
     competingStudents: number;
+    town: string;
 };
 
 /**
@@ -95,6 +96,8 @@ function buildSchoolInfoMap(rawData: RowData[]): Map<string, SchoolInfoEntry> {
         ) ??
         headerMap.get(normalize("competingStudents")) ??
         headerMap.get(normalize("competing students"));
+    const townIdx =
+        headerMap.get(normalize("Town")) ?? headerMap.get(normalize("town"));
 
     if (schoolIdIdx === undefined) return map;
 
@@ -121,6 +124,8 @@ function buildSchoolInfoMap(rawData: RowData[]): Map<string, SchoolInfoEntry> {
             competingStudentsIdx !== undefined
                 ? Number(row[competingStudentsIdx] ?? 0) || 0
                 : 0;
+        const town =
+            townIdx !== undefined ? String(row[townIdx] ?? "").trim() : "";
 
         const existing = map.get(schoolId);
         if (existing) {
@@ -140,6 +145,7 @@ function buildSchoolInfoMap(rawData: RowData[]): Map<string, SchoolInfoEntry> {
                 implementationModel,
                 schoolType,
                 competingStudents,
+                town,
             });
         }
     }
@@ -177,6 +183,13 @@ export async function POST(req: NextRequest) {
             jsonReq.schoolInfoData
                 ? buildSchoolInfoMap(JSON.parse(jsonReq.schoolInfoData))
                 : new Map();
+
+        // Maps schoolId → town name sourced from the school spreadsheet.
+        // Falls back to the student spreadsheet's city column when a school has no entry here.
+        const townMap = new Map<string, string>();
+        for (const [schoolId, info] of schoolInfoMap) {
+            if (info.town) townMap.set(schoolId, toTitleCase(info.town));
+        }
 
         const coordsMap = new Map<
             string,
@@ -303,6 +316,7 @@ export async function POST(req: NextRequest) {
             }
         >();
         const coordUpdateMap = new Map<number, { lat: number; long: number }>();
+        const townUpdateMap = new Map<number, string>();
         const newTeachersMap = new Map<
             string,
             { teacherId: string; name: string; email: string }
@@ -321,37 +335,54 @@ export async function POST(req: NextRequest) {
             const projectIdValue = String(row[COLUMN_INDICES.projectId]);
             const schoolInfo = schoolInfoMap.get(schoolIdValue);
 
-            // School: collect new ones or flag existing for coord update
+            // School: collect new ones or flag existing for coord/town update
             if (
                 !schoolMap.has(schoolIdValue) &&
                 !newSchoolsMap.has(schoolIdValue)
             ) {
                 const coords = coordsMap.get(schoolIdValue);
                 const region = findRegionOf(coords?.lat, coords?.long);
+                // School's town is from school spreadsheet; fallback to student
+                // spreadsheet if not in school spreadsheet
+                const town =
+                    townMap.get(schoolIdValue) ??
+                    toTitleCase(row[COLUMN_INDICES.city] as string);
                 newSchoolsMap.set(schoolIdValue, {
                     schoolId: schoolIdValue,
                     name: row[COLUMN_INDICES.schoolName] as string,
                     standardizedName: standardize(
                         row[COLUMN_INDICES.schoolName] as string,
                     ),
-                    town: toTitleCase(row[COLUMN_INDICES.city] as string),
+                    town,
                     latitude: coords?.lat ?? null,
                     longitude: coords?.long ?? null,
                     region: region ?? "",
                 });
             } else {
                 const existing = schoolMap.get(schoolIdValue);
-                if (existing && !existing.latitude && !existing.longitude) {
-                    const coords = coordsMap.get(schoolIdValue);
+                if (existing) {
+                    if (!existing.latitude && !existing.longitude) {
+                        const coords = coordsMap.get(schoolIdValue);
+                        if (
+                            coords?.lat &&
+                            coords?.long &&
+                            !coordUpdateMap.has(existing.id)
+                        ) {
+                            coordUpdateMap.set(existing.id, {
+                                lat: coords.lat,
+                                long: coords.long,
+                            });
+                        }
+                    }
+                    const townFromMap = townMap.get(schoolIdValue);
+
+                    // Only set a new town if it doesn't already exist in db
                     if (
-                        coords?.lat &&
-                        coords?.long &&
-                        !coordUpdateMap.has(existing.id)
+                        townFromMap &&
+                        !existing.town &&
+                        !townUpdateMap.has(existing.id)
                     ) {
-                        coordUpdateMap.set(existing.id, {
-                            lat: coords.lat,
-                            long: coords.long,
-                        });
+                        townUpdateMap.set(existing.id, townFromMap);
                     }
                 }
             }
@@ -408,16 +439,29 @@ export async function POST(req: NextRequest) {
             }
         }
 
-        // Update coordinates for existing schools missing them (run in parallel per school, not per row)
-        if (coordUpdateMap.size > 0) {
-            await Promise.all(
-                [...coordUpdateMap.entries()].map(([id, { lat, long }]) =>
-                    db
-                        .update(schools)
-                        .set({ latitude: lat, longitude: long })
-                        .where(eq(schools.id, id)),
-                ),
+        // Update coordinates and towns for existing schools (run in parallel per school, not per row)
+        const schoolUpdatePromises: Promise<unknown>[] = [];
+        for (const [id, { lat, long }] of coordUpdateMap) {
+            const town = townUpdateMap.get(id);
+            schoolUpdatePromises.push(
+                db
+                    .update(schools)
+                    .set(
+                        town
+                            ? { latitude: lat, longitude: long, town }
+                            : { latitude: lat, longitude: long },
+                    )
+                    .where(eq(schools.id, id)),
             );
+            townUpdateMap.delete(id);
+        }
+        for (const [id, town] of townUpdateMap) {
+            schoolUpdatePromises.push(
+                db.update(schools).set({ town }).where(eq(schools.id, id)),
+            );
+        }
+        if (schoolUpdatePromises.length > 0) {
+            await Promise.all(schoolUpdatePromises);
         }
 
         currentProgress.progress = 55;
