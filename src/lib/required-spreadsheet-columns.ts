@@ -22,6 +22,7 @@ export const studentRequiredColumns = [
 export const schoolRequiredColumns = [
     "School name",
     "School id",
+    "Town",
     "Division",
     "Implementation Model",
     "School Type",

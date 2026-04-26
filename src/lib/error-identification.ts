@@ -111,6 +111,7 @@ export const studentColumnSpec: ColumnSpec = {
 export const schoolRequiredColumnsDict: Record<string, ColumnType> = {
     "School name": "string",
     "School id": "number",
+    "Town": "string",
     "Division": "string",
     "Implementation Model": "string",
     "School Type": "string",
@@ -123,6 +124,7 @@ export const schoolColumnSpec: ColumnSpec = {
     columnsDict: {
         "School name": "string",
         "School id": "number",
+        "Town": "string",
         "Division": "enum",
         "Implementation Model": "enum",
         "School Type": "enum",
