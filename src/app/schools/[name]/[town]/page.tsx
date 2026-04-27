@@ -77,6 +77,7 @@ type SchoolProfileGraphMetric =
 export default function SchoolProfilePage() {
     const params = useParams();
     const schoolName = params.name as string;
+    const schoolTown = params.town as string;
     const router = useRouter();
     const [year, setYear] = useQueryState("year", parseAsInteger);
     const [schoolData, setSchoolData] = useState<SchoolData | null>(null);
@@ -109,15 +110,15 @@ export default function SchoolProfilePage() {
 
     // Check on mount whether this school has been merged away
     useEffect(() => {
-        fetch(`/api/schools/${schoolName}`)
+        fetch(`/api/schools/${schoolName}/${schoolTown}`)
             .then(async (r) => {
                 if (r.status === 301) {
                     const data = await r.json();
-                    if (data.redirectTo) {
+                    if (data.redirectTo && data.redirectTown) {
                         router.replace(
                             year !== null
-                                ? `/schools/${data.redirectTo}?year=${year}`
-                                : `/schools/${data.redirectTo}`,
+                                ? `/schools/${data.redirectTo}/${data.redirectTown}?year=${year}`
+                                : `/schools/${data.redirectTo}/${data.redirectTown}`,
                         );
                     }
                 }
@@ -147,9 +148,12 @@ export default function SchoolProfilePage() {
 
                 const responses = await Promise.all(
                     fetchYears.map((y) =>
-                        fetch(`/api/schools/${schoolName}?year=${y}`, {
-                            signal,
-                        }).then(async (r) => {
+                        fetch(
+                            `/api/schools/${schoolName}/${schoolTown}?year=${y}`,
+                            {
+                                signal,
+                            },
+                        ).then(async (r) => {
                             if (r.status === 301) return r.json();
                             if (!r.ok)
                                 throw new Error(`Failed to fetch year ${y}`);
@@ -161,9 +165,9 @@ export default function SchoolProfilePage() {
                 if (signal.aborted) return;
 
                 // If the school has been merged away, redirect to the absorbing school
-                if (responses[5]?.redirectTo) {
+                if (responses[5]?.redirectTo && responses[5]?.redirectTown) {
                     router.replace(
-                        `/schools/${responses[5].redirectTo}/?year=${year}`,
+                        `/schools/${responses[5].redirectTo}/${responses[5].redirectTown}/?year=${year}`,
                     );
                     return;
                 }
@@ -220,7 +224,7 @@ export default function SchoolProfilePage() {
     const handleNameCommit = async () => {
         setEditingName(false);
         if (!schoolData || nameDraft.trim() === schoolData.name) return;
-        const res = await fetch(`/api/schools/${schoolName}`, {
+        const res = await fetch(`/api/schools/${schoolName}/${schoolTown}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ name: nameDraft.trim() }),
@@ -341,6 +345,7 @@ export default function SchoolProfilePage() {
                                 onYearChange={handleYearChange}
                                 showDataIndicator={true}
                                 school={schoolName}
+                                town={schoolTown}
                             />
                             <Button variant="ghost" size="icon">
                                 <EllipsisVertical className="h-4 w-4" />
@@ -389,6 +394,7 @@ export default function SchoolProfilePage() {
                             onYearChange={handleYearChange}
                             showDataIndicator={true}
                             school={schoolName}
+                            town={schoolTown}
                         />
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>

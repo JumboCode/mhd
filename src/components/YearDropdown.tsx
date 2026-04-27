@@ -29,15 +29,15 @@ type YearDropdownProps = {
     selectedYear?: number | null;
     onYearChange?: (year: number | null) => void;
     showDataIndicator?: boolean;
-    school?: string | null;
     enableArrowHotkeys?: boolean;
-};
+} & ({ school: string; town: string } | { school?: null; town?: null });
 
 export default function YearDropdown({
     selectedYear,
     onYearChange,
     showDataIndicator = false,
     school = null,
+    town = null,
     enableArrowHotkeys = false,
 }: YearDropdownProps) {
     const [year, setYear] = useState<number | null>(null);
@@ -85,9 +85,8 @@ export default function YearDropdown({
         }
         async function fetchSchoolYears() {
             try {
-                const res = await fetch(
-                    `/api/years-with-data?school=${encodeURIComponent(school!)}`,
-                );
+                const url = `/api/years-with-data?school=${encodeURIComponent(school!)}${town ? `&town=${encodeURIComponent(town)}` : ""}`;
+                const res = await fetch(url);
                 if (!res.ok) return;
                 const data = await res.json();
                 const nums: number[] = Array.isArray(data.years)
@@ -97,7 +96,7 @@ export default function YearDropdown({
             } catch (err) {}
         }
         fetchSchoolYears();
-    }, [school]);
+    }, [school, town]);
 
     // Default to latest year with data when parent hasn't set a year.
     // When a school is provided, wait for schoolYears to load before defaulting

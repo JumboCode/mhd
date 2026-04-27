@@ -292,7 +292,7 @@ export function SchoolsDataTable<TData, TValue>({
                                         >
                                             {cell.column.getIndex() === 0 ? (
                                                 <Link
-                                                    href={`/schools/${standardize(String(cell.getValue()))}`}
+                                                    href={`/schools/${standardize(String(cell.getValue()))}/${((cell.row.original as { city: string }).city ?? "").toLowerCase().replace(/\s+/g, "-")}`}
                                                     className="hover:underline block truncate"
                                                 >
                                                     {flexRender(
