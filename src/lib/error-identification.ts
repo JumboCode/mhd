@@ -255,7 +255,7 @@ function trimTrailingAndCheckEmptyRows(
  * @param jsonData - The spreadsheet data.
  */
 function trimTownCommas(jsonData: SpreadsheetData) {
-    const cityColIdx = jsonData[0].indexOf("city");
+    const cityColIdx = jsonData[0].indexOf("town");
 
     for (let row = 1; row < jsonData.length; row++) {
         const currentRow = jsonData[row];

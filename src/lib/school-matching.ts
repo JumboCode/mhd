@@ -29,7 +29,7 @@ export type KnownSchool = {
 export type UploadedSchool = {
     name: string;
     city: string;
-    schoolId: string;
+    schoolKey: string; // composite: standardize(name) + "__" + canonicalTown.toLowerCase()
     rowIndices: number[]; // Which rows in the spreadsheet reference this school
 };
 
@@ -39,7 +39,7 @@ export type UploadedSchool = {
 export type SchoolWithCoordinates = {
     name: string;
     city: string;
-    schoolId: string;
+    schoolKey: string; // composite: standardize(name) + "__" + canonicalTown.toLowerCase()
     lat: number | null;
     long: number | null;
 };
@@ -53,11 +53,50 @@ export type SchoolMatchResult = {
 };
 
 /**
- * Extracts unique schools from spreadsheet data
+ * Builds a standardizedName → town lookup from the school info spreadsheet.
+ * Used to get the canonical town for each school during matching.
+ */
+export function buildSchoolTownMap(
+    schoolInfoData: (string | number | boolean | null | undefined)[][],
+): Map<string, string> {
+    const townMap = new Map<string, string>();
+    if (!schoolInfoData || schoolInfoData.length === 0) return townMap;
+
+    const normalize = (s: string) => s.toLowerCase().replace(/\s+/g, "");
+    const headers = schoolInfoData[0];
+    const headerMap = new Map<string, number>();
+    headers.forEach((h, i) => headerMap.set(normalize(String(h ?? "")), i));
+
+    const schoolNameIdx =
+        headerMap.get(normalize("School name")) ??
+        headerMap.get(normalize("schoolName"));
+    const townIdx = headerMap.get(normalize("Town"));
+
+    if (schoolNameIdx === undefined || townIdx === undefined) return townMap;
+
+    for (let i = 1; i < schoolInfoData.length; i++) {
+        const row = schoolInfoData[i];
+        if (!row) continue;
+        const name = String(row[schoolNameIdx] ?? "").trim();
+        const town = String(row[townIdx] ?? "").trim();
+        const key = standardize(name);
+        if (key && town && !townMap.has(key)) {
+            townMap.set(key, town);
+        }
+    }
+
+    return townMap;
+}
+
+/**
+ * Extracts unique schools from spreadsheet data.
+ * Uses the school spreadsheet's townMap (standardizedName → town) to get the
+ * canonical town for the key, falling back to the student spreadsheet's city.
  */
 export function extractSchoolsFromSpreadsheet(
     spreadsheetData: (string | number | boolean | null | undefined)[][],
-    columnIndices: { schoolName: number; city: number; schoolId: number },
+    columnIndices: { schoolName: number; city: number },
+    townMap?: Map<string, string>,
 ): UploadedSchool[] {
     const schoolMap = new Map<string, UploadedSchool>();
 
@@ -68,20 +107,19 @@ export function extractSchoolsFromSpreadsheet(
 
         const name = String(row[columnIndices.schoolName] ?? "").trim();
         const city = String(row[columnIndices.city] ?? "").trim();
-        const schoolId = String(row[columnIndices.schoolId] ?? "").trim();
 
         if (!name || !city) continue;
 
-        // Use schoolId as unique key (one school per ID, multiple rows allowed)
-        const key = schoolId;
+        const canonicalTown = townMap?.get(standardize(name)) ?? city;
+        const schoolKey = `${standardize(name)}__${canonicalTown.toLowerCase()}`;
 
-        if (schoolMap.has(key)) {
-            schoolMap.get(key)!.rowIndices.push(i);
+        if (schoolMap.has(schoolKey)) {
+            schoolMap.get(schoolKey)!.rowIndices.push(i);
         } else {
-            schoolMap.set(key, {
+            schoolMap.set(schoolKey, {
                 name,
-                city,
-                schoolId,
+                city: canonicalTown,
+                schoolKey,
                 rowIndices: [i],
             });
         }
@@ -157,7 +195,7 @@ export function matchSchools(
             matched.push({
                 name: uploaded.name,
                 city: uploaded.city,
-                schoolId: uploaded.schoolId,
+                schoolKey: uploaded.schoolKey,
                 lat: matchedSchool.lat,
                 long: matchedSchool.long,
             });
@@ -175,7 +213,7 @@ export function matchSchools(
  */
 export function getSchoolColumnIndices(
     headers: (string | number | boolean | null | undefined)[],
-): { schoolName: number; city: number; schoolId: number } | null {
+): { schoolName: number; city: number } | null {
     const normalizeColumnName = (name: string): string => {
         return name.toLowerCase().replace(/\s+/g, "");
     };
@@ -189,19 +227,13 @@ export function getSchoolColumnIndices(
 
     const schoolNameIdx = headerMap.get("schoolname");
     const cityIdx = headerMap.get("city");
-    const schoolIdIdx = headerMap.get("schoolid");
 
-    if (
-        schoolNameIdx === undefined ||
-        cityIdx === undefined ||
-        schoolIdIdx === undefined
-    ) {
+    if (schoolNameIdx === undefined || cityIdx === undefined) {
         return null;
     }
 
     return {
         schoolName: schoolNameIdx,
         city: cityIdx,
-        schoolId: schoolIdIdx,
     };
 }

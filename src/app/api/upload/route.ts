@@ -29,7 +29,7 @@ import { yearSchema, MIN_YEAR, MAX_YEAR } from "@/lib/year-validation";
 type RowData = Array<string | number | boolean | null>;
 
 type SchoolCoordinateData = {
-    schoolId: string;
+    schoolKey: string; // composite: standardize(name) + "__" + city.toLowerCase()
     lat: number | null;
     long: number | null;
 };
@@ -44,7 +44,6 @@ type SchoolInfoEntry = {
     implementationModel: string;
     schoolType: string;
     competingStudents: number;
-    town: string;
 };
 
 /**
@@ -66,13 +65,20 @@ function parseDivisions(raw: string): string[] {
 }
 
 /**
- * Builds a lookup map from schoolId → school info fields using the school info spreadsheet.
+ * Builds two maps from the school info spreadsheet:
+ *   infoMap: composite key (standardize(name) + "__" + town.toLowerCase()) → school info fields
+ *   townMap: standardize(name) → canonical town (title-cased)
+ * Keying by name+town matches the DB unique constraint and avoids any schoolId dependency.
  * If a school appears on multiple rows (one per division), divisions are accumulated.
  * Comma-separated divisions within a single cell are also supported.
  */
-function buildSchoolInfoMap(rawData: RowData[]): Map<string, SchoolInfoEntry> {
-    const map = new Map<string, SchoolInfoEntry>();
-    if (!rawData || rawData.length === 0) return map;
+function buildSchoolInfoMap(rawData: RowData[]): {
+    infoMap: Map<string, SchoolInfoEntry>;
+    townMap: Map<string, string>;
+} {
+    const infoMap = new Map<string, SchoolInfoEntry>();
+    const townMap = new Map<string, string>();
+    if (!rawData || rawData.length === 0) return { infoMap, townMap };
 
     const normalize = (s: string) => s.toLowerCase().replace(/\s+/g, "");
 
@@ -80,9 +86,9 @@ function buildSchoolInfoMap(rawData: RowData[]): Map<string, SchoolInfoEntry> {
     const headerMap = new Map<string, number>();
     headers.forEach((h, i) => headerMap.set(normalize(h), i));
 
-    const schoolIdIdx =
-        headerMap.get(normalize("schoolId")) ??
-        headerMap.get(normalize("School id"));
+    const schoolNameIdx =
+        headerMap.get(normalize("schoolName")) ??
+        headerMap.get(normalize("School name"));
     const divisionIdx = headerMap.get(normalize("division"));
     const implModelIdx =
         headerMap.get(normalize("implementationModel")) ??
@@ -99,14 +105,27 @@ function buildSchoolInfoMap(rawData: RowData[]): Map<string, SchoolInfoEntry> {
     const townIdx =
         headerMap.get(normalize("Town")) ?? headerMap.get(normalize("town"));
 
-    if (schoolIdIdx === undefined) return map;
+    if (schoolNameIdx === undefined || townIdx === undefined)
+        return { infoMap, townMap };
 
     for (let i = 1; i < rawData.length; i++) {
         const row = rawData[i];
-        const rawId = row[schoolIdIdx];
-        if (rawId === null || rawId === undefined || rawId === "") continue;
+        const rawName = row[schoolNameIdx];
+        if (rawName === null || rawName === undefined || rawName === "")
+            continue;
 
-        const schoolId = String(rawId).trim();
+        const schoolName = String(rawName).trim();
+        const town = String(row[townIdx] ?? "")
+            .trim()
+            .replace(/, ma/i, "")
+            .trim();
+        if (!town) continue;
+
+        const stdName = standardize(schoolName);
+        const schoolKey = `${stdName}__${town.toLowerCase()}`;
+
+        // Track standardize(name) → town for student-row lookups
+        if (!townMap.has(stdName)) townMap.set(stdName, toTitleCase(town));
 
         const divisions =
             divisionIdx !== undefined
@@ -124,10 +143,8 @@ function buildSchoolInfoMap(rawData: RowData[]): Map<string, SchoolInfoEntry> {
             competingStudentsIdx !== undefined
                 ? Number(row[competingStudentsIdx] ?? 0) || 0
                 : 0;
-        const town =
-            townIdx !== undefined ? String(row[townIdx] ?? "").trim() : "";
 
-        const existing = map.get(schoolId);
+        const existing = infoMap.get(schoolKey);
         if (existing) {
             // Accumulate divisions from additional rows for the same school
             for (const div of divisions) {
@@ -140,17 +157,16 @@ function buildSchoolInfoMap(rawData: RowData[]): Map<string, SchoolInfoEntry> {
                 existing.competingStudents = competingStudents;
             }
         } else {
-            map.set(schoolId, {
+            infoMap.set(schoolKey, {
                 division: divisions,
                 implementationModel,
                 schoolType,
                 competingStudents,
-                town,
             });
         }
     }
 
-    return map;
+    return { infoMap, townMap };
 }
 
 function chunkArray<T>(arr: T[], size: number): T[][] {
@@ -179,24 +195,22 @@ export async function POST(req: NextRequest) {
         const schoolCoordinates: SchoolCoordinateData[] =
             jsonReq.schoolCoordinates || [];
 
-        const schoolInfoMap: Map<string, SchoolInfoEntry> =
-            jsonReq.schoolInfoData
-                ? buildSchoolInfoMap(JSON.parse(jsonReq.schoolInfoData))
-                : new Map();
-
-        // Maps schoolId → town name sourced from the school spreadsheet.
-        // Falls back to the student spreadsheet's city column when a school has no entry here.
-        const townMap = new Map<string, string>();
-        for (const [schoolId, info] of schoolInfoMap) {
-            if (info.town) townMap.set(schoolId, toTitleCase(info.town));
-        }
+        const { infoMap: schoolInfoMap, townMap } = jsonReq.schoolInfoData
+            ? buildSchoolInfoMap(JSON.parse(jsonReq.schoolInfoData))
+            : {
+                  infoMap: new Map<string, SchoolInfoEntry>(),
+                  townMap: new Map<string, string>(),
+              };
 
         const coordsMap = new Map<
             string,
             { lat: number | null; long: number | null }
         >();
         for (const coord of schoolCoordinates) {
-            coordsMap.set(coord.schoolId, { lat: coord.lat, long: coord.long });
+            coordsMap.set(coord.schoolKey, {
+                lat: coord.lat,
+                long: coord.long,
+            });
         }
 
         if (rawData.length === 0) {
@@ -255,9 +269,11 @@ export async function POST(req: NextRequest) {
         currentProgress.progress = 10;
 
         // Phase 2: Pre-fetch all referenced schools and teachers in bulk
-        const allSchoolIds = [
+        const allStandardizedNames = [
             ...new Set(
-                filteredRows.map((r) => String(r[COLUMN_INDICES.schoolId])),
+                filteredRows.map((r) =>
+                    standardize(String(r[COLUMN_INDICES.schoolName])),
+                ),
             ),
         ];
         const allTeacherIds = [
@@ -267,11 +283,16 @@ export async function POST(req: NextRequest) {
         ];
 
         const [existingSchoolsArr, existingTeachersArr] = await Promise.all([
-            allSchoolIds.length > 0
+            allStandardizedNames.length > 0
                 ? db
                       .select()
                       .from(schools)
-                      .where(inArray(schools.schoolId, allSchoolIds))
+                      .where(
+                          inArray(
+                              schools.standardizedName,
+                              allStandardizedNames,
+                          ),
+                      )
                 : Promise.resolve([]),
             allTeacherIds.length > 0
                 ? db
@@ -281,8 +302,12 @@ export async function POST(req: NextRequest) {
                 : Promise.resolve([]),
         ]);
 
+        // Keyed by composite: standardize(name) + "__" + town.toLowerCase()
         const schoolMap = new Map(
-            existingSchoolsArr.map((s) => [s.schoolId, s]),
+            existingSchoolsArr.map((s) => [
+                `${s.standardizedName}__${(s.town ?? "").toLowerCase()}`,
+                s,
+            ]),
         );
         const teacherMap = new Map(
             existingTeachersArr.map((t) => [t.teacherId, t]),
@@ -306,7 +331,6 @@ export async function POST(req: NextRequest) {
         const newSchoolsMap = new Map<
             string,
             {
-                schoolId: string;
                 name: string;
                 standardizedName: string;
                 town: string;
@@ -323,46 +347,45 @@ export async function POST(req: NextRequest) {
         >();
         const projectDataMap = new Map<string, ProjectAccumulator>();
         const yearlySchoolSet = new Set<string>();
-        // Null byte separator — can't appear in spreadsheet ID values
+        // Null byte separator — can't appear in spreadsheet values
         const yearlyTeacherMap = new Map<
             string,
-            { schoolIdStr: string; teacherIdStr: string }
+            { schoolKey: string; teacherIdStr: string }
         >();
 
         for (const row of filteredRows) {
-            const schoolIdValue = String(row[COLUMN_INDICES.schoolId]);
             const teacherIdValue = String(row[COLUMN_INDICES.teacherId]);
             const projectIdValue = String(row[COLUMN_INDICES.projectId]);
-            const schoolInfo = schoolInfoMap.get(schoolIdValue);
+
+            // Canonical town from school spreadsheet (keyed by standardized name); fallback to student spreadsheet
+            const stdSchoolName = standardize(
+                String(row[COLUMN_INDICES.schoolName]),
+            );
+            const canonicalTown =
+                townMap.get(stdSchoolName) ??
+                toTitleCase(row[COLUMN_INDICES.city] as string);
+            const schoolKey = `${stdSchoolName}__${canonicalTown.toLowerCase()}`;
+            const schoolInfo = schoolInfoMap.get(schoolKey);
 
             // School: collect new ones or flag existing for coord/town update
-            if (
-                !schoolMap.has(schoolIdValue) &&
-                !newSchoolsMap.has(schoolIdValue)
-            ) {
-                const coords = coordsMap.get(schoolIdValue);
+            if (!schoolMap.has(schoolKey) && !newSchoolsMap.has(schoolKey)) {
+                const coords = coordsMap.get(schoolKey);
                 const region = findRegionOf(coords?.lat, coords?.long);
-                // School's town is from school spreadsheet; fallback to student
-                // spreadsheet if not in school spreadsheet
-                const town =
-                    townMap.get(schoolIdValue) ??
-                    toTitleCase(row[COLUMN_INDICES.city] as string);
-                newSchoolsMap.set(schoolIdValue, {
-                    schoolId: schoolIdValue,
+                newSchoolsMap.set(schoolKey, {
                     name: row[COLUMN_INDICES.schoolName] as string,
                     standardizedName: standardize(
                         row[COLUMN_INDICES.schoolName] as string,
                     ),
-                    town,
+                    town: canonicalTown,
                     latitude: coords?.lat ?? null,
                     longitude: coords?.long ?? null,
                     region: region ?? "",
                 });
             } else {
-                const existing = schoolMap.get(schoolIdValue);
+                const existing = schoolMap.get(schoolKey);
                 if (existing) {
                     if (!existing.latitude && !existing.longitude) {
-                        const coords = coordsMap.get(schoolIdValue);
+                        const coords = coordsMap.get(schoolKey);
                         if (
                             coords?.lat &&
                             coords?.long &&
@@ -374,9 +397,7 @@ export async function POST(req: NextRequest) {
                             });
                         }
                     }
-                    const townFromMap = townMap.get(schoolIdValue);
-
-                    // Only set a new town if it doesn't already exist in db
+                    const townFromMap = townMap.get(stdSchoolName);
                     if (
                         townFromMap &&
                         !existing.town &&
@@ -402,7 +423,7 @@ export async function POST(req: NextRequest) {
             // Project: accumulate student count
             if (!projectDataMap.has(projectIdValue)) {
                 projectDataMap.set(projectIdValue, {
-                    schoolIdStr: schoolIdValue,
+                    schoolIdStr: schoolKey,
                     teacherIdStr: teacherIdValue,
                     projectId: projectIdValue,
                     title: row[COLUMN_INDICES.title] as string,
@@ -416,11 +437,11 @@ export async function POST(req: NextRequest) {
             projectDataMap.get(projectIdValue)!.numStudents++;
 
             // Yearly participations
-            yearlySchoolSet.add(schoolIdValue);
-            const ytKey = `${schoolIdValue}\x00${teacherIdValue}`;
+            yearlySchoolSet.add(schoolKey);
+            const ytKey = `${schoolKey}\x00${teacherIdValue}`;
             if (!yearlyTeacherMap.has(ytKey)) {
                 yearlyTeacherMap.set(ytKey, {
-                    schoolIdStr: schoolIdValue,
+                    schoolKey,
                     teacherIdStr: teacherIdValue,
                 });
             }
@@ -435,7 +456,11 @@ export async function POST(req: NextRequest) {
                     .insert(schools)
                     .values(chunk)
                     .returning();
-                for (const s of inserted) schoolMap.set(s.schoolId, s);
+                for (const s of inserted)
+                    schoolMap.set(
+                        `${s.standardizedName}__${(s.town ?? "").toLowerCase()}`,
+                        s,
+                    );
             }
         }
 
@@ -500,9 +525,9 @@ export async function POST(req: NextRequest) {
         currentProgress.progress = 78;
 
         // Phase 7: Batch insert yearly school participation (all new, year was deleted)
-        const yearlySchoolValues = [...yearlySchoolSet].map((schoolIdStr) => {
-            const school = schoolMap.get(schoolIdStr)!;
-            const info = schoolInfoMap.get(schoolIdStr);
+        const yearlySchoolValues = [...yearlySchoolSet].map((schoolKey) => {
+            const school = schoolMap.get(schoolKey)!;
+            const info = schoolInfoMap.get(schoolKey);
             return {
                 year,
                 schoolId: school.id,
@@ -521,10 +546,10 @@ export async function POST(req: NextRequest) {
 
         // Phase 8: Batch insert yearly teacher participation (all new, year was deleted)
         const yearlyTeacherValues = [...yearlyTeacherMap.values()].map(
-            ({ schoolIdStr, teacherIdStr }) => ({
+            ({ schoolKey, teacherIdStr }) => ({
                 year,
                 teacherId: teacherMap.get(teacherIdStr)!.id,
-                schoolId: schoolMap.get(schoolIdStr)!.id,
+                schoolId: schoolMap.get(schoolKey)!.id,
             }),
         );
 

@@ -8,21 +8,31 @@ import {
     boolean,
     timestamp,
     index,
+    uniqueIndex,
 } from "drizzle-orm/pg-core";
 
 // Represents metadata (relatively unchanging data) about a school
-export const schools = pgTable("schools", {
-    id: serial("id").primaryKey(),
-    name: text("name").notNull(),
-    standardizedName: text("standardized_name").notNull(),
-    town: text("town"), // regional schools may not have a town
-    schoolId: text("school_id").unique().notNull(),
-    latitude: doublePrecision("latitude"),
-    longitude: doublePrecision("longitude"),
-    zipcode: text("zipcode"),
-    gateway: boolean("gateway").default(false).notNull(),
-    region: text("region").default("").notNull(),
-});
+export const schools = pgTable(
+    "schools",
+    {
+        id: serial("id").primaryKey(),
+        name: text("name").notNull(),
+        standardizedName: text("standardized_name").notNull(),
+        town: text("town").notNull().default(""),
+        schoolId: text("school_id"),
+        latitude: doublePrecision("latitude"),
+        longitude: doublePrecision("longitude"),
+        zipcode: text("zipcode"),
+        gateway: boolean("gateway").default(false).notNull(),
+        region: text("region").default("").notNull(),
+    },
+    (table) => [
+        uniqueIndex("schools_standardized_name_town_idx").on(
+            table.standardizedName,
+            table.town,
+        ),
+    ],
+);
 
 // Ties a school to the years it has participated
 export const yearlySchoolParticipation = pgTable(

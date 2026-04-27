@@ -17,6 +17,7 @@ import { DataTable } from "./DataTable";
 import { CircleCheck, FileChartColumn } from "lucide-react";
 import type { CellValue, SpreadsheetData } from "@/types/spreadsheet";
 import { studentRequiredColumns } from "@/lib/required-spreadsheet-columns";
+import { standardize } from "@/lib/string-standardize";
 
 type PreviewProps = {
     fileName: string;
@@ -69,7 +70,7 @@ export default function SpreadsheetPreview({
 
         const schoolNameIdx =
             getColumnIndex("schoolName") ?? getColumnIndex("School name");
-        const schoolIdIdx = getColumnIndex("schoolId");
+        const cityIdx = getColumnIndex("city");
         const teacherIdIdx = getColumnIndex("teacherId");
         const teacherNameIdx = getColumnIndex("teacherName");
         const projectIdIdx = getColumnIndex("projectId");
@@ -87,10 +88,10 @@ export default function SpreadsheetPreview({
                 const schoolName = String(row[schoolNameIdx] ?? "").trim();
                 if (!schoolName) return;
 
-                const schoolId = String(
-                    schoolIdIdx !== undefined ? (row[schoolIdIdx] ?? "") : "",
+                const city = String(
+                    cityIdx !== undefined ? (row[cityIdx] ?? "") : "",
                 ).trim();
-                const schoolKey = schoolId || schoolName.toLowerCase();
+                const schoolKey = `${standardize(schoolName)}__${city.toLowerCase()}`;
 
                 if (!statsBySchool.has(schoolKey)) {
                     statsBySchool.set(schoolKey, {

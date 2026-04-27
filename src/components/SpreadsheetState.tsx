@@ -53,6 +53,7 @@ import {
     type KnownSchool,
     type SchoolWithCoordinates,
     type UploadedSchool,
+    buildSchoolTownMap,
     extractSchoolsFromSpreadsheet,
     getSchoolColumnIndices,
     matchSchools,
@@ -201,10 +202,10 @@ export default function SpreadsheetState() {
     };
 
     const handleSchoolLocationAssigned = useCallback(
-        (schoolId: string, lat: number, long: number) => {
+        (schoolKey: string, lat: number, long: number) => {
             setAssignedLocations((prev) => {
                 const newMap = new Map(prev);
-                newMap.set(schoolId, { lat, long });
+                newMap.set(schoolKey, { lat, long });
                 return newMap;
             });
         },
@@ -215,7 +216,7 @@ export default function SpreadsheetState() {
         unmatchedSchools.length === 0 ||
         (unmatchedSchools[currentSchoolIndex] &&
             assignedLocations.has(
-                unmatchedSchools[currentSchoolIndex].schoolId,
+                unmatchedSchools[currentSchoolIndex].schoolKey,
             ));
 
     // Fetch years with data once on mount
@@ -333,23 +334,23 @@ export default function SpreadsheetState() {
         setIsSubmitting(true);
 
         const schoolCoordinates: {
-            schoolId: string;
+            schoolKey: string;
             lat: number | null;
             long: number | null;
         }[] = [];
 
         for (const school of matchedSchools) {
             schoolCoordinates.push({
-                schoolId: school.schoolId,
+                schoolKey: school.schoolKey,
                 lat: school.lat,
                 long: school.long,
             });
         }
 
         for (const school of unmatchedSchools) {
-            const assigned = assignedLocations.get(school.schoolId);
+            const assigned = assignedLocations.get(school.schoolKey);
             schoolCoordinates.push({
-                schoolId: school.schoolId,
+                schoolKey: school.schoolKey,
                 lat: assigned?.lat ?? null,
                 long: assigned?.long ?? null,
             });
@@ -592,11 +593,15 @@ export default function SpreadsheetState() {
                 const columnIndices = getSchoolColumnIndices(headers);
 
                 if (columnIndices) {
+                    const townMap = buildSchoolTownMap(schoolInfoData);
                     const uploadedSchools = extractSchoolsFromSpreadsheet(
                         spreadsheetData,
                         columnIndices,
+                        townMap,
                     );
                     const result = matchSchools(uploadedSchools, knownSchools);
+
+                    console.log(result);
 
                     setMatchedSchools(result.matched);
                     setUnmatchedSchools(result.unmatched);
@@ -605,7 +610,9 @@ export default function SpreadsheetState() {
                         setCanNext(true);
                     } else {
                         setCanNext(
-                            assignedLocations.has(result.unmatched[0].schoolId),
+                            assignedLocations.has(
+                                result.unmatched[0].schoolKey,
+                            ),
                         );
                     }
 
@@ -713,6 +720,7 @@ export default function SpreadsheetState() {
                         {tabIndex === STEP_CONFIRM ? (
                             <SpreadsheetConfirmation
                                 spreadsheetData={spreadsheetData}
+                                schoolInfoData={schoolInfoData}
                                 year={year}
                                 setConfirmed={setConfirmed}
                                 yearHasData={yearHasData}
