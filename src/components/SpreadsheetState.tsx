@@ -59,6 +59,10 @@ import {
     matchSchools,
 } from "@/lib/school-matching";
 import { schoolRequiredColumns } from "@/lib/required-spreadsheet-columns";
+import SpreadsheetConflicts, {
+    type ConflictResolution,
+} from "@/components/SpreadsheetConflicts";
+import type { SchoolConflict } from "@/app/api/schools/check-conflicts/route";
 
 // Step indices
 const STEP_UPLOAD = 0;
@@ -145,6 +149,14 @@ export default function SpreadsheetState() {
         Map<string, { lat: number; long: number }>
     >(new Map());
     const [currentSchoolIndex, setCurrentSchoolIndex] = useState(0);
+
+    // Conflict resolution state
+    const [conflicts, setConflicts] = useState<SchoolConflict[]>([]);
+    const [conflictDialogOpen, setConflictDialogOpen] = useState(false);
+    const [conflictResolutions, setConflictResolutions] = useState<
+        ConflictResolution[]
+    >([]);
+    const pendingUploadedSchoolsRef = useRef<UploadedSchool[]>([]);
     const [progress, setProgress] = useState<number>(0);
     const router = useRouter();
     const [uploadSuccess, setUploadSuccess] = useState(false);
@@ -325,6 +337,49 @@ export default function SpreadsheetState() {
         currentSchoolIndex,
     ]);
 
+    const runSchoolMatching = (uploadedSchools: UploadedSchool[]) => {
+        const result = matchSchools(uploadedSchools, knownSchools);
+        setMatchedSchools(result.matched);
+        setUnmatchedSchools(result.unmatched);
+
+        if (result.unmatched.length === 0) {
+            setCanNext(true);
+        } else {
+            setCanNext(assignedLocations.has(result.unmatched[0].schoolKey));
+        }
+
+        setTab(
+            <SpreadsheetEdits
+                matchedSchools={result.matched}
+                unmatchedSchools={result.unmatched}
+                currentSchoolIndex={0}
+                onSchoolLocationAssigned={handleSchoolLocationAssigned}
+                assignedLocations={assignedLocations}
+            />,
+        );
+        setTabIndex(STEP_SCHOOL_MATCHING);
+        setNextText("Next");
+        setCanPrevious(true);
+    };
+
+    const handleConflictsResolved = (resolutions: ConflictResolution[]) => {
+        setConflictResolutions(resolutions);
+        setConflictDialogOpen(false);
+
+        const useDbKeys = new Set(
+            resolutions
+                .filter((r) => r.action === "use-db")
+                .map((r) => r.uploadedSchoolKey),
+        );
+
+        // Filter out schools that will be merged into existing ones from matching
+        const schoolsForMatching = pendingUploadedSchoolsRef.current.filter(
+            (s) => !useDbKeys.has(s.schoolKey),
+        );
+
+        runSchoolMatching(schoolsForMatching);
+    };
+
     const handleSubmit = async (): Promise<boolean> => {
         if (spreadsheetData.length === 0) {
             toast.warning("No data to upload.");
@@ -373,6 +428,7 @@ export default function SpreadsheetState() {
                     formData: JSON.stringify(spreadsheetData),
                     schoolInfoData: JSON.stringify(schoolInfoData),
                     schoolCoordinates,
+                    conflictResolutions,
                 }),
             });
 
@@ -585,7 +641,6 @@ export default function SpreadsheetState() {
             setCanPrevious(true);
             setNextText("Next");
         } else if (index === STEP_SCHOOL_MATCHING) {
-            setTabIndex(STEP_SCHOOL_MATCHING);
             setCurrentSchoolIndex(0);
 
             if (spreadsheetData.length > 0 && knownSchools.length > 0) {
@@ -599,34 +654,36 @@ export default function SpreadsheetState() {
                         columnIndices,
                         townMap,
                     );
-                    const result = matchSchools(uploadedSchools, knownSchools);
 
-                    console.log(result);
-
-                    setMatchedSchools(result.matched);
-                    setUnmatchedSchools(result.unmatched);
-
-                    if (result.unmatched.length === 0) {
-                        setCanNext(true);
-                    } else {
-                        setCanNext(
-                            assignedLocations.has(
-                                result.unmatched[0].schoolKey,
-                            ),
+                    try {
+                        const res = await fetch(
+                            "/api/schools/check-conflicts",
+                            {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                    schools: uploadedSchools.map((s) => ({
+                                        name: s.name,
+                                        town: s.city,
+                                        schoolKey: s.schoolKey,
+                                    })),
+                                }),
+                            },
                         );
+                        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                        const data = await res.json();
+                        if (data.conflicts && data.conflicts.length > 0) {
+                            pendingUploadedSchoolsRef.current = uploadedSchools;
+                            setConflicts(data.conflicts);
+                            setConflictDialogOpen(true);
+                            return;
+                        }
+                    } catch (err) {
+                        console.error("Conflict check failed:", err);
+                        toast.error("Could not check for school conflicts.");
                     }
 
-                    setTab(
-                        <SpreadsheetEdits
-                            matchedSchools={result.matched}
-                            unmatchedSchools={result.unmatched}
-                            currentSchoolIndex={0}
-                            onSchoolLocationAssigned={
-                                handleSchoolLocationAssigned
-                            }
-                            assignedLocations={assignedLocations}
-                        />,
-                    );
+                    runSchoolMatching(uploadedSchools);
                 } else {
                     toast.error(
                         "Could not identify school columns in spreadsheet",
@@ -637,9 +694,6 @@ export default function SpreadsheetState() {
                 toast.error("Known schools data not loaded yet. Please wait.");
                 setCanNext(false);
             }
-
-            setNextText("Next");
-            setCanPrevious(true);
         } else if (index === STEP_CONFIRM) {
             setTabIndex(STEP_CONFIRM);
             setNextText("Finish Upload");
@@ -767,6 +821,12 @@ export default function SpreadsheetState() {
                     </Button>
                 </div>
             )}
+
+            <SpreadsheetConflicts
+                open={conflictDialogOpen}
+                conflicts={conflicts}
+                onResolved={handleConflictsResolved}
+            />
 
             {/* Warn user if they try to navigate away while upload is in progress */}
             <Dialog open={showLeaveDialog} onOpenChange={handleStay}>

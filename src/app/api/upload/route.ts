@@ -20,7 +20,9 @@ import {
     yearlyTeacherParticipation,
     yearlySchoolParticipation,
     yearMetadata,
+    schoolHistoricNames,
 } from "@/lib/schema";
+import type { ConflictResolution } from "@/components/SpreadsheetConflicts";
 import { standardize, toTitleCase } from "@/lib/string-standardize";
 import { studentRequiredColumns } from "@/lib/required-spreadsheet-columns";
 import { findRegionOf } from "@/lib/region-finder";
@@ -202,6 +204,12 @@ export async function POST(req: NextRequest) {
                   townMap: new Map<string, string>(),
               };
 
+        const conflictResolutions: ConflictResolution[] =
+            jsonReq.conflictResolutions ?? [];
+        const useDbResolutions = conflictResolutions.filter(
+            (r) => r.action === "use-db",
+        );
+
         const coordsMap = new Map<
             string,
             { lat: number | null; long: number | null }
@@ -312,6 +320,28 @@ export async function POST(req: NextRequest) {
         const teacherMap = new Map(
             existingTeachersArr.map((t) => [t.teacherId, t]),
         );
+
+        // For "use-db" resolutions, point the uploaded school's key to the
+        // existing DB school so all rows for that uploaded school get routed
+        // to the correct school record.
+        if (useDbResolutions.length > 0) {
+            const dbIds = [
+                ...new Set(useDbResolutions.map((r) => r.dbSchoolId)),
+            ];
+            const resolvedDbSchools = await db
+                .select()
+                .from(schools)
+                .where(inArray(schools.id, dbIds));
+            const dbSchoolById = new Map(
+                resolvedDbSchools.map((s) => [s.id, s]),
+            );
+            for (const r of useDbResolutions) {
+                const dbSchool = dbSchoolById.get(r.dbSchoolId);
+                if (dbSchool) {
+                    schoolMap.set(r.uploadedSchoolKey, dbSchool);
+                }
+            }
+        }
 
         currentProgress.progress = 20;
 
@@ -567,6 +597,24 @@ export async function POST(req: NextRequest) {
                 target: yearMetadata.year,
                 set: { uploadedAt: now, lastUpdatedAt: now },
             });
+
+        // Persist "use-db" resolutions as historic name aliases so future
+        // uploads auto-remap without showing the conflict dialog again.
+        if (useDbResolutions.length > 0) {
+            const aliasValues = useDbResolutions.map((r) => {
+                const [stdName, town] = r.uploadedSchoolKey.split("__");
+                return {
+                    absorbingSchoolId: r.dbSchoolId,
+                    mergedName: r.uploadedSchoolName,
+                    mergedStandardizedName: stdName,
+                    mergedTown: town ?? "",
+                };
+            });
+            await db
+                .insert(schoolHistoricNames)
+                .values(aliasValues)
+                .onConflictDoNothing();
+        }
 
         currentProgress.progress = 100;
         currentProgress.complete = true;

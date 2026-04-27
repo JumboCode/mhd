@@ -99,16 +99,27 @@ export const yearlyTeacherParticipation = pgTable(
     },
 );
 
-// Stores historic names for schools that have been merged into another school
-export const schoolHistoricNames = pgTable("school_historic_names", {
-    id: serial("id").primaryKey(),
-    absorbingSchoolId: integer("absorbing_school_id")
-        .notNull()
-        .references(() => schools.id, { onDelete: "cascade" }),
-    mergedName: text("merged_name").notNull(),
-    mergedStandardizedName: text("merged_standardized_name").notNull().unique(),
-    mergedExternalSchoolId: text("merged_external_school_id"),
-});
+// Stores historic names for schools that have been merged into another school,
+// and upload-time aliases where two spreadsheet schools were resolved to the same DB school.
+export const schoolHistoricNames = pgTable(
+    "school_historic_names",
+    {
+        id: serial("id").primaryKey(),
+        absorbingSchoolId: integer("absorbing_school_id")
+            .notNull()
+            .references(() => schools.id, { onDelete: "cascade" }),
+        mergedName: text("merged_name").notNull(),
+        mergedStandardizedName: text("merged_standardized_name").notNull(),
+        mergedTown: text("merged_town").notNull().default(""),
+        mergedExternalSchoolId: text("merged_external_school_id"),
+    },
+    (table) => [
+        uniqueIndex("school_historic_names_name_town_idx").on(
+            table.mergedStandardizedName,
+            table.mergedTown,
+        ),
+    ],
+);
 
 // Better-Auth generated Schema below
 export const user = pgTable("user", {
