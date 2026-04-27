@@ -679,7 +679,6 @@ export default function SpreadsheetState() {
                             return;
                         }
                     } catch (err) {
-                        console.error("Conflict check failed:", err);
                         toast.error("Could not check for school conflicts.");
                     }
 

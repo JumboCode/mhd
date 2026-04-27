@@ -49,7 +49,7 @@ export default function SpreadsheetConflicts({
     }, [open, conflicts]);
 
     const allResolved = conflicts.every(
-        (c) => decisions[c.uploaded.schoolKey] != null,
+        (c) => decisions[c.uploaded.schoolKey] !== null,
     );
 
     const handleConfirm = () => {
