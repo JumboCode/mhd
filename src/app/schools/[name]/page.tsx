@@ -339,7 +339,7 @@ export default function SchoolProfilePage() {
                             <YearDropdown
                                 selectedYear={year}
                                 onYearChange={handleYearChange}
-                                showDataIndicator={true}
+                                showDataIndicator={false}
                                 school={schoolName}
                             />
                             <Button variant="ghost" size="icon">
@@ -387,7 +387,7 @@ export default function SchoolProfilePage() {
                         <YearDropdown
                             selectedYear={year}
                             onYearChange={handleYearChange}
-                            showDataIndicator={true}
+                            showDataIndicator={false}
                             school={schoolName}
                         />
                         <DropdownMenu>
