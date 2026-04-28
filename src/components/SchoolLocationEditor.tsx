@@ -117,9 +117,14 @@ export const SchoolLocationEditor = forwardRef<
         (s) => String(s.id) === selectedSchoolId,
     );
 
+    const duplicateNames = new Set(
+        schools
+            .map((s) => s.name)
+            .filter((name, i, arr) => arr.indexOf(name) !== i),
+    );
     const schoolOptions = schools.map((s) => ({
         value: String(s.id),
-        label: s.name,
+        label: duplicateNames.has(s.name) ? `${s.name} (${s.town})` : s.name,
     }));
 
     const handleSchoolChange = (value: string) => {
