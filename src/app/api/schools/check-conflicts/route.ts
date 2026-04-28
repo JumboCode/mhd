@@ -70,9 +70,13 @@ export async function POST(req: NextRequest) {
         );
 
         const conflicts: SchoolConflict[] = [];
+        const autoRemappedKeys: string[] = [];
 
         for (const uploaded of uploadedSchools) {
-            if (aliasSet.has(uploaded.schoolKey)) continue;
+            if (aliasSet.has(uploaded.schoolKey)) {
+                autoRemappedKeys.push(uploaded.schoolKey);
+                continue;
+            }
 
             const stdName = uploaded.schoolKey.split("__")[0];
             const uploadedTown = uploaded.town.toLowerCase();
@@ -85,7 +89,7 @@ export async function POST(req: NextRequest) {
             }
         }
 
-        return NextResponse.json({ conflicts });
+        return NextResponse.json({ conflicts, autoRemappedKeys });
     } catch {
         return internalError();
     }

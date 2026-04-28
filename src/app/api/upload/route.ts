@@ -644,18 +644,44 @@ export async function POST(req: NextRequest) {
                 set: { uploadedAt: now, lastUpdatedAt: now },
             });
 
-        // Persist "use-db" resolutions as historic name aliases so future
-        // uploads auto-remap without showing the conflict dialog again.
-        if (useDbResolutions.length > 0) {
-            const aliasValues = useDbResolutions.map((r) => {
-                const [stdName, town] = r.uploadedSchoolKey.split("__");
-                return {
-                    absorbingSchoolId: r.dbSchoolId,
-                    mergedName: r.uploadedSchoolName,
-                    mergedStandardizedName: stdName,
-                    mergedTown: town ?? "",
-                };
+        // Persist conflict resolutions so future uploads skip the dialog.
+        // "use-db": uploaded key → absorbing DB school (different school)
+        // "keep-distinct": uploaded key → the school itself (prevents re-prompting)
+        const aliasValues: {
+            absorbingSchoolId: number;
+            mergedName: string;
+            mergedStandardizedName: string;
+            mergedTown: string;
+        }[] = [];
+
+        for (const r of useDbResolutions) {
+            const [stdName, town] = r.uploadedSchoolKey.split("__");
+            aliasValues.push({
+                absorbingSchoolId: r.dbSchoolId,
+                mergedName: r.uploadedSchoolName,
+                mergedStandardizedName: stdName,
+                mergedTown: town ?? "",
             });
+        }
+
+        const seenKeys = new Set<string>();
+        for (const r of conflictResolutions.filter(
+            (r) => r.action === "keep-distinct",
+        )) {
+            if (seenKeys.has(r.uploadedSchoolKey)) continue;
+            seenKeys.add(r.uploadedSchoolKey);
+            const school = schoolMap.get(r.uploadedSchoolKey);
+            if (!school) continue;
+            const [stdName, town] = r.uploadedSchoolKey.split("__");
+            aliasValues.push({
+                absorbingSchoolId: school.id,
+                mergedName: r.uploadedSchoolName,
+                mergedStandardizedName: stdName,
+                mergedTown: town ?? "",
+            });
+        }
+
+        if (aliasValues.length > 0) {
             await db
                 .insert(schoolHistoricNames)
                 .values(aliasValues)

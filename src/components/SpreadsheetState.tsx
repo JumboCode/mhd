@@ -655,6 +655,11 @@ export default function SpreadsheetState() {
                         townMap,
                     );
 
+                    // Schools auto-remapped via schoolHistoricNames are
+                    // already in the DB — exclude them from matching so they
+                    // don't appear as unmatched and force coordinate placement.
+                    let schoolsForMatching = uploadedSchools;
+
                     try {
                         const res = await fetch(
                             "/api/schools/check-conflicts",
@@ -672,8 +677,17 @@ export default function SpreadsheetState() {
                         );
                         if (!res.ok) throw new Error(`HTTP ${res.status}`);
                         const data = await res.json();
+
+                        const autoRemappedKeySet = new Set<string>(
+                            data.autoRemappedKeys ?? [],
+                        );
+                        schoolsForMatching = uploadedSchools.filter(
+                            (s) => !autoRemappedKeySet.has(s.schoolKey),
+                        );
+
                         if (data.conflicts && data.conflicts.length > 0) {
-                            pendingUploadedSchoolsRef.current = uploadedSchools;
+                            pendingUploadedSchoolsRef.current =
+                                schoolsForMatching;
                             setConflicts(data.conflicts);
                             setConflictDialogOpen(true);
                             return;
@@ -682,7 +696,7 @@ export default function SpreadsheetState() {
                         toast.error("Could not check for school conflicts.");
                     }
 
-                    runSchoolMatching(uploadedSchools);
+                    runSchoolMatching(schoolsForMatching);
                 } else {
                     toast.error(
                         "Could not identify school columns in spreadsheet",
