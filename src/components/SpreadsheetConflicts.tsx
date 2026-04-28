@@ -27,12 +27,16 @@ type Props = {
     onResolved: (resolutions: ConflictResolution[]) => void;
 };
 
+function conflictKey(c: SchoolConflict): string {
+    return `${c.uploaded.schoolKey}--${c.db.id}`;
+}
+
 export default function SpreadsheetConflicts({
     open,
     conflicts,
     onResolved,
 }: Props) {
-    // Local state: one decision per conflict, keyed by uploadedSchoolKey
+    // One decision per conflict pair (uploaded school and DB school)
     const [decisions, setDecisions] = useState<
         Record<string, "use-db" | "keep-distinct" | null>
     >({});
@@ -42,27 +46,35 @@ export default function SpreadsheetConflicts({
         if (open) {
             const initial: Record<string, null> = {};
             for (const c of conflicts) {
-                initial[c.uploaded.schoolKey] = null;
+                initial[conflictKey(c)] = null;
             }
             setDecisions(initial);
         }
     }, [open, conflicts]);
 
     const allResolved = conflicts.every(
-        (c) => decisions[c.uploaded.schoolKey] !== null,
+        (c) => decisions[conflictKey(c)] !== null,
     );
 
     const handleConfirm = () => {
         const resolutions: ConflictResolution[] = conflicts.map((c) => ({
             uploadedSchoolKey: c.uploaded.schoolKey,
             uploadedSchoolName: c.uploaded.name,
-            action: decisions[c.uploaded.schoolKey] ?? "keep-distinct",
+            action: decisions[conflictKey(c)] ?? "keep-distinct",
             dbSchoolId: c.db.id,
             dbSchoolStandardizedName: c.db.standardizedName,
             dbSchoolTown: c.db.town,
         }));
         onResolved(resolutions);
     };
+
+    // Build a lookup of which uploaded school is being merged into which DB school
+    const mergedIntoMap = new Map<string, SchoolConflict>();
+    for (const c of conflicts) {
+        if (decisions[conflictKey(c)] === "use-db") {
+            mergedIntoMap.set(c.uploaded.schoolKey, c);
+        }
+    }
 
     return (
         <Dialog open={open} onOpenChange={() => {}}>
@@ -82,11 +94,21 @@ export default function SpreadsheetConflicts({
                 </DialogHeader>
 
                 <div className="flex flex-col gap-4 max-h-[60vh] overflow-y-auto py-1 pr-1">
-                    {conflicts.map((c) => {
-                        const decision = decisions[c.uploaded.schoolKey];
+                    {conflicts.map((c, i) => {
+                        const key = conflictKey(c);
+                        const decision = decisions[key];
+                        const mergedInto = mergedIntoMap.get(
+                            c.uploaded.schoolKey,
+                        );
+                        // This row's uploaded school was auto-set to keep-distinct
+                        // because the user merged it into a different DB school
+                        const isAutoKeptDistinct =
+                            decision === "keep-distinct" &&
+                            mergedInto !== undefined &&
+                            mergedInto.db.id !== c.db.id;
                         return (
                             <div
-                                key={c.uploaded.schoolKey}
+                                key={`${key}--${i}`}
                                 className="rounded-lg border p-4 flex flex-col gap-3"
                             >
                                 <div className="grid grid-cols-2 gap-3">
@@ -95,14 +117,15 @@ export default function SpreadsheetConflicts({
                                         onClick={() =>
                                             setDecisions((d) => ({
                                                 ...d,
-                                                [c.uploaded.schoolKey]:
-                                                    "keep-distinct",
+                                                [key]: "keep-distinct",
                                             }))
                                         }
                                         className={`rounded-md border px-3 py-2 text-sm text-left transition-colors ${
-                                            decision === "keep-distinct"
-                                                ? "border-primary bg-primary/5 ring-1 ring-primary"
-                                                : "border-border hover:bg-muted/40"
+                                            isAutoKeptDistinct
+                                                ? "border-red-400 bg-red-50 ring-1 ring-red-400"
+                                                : decision === "keep-distinct"
+                                                  ? "border-primary bg-primary/5 ring-1 ring-primary"
+                                                  : "border-border hover:bg-muted/40"
                                         }`}
                                     >
                                         <p className="text-xs text-muted-foreground mb-0.5">
@@ -119,11 +142,28 @@ export default function SpreadsheetConflicts({
                                     <button
                                         type="button"
                                         onClick={() =>
-                                            setDecisions((d) => ({
-                                                ...d,
-                                                [c.uploaded.schoolKey]:
-                                                    "use-db",
-                                            }))
+                                            setDecisions((d) => {
+                                                const next = {
+                                                    ...d,
+                                                    [key]: "use-db" as const,
+                                                };
+                                                // An uploaded school can only merge into one DB school —
+                                                // auto-set all other pairs for this uploaded school to "keep-distinct"
+                                                for (const other of conflicts) {
+                                                    const otherKey =
+                                                        conflictKey(other);
+                                                    if (
+                                                        otherKey !== key &&
+                                                        other.uploaded
+                                                            .schoolKey ===
+                                                            c.uploaded.schoolKey
+                                                    ) {
+                                                        next[otherKey] =
+                                                            "keep-distinct";
+                                                    }
+                                                }
+                                                return next;
+                                            })
                                         }
                                         className={`rounded-md border px-3 py-2 text-sm text-left transition-colors ${
                                             decision === "use-db"
@@ -147,12 +187,20 @@ export default function SpreadsheetConflicts({
                                         Select one to continue
                                     </p>
                                 )}
-                                {decision === "keep-distinct" && (
-                                    <p className="text-xs text-muted-foreground">
-                                        Will be uploaded as a new separate
-                                        school.
+                                {isAutoKeptDistinct && (
+                                    <p className="text-xs text-red-500">
+                                        Will be merged into{" "}
+                                        {mergedInto!.db.name} (
+                                        {mergedInto!.db.town}) instead.
                                     </p>
                                 )}
+                                {decision === "keep-distinct" &&
+                                    !isAutoKeptDistinct && (
+                                        <p className="text-xs text-muted-foreground">
+                                            Will be uploaded as a new separate
+                                            school.
+                                        </p>
+                                    )}
                                 {decision === "use-db" && (
                                     <p className="text-xs text-muted-foreground">
                                         Uploaded data will be added to the

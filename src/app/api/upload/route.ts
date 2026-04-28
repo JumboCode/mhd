@@ -343,6 +343,52 @@ export async function POST(req: NextRequest) {
             }
         }
 
+        // Auto-remap schools whose conflicts were resolved in a previous upload.
+        // schoolHistoricNames stores the uploaded school's composite key
+        // (mergedStandardizedName + mergedTown) alongside the absorbing school.
+        // Without this, a previously-resolved uploaded school would silently
+        // create a new DB record instead of routing to the correct school.
+        if (allStandardizedNames.length > 0) {
+            const historicAliases = await db
+                .select({
+                    mergedStandardizedName:
+                        schoolHistoricNames.mergedStandardizedName,
+                    mergedTown: schoolHistoricNames.mergedTown,
+                    absorbingSchoolId: schoolHistoricNames.absorbingSchoolId,
+                })
+                .from(schoolHistoricNames)
+                .where(
+                    inArray(
+                        schoolHistoricNames.mergedStandardizedName,
+                        allStandardizedNames,
+                    ),
+                );
+
+            if (historicAliases.length > 0) {
+                const absorbingIds = [
+                    ...new Set(historicAliases.map((a) => a.absorbingSchoolId)),
+                ];
+                const absorbingSchools = await db
+                    .select()
+                    .from(schools)
+                    .where(inArray(schools.id, absorbingIds));
+                const absorbingById = new Map(
+                    absorbingSchools.map((s) => [s.id, s]),
+                );
+                for (const alias of historicAliases) {
+                    if (!alias.mergedTown) continue;
+                    const aliasKey = `${alias.mergedStandardizedName}__${alias.mergedTown}`;
+                    if (schoolMap.has(aliasKey)) continue;
+                    const absorbing = absorbingById.get(
+                        alias.absorbingSchoolId,
+                    );
+                    if (absorbing) {
+                        schoolMap.set(aliasKey, absorbing);
+                    }
+                }
+            }
+        }
+
         currentProgress.progress = 20;
 
         // Phase 3: Process all rows in memory — no DB calls
