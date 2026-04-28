@@ -18,7 +18,6 @@ import { Plus, Trash, Undo2 } from "lucide-react";
 import { toast } from "sonner";
 import { LoadError } from "@/components/ui/load-error";
 import { Skeleton } from "@/components/ui/skeleton";
-import { standardize } from "@/lib/string-standardize";
 
 /**
  * Represents a single school entry in the system.
@@ -26,6 +25,8 @@ import { standardize } from "@/lib/string-standardize";
 interface SchoolEntry {
     id: number;
     name: string;
+    town: string;
+    standardizedName: string;
     latitude: number | null;
     longitude: number | null;
     gateway?: boolean;
@@ -169,7 +170,7 @@ const GatewaySchools = forwardRef<
                 await Promise.all([
                     ...pendingAdditions.map((school) =>
                         fetch(
-                            `/api/schools/${standardize(school.name)}/gateway`,
+                            `/api/schools/${school.standardizedName}/${school.town.toLowerCase().replace(/\s+/g, "-")}/gateway`,
                             {
                                 method: "PATCH",
                                 headers: { "Content-Type": "application/json" },
@@ -179,7 +180,7 @@ const GatewaySchools = forwardRef<
                     ),
                     ...pendingRemovals.map((school) =>
                         fetch(
-                            `/api/schools/${standardize(school.name)}/gateway`,
+                            `/api/schools/${school.standardizedName}/${school.town.toLowerCase().replace(/\s+/g, "-")}/gateway`,
                             {
                                 method: "PATCH",
                                 headers: { "Content-Type": "application/json" },

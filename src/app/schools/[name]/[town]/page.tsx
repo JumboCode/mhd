@@ -643,7 +643,10 @@ export default function SchoolProfilePage() {
                         School Location
                     </h2>
                     <SchoolLocationEditor
-                        fixedSchool={{ name: schoolData.name }}
+                        fixedSchool={{
+                            name: schoolData.name,
+                            town: schoolData.town,
+                        }}
                     />
                 </div>
 

@@ -1,40 +1,31 @@
-/***************************************************************
- *
- *                /api/schools/[name]/gateway/route.ts
- *
- *         Author: Zander & Anne
- *           Date: 3/1/2026
- *
- *        Summary: Endpoint to fetch or update a school's
- *                 "gateway" flag in the database.
- *
- **************************************************************/
-
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { schools } from "@/lib/schema";
-import { eq } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { gatewayPatchBodySchema } from "@/lib/api-schemas";
 import { parseOrError, internalError } from "@/lib/api-utils";
 
-/**
- * Fetch the gateway status of a school.
- *
- * @param req NextRequest object
- * @param params Promise containing the school `name` param
- * @returns JSON response with { gateway: boolean } or error
- */
+function decodeTownSegment(segment: string): string {
+    return segment.replace(/-/g, " ");
+}
+
 export async function GET(
-    req: NextRequest,
-    { params }: { params: Promise<{ name: string }> },
+    _req: NextRequest,
+    { params }: { params: Promise<{ name: string; town: string }> },
 ) {
     try {
-        const { name } = await params;
+        const { name, town } = await params;
+        const townQuery = decodeTownSegment(town);
 
         const schoolResult = await db
             .select({ id: schools.id, gateway: schools.gateway })
             .from(schools)
-            .where(eq(schools.standardizedName, name))
+            .where(
+                and(
+                    eq(schools.standardizedName, name),
+                    sql`LOWER(${schools.town}) = ${townQuery}`,
+                ),
+            )
             .limit(1);
 
         if (!schoolResult || schoolResult.length === 0) {
@@ -50,19 +41,13 @@ export async function GET(
     }
 }
 
-/**
- * Update the gateway status of a school.
- *
- * @param req NextRequest object
- * @param params Promise containing the school `name` param
- * @returns JSON response with { message, gateway } or error
- */
 export async function PATCH(
     req: NextRequest,
-    { params }: { params: Promise<{ name: string }> },
+    { params }: { params: Promise<{ name: string; town: string }> },
 ) {
     try {
-        const { name } = await params;
+        const { name, town } = await params;
+        const townQuery = decodeTownSegment(town);
 
         const body = await req.json();
         const parsed = parseOrError(gatewayPatchBodySchema, body);
@@ -73,7 +58,12 @@ export async function PATCH(
         const schoolResult = await db
             .select({ id: schools.id })
             .from(schools)
-            .where(eq(schools.standardizedName, name))
+            .where(
+                and(
+                    eq(schools.standardizedName, name),
+                    sql`LOWER(${schools.town}) = ${townQuery}`,
+                ),
+            )
             .limit(1);
 
         if (!schoolResult || schoolResult.length === 0) {
