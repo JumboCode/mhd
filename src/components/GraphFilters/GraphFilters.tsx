@@ -17,6 +17,7 @@ import { useState, useEffect } from "react";
 import { Combobox } from "@/components/Combobox";
 import { AddFilterPopover } from "./AddFilterPopover";
 import { FilterValuePopover } from "./FilterValuePopover";
+import type { FilterOption } from "./FilterValuePopover";
 import { Info, X } from "lucide-react";
 import {
     Select,
@@ -99,7 +100,7 @@ export type Filters = {
 };
 
 type GraphFiltersProps = {
-    schools: string[];
+    schools: FilterOption[];
     cities: string[];
     projectTypes?: string[]; // List of project type options
     divisions?: string[];
@@ -506,7 +507,7 @@ export default function GraphFilters({
                                     filter.value as MultiSelectFilterType;
                                 const optionsMap: Record<
                                     MultiSelectFilterType,
-                                    string[]
+                                    FilterOption[]
                                 > = {
                                     "school": schools,
                                     "city": cities,

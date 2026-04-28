@@ -30,6 +30,7 @@ import { Checkbox } from "./Checkbox";
 interface SchoolOption {
     id: number;
     name: string;
+    town: string;
 }
 
 interface Props {
@@ -78,10 +79,22 @@ export default function MergeSchoolDialog({
 
     const otherSchool = schools.find((s) => String(s.id) === otherSchoolId);
 
+    const duplicateNames = new Set(
+        schools
+            .map((s) => s.name)
+            .filter((name, i, arr) => arr.indexOf(name) !== i),
+    );
+    const schoolLabel = (s: SchoolOption) =>
+        duplicateNames.has(s.name) ? `${s.name} (${s.town})` : s.name;
+
     const mergingSchool =
-        direction === "outward" ? currentSchoolName : otherSchool?.name;
+        direction === "outward"
+            ? currentSchoolName
+            : otherSchool && schoolLabel(otherSchool);
     const baseSchool =
-        direction === "outward" ? otherSchool?.name : currentSchoolName;
+        direction === "outward"
+            ? otherSchool && schoolLabel(otherSchool)
+            : currentSchoolName;
 
     const handleMerge = async () => {
         if (!otherSchool) return;
@@ -167,7 +180,9 @@ export default function MergeSchoolDialog({
                                                   : "border-dashed border-muted-foreground/50 text-muted-foreground hover:border-muted-foreground hover:bg-muted/30",
                                         )}
                                     >
-                                        {otherSchool?.name ?? (
+                                        {otherSchool ? (
+                                            schoolLabel(otherSchool)
+                                        ) : (
                                             <span className="italic font-normal">
                                                 Click to select
                                             </span>
@@ -194,7 +209,9 @@ export default function MergeSchoolDialog({
                                                 {schools.map((school) => (
                                                     <CommandItem
                                                         key={school.id}
-                                                        value={school.name}
+                                                        value={schoolLabel(
+                                                            school,
+                                                        )}
                                                         onSelect={() => {
                                                             setOtherSchoolId(
                                                                 String(
@@ -217,7 +234,7 @@ export default function MergeSchoolDialog({
                                                                     : "opacity-0",
                                                             )}
                                                         />
-                                                        {school.name}
+                                                        {schoolLabel(school)}
                                                     </CommandItem>
                                                 ))}
                                             </CommandGroup>

@@ -110,7 +110,13 @@ export function computeGraphDataset(
 
         if (
             filters.selectedSchools.length > 0 &&
-            !filters.selectedSchools.includes(p.schoolName)
+            !filters.selectedSchools.some((v) => {
+                const sep = v.indexOf("\x00");
+                return sep === -1
+                    ? v === p.schoolName
+                    : v.slice(0, sep) === p.schoolName &&
+                          v.slice(sep + 1) === p.schoolTown;
+            })
         )
             return false;
 

@@ -540,10 +540,34 @@ export default function ChartPage() {
         [filters.measuredAs, filters.groupBy],
     );
 
-    // Data for filter dropdowns
-    const schools = Array.from(
-        new Set(allProjects.map((p) => p.schoolName)),
-    ).sort();
+    // Data for filter dropdowns — disambiguate schools sharing the same name
+    // by appending the town. Only schools with multiple distinct towns get the
+    // "(Town)" suffix. Value uses \x00 as separator so filter logic can split
+    // it back into name + town without ambiguity.
+    const schoolTownSets = new Map<string, Set<string>>();
+    for (const p of allProjects) {
+        if (!schoolTownSets.has(p.schoolName))
+            schoolTownSets.set(p.schoolName, new Set());
+        schoolTownSets.get(p.schoolName)!.add(p.schoolTown);
+    }
+    const seenSchoolKeys = new Set<string>();
+    const schools = allProjects
+        .flatMap((p) => {
+            const key = `${p.schoolName}\x00${p.schoolTown}`;
+            if (seenSchoolKeys.has(key)) return [];
+            seenSchoolKeys.add(key);
+            const isDup = (schoolTownSets.get(p.schoolName)?.size ?? 0) > 1;
+            return [
+                isDup
+                    ? { label: `${p.schoolName} (${p.schoolTown})`, value: key }
+                    : p.schoolName,
+            ];
+        })
+        .sort((a, b) => {
+            const la = typeof a === "string" ? a : a.label;
+            const lb = typeof b === "string" ? b : b.label;
+            return la.localeCompare(lb);
+        });
     const cities = Array.from(
         new Set(allProjects.map((p) => p.schoolTown)),
     ).sort();

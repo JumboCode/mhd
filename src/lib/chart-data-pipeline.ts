@@ -308,7 +308,13 @@ export function buildFilterPipeline(
     // Step 4: Selected schools
     if (filters.selectedSchools.length > 0) {
         current = current.filter((p) =>
-            filters.selectedSchools.includes(p.schoolName),
+            filters.selectedSchools.some((v) => {
+                const sep = v.indexOf("\x00");
+                return sep === -1
+                    ? v === p.schoolName
+                    : v.slice(0, sep) === p.schoolName &&
+                          v.slice(sep + 1) === p.schoolTown;
+            }),
         );
         steps.push({
             id: "school",
