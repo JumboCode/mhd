@@ -221,7 +221,12 @@ export async function GET(
                     absorbingSchoolId: schoolHistoricNames.absorbingSchoolId,
                 })
                 .from(schoolHistoricNames)
-                .where(eq(schoolHistoricNames.mergedStandardizedName, name))
+                .where(
+                    and(
+                        eq(schoolHistoricNames.mergedStandardizedName, name),
+                        sql`LOWER(${schoolHistoricNames.mergedTown}) = ${townQuery}`,
+                    ),
+                )
                 .limit(1);
 
             if (historic.length > 0) {

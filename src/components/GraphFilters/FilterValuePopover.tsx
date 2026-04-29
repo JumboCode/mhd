@@ -61,7 +61,6 @@ export function FilterValuePopover({
             setOpen(true);
             onAutoOpenCompleteRef.current?.();
         }
-        console.log(options);
     }, [autoOpen]);
 
     // Separate effect to unlock dismiss — not tied to autoOpen changing,
