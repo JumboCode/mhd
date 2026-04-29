@@ -233,7 +233,7 @@ const GatewaySchools = forwardRef<
                 />
             ) : (
                 <>
-                    <div className="w-72 w-fit">
+                    <div className="w-72">
                         <Combobox
                             options={schoolOptions}
                             value={selectedSchoolId}
@@ -250,18 +250,18 @@ const GatewaySchools = forwardRef<
                         />
                     </div>
 
-                    <div className="border-2 border-gray-200 rounded-lg overflow-hidden">
+                    <div className="border border-gray-200 rounded-lg overflow-hidden shadow-[0_1px_2px_rgba(0,0,0,0.04),0_1px_4px_rgba(0,0,0,0.04)]">
                         <table className="w-full">
-                            <thead className="bg-gray-50 border-b-2 border-gray-200">
-                                <tr className="divide-x-2 divide-gray-200">
-                                    <th className="text-center px-4 py-3 text-sm font-medium text-gray-500 w-[60%]">
+                            <thead className="bg-gray-50 border-b border-gray-200">
+                                <tr>
+                                    <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide w-[60%]">
                                         School
                                     </th>
-                                    <th className="text-center px-4 py-3 text-sm font-medium text-gray-500 w-[25%]">
+                                    <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide w-[25%]">
                                         Status
                                     </th>
-                                    <th className="text-center px-4 py-3 text-sm font-medium text-gray-500 w-[15%]">
-                                        Actions
+                                    <th className="text-right px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide w-[15%]">
+                                        <span className="sr-only">Actions</span>
                                     </th>
                                 </tr>
                             </thead>
@@ -293,33 +293,31 @@ const GatewaySchools = forwardRef<
                                         return (
                                             <tr
                                                 key={school.id}
-                                                className={
+                                                className={`transition-colors duration-150 ${
                                                     isPendingRemove
                                                         ? "bg-red-50"
                                                         : isPendingAdd
                                                           ? "bg-green-50"
                                                           : "hover:bg-gray-50"
-                                                }
+                                                }`}
                                             >
                                                 <td
                                                     className={`px-4 py-3 text-sm w-[60%] ${isPendingRemove ? "line-through text-gray-400" : ""}`}
                                                 >
                                                     {school.name}
                                                 </td>
-                                                <td className="px-4 py-2 text-sm text-center">
-                                                    <div className="flex items-center justify-center">
-                                                        {isPendingRemove ? (
-                                                            <span className="inline-flex items-center justify-center gap-1.5 w-24 px-3 py-1 rounded-sm text-xs font-medium bg-red-100 text-red-600 border border-red-300">
-                                                                <Trash className="w-3 h-3" />
-                                                                Removing
-                                                            </span>
-                                                        ) : isPendingAdd ? (
-                                                            <span className="inline-flex items-center justify-center gap-1.5 w-24 px-3 py-1 rounded-sm text-xs font-medium bg-green-100 text-green-700 border border-green-300">
-                                                                <Plus className="w-3 h-3" />
-                                                                Adding
-                                                            </span>
-                                                        ) : null}
-                                                    </div>
+                                                <td className="px-4 py-2 text-sm">
+                                                    {isPendingRemove ? (
+                                                        <span className="inline-flex items-center justify-center gap-1.5 w-24 px-2.5 py-1 rounded-md text-xs font-medium bg-red-100 text-red-600 border border-red-200">
+                                                            <Trash className="w-3 h-3" />
+                                                            Removing
+                                                        </span>
+                                                    ) : isPendingAdd ? (
+                                                        <span className="inline-flex items-center justify-center gap-1.5 w-24 px-2.5 py-1 rounded-md text-xs font-medium bg-green-100 text-green-700 border border-green-200">
+                                                            <Plus className="w-3 h-3" />
+                                                            Adding
+                                                        </span>
+                                                    ) : null}
                                                 </td>
                                                 <td className="text-sm p-0">
                                                     {isPendingRemove ? (
@@ -329,7 +327,7 @@ const GatewaySchools = forwardRef<
                                                                     school.id,
                                                                 )
                                                             }
-                                                            className="w-full h-full px-4 py-3 flex items-center justify-center text-red-400 hover:text-gray-500 transition-colors cursor-pointer"
+                                                            className="w-full h-full px-4 py-3 flex items-center justify-end text-red-400 hover:text-gray-500 transition-colors cursor-pointer"
                                                             aria-label={`Undo remove ${school.name}`}
                                                         >
                                                             <Undo2 className="w-4 h-4" />
@@ -341,7 +339,7 @@ const GatewaySchools = forwardRef<
                                                                     school.id,
                                                                 )
                                                             }
-                                                            className="w-full h-full px-4 py-3 flex items-center justify-center text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
+                                                            className="w-full h-full px-4 py-3 flex items-center justify-end text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
                                                             aria-label={`Remove ${school.name}`}
                                                         >
                                                             <Trash className="w-4 h-4" />

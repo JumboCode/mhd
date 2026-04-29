@@ -119,72 +119,144 @@ export default function Settings() {
     };
 
     return (
-        <div className="flex flex-col gap-12 p-8 max-w-4xl pb-24">
-            <div>
-                <h1 className="text-3xl font-bold">Settings</h1>
-            </div>
-            <div className="space-y-6">
-                <div>
-                    <h3 className="font-bold">Schools in Gateway Cities</h3>
-                    <h4 className="mb-2">
-                        Select schools that represent students from gateway
-                        cities.
-                    </h4>
-                    <GatewaySchools
-                        ref={gatewaySchoolsRef}
-                        onDirtyChange={setGatewayDirty}
-                    />
-                </div>
-                <SchoolLocationEditor
-                    ref={schoolLocationRef}
-                    onUnsavedChange={() => setLocationDirty(true)}
-                />
-                <div className="space-y-3">
-                    <h3 className="font-bold">Available Data</h3>
-                    <YearsOfData
-                        ref={yearsOfDataRef}
-                        onUnsavedChange={() => setYearsHasChanges(true)}
-                        onAllChangesReverted={() => setYearsHasChanges(false)}
-                    />
-                </div>
+        <div className="mx-auto max-w-6xl px-8 py-10 pb-32">
+            <h1 className="text-3xl font-bold tracking-tight text-balance">
+                Settings
+            </h1>
+
+            <div className="mt-6 divide-y divide-border">
+                <section className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-x-12 gap-y-4 py-10">
+                    <div>
+                        <h2 className="font-semibold text-balance">
+                            Schools in Gateway Cities
+                        </h2>
+                        <p className="mt-1 text-sm text-muted-foreground text-pretty">
+                            Select schools that represent students from gateway
+                            cities.
+                        </p>
+                    </div>
+                    <div>
+                        <GatewaySchools
+                            ref={gatewaySchoolsRef}
+                            onDirtyChange={setGatewayDirty}
+                        />
+                    </div>
+                </section>
+
+                <section className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-x-12 gap-y-4 py-10">
+                    <div>
+                        <h2 className="font-semibold text-balance">
+                            School Locations
+                        </h2>
+                        <p className="mt-1 text-sm text-muted-foreground text-pretty">
+                            Update a school&apos;s coordinates by selecting it
+                            and clicking on the map.
+                        </p>
+                    </div>
+                    <div>
+                        <SchoolLocationEditor
+                            ref={schoolLocationRef}
+                            onUnsavedChange={() => setLocationDirty(true)}
+                        />
+                    </div>
+                </section>
+
+                <section className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-x-12 gap-y-4 py-10">
+                    <div>
+                        <h2 className="font-semibold text-balance">
+                            Available Data
+                        </h2>
+                        <p className="mt-1 text-sm text-muted-foreground text-pretty">
+                            Review which years of project data are loaded and
+                            remove old years.
+                        </p>
+                    </div>
+                    <div>
+                        <YearsOfData
+                            ref={yearsOfDataRef}
+                            onUnsavedChange={() => setYearsHasChanges(true)}
+                            onAllChangesReverted={() =>
+                                setYearsHasChanges(false)
+                            }
+                        />
+                    </div>
+                </section>
             </div>
 
+            {/* Save bar */}
             <div
-                className={`fixed bottom-0 left-56 right-0 z-50 flex items-center justify-between px-8 py-4 bg-white/20 backdrop-blur-md shadow-lg transition-transform duration-200 ease-in-out ${hasUnsavedChanges ? "translate-y-0" : "translate-y-full"}`}
+                className={`fixed bottom-0 left-56 right-0 z-50 border-t border-border bg-background/60 backdrop-blur-xl shadow-[0_-4px_16px_rgba(0,0,0,0.04)] transition-transform duration-300 ease-[cubic-bezier(0.2,0,0,1)] ${
+                    hasUnsavedChanges ? "translate-y-0" : "translate-y-full"
+                }`}
             >
-                <span className="text-sm text-muted-foreground flex items-center gap-1.5">
-                    <span className="inline-block w-2 h-2 rounded-full bg-amber-400" />
-                    You have unsaved changes — save?
-                </span>
-                <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={handleDiscard}>
-                        Discard Changes
-                    </Button>
-                    <Button size="sm" onClick={handleSave}>
-                        Save
-                    </Button>
+                <div className="mx-auto flex max-w-6xl items-center justify-between px-8 py-4">
+                    <span className="text-sm text-muted-foreground flex items-center gap-2">
+                        <span className="relative inline-flex h-2 w-2 shrink-0">
+                            <span className="absolute inset-0 animate-ping rounded-full bg-amber-400 opacity-75" />
+                            <span className="absolute inset-0 rounded-full bg-amber-400" />
+                        </span>
+                        Unsaved changes
+                    </span>
+                    <div className="flex gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleDiscard}
+                            className="transition-transform active:scale-[0.96]"
+                        >
+                            Discard
+                        </Button>
+                        <Button
+                            size="sm"
+                            onClick={handleSave}
+                            className="transition-transform active:scale-[0.96]"
+                        >
+                            Save
+                        </Button>
+                    </div>
                 </div>
             </div>
             {/* If user tries to leave page with unsaved changes */}
-            <Dialog open={showUnsavedDialog} onOpenChange={handleDialogCancel}>
+            <Dialog
+                open={showUnsavedDialog}
+                onOpenChange={(open) => {
+                    // Esc → discard changes and continue with navigation
+                    if (!open) handleDialogDiscard();
+                }}
+            >
                 <DialogContent
                     showCloseButton={false}
                     onInteractOutside={(e) => e.preventDefault()}
                 >
                     <DialogHeader>
-                        <DialogTitle>Unsaved Changes</DialogTitle>
-                        <DialogDescription>
+                        <DialogTitle className="text-balance">
+                            Unsaved Changes
+                        </DialogTitle>
+                        <DialogDescription className="text-pretty">
                             You have unsaved changes. What would you like to do?
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
-                        <Button variant="outline" onClick={handleDialogCancel}>
+                        <Button
+                            variant="outline"
+                            onClick={handleDialogCancel}
+                            className="transition-transform active:scale-[0.96]"
+                        >
                             Cancel
                         </Button>
-                        <Button variant="outline" onClick={handleDialogDiscard}>
+                        <Button
+                            variant="destructive"
+                            onClick={handleDialogDiscard}
+                            className="text-white transition-transform active:scale-[0.96]"
+                        >
                             Discard Changes
                         </Button>
-                        <Button onClick={handleDialogSave}>Save</Button>
+                        <Button
+                            onClick={handleDialogSave}
+                            className="transition-transform active:scale-[0.96]"
+                        >
+                            Save
+                        </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

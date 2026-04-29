@@ -303,12 +303,12 @@ export const MapPlacer = ({
                         <DialogTitle>Edit Location: {displayName}</DialogTitle>
                         <DialogDescription>
                             Click on the map to drop a pin for the new location.
-                            The red dot shows the current location.
+                            The blue marker shows the current location.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="flex-1 rounded-lg overflow-hidden border border-border">
                         <Map center={editMapCenter} zoom={12}>
-                            {/* Current location marker (red) */}
+                            {/* Current location marker (blue) */}
                             {coordinates &&
                                 coordinates.latitude &&
                                 coordinates.longitude && (
@@ -317,18 +317,30 @@ export const MapPlacer = ({
                                         latitude={coordinates.latitude}
                                     >
                                         <MarkerContent>
-                                            <div className="flex h-4 w-4 items-center justify-center rounded-full bg-red-500/60 border-2 border-red-500 shadow-lg" />
+                                            <Image
+                                                src="/maps/location-marker.svg"
+                                                alt="Current location"
+                                                width={32}
+                                                height={32}
+                                                className="h-10 w-10"
+                                            />
                                         </MarkerContent>
                                     </MapMarker>
                                 )}
-                            {/* New pin location (blue) */}
+                            {/* New pin location (red) */}
                             {newPin && (
                                 <MapMarker
                                     longitude={newPin.longitude}
                                     latitude={newPin.latitude}
                                 >
                                     <MarkerContent>
-                                        <div className="flex h-4 w-4 items-center justify-center rounded-full bg-blue-500/60 border-2 border-blue-500 shadow-lg" />
+                                        <Image
+                                            src="/maps/location-marker-red.svg"
+                                            alt="New location"
+                                            width={32}
+                                            height={32}
+                                            className="h-10 w-10"
+                                        />
                                     </MarkerContent>
                                 </MapMarker>
                             )}

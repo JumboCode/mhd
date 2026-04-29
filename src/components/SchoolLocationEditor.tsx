@@ -20,6 +20,7 @@ import {
     useImperativeHandle,
     useState,
 } from "react";
+import Image from "next/image";
 import { Map, MapMarker, MarkerContent, useMap } from "@/components/ui/map";
 import { Combobox } from "@/components/Combobox";
 import { Button } from "@/components/ui/button";
@@ -205,19 +206,14 @@ export const SchoolLocationEditor = forwardRef<
     return (
         <div className="space-y-3">
             {!fixedSchool && (
-                <>
-                    <div className="flex items-center justify-between">
-                        <h3 className="font-bold">School Locations</h3>
-                    </div>
-                    <div className="min-w-72 w-fit">
-                        <Combobox
-                            options={schoolOptions}
-                            value={selectedSchoolId}
-                            onChange={handleSchoolChange}
-                            placeholder="Search for a school..."
-                        />
-                    </div>
-                </>
+                <div className="w-72">
+                    <Combobox
+                        options={schoolOptions}
+                        value={selectedSchoolId}
+                        onChange={handleSchoolChange}
+                        placeholder="Search for a school..."
+                    />
+                </div>
             )}
 
             {selectedSchool && mounted && (
@@ -233,7 +229,7 @@ export const SchoolLocationEditor = forwardRef<
                             doubleClickZoom={editing}
                             touchZoomRotate={editing}
                         >
-                            {/* Current location (red) */}
+                            {/* Current location (blue) */}
                             {selectedSchool.latitude &&
                                 selectedSchool.longitude && (
                                     <MapMarker
@@ -241,18 +237,30 @@ export const SchoolLocationEditor = forwardRef<
                                         latitude={selectedSchool.latitude}
                                     >
                                         <MarkerContent>
-                                            <div className="flex h-4 w-4 items-center justify-center rounded-full bg-red-500/60 border-2 border-red-500 shadow-lg" />
+                                            <Image
+                                                src="/maps/location-marker.svg"
+                                                alt="Current location"
+                                                width={32}
+                                                height={32}
+                                                className="h-10 w-10"
+                                            />
                                         </MarkerContent>
                                     </MapMarker>
                                 )}
-                            {/* New pin (blue) */}
+                            {/* New pin (red) */}
                             {newPin && (
                                 <MapMarker
                                     longitude={newPin.longitude}
                                     latitude={newPin.latitude}
                                 >
                                     <MarkerContent>
-                                        <div className="flex h-4 w-4 items-center justify-center rounded-full bg-blue-500/60 border-2 border-blue-500 shadow-lg" />
+                                        <Image
+                                            src="/maps/location-marker-red.svg"
+                                            alt="New location"
+                                            width={32}
+                                            height={32}
+                                            className="h-10 w-10"
+                                        />
                                     </MarkerContent>
                                 </MapMarker>
                             )}

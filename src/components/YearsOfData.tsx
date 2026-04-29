@@ -198,24 +198,24 @@ const YearsOfData = forwardRef<
 
     return (
         <>
-            <div className="border-2 border-gray-200 rounded-lg overflow-hidden w-full">
+            <div className="border border-gray-200 rounded-lg overflow-hidden w-full shadow-[0_1px_2px_rgba(0,0,0,0.04),0_1px_4px_rgba(0,0,0,0.04)]">
                 <table className="w-full">
-                    <thead className="bg-gray-50 border-b-2 border-gray-200">
-                        <tr className="divide-x-2 divide-gray-200">
-                            <th className="text-center px-4 py-3 text-sm font-medium text-gray-500 w-[15%]">
+                    <thead className="bg-gray-50 border-b border-gray-200">
+                        <tr>
+                            <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide w-[15%]">
                                 Year
                             </th>
-                            <th className="text-center px-4 py-3 text-sm font-medium text-gray-500 w-[20%]">
+                            <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide w-[20%]">
                                 Status
                             </th>
-                            <th className="text-center px-4 py-3 text-sm font-medium text-gray-500 w-[27%]">
+                            <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide w-[27%]">
                                 Uploaded
                             </th>
-                            <th className="text-center px-4 py-3 text-sm font-medium text-gray-500 w-[27%]">
+                            <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide w-[27%]">
                                 Last Updated
                             </th>
-                            <th className="text-center px-4 py-3 text-sm font-medium text-gray-500 w-[11%]">
-                                Actions
+                            <th className="text-right px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide w-[11%]">
+                                <span className="sr-only">Actions</span>
                             </th>
                         </tr>
                     </thead>
@@ -227,54 +227,50 @@ const YearsOfData = forwardRef<
                                 return (
                                     <tr
                                         key={entry.year}
-                                        className={
+                                        className={`transition-colors duration-150 ${
                                             isPendingDelete
                                                 ? "bg-red-50"
                                                 : "hover:bg-gray-50"
-                                        }
+                                        }`}
                                     >
                                         <td
-                                            className={`px-4 py-3 text-sm text-center ${isPendingDelete ? "line-through text-gray-400" : ""}`}
+                                            className={`px-4 py-3 text-sm tabular-nums ${isPendingDelete ? "line-through text-gray-400" : ""}`}
                                         >
                                             {entry.year}
                                         </td>
-                                        <td className="px-4 py-3 text-sm text-center">
-                                            <div className="flex items-center justify-center">
-                                                {isPendingDelete ? (
-                                                    <span className="inline-flex items-center justify-center gap-1.5 w-24 px-3 py-1 rounded-sm text-xs font-medium bg-red-100 text-red-600 border border-red-300">
-                                                        <Trash className="w-3 h-3" />
-                                                        Deleting
-                                                    </span>
-                                                ) : yearsWithData.has(
-                                                      entry.year,
-                                                  ) &&
-                                                  entry.uploadedAt !== null ? (
-                                                    <span className="inline-flex items-center justify-center gap-1.5 w-24 px-3 py-1 rounded-sm text-xs font-medium bg-green-100 text-green-700 border border-green-300">
-                                                        <Check className="w-3 h-3" />
-                                                        Uploaded
-                                                    </span>
-                                                ) : yearsWithData.has(
-                                                      entry.year,
-                                                  ) ? (
-                                                    <span className="inline-flex items-center justify-center gap-1.5 w-28 px-3 py-1 rounded-sm text-xs font-medium bg-amber-100 text-amber-700 border border-amber-300">
-                                                        <AlertTriangle className="w-3 h-3" />
-                                                        Incomplete
-                                                    </span>
-                                                ) : (
-                                                    <span className="inline-flex items-center justify-center gap-1.5 w-24 px-3 py-1 rounded-sm text-xs font-medium bg-red-100 text-red-600 border border-red-300">
-                                                        <X className="w-3 h-3" />
-                                                        Missing
-                                                    </span>
-                                                )}
-                                            </div>
+                                        <td className="px-4 py-3 text-sm">
+                                            {isPendingDelete ? (
+                                                <span className="inline-flex items-center justify-center gap-1.5 w-28 px-2.5 py-1 rounded-md text-xs font-medium bg-red-100 text-red-600 border border-red-200">
+                                                    <Trash className="w-3 h-3" />
+                                                    Deleting
+                                                </span>
+                                            ) : yearsWithData.has(entry.year) &&
+                                              entry.uploadedAt !== null ? (
+                                                <span className="inline-flex items-center justify-center gap-1.5 w-28 px-2.5 py-1 rounded-md text-xs font-medium bg-green-100 text-green-700 border border-green-200">
+                                                    <Check className="w-3 h-3" />
+                                                    Uploaded
+                                                </span>
+                                            ) : yearsWithData.has(
+                                                  entry.year,
+                                              ) ? (
+                                                <span className="inline-flex items-center justify-center gap-1.5 w-28 px-2.5 py-1 rounded-md text-xs font-medium bg-amber-100 text-amber-700 border border-amber-200">
+                                                    <AlertTriangle className="w-3 h-3" />
+                                                    Incomplete
+                                                </span>
+                                            ) : (
+                                                <span className="inline-flex items-center justify-center gap-1.5 w-28 px-2.5 py-1 rounded-md text-xs font-medium bg-red-100 text-red-600 border border-red-200">
+                                                    <X className="w-3 h-3" />
+                                                    Missing
+                                                </span>
+                                            )}
                                         </td>
                                         <td
-                                            className={`px-4 py-3 text-sm text-center ${isPendingDelete ? "line-through text-gray-400" : "text-gray-600"}`}
+                                            className={`px-4 py-3 text-sm tabular-nums ${isPendingDelete ? "line-through text-gray-400" : "text-gray-600"}`}
                                         >
                                             {formatDate(entry.uploadedAt)}
                                         </td>
                                         <td
-                                            className={`px-4 py-3 text-sm text-center ${isPendingDelete ? "line-through text-gray-400" : "text-gray-600"}`}
+                                            className={`px-4 py-3 text-sm tabular-nums ${isPendingDelete ? "line-through text-gray-400" : "text-gray-600"}`}
                                         >
                                             {formatDate(entry.lastUpdatedAt)}
                                         </td>
@@ -286,7 +282,7 @@ const YearsOfData = forwardRef<
                                                             entry.year,
                                                         )
                                                     }
-                                                    className="w-full h-full px-4 py-3 flex items-center justify-center text-red-400 hover:text-gray-500 transition-colors cursor-pointer"
+                                                    className="w-full h-full px-4 py-3 flex items-center justify-end text-red-400 hover:text-gray-500 transition-colors cursor-pointer"
                                                     aria-label={`Undo delete ${entry.year}`}
                                                 >
                                                     <Undo2 className="w-4 h-4" />
@@ -300,7 +296,7 @@ const YearsOfData = forwardRef<
                                                             entry.year,
                                                         )
                                                     }
-                                                    className="w-full h-full px-4 py-3 flex items-center justify-center text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
+                                                    className="w-full h-full px-4 py-3 flex items-center justify-end text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
                                                     aria-label={`Delete ${entry.year}`}
                                                 >
                                                     <Trash className="w-4 h-4" />
@@ -308,7 +304,7 @@ const YearsOfData = forwardRef<
                                             ) : (
                                                 <Link
                                                     href={`/upload?year=${entry.year}`}
-                                                    className="w-full h-full px-4 py-3 flex items-center justify-center text-gray-400 hover:text-blue-500 transition-colors"
+                                                    className="w-full h-full px-4 py-3 flex items-center justify-end text-gray-400 hover:text-blue-500 transition-colors"
                                                     aria-label={`Upload ${entry.year}`}
                                                 >
                                                     <Upload className="w-4 h-4" />
