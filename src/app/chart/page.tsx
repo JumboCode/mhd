@@ -554,23 +554,25 @@ export default function ChartPage() {
     // by appending the town. Only schools with multiple distinct towns get the
     // "(Town)" suffix. Value uses \x00 as separator so filter logic can split
     // it back into name + town without ambiguity.
+    // Use allSchoolParticipations (not allProjects) so schools without projects
+    // are still included and same-name detection works across all participants.
     const schoolTownSets = new Map<string, Set<string>>();
-    for (const p of allProjects) {
-        if (!schoolTownSets.has(p.schoolName))
-            schoolTownSets.set(p.schoolName, new Set());
-        schoolTownSets.get(p.schoolName)!.add(p.schoolTown);
+    for (const s of allSchoolParticipations) {
+        if (!schoolTownSets.has(s.schoolName))
+            schoolTownSets.set(s.schoolName, new Set());
+        schoolTownSets.get(s.schoolName)!.add(s.schoolTown);
     }
     const seenSchoolKeys = new Set<string>();
-    const schools = allProjects
-        .flatMap((p) => {
-            const key = `${p.schoolName}\x00${p.schoolTown}`;
+    const schools = allSchoolParticipations
+        .flatMap((s) => {
+            const key = `${s.schoolName}\x00${s.schoolTown}`;
             if (seenSchoolKeys.has(key)) return [];
             seenSchoolKeys.add(key);
-            const isDup = (schoolTownSets.get(p.schoolName)?.size ?? 0) > 1;
+            const isDup = (schoolTownSets.get(s.schoolName)?.size ?? 0) > 1;
             return [
                 isDup
-                    ? { label: `${p.schoolName} (${p.schoolTown})`, value: key }
-                    : p.schoolName,
+                    ? { label: `${s.schoolName} (${s.schoolTown})`, value: key }
+                    : s.schoolName,
             ];
         })
         .sort((a, b) => {

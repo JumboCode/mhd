@@ -496,9 +496,12 @@ export async function POST(req: NextRequest) {
                 });
             }
 
-            // Project: accumulate student count
-            if (!projectDataMap.has(projectIdValue)) {
-                projectDataMap.set(projectIdValue, {
+            // Project: accumulate student count.
+            // projectIds are only unique within a school, so key by school+projectId
+            // to avoid silently collapsing projects from different schools that share an ID.
+            const projectKey = `${schoolKey}\x00${projectIdValue}`;
+            if (!projectDataMap.has(projectKey)) {
+                projectDataMap.set(projectKey, {
                     schoolIdStr: schoolKey,
                     teacherIdStr: teacherIdValue,
                     projectId: projectIdValue,
@@ -510,7 +513,7 @@ export async function POST(req: NextRequest) {
                     numStudents: 0,
                 });
             }
-            projectDataMap.get(projectIdValue)!.numStudents++;
+            projectDataMap.get(projectKey)!.numStudents++;
 
             // Yearly participations
             yearlySchoolSet.add(schoolKey);

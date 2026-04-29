@@ -342,12 +342,19 @@ export default function GraphFilters({
         return joined.substring(0, maxLength).trim() + "...";
     };
 
+    const schoolValueToLabel = (v: string): string => {
+        const sep = v.indexOf("\x00");
+        return sep === -1 ? v : `${v.slice(0, sep)} (${v.slice(sep + 1)})`;
+    };
+
     // Get display text for filter chip
     const getFilterDisplayText = (filter: Filter): string => {
         if (filter.value === "school") {
             const count = selectedSchools.length;
             if (count === 0) return filter.label;
-            const truncated = truncateValues(selectedSchools);
+            const truncated = truncateValues(
+                selectedSchools.map(schoolValueToLabel),
+            );
             const label =
                 count > 1 ? `${filter.label} (${count})` : filter.label;
             return `${label}: ${truncated}`;
