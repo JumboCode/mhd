@@ -164,6 +164,8 @@ export default function ChartPage() {
     // All data fetching from single hook
     const {
         allProjects,
+        allSchoolParticipations,
+        allTeacherParticipations,
         gatewaySchools,
         isLoaded,
         projectDataError,
@@ -278,9 +280,17 @@ export default function ChartPage() {
             allProjects,
             filters,
             yearRange,
+            allSchoolParticipations,
+            allTeacherParticipations,
         );
         return datasets;
-    }, [allProjects, filters, yearRange]);
+    }, [
+        allProjects,
+        filters,
+        yearRange,
+        allSchoolParticipations,
+        allTeacherParticipations,
+    ]);
 
     // Cmd+S to open export dialog, Cmd+P to print PDF
     useHotkey(

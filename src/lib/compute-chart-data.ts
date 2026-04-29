@@ -34,6 +34,207 @@ export type Project = {
     schoolSchoolType: string | null;
 };
 
+/**
+ * One record per (school, year) from yearlySchoolParticipation joined with schools.
+ * Represents all participating schools, including those without any projects.
+ */
+export type SchoolParticipation = {
+    schoolId: number;
+    year: number;
+    schoolName: string;
+    standardizedSchoolName: string;
+    schoolTown: string;
+    schoolRegion: string;
+    gatewaySchool: string; // "Gateway" | "Non-Gateway"
+    schoolImplementationModel: string;
+    schoolSchoolType: string;
+    schoolDivisions: string[];
+};
+
+/**
+ * One record per (teacher, school, year) from yearlyTeacherParticipation joined with schools.
+ * Represents all participating teachers, including those without any projects.
+ */
+export type TeacherParticipation = {
+    teacherId: number;
+    year: number;
+    schoolName: string;
+    schoolTown: string;
+    schoolRegion: string;
+    gatewaySchool: string; // "Gateway" | "Non-Gateway"
+    schoolImplementationModel: string;
+    schoolSchoolType: string;
+    schoolDivisions: string[];
+};
+
+/**
+ * Filter teacher participation records by the same criteria as projects,
+ * excluding project-specific filters (project type, individual/group, teacher years).
+ */
+export function filterTeacherParticipations(
+    records: TeacherParticipation[],
+    filters: Filters,
+    yearStart: number,
+    yearEnd: number,
+): TeacherParticipation[] {
+    return records.filter((t) => {
+        if (t.year < yearStart || t.year > yearEnd) return false;
+
+        if (filters.onlyGatewaySchools && t.gatewaySchool !== "Gateway")
+            return false;
+
+        if (filters.selectedSchools.length > 0) {
+            const match = filters.selectedSchools.some((v) => {
+                const sep = v.indexOf("\x00");
+                return sep === -1
+                    ? v === t.schoolName
+                    : v.slice(0, sep) === t.schoolName &&
+                          v.slice(sep + 1) === t.schoolTown;
+            });
+            if (!match) return false;
+        }
+
+        if (
+            filters.selectedCities.length > 0 &&
+            !filters.selectedCities.includes(t.schoolTown)
+        )
+            return false;
+
+        if (filters.selectedDivisions && filters.selectedDivisions.length > 0) {
+            const divs = t.schoolDivisions;
+            if (!divs || divs.length === 0) {
+                if (!filters.selectedDivisions.includes("Unassigned"))
+                    return false;
+            } else {
+                const normalize = (d: string): string => {
+                    const lower = d.toLowerCase();
+                    if (lower.startsWith("junior")) return "Junior";
+                    if (lower.startsWith("senior")) return "Senior";
+                    if (lower.startsWith("young")) return "Young Historian";
+                    return d;
+                };
+                if (
+                    !divs
+                        .map(normalize)
+                        .some((d) => filters.selectedDivisions.includes(d))
+                )
+                    return false;
+            }
+        }
+
+        if (
+            filters.selectedSchoolTypes &&
+            filters.selectedSchoolTypes.length > 0 &&
+            !filters.selectedSchoolTypes.includes(
+                t.schoolSchoolType || "Unassigned",
+            )
+        )
+            return false;
+
+        if (
+            filters.selectedRegions &&
+            filters.selectedRegions.length > 0 &&
+            !filters.selectedRegions.includes(t.schoolRegion || "Unassigned")
+        )
+            return false;
+
+        if (
+            filters.selectedImplementationTypes &&
+            filters.selectedImplementationTypes.length > 0 &&
+            !filters.selectedImplementationTypes.includes(
+                t.schoolImplementationModel || "Unassigned",
+            )
+        )
+            return false;
+
+        return true;
+    });
+}
+
+/**
+ * Filter school participation records by the same criteria as projects,
+ * excluding project-specific filters (project type, individual/group, teacher years).
+ */
+export function filterSchoolParticipations(
+    records: SchoolParticipation[],
+    filters: Filters,
+    yearStart: number,
+    yearEnd: number,
+): SchoolParticipation[] {
+    return records.filter((s) => {
+        if (s.year < yearStart || s.year > yearEnd) return false;
+
+        if (filters.onlyGatewaySchools && s.gatewaySchool !== "Gateway")
+            return false;
+
+        if (filters.selectedSchools.length > 0) {
+            const match = filters.selectedSchools.some((v) => {
+                const sep = v.indexOf("\x00");
+                return sep === -1
+                    ? v === s.schoolName
+                    : v.slice(0, sep) === s.schoolName &&
+                          v.slice(sep + 1) === s.schoolTown;
+            });
+            if (!match) return false;
+        }
+
+        if (
+            filters.selectedCities.length > 0 &&
+            !filters.selectedCities.includes(s.schoolTown)
+        )
+            return false;
+
+        if (filters.selectedDivisions && filters.selectedDivisions.length > 0) {
+            const divs = s.schoolDivisions;
+            if (!divs || divs.length === 0) {
+                if (!filters.selectedDivisions.includes("Unassigned"))
+                    return false;
+            } else {
+                const normalize = (d: string): string => {
+                    const lower = d.toLowerCase();
+                    if (lower.startsWith("junior")) return "Junior";
+                    if (lower.startsWith("senior")) return "Senior";
+                    if (lower.startsWith("young")) return "Young Historian";
+                    return d;
+                };
+                if (
+                    !divs
+                        .map(normalize)
+                        .some((d) => filters.selectedDivisions.includes(d))
+                )
+                    return false;
+            }
+        }
+
+        if (
+            filters.selectedSchoolTypes &&
+            filters.selectedSchoolTypes.length > 0 &&
+            !filters.selectedSchoolTypes.includes(
+                s.schoolSchoolType || "Unassigned",
+            )
+        )
+            return false;
+
+        if (
+            filters.selectedRegions &&
+            filters.selectedRegions.length > 0 &&
+            !filters.selectedRegions.includes(s.schoolRegion || "Unassigned")
+        )
+            return false;
+
+        if (
+            filters.selectedImplementationTypes &&
+            filters.selectedImplementationTypes.length > 0 &&
+            !filters.selectedImplementationTypes.includes(
+                s.schoolImplementationModel || "Unassigned",
+            )
+        )
+            return false;
+
+        return true;
+    });
+}
+
 export const measuredAsLabels: Record<string, string> = {
     "total-school-count": "Total Schools",
     "total-competing-student-count": "Total Competing Students",
@@ -69,6 +270,8 @@ export type ChartParams = {
     filters: Filters;
     yearStart: number;
     yearEnd: number;
+    schoolParticipations?: SchoolParticipation[];
+    teacherParticipations?: TeacherParticipation[];
 };
 
 export function computeGraphDataset(
@@ -77,6 +280,24 @@ export function computeGraphDataset(
 ): ChartDataset[] {
     const { filters, yearStart, yearEnd } = params;
     if (!allProjects.length) return [];
+
+    const filteredSchoolRecords = params.schoolParticipations
+        ? filterSchoolParticipations(
+              params.schoolParticipations,
+              filters,
+              yearStart,
+              yearEnd,
+          )
+        : undefined;
+
+    const filteredTeacherRecords = params.teacherParticipations
+        ? filterTeacherParticipations(
+              params.teacherParticipations,
+              filters,
+              yearStart,
+              yearEnd,
+          )
+        : undefined;
 
     // Pre-calculate teacher participation years if filter is active
     const teacherYearsMap = new Map<number, number>();
@@ -238,12 +459,79 @@ export function computeGraphDataset(
                   ),
               ).sort();
 
-    function computeMetric(projects: Project[], metric: string) {
+    // Map groupBy to group-key functions for school and teacher records.
+    // null means "not applicable for this groupBy — fall back to project counts".
+    type SchoolGroupFn = (s: SchoolParticipation) => string;
+    type TeacherGroupFn = (t: TeacherParticipation) => string;
+    let schoolGroupFn: SchoolGroupFn | null = null;
+    let teacherGroupFn: TeacherGroupFn | null = null;
+    let useSchoolRecordsForCount = filteredSchoolRecords !== undefined;
+    let useTeacherRecordsForCount = filteredTeacherRecords !== undefined;
+
+    switch (filters.groupBy) {
+        case "none":
+            break; // fns stay null → "All" bucket
+        case "region":
+            schoolGroupFn = (s) => s.schoolRegion || "Unknown";
+            teacherGroupFn = (t) => t.schoolRegion || "Unknown";
+            break;
+        case "school-type":
+            schoolGroupFn = (s) => s.schoolSchoolType || "Unknown";
+            teacherGroupFn = (t) => t.schoolSchoolType || "Unknown";
+            break;
+        case "implementation-model":
+            schoolGroupFn = (s) => s.schoolImplementationModel || "Unknown";
+            teacherGroupFn = (t) => t.schoolImplementationModel || "Unknown";
+            break;
+        case "gateway-school":
+            schoolGroupFn = (s) => s.gatewaySchool;
+            teacherGroupFn = (t) => t.gatewaySchool;
+            break;
+        default:
+            // project-type, division: no direct equivalent on participation records
+            useSchoolRecordsForCount = false;
+            useTeacherRecordsForCount = false;
+    }
+
+    // Index participation records by year → group for O(1) lookup
+    const buildYearGroupIndex = <T extends { year: number }>(
+        records: T[],
+        keyFn: ((r: T) => string) | null,
+    ): Map<number, Map<string, T[]>> => {
+        const idx = new Map<number, Map<string, T[]>>();
+        for (const r of records) {
+            if (!idx.has(r.year)) idx.set(r.year, new Map());
+            const byGroup = idx.get(r.year)!;
+            const key = keyFn ? keyFn(r) : "All";
+            if (!byGroup.has(key)) byGroup.set(key, []);
+            byGroup.get(key)!.push(r);
+        }
+        return idx;
+    };
+
+    const schoolsByYearByGroup =
+        useSchoolRecordsForCount && filteredSchoolRecords
+            ? buildYearGroupIndex(filteredSchoolRecords, schoolGroupFn)
+            : new Map<number, Map<string, SchoolParticipation[]>>();
+
+    const teachersByYearByGroup =
+        useTeacherRecordsForCount && filteredTeacherRecords
+            ? buildYearGroupIndex(filteredTeacherRecords, teacherGroupFn)
+            : new Map<number, Map<string, TeacherParticipation[]>>();
+
+    function computeMetric(
+        projects: Project[],
+        metric: string,
+        schoolRecords?: SchoolParticipation[],
+        teacherRecords?: TeacherParticipation[],
+    ) {
         switch (metric) {
             case "total-project-count":
                 return projects.length;
             case "total-school-count":
-                return new Set(projects.map((p) => p.schoolName)).size;
+                if (schoolRecords !== undefined)
+                    return new Set(schoolRecords.map((s) => s.schoolId)).size;
+                return new Set(projects.map((p) => p.schoolId)).size;
             case "total-student-count":
             case "total-participating-student-count":
                 return projects.reduce(
@@ -251,8 +539,6 @@ export function computeGraphDataset(
                     0,
                 );
             case "total-competing-student-count": {
-                // Sum competing students once per (school, year) pair to
-                // avoid double-counting across projects.
                 const seen = new Set<string>();
                 let total = 0;
                 for (const p of projects) {
@@ -264,14 +550,19 @@ export function computeGraphDataset(
                 return total;
             }
             case "total-teacher-count":
+                if (teacherRecords !== undefined)
+                    return new Set(teacherRecords.map((t) => t.teacherId)).size;
                 return new Set(projects.map((p) => p.teacherId)).size;
             case "total-city-count":
+                if (schoolRecords !== undefined)
+                    return new Set(schoolRecords.map((s) => s.schoolTown)).size;
                 return new Set(projects.map((p) => p.schoolTown)).size;
             case "school-return-rate": {
                 const schoolsThisYear = new Set(
                     projects.map((p) => p.schoolId),
                 );
-                const year = projects[0].year;
+                const year = projects[0]?.year;
+                if (!year) return 0;
                 const priorParticipation = allProjects.filter(
                     (x) =>
                         schoolsThisYear.has(x.schoolId) && x.year === year - 1,
@@ -302,10 +593,29 @@ export function computeGraphDataset(
             projectsByYear[p.year].push(p);
         });
 
-        const dataPoints = Object.entries(projectsByYear)
-            .map(([year, projs]) => ({
-                x: Number(year),
-                y: computeMetric(projs, metric),
+        // Union years from projects and relevant participation records
+        const allYears = new Set(Object.keys(projectsByYear).map(Number));
+        if (useSchoolRecordsForCount && metric === "total-school-count")
+            for (const y of schoolsByYearByGroup.keys()) allYears.add(y);
+        if (useSchoolRecordsForCount && metric === "total-city-count")
+            for (const y of schoolsByYearByGroup.keys()) allYears.add(y);
+        if (useTeacherRecordsForCount && metric === "total-teacher-count")
+            for (const y of teachersByYearByGroup.keys()) allYears.add(y);
+
+        const dataPoints = Array.from(allYears)
+            .map((year) => ({
+                x: year,
+                y: computeMetric(
+                    projectsByYear[year] ?? [],
+                    metric,
+                    useSchoolRecordsForCount
+                        ? (schoolsByYearByGroup.get(year)?.get(groupName) ?? [])
+                        : undefined,
+                    useTeacherRecordsForCount
+                        ? (teachersByYearByGroup.get(year)?.get(groupName) ??
+                              [])
+                        : undefined,
+                ),
             }))
             .sort((a, b) => a.x - b.x);
 

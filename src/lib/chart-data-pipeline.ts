@@ -10,7 +10,13 @@
  *
  **************************************************************/
 
-import { type Project } from "@/lib/compute-chart-data";
+import {
+    type Project,
+    type SchoolParticipation,
+    type TeacherParticipation,
+    filterSchoolParticipations,
+    filterTeacherParticipations,
+} from "@/lib/compute-chart-data";
 import { type ChartDataset } from "@/components/charts/chartTypes";
 import {
     type Filters,
@@ -43,17 +49,20 @@ export function buildTeacherYearsMap(
 
 /**
  * Compute a metric value for a set of projects.
+ * Pass schoolRecords to use yearlySchoolParticipation data for school/city counts.
  * @param allProjects - needed for school-return-rate calculation
  */
 export function computeMetric(
     projects: Project[],
     metric: MeasuredAs,
     allProjects: Project[],
+    schoolRecords?: SchoolParticipation[],
+    teacherRecords?: TeacherParticipation[],
 ): number {
-    if (projects.length === 0) return 0;
-
     switch (metric) {
         case "total-school-count":
+            if (schoolRecords !== undefined)
+                return new Set(schoolRecords.map((s) => s.schoolId)).size;
             return new Set(projects.map((p) => p.schoolId)).size;
 
         case "total-project-count":
@@ -76,12 +85,17 @@ export function computeMetric(
         }
 
         case "total-teacher-count":
+            if (teacherRecords !== undefined)
+                return new Set(teacherRecords.map((t) => t.teacherId)).size;
             return new Set(projects.map((p) => p.teacherId)).size;
 
         case "total-city-count":
+            if (schoolRecords !== undefined)
+                return new Set(schoolRecords.map((s) => s.schoolTown)).size;
             return new Set(projects.map((p) => p.schoolTown)).size;
 
         case "school-return-rate": {
+            if (projects.length === 0) return 0;
             const schoolsThisYear = new Set(projects.map((p) => p.schoolId));
             const year = projects[0].year;
             const priorParticipation = allProjects.filter(
@@ -99,7 +113,37 @@ export function computeMetric(
 }
 
 /**
+ * Get school participation records matching a division group.
+ */
+export function getSchoolRecordsInDivision(
+    records: SchoolParticipation[],
+    groupName: string,
+): SchoolParticipation[] {
+    return records.filter((s) => {
+        const divs = s.schoolDivisions;
+        if (groupName === "Unassigned") return !divs || divs.length === 0;
+        return divs?.some((d) => normalizeDivision(d) === groupName) ?? false;
+    });
+}
+
+/**
+ * Get teacher participation records matching a division group.
+ */
+export function getTeacherRecordsInDivision(
+    records: TeacherParticipation[],
+    groupName: string,
+): TeacherParticipation[] {
+    return records.filter((t) => {
+        const divs = t.schoolDivisions;
+        if (groupName === "Unassigned") return !divs || divs.length === 0;
+        return divs?.some((d) => normalizeDivision(d) === groupName) ?? false;
+    });
+}
+
+/**
  * Build chart datasets from grouped projects.
+ * Pass getSchoolRecordsInGroup / getTeacherRecordsInGroup to use participation
+ * tables for school/city/teacher counts.
  * Pure function - no setState calls.
  */
 export function buildDatasets(
@@ -107,20 +151,69 @@ export function buildDatasets(
     getProjectsInGroup: (groupName: string) => Project[],
     metric: MeasuredAs,
     allProjects: Project[],
+    getSchoolRecordsInGroup?: (groupName: string) => SchoolParticipation[],
+    getTeacherRecordsInGroup?: (groupName: string) => TeacherParticipation[],
 ): ChartDataset[] {
+    const useSchoolRecords =
+        getSchoolRecordsInGroup !== undefined &&
+        (metric === "total-school-count" || metric === "total-city-count");
+    const useTeacherRecords =
+        getTeacherRecordsInGroup !== undefined &&
+        metric === "total-teacher-count";
+
     return groups.map((groupName) => {
         const projectsInGroup = getProjectsInGroup(groupName);
-        const projectsByYear: Record<number, Project[]> = {};
+        const schoolRecordsInGroup = useSchoolRecords
+            ? getSchoolRecordsInGroup!(groupName)
+            : undefined;
+        const teacherRecordsInGroup = useTeacherRecords
+            ? getTeacherRecordsInGroup!(groupName)
+            : undefined;
 
+        const projectsByYear: Record<number, Project[]> = {};
         for (const p of projectsInGroup) {
             if (!projectsByYear[p.year]) projectsByYear[p.year] = [];
             projectsByYear[p.year].push(p);
         }
 
-        const dataPoints = Object.entries(projectsByYear)
-            .map(([year, projs]) => ({
-                x: Number(year),
-                y: computeMetric(projs, metric, allProjects),
+        const schoolRecordsByYear: Record<number, SchoolParticipation[]> = {};
+        if (schoolRecordsInGroup) {
+            for (const s of schoolRecordsInGroup) {
+                if (!schoolRecordsByYear[s.year])
+                    schoolRecordsByYear[s.year] = [];
+                schoolRecordsByYear[s.year].push(s);
+            }
+        }
+
+        const teacherRecordsByYear: Record<number, TeacherParticipation[]> = {};
+        if (teacherRecordsInGroup) {
+            for (const t of teacherRecordsInGroup) {
+                if (!teacherRecordsByYear[t.year])
+                    teacherRecordsByYear[t.year] = [];
+                teacherRecordsByYear[t.year].push(t);
+            }
+        }
+
+        const allYears = new Set([
+            ...Object.keys(projectsByYear).map(Number),
+            ...(useSchoolRecords
+                ? Object.keys(schoolRecordsByYear).map(Number)
+                : []),
+            ...(useTeacherRecords
+                ? Object.keys(teacherRecordsByYear).map(Number)
+                : []),
+        ]);
+
+        const dataPoints = Array.from(allYears)
+            .map((year) => ({
+                x: year,
+                y: computeMetric(
+                    projectsByYear[year] ?? [],
+                    metric,
+                    allProjects,
+                    schoolRecordsByYear[year],
+                    teacherRecordsByYear[year],
+                ),
             }))
             .sort((a, b) => a.x - b.x);
 
@@ -439,6 +532,8 @@ export function computeChartDatasets(
     allProjects: Project[],
     filters: Filters,
     yearRange: YearRange,
+    allSchoolParticipations?: SchoolParticipation[],
+    allTeacherParticipations?: TeacherParticipation[],
 ): { datasets: ChartDataset[]; metric: MeasuredAs } {
     if (!allProjects.length) {
         return { datasets: [], metric: filters.measuredAs };
@@ -449,6 +544,35 @@ export function computeChartDatasets(
 
     const metric = filters.measuredAs;
 
+    const filteredSchoolRecords = allSchoolParticipations
+        ? filterSchoolParticipations(
+              allSchoolParticipations,
+              filters,
+              yearRange.start,
+              yearRange.end,
+          )
+        : undefined;
+
+    const filteredTeacherRecords = allTeacherParticipations
+        ? filterTeacherParticipations(
+              allTeacherParticipations,
+              filters,
+              yearRange.start,
+              yearRange.end,
+          )
+        : undefined;
+
+    // Helper factories for grouping participation records
+    const makeSchoolGroupFn =
+        (keyFn: (s: SchoolParticipation) => string) =>
+        (groupName: string): SchoolParticipation[] =>
+            filteredSchoolRecords?.filter((s) => keyFn(s) === groupName) ?? [];
+
+    const makeTeacherGroupFn =
+        (keyFn: (t: TeacherParticipation) => string) =>
+        (groupName: string): TeacherParticipation[] =>
+            filteredTeacherRecords?.filter((t) => keyFn(t) === groupName) ?? [];
+
     // Division groupBy: special handling for array field
     if (filters.groupBy === "division") {
         const groups = getDivisionGroups(filteredProjects);
@@ -457,11 +581,80 @@ export function computeChartDatasets(
             (groupName) => getProjectsInDivision(filteredProjects, groupName),
             metric,
             allProjects,
+            filteredSchoolRecords
+                ? (groupName) =>
+                      getSchoolRecordsInDivision(
+                          filteredSchoolRecords,
+                          groupName,
+                      )
+                : undefined,
+            filteredTeacherRecords
+                ? (groupName) =>
+                      getTeacherRecordsInDivision(
+                          filteredTeacherRecords,
+                          groupName,
+                      )
+                : undefined,
         );
         return { datasets, metric };
     }
 
-    // All other groupBy values
+    // For all other groupBy values, map to group-key functions
+    type SchoolFn = (groupName: string) => SchoolParticipation[];
+    type TeacherFn = (groupName: string) => TeacherParticipation[];
+    let schoolGroupFn: SchoolFn | undefined;
+    let teacherGroupFn: TeacherFn | undefined;
+
+    switch (filters.groupBy) {
+        case "none":
+            schoolGroupFn = filteredSchoolRecords
+                ? () => filteredSchoolRecords
+                : undefined;
+            teacherGroupFn = filteredTeacherRecords
+                ? () => filteredTeacherRecords
+                : undefined;
+            break;
+        case "region":
+            schoolGroupFn = filteredSchoolRecords
+                ? makeSchoolGroupFn((s) => s.schoolRegion || "Unassigned")
+                : undefined;
+            teacherGroupFn = filteredTeacherRecords
+                ? makeTeacherGroupFn((t) => t.schoolRegion || "Unassigned")
+                : undefined;
+            break;
+        case "school-type":
+            schoolGroupFn = filteredSchoolRecords
+                ? makeSchoolGroupFn((s) => s.schoolSchoolType || "Unassigned")
+                : undefined;
+            teacherGroupFn = filteredTeacherRecords
+                ? makeTeacherGroupFn((t) => t.schoolSchoolType || "Unassigned")
+                : undefined;
+            break;
+        case "implementation-model":
+            schoolGroupFn = filteredSchoolRecords
+                ? makeSchoolGroupFn(
+                      (s) => s.schoolImplementationModel || "Unassigned",
+                  )
+                : undefined;
+            teacherGroupFn = filteredTeacherRecords
+                ? makeTeacherGroupFn(
+                      (t) => t.schoolImplementationModel || "Unassigned",
+                  )
+                : undefined;
+            break;
+        case "gateway-school":
+            schoolGroupFn = filteredSchoolRecords
+                ? makeSchoolGroupFn((s) => s.gatewaySchool)
+                : undefined;
+            teacherGroupFn = filteredTeacherRecords
+                ? makeTeacherGroupFn((t) => t.gatewaySchool)
+                : undefined;
+            break;
+        default:
+            // project-type: no participation-level equivalent
+            break;
+    }
+
     const groupKey = getGroupKey(filters.groupBy);
     const groups = getUniqueGroups(filteredProjects, groupKey);
     const datasets = buildDatasets(
@@ -470,6 +663,8 @@ export function computeChartDatasets(
             getProjectsInGroup(filteredProjects, groupKey, groupName),
         metric,
         allProjects,
+        schoolGroupFn,
+        teacherGroupFn,
     );
 
     return { datasets, metric };
