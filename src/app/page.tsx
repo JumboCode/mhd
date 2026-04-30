@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function Home() {
     return (
-        <Suspense fallback={<DashboardSkeleton />}>
+        <Suspense fallback={<DashboardSkeleton withHeader />}>
             <Dashboard />
         </Suspense>
     );
