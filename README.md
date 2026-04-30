@@ -1,6 +1,10 @@
 # Massachusetts History Day
 
-JumboCode 2025-2026 project for Massachusetts History Day, led by Dan Glorioso
+JumboCode 2025-2026 project for Massachusetts History Day, led by Dan Glorioso.
+
+Project Manager: Dan Glorioso  
+Technical Lead: Shayne Sidman  
+Designer: Tika Capon  
 
 ## How to run
 
