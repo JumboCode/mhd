@@ -715,8 +715,8 @@ export default function ChartPage() {
                 </div>
 
                 {/* Main Content Area */}
-                <div className="flex-1 flex flex-col overflow-hidden">
-                    <div className="flex flex-col gap-5 h-full overflow-hidden">
+                <div className="flex-1 flex flex-col">
+                    <div className="flex flex-col gap-5">
                         {/* Header - title and actions */}
                         <div className="flex items-center justify-between px-8 pt-8 shrink-0 gap-4">
                             <div className="min-w-0 flex-1">
@@ -1220,7 +1220,7 @@ export default function ChartPage() {
                         </div>
 
                         {/* Chart Area */}
-                        <div className="relative flex-1 mb-4">
+                        <div className="relative mb-4 h-[65vh]">
                             {projectDataError ? (
                                 <LoadError
                                     message={projectDataError}
@@ -1333,7 +1333,7 @@ export default function ChartPage() {
                         </div>
 
                         {/* Data table */}
-                        <div className="px-8 overflow-x-auto max-h-64 overflow-y-auto border-border">
+                        <div className="px-8 overflow-x-auto">
                             <DataTable data={rows} columns={cols} />
                         </div>
 
