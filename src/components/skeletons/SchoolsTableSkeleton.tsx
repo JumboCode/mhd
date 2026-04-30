@@ -15,7 +15,7 @@ export function SchoolsTableSkeleton() {
     const totalWidth = COLUMN_SIZES.reduce((a, b) => a + b, 0);
 
     return (
-        <div className="h-full w-full min-w-0 overflow-hidden border text-center">
+        <div className="h-full w-full min-w-0 overflow-hidden border text-left">
             <Table
                 className="caption-bottom text-sm border-separate border-spacing-0"
                 style={{
@@ -30,8 +30,8 @@ export function SchoolsTableSkeleton() {
                                 key={i}
                                 className={
                                     i === 0
-                                        ? "sticky top-0 left-0 z-40 text-center bg-muted border-r border-b relative"
-                                        : "sticky top-0 z-30 text-center border-r border-b bg-muted relative"
+                                        ? "sticky top-0 left-0 z-40 text-left bg-muted border-r border-b relative"
+                                        : "sticky top-0 z-30 text-left border-r border-b bg-muted relative"
                                 }
                                 style={{
                                     width: size,
@@ -41,7 +41,7 @@ export function SchoolsTableSkeleton() {
                                     ...(i === 0 && { left: 0 }),
                                 }}
                             >
-                                <Skeleton className="h-4 w-16 mx-auto" />
+                                <Skeleton className="h-4 w-16" />
                             </TableHead>
                         ))}
                     </TableRow>
@@ -54,8 +54,8 @@ export function SchoolsTableSkeleton() {
                                     key={c}
                                     className={
                                         c === 0
-                                            ? "text-center sticky left-0 z-20 bg-muted border-r border-b"
-                                            : "text-center z-0 border-b"
+                                            ? "text-left sticky left-0 z-20 bg-muted border-r border-b"
+                                            : "text-left z-0 border-b"
                                     }
                                     style={{
                                         width: size,
@@ -66,7 +66,7 @@ export function SchoolsTableSkeleton() {
                                         }),
                                     }}
                                 >
-                                    <div className="flex flex-row items-center justify-center h-12">
+                                    <div className="flex flex-row items-center justify-start h-12">
                                         <Skeleton
                                             className={`h-4 ${
                                                 c === 0 ? "w-32" : "w-12"
