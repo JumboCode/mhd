@@ -36,7 +36,15 @@ import {
 } from "@/components/EditableProjectsTable";
 import PieChart from "@/components/charts/PieChart";
 import { projectCategoryDistribution } from "@/lib/utils";
-import { AlertCircle, X, Users, EllipsisVertical, Merge } from "lucide-react";
+import {
+    AlertCircle,
+    X,
+    Users,
+    EllipsisVertical,
+    Merge,
+    Download,
+} from "lucide-react";
+import { exportSchoolToPDF } from "@/lib/school-export";
 import { Button } from "@/components/ui/button";
 import {
     DropdownMenu,
@@ -412,6 +420,78 @@ export default function SchoolProfilePage() {
                                     <div className="flex items-center gap-2">
                                         <Merge className="h-4 w-4" />
                                         Merge school
+                                    </div>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    onClick={async () => {
+                                        if (!schoolData) return;
+                                        const seriesYears = studentYearData.map(
+                                            (p) => p.x,
+                                        );
+                                        await exportSchoolToPDF({
+                                            schoolName: schoolData.name,
+                                            year,
+                                            info: {
+                                                town: schoolData.town,
+                                                region: schoolData.region,
+                                                division: schoolData.division,
+                                                implementationModel:
+                                                    schoolData.implementationModel,
+                                                firstYear: schoolData.firstYear,
+                                            },
+                                            kpis: {
+                                                projects: {
+                                                    label: "Total # Projects",
+                                                    value: schoolData.projectCount,
+                                                    percentChange:
+                                                        projectsPercentChange,
+                                                },
+                                                teachers: {
+                                                    label: "Total # Teachers",
+                                                    value: schoolData.teacherCount,
+                                                    percentChange:
+                                                        teachersPercentChange,
+                                                },
+                                                competing: {
+                                                    label: "Total # Competing",
+                                                    value:
+                                                        schoolData.competingStudents ??
+                                                        "—",
+                                                    percentChange:
+                                                        competingStudentsPercentChange,
+                                                },
+                                                participating: {
+                                                    label: "Total # Participating",
+                                                    value: schoolData.studentCount,
+                                                    percentChange:
+                                                        participatingStudentsPercentChange,
+                                                },
+                                            },
+                                            seriesYears,
+                                            series: {
+                                                competing:
+                                                    competingStudentsSparkline,
+                                                participating:
+                                                    participatingStudentsSparkline,
+                                                teachers: teachersSparkline,
+                                                projects: projectsSparkline,
+                                            },
+                                            pieSlices:
+                                                projectCategoryDistribution(
+                                                    projects,
+                                                ),
+                                            teamProjects: {
+                                                teamCount: projects.filter(
+                                                    (p) => p.teamProject,
+                                                ).length,
+                                                totalCount: projects.length,
+                                            },
+                                        });
+                                    }}
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <Download className="h-4 w-4" />
+                                        Export to PDF
                                     </div>
                                 </DropdownMenuItem>
                             </DropdownMenuContent>

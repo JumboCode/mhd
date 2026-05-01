@@ -111,6 +111,8 @@ export type ChartConfig = {
     pieInnerRadius?: number;
     /** PieChart: arc corner radius. Default: 8 */
     pieCornerRadius?: number;
+    /** LineGraph: render the y-value next to each data point. Default: false */
+    showPointLabels?: boolean;
 };
 
 /**
