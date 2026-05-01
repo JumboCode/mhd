@@ -38,6 +38,8 @@ export async function GET(req: NextRequest) {
                 .select({
                     id: schools.id,
                     name: schools.name,
+                    town: schools.town,
+                    standardizedName: schools.standardizedName,
                     latitude: schools.latitude,
                     longitude: schools.longitude,
                     region: schools.region,

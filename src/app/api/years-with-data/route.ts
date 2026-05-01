@@ -12,7 +12,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { yearlySchoolParticipation, yearMetadata, schools } from "@/lib/schema";
-import { eq } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { internalError } from "@/lib/api-utils";
 
 export async function GET(req: Request) {
@@ -23,6 +23,9 @@ export async function GET(req: Request) {
         // If a school standardized name is provided, return only years that
         // school participated in (used by the school profile page).
         if (schoolParam) {
+            const townParam = searchParams.get("town");
+            const townQuery = townParam?.replace(/-/g, " ") ?? null;
+
             const rows = await db
                 .select({ year: yearlySchoolParticipation.year })
                 .from(yearlySchoolParticipation)
@@ -30,7 +33,14 @@ export async function GET(req: Request) {
                     schools,
                     eq(yearlySchoolParticipation.schoolId, schools.id),
                 )
-                .where(eq(schools.standardizedName, schoolParam))
+                .where(
+                    townQuery
+                        ? and(
+                              eq(schools.standardizedName, schoolParam),
+                              sql`LOWER(${schools.town}) = ${townQuery}`,
+                          )
+                        : eq(schools.standardizedName, schoolParam),
+                )
                 .groupBy(yearlySchoolParticipation.year)
                 .orderBy(yearlySchoolParticipation.year);
 

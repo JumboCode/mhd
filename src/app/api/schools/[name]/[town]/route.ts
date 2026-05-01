@@ -1,12 +1,12 @@
 /***************************************************************
  *
- *                /api/schools/[name]/route.ts
+ *                /api/schools/[name]/[town]/route.ts
  *
  *         Author: Elki Laranas & Hansini Gundavarapu
  *           Date: 11/16/2025
  *
  *        Summary: Backend endpoint to fetch individual school profile
- *                 data
+ *                 data, identified by standardized name + town.
  *
  **************************************************************/
 
@@ -56,12 +56,19 @@ async function upsertYearlySchoolData(
     }
 }
 
+// Converts a URL town segment (e.g. "north-andover") to a lowercase string
+// suitable for case-insensitive comparison with the DB town column.
+function decodeTownSegment(segment: string): string {
+    return segment.replace(/-/g, " ");
+}
+
 export async function PATCH(
     req: NextRequest,
-    { params }: { params: Promise<{ name: string }> },
+    { params }: { params: Promise<{ name: string; town: string }> },
 ) {
     try {
-        const { name } = await params;
+        const { name, town } = await params;
+        const townQuery = decodeTownSegment(town);
 
         const body = await req.json();
         const parsed = parseOrError(schoolPatchBodySchema, body);
@@ -81,7 +88,12 @@ export async function PATCH(
         const schoolResult = await db
             .select({ id: schools.id })
             .from(schools)
-            .where(eq(schools.standardizedName, name))
+            .where(
+                and(
+                    eq(schools.standardizedName, name),
+                    sql`LOWER(${schools.town}) = ${townQuery}`,
+                ),
+            )
             .limit(1);
 
         if (!schoolResult || schoolResult.length === 0) {
@@ -182,18 +194,24 @@ export async function PATCH(
 
 export async function GET(
     req: NextRequest,
-    { params }: { params: Promise<{ name: string }> },
+    { params }: { params: Promise<{ name: string; town: string }> },
 ) {
     try {
         const { searchParams } = new URL(req.url);
         const year = Number(searchParams.get("year"));
-        const { name } = await params;
+        const { name, town } = await params;
+        const townQuery = decodeTownSegment(town);
 
-        // Match on standardized name
+        // Match on standardized name + town (mirrors the DB unique constraint)
         const schoolResult = await db
             .select()
             .from(schools)
-            .where(eq(schools.standardizedName, name))
+            .where(
+                and(
+                    eq(schools.standardizedName, name),
+                    sql`LOWER(${schools.town}) = ${townQuery}`,
+                ),
+            )
             .limit(1);
 
         // Check if school exists; if not, check if it's a historic name (merged away)
@@ -203,19 +221,33 @@ export async function GET(
                     absorbingSchoolId: schoolHistoricNames.absorbingSchoolId,
                 })
                 .from(schoolHistoricNames)
-                .where(eq(schoolHistoricNames.mergedStandardizedName, name))
+                .where(
+                    and(
+                        eq(schoolHistoricNames.mergedStandardizedName, name),
+                        sql`LOWER(${schoolHistoricNames.mergedTown}) = ${townQuery}`,
+                    ),
+                )
                 .limit(1);
 
             if (historic.length > 0) {
                 const absorbing = await db
-                    .select({ standardizedName: schools.standardizedName })
+                    .select({
+                        standardizedName: schools.standardizedName,
+                        town: schools.town,
+                    })
                     .from(schools)
                     .where(eq(schools.id, historic[0].absorbingSchoolId))
                     .limit(1);
 
                 if (absorbing.length > 0) {
+                    const redirectTown = (absorbing[0].town ?? "")
+                        .toLowerCase()
+                        .replace(/\s+/g, "-");
                     return NextResponse.json(
-                        { redirectTo: absorbing[0].standardizedName },
+                        {
+                            redirectTo: absorbing[0].standardizedName,
+                            redirectTown,
+                        },
                         { status: 301 },
                     );
                 }
@@ -273,7 +305,6 @@ export async function GET(
                 and(eq(projects.schoolId, school.id), eq(projects.year, year)),
             );
 
-        // First year would be minimum of first time there are projects, school info, or teachers
         const firstYearProjects = await db
             .select({ year: sql<number>`min(${projects.year})` })
             .from(projects)
@@ -314,7 +345,6 @@ export async function GET(
             region: school.region,
             latitude: school.latitude,
             longitude: school.longitude,
-            // `studentCount` is kept as a back-compat alias for participating.
             studentCount: participatingStudentCount,
             participatingStudentCount,
             competingStudents: yearlyData?.competingStudents ?? null,

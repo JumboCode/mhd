@@ -271,13 +271,16 @@ export function useHeatmapLayers({
                     number,
                 ];
 
-                const { name } = feature.properties || {};
+                const { name, town } = feature.properties || {};
                 const value = feature.properties?.[metric] || 0;
-                const schoolSlug = standardize(name);
+                const nameSlug = standardize(name);
+                const townSlug = (town ?? "")
+                    .toLowerCase()
+                    .replace(/\s+/g, "-");
                 const profileUrl =
                     year !== null
-                        ? `/schools/${schoolSlug}?year=${year}`
-                        : `/schools/${schoolSlug}`;
+                        ? `/schools/${nameSlug}/${townSlug}?year=${year}`
+                        : `/schools/${nameSlug}/${townSlug}`;
 
                 // Competing / Participating are student-count metrics — they
                 // don't pluralize via trailing "s" like Projects/Teachers do.

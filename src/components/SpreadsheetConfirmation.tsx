@@ -15,10 +15,13 @@ import { FolderOpenDot, GraduationCap, School, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Checkbox } from "@/components/Checkbox";
 import type { SpreadsheetData, CellValue } from "@/types/spreadsheet";
+import { standardize } from "@/lib/string-standardize";
+import { buildSchoolTownMap } from "@/lib/school-matching";
 
 type ConfirmationProps = {
     year?: number | null;
     spreadsheetData: SpreadsheetData;
+    schoolInfoData: SpreadsheetData;
     setConfirmed: (confirmed: boolean | null) => void;
     yearHasData: boolean;
     disabled?: boolean;
@@ -27,6 +30,7 @@ type ConfirmationProps = {
 export default function SpreadsheetConfirmation({
     year,
     spreadsheetData,
+    schoolInfoData,
     setConfirmed,
     yearHasData,
     disabled = false,
@@ -72,14 +76,27 @@ export default function SpreadsheetConfirmation({
         // Count number of rows for number of students
         setStudents(dataRows.length);
 
-        // Count unique schools using schoolId
-        const schoolIdIdx = getColumnIndex("schoolId");
-        if (schoolIdIdx !== undefined) {
-            const schools = dataRows
-                .map((row) => row[schoolIdIdx])
-                .filter(Boolean);
-            const uniqueSchoolsSet = new Set(schools);
-            setUniqueSchools(uniqueSchoolsSet.size);
+        // Count unique schools using composite (standardizedName, canonicalTown)
+        const schoolNameIdx = getColumnIndex("schoolName");
+        const cityIdx = getColumnIndex("city");
+        if (schoolNameIdx !== undefined) {
+            const townMap = buildSchoolTownMap(schoolInfoData);
+            const schoolKeys = dataRows
+                .map((row) => {
+                    const name = standardize(
+                        String(row[schoolNameIdx] ?? "").trim(),
+                    );
+                    const city =
+                        cityIdx !== undefined
+                            ? String(row[cityIdx] ?? "")
+                                  .toLowerCase()
+                                  .trim()
+                            : "";
+                    const canonicalTown = townMap.get(name) ?? city;
+                    return `${name}__${canonicalTown.toLowerCase()}`;
+                })
+                .filter((key) => key !== "__");
+            setUniqueSchools(new Set(schoolKeys).size);
         }
 
         // Count unique teachers using teacherId
@@ -92,8 +109,8 @@ export default function SpreadsheetConfirmation({
             setNumTeachers(uniqueTeachersSet.size);
         }
 
-        // Count unique projects using projectId
-        const projectIdIdx = getColumnIndex("projectId");
+        // Count unique projects using projectIntId
+        const projectIdIdx = getColumnIndex("projectIntId");
         if (projectIdIdx !== undefined) {
             const projects = dataRows
                 .map((row) => row[projectIdIdx])

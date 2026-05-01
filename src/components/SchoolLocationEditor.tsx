@@ -54,6 +54,8 @@ function MapClickHandler({
 interface SchoolEntry {
     id: number;
     name: string;
+    town: string;
+    standardizedName: string;
     latitude: number | null;
     longitude: number | null;
 }
@@ -69,7 +71,7 @@ type SchoolLocationEditorProps = {
      * When provided, hides the school selector dropdown and locks the editor
      * to this specific school. Save/Cancel buttons are shown inline.
      */
-    fixedSchool?: { name: string };
+    fixedSchool?: { name: string; town: string };
 };
 
 export const SchoolLocationEditor = forwardRef<
@@ -102,7 +104,9 @@ export const SchoolLocationEditor = forwardRef<
     useEffect(() => {
         if (!fixedSchool || schools.length === 0) return;
         const match = schools.find(
-            (s) => standardize(s.name) === standardize(fixedSchool.name),
+            (s) =>
+                standardize(s.name) === standardize(fixedSchool.name) &&
+                s.town.toLowerCase() === fixedSchool.town.toLowerCase(),
         );
         if (match) {
             setSelectedSchoolId(String(match.id));
@@ -114,9 +118,14 @@ export const SchoolLocationEditor = forwardRef<
         (s) => String(s.id) === selectedSchoolId,
     );
 
+    const duplicateNames = new Set(
+        schools
+            .map((s) => s.name)
+            .filter((name, i, arr) => arr.indexOf(name) !== i),
+    );
     const schoolOptions = schools.map((s) => ({
         value: String(s.id),
-        label: s.name,
+        label: duplicateNames.has(s.name) ? `${s.name} (${s.town})` : s.name,
     }));
 
     const handleSchoolChange = (value: string) => {
@@ -154,15 +163,21 @@ export const SchoolLocationEditor = forwardRef<
     const handleSave = async () => {
         if (!newPin || !selectedSchool) return;
         try {
-            const slugName = standardize(selectedSchool.name);
-            const response = await fetch(`/api/schools/${slugName}`, {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    latitude: newPin.latitude,
-                    longitude: newPin.longitude,
-                }),
-            });
+            const slugName = selectedSchool.standardizedName;
+            const slugTown = selectedSchool.town
+                .toLowerCase()
+                .replace(/\s+/g, "-");
+            const response = await fetch(
+                `/api/schools/${slugName}/${slugTown}`,
+                {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        latitude: newPin.latitude,
+                        longitude: newPin.longitude,
+                    }),
+                },
+            );
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(

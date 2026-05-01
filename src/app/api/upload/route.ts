@@ -20,7 +20,9 @@ import {
     yearlyTeacherParticipation,
     yearlySchoolParticipation,
     yearMetadata,
+    schoolHistoricNames,
 } from "@/lib/schema";
+import type { ConflictResolution } from "@/components/SpreadsheetConflicts";
 import { standardize, toTitleCase } from "@/lib/string-standardize";
 import { studentRequiredColumns } from "@/lib/required-spreadsheet-columns";
 import { findRegionOf } from "@/lib/region-finder";
@@ -29,7 +31,7 @@ import { yearSchema, MIN_YEAR, MAX_YEAR } from "@/lib/year-validation";
 type RowData = Array<string | number | boolean | null>;
 
 type SchoolCoordinateData = {
-    schoolId: string;
+    schoolKey: string; // composite: standardize(name) + "__" + city.toLowerCase()
     lat: number | null;
     long: number | null;
 };
@@ -65,13 +67,20 @@ function parseDivisions(raw: string): string[] {
 }
 
 /**
- * Builds a lookup map from schoolId → school info fields using the school info spreadsheet.
+ * Builds two maps from the school info spreadsheet:
+ *   infoMap: composite key (standardize(name) + "__" + town.toLowerCase()) → school info fields
+ *   townMap: standardize(name) → canonical town (title-cased)
+ * Keying by name+town matches the DB unique constraint and avoids any schoolId dependency.
  * If a school appears on multiple rows (one per division), divisions are accumulated.
  * Comma-separated divisions within a single cell are also supported.
  */
-function buildSchoolInfoMap(rawData: RowData[]): Map<string, SchoolInfoEntry> {
-    const map = new Map<string, SchoolInfoEntry>();
-    if (!rawData || rawData.length === 0) return map;
+function buildSchoolInfoMap(rawData: RowData[]): {
+    infoMap: Map<string, SchoolInfoEntry>;
+    townMap: Map<string, string>;
+} {
+    const infoMap = new Map<string, SchoolInfoEntry>();
+    const townMap = new Map<string, string>();
+    if (!rawData || rawData.length === 0) return { infoMap, townMap };
 
     const normalize = (s: string) => s.toLowerCase().replace(/\s+/g, "");
 
@@ -79,9 +88,9 @@ function buildSchoolInfoMap(rawData: RowData[]): Map<string, SchoolInfoEntry> {
     const headerMap = new Map<string, number>();
     headers.forEach((h, i) => headerMap.set(normalize(h), i));
 
-    const schoolIdIdx =
-        headerMap.get(normalize("schoolId")) ??
-        headerMap.get(normalize("School id"));
+    const schoolNameIdx =
+        headerMap.get(normalize("schoolName")) ??
+        headerMap.get(normalize("School name"));
     const divisionIdx = headerMap.get(normalize("division"));
     const implModelIdx =
         headerMap.get(normalize("implementationModel")) ??
@@ -95,15 +104,30 @@ function buildSchoolInfoMap(rawData: RowData[]): Map<string, SchoolInfoEntry> {
         ) ??
         headerMap.get(normalize("competingStudents")) ??
         headerMap.get(normalize("competing students"));
+    const townIdx =
+        headerMap.get(normalize("Town")) ?? headerMap.get(normalize("town"));
 
-    if (schoolIdIdx === undefined) return map;
+    if (schoolNameIdx === undefined || townIdx === undefined)
+        return { infoMap, townMap };
 
     for (let i = 1; i < rawData.length; i++) {
         const row = rawData[i];
-        const rawId = row[schoolIdIdx];
-        if (rawId === null || rawId === undefined || rawId === "") continue;
+        const rawName = row[schoolNameIdx];
+        if (rawName === null || rawName === undefined || rawName === "")
+            continue;
 
-        const schoolId = String(rawId).trim();
+        const schoolName = String(rawName).trim();
+        const town = String(row[townIdx] ?? "")
+            .trim()
+            .replace(/, ma/i, "")
+            .trim();
+        if (!town) continue;
+
+        const stdName = standardize(schoolName);
+        const schoolKey = `${stdName}__${town.toLowerCase()}`;
+
+        // Track standardize(name) → town for student-row lookups
+        if (!townMap.has(stdName)) townMap.set(stdName, toTitleCase(town));
 
         const divisions =
             divisionIdx !== undefined
@@ -122,7 +146,7 @@ function buildSchoolInfoMap(rawData: RowData[]): Map<string, SchoolInfoEntry> {
                 ? Number(row[competingStudentsIdx] ?? 0) || 0
                 : 0;
 
-        const existing = map.get(schoolId);
+        const existing = infoMap.get(schoolKey);
         if (existing) {
             // Accumulate divisions from additional rows for the same school
             for (const div of divisions) {
@@ -135,7 +159,7 @@ function buildSchoolInfoMap(rawData: RowData[]): Map<string, SchoolInfoEntry> {
                 existing.competingStudents = competingStudents;
             }
         } else {
-            map.set(schoolId, {
+            infoMap.set(schoolKey, {
                 division: divisions,
                 implementationModel,
                 schoolType,
@@ -144,7 +168,7 @@ function buildSchoolInfoMap(rawData: RowData[]): Map<string, SchoolInfoEntry> {
         }
     }
 
-    return map;
+    return { infoMap, townMap };
 }
 
 function chunkArray<T>(arr: T[], size: number): T[][] {
@@ -173,17 +197,28 @@ export async function POST(req: NextRequest) {
         const schoolCoordinates: SchoolCoordinateData[] =
             jsonReq.schoolCoordinates || [];
 
-        const schoolInfoMap: Map<string, SchoolInfoEntry> =
-            jsonReq.schoolInfoData
-                ? buildSchoolInfoMap(JSON.parse(jsonReq.schoolInfoData))
-                : new Map();
+        const { infoMap: schoolInfoMap, townMap } = jsonReq.schoolInfoData
+            ? buildSchoolInfoMap(JSON.parse(jsonReq.schoolInfoData))
+            : {
+                  infoMap: new Map<string, SchoolInfoEntry>(),
+                  townMap: new Map<string, string>(),
+              };
+
+        const conflictResolutions: ConflictResolution[] =
+            jsonReq.conflictResolutions ?? [];
+        const useDbResolutions = conflictResolutions.filter(
+            (r) => r.action === "use-db",
+        );
 
         const coordsMap = new Map<
             string,
             { lat: number | null; long: number | null }
         >();
         for (const coord of schoolCoordinates) {
-            coordsMap.set(coord.schoolId, { lat: coord.lat, long: coord.long });
+            coordsMap.set(coord.schoolKey, {
+                lat: coord.lat,
+                long: coord.long,
+            });
         }
 
         if (rawData.length === 0) {
@@ -242,9 +277,11 @@ export async function POST(req: NextRequest) {
         currentProgress.progress = 10;
 
         // Phase 2: Pre-fetch all referenced schools and teachers in bulk
-        const allSchoolIds = [
+        const allStandardizedNames = [
             ...new Set(
-                filteredRows.map((r) => String(r[COLUMN_INDICES.schoolId])),
+                filteredRows.map((r) =>
+                    standardize(String(r[COLUMN_INDICES.schoolName])),
+                ),
             ),
         ];
         const allTeacherIds = [
@@ -254,11 +291,16 @@ export async function POST(req: NextRequest) {
         ];
 
         const [existingSchoolsArr, existingTeachersArr] = await Promise.all([
-            allSchoolIds.length > 0
+            allStandardizedNames.length > 0
                 ? db
                       .select()
                       .from(schools)
-                      .where(inArray(schools.schoolId, allSchoolIds))
+                      .where(
+                          inArray(
+                              schools.standardizedName,
+                              allStandardizedNames,
+                          ),
+                      )
                 : Promise.resolve([]),
             allTeacherIds.length > 0
                 ? db
@@ -268,12 +310,84 @@ export async function POST(req: NextRequest) {
                 : Promise.resolve([]),
         ]);
 
+        // Keyed by composite: standardize(name) + "__" + town.toLowerCase()
         const schoolMap = new Map(
-            existingSchoolsArr.map((s) => [s.schoolId, s]),
+            existingSchoolsArr.map((s) => [
+                `${s.standardizedName}__${(s.town ?? "").toLowerCase()}`,
+                s,
+            ]),
         );
         const teacherMap = new Map(
             existingTeachersArr.map((t) => [t.teacherId, t]),
         );
+
+        // For "use-db" resolutions, point the uploaded school's key to the
+        // existing DB school so all rows for that uploaded school get routed
+        // to the correct school record.
+        if (useDbResolutions.length > 0) {
+            const dbIds = [
+                ...new Set(useDbResolutions.map((r) => r.dbSchoolId)),
+            ];
+            const resolvedDbSchools = await db
+                .select()
+                .from(schools)
+                .where(inArray(schools.id, dbIds));
+            const dbSchoolById = new Map(
+                resolvedDbSchools.map((s) => [s.id, s]),
+            );
+            for (const r of useDbResolutions) {
+                const dbSchool = dbSchoolById.get(r.dbSchoolId);
+                if (dbSchool) {
+                    schoolMap.set(r.uploadedSchoolKey, dbSchool);
+                }
+            }
+        }
+
+        // Auto-remap schools whose conflicts were resolved in a previous upload.
+        // schoolHistoricNames stores the uploaded school's composite key
+        // (mergedStandardizedName + mergedTown) alongside the absorbing school.
+        // Without this, a previously-resolved uploaded school would silently
+        // create a new DB record instead of routing to the correct school.
+        if (allStandardizedNames.length > 0) {
+            const historicAliases = await db
+                .select({
+                    mergedStandardizedName:
+                        schoolHistoricNames.mergedStandardizedName,
+                    mergedTown: schoolHistoricNames.mergedTown,
+                    absorbingSchoolId: schoolHistoricNames.absorbingSchoolId,
+                })
+                .from(schoolHistoricNames)
+                .where(
+                    inArray(
+                        schoolHistoricNames.mergedStandardizedName,
+                        allStandardizedNames,
+                    ),
+                );
+
+            if (historicAliases.length > 0) {
+                const absorbingIds = [
+                    ...new Set(historicAliases.map((a) => a.absorbingSchoolId)),
+                ];
+                const absorbingSchools = await db
+                    .select()
+                    .from(schools)
+                    .where(inArray(schools.id, absorbingIds));
+                const absorbingById = new Map(
+                    absorbingSchools.map((s) => [s.id, s]),
+                );
+                for (const alias of historicAliases) {
+                    if (!alias.mergedTown) continue;
+                    const aliasKey = `${alias.mergedStandardizedName}__${alias.mergedTown}`;
+                    if (schoolMap.has(aliasKey)) continue;
+                    const absorbing = absorbingById.get(
+                        alias.absorbingSchoolId,
+                    );
+                    if (absorbing) {
+                        schoolMap.set(aliasKey, absorbing);
+                    }
+                }
+            }
+        }
 
         currentProgress.progress = 20;
 
@@ -293,7 +407,6 @@ export async function POST(req: NextRequest) {
         const newSchoolsMap = new Map<
             string,
             {
-                schoolId: string;
                 name: string;
                 standardizedName: string;
                 town: string;
@@ -303,55 +416,70 @@ export async function POST(req: NextRequest) {
             }
         >();
         const coordUpdateMap = new Map<number, { lat: number; long: number }>();
+        const townUpdateMap = new Map<number, string>();
         const newTeachersMap = new Map<
             string,
             { teacherId: string; name: string; email: string }
         >();
         const projectDataMap = new Map<string, ProjectAccumulator>();
         const yearlySchoolSet = new Set<string>();
-        // Null byte separator — can't appear in spreadsheet ID values
+        // Null byte separator — can't appear in spreadsheet values
         const yearlyTeacherMap = new Map<
             string,
-            { schoolIdStr: string; teacherIdStr: string }
+            { schoolKey: string; teacherIdStr: string }
         >();
 
         for (const row of filteredRows) {
-            const schoolIdValue = String(row[COLUMN_INDICES.schoolId]);
             const teacherIdValue = String(row[COLUMN_INDICES.teacherId]);
-            const projectIdValue = String(row[COLUMN_INDICES.projectId]);
-            const schoolInfo = schoolInfoMap.get(schoolIdValue);
+            const projectIdValue = String(row[COLUMN_INDICES.projectIntId]);
 
-            // School: collect new ones or flag existing for coord update
-            if (
-                !schoolMap.has(schoolIdValue) &&
-                !newSchoolsMap.has(schoolIdValue)
-            ) {
-                const coords = coordsMap.get(schoolIdValue);
+            // Canonical town from school spreadsheet (keyed by standardized name); fallback to student spreadsheet
+            const stdSchoolName = standardize(
+                String(row[COLUMN_INDICES.schoolName]),
+            );
+            const canonicalTown =
+                townMap.get(stdSchoolName) ??
+                toTitleCase(row[COLUMN_INDICES.city] as string);
+            const schoolKey = `${stdSchoolName}__${canonicalTown.toLowerCase()}`;
+            const schoolInfo = schoolInfoMap.get(schoolKey);
+
+            // School: collect new ones or flag existing for coord/town update
+            if (!schoolMap.has(schoolKey) && !newSchoolsMap.has(schoolKey)) {
+                const coords = coordsMap.get(schoolKey);
                 const region = findRegionOf(coords?.lat, coords?.long);
-                newSchoolsMap.set(schoolIdValue, {
-                    schoolId: schoolIdValue,
+                newSchoolsMap.set(schoolKey, {
                     name: row[COLUMN_INDICES.schoolName] as string,
                     standardizedName: standardize(
                         row[COLUMN_INDICES.schoolName] as string,
                     ),
-                    town: toTitleCase(row[COLUMN_INDICES.city] as string),
+                    town: canonicalTown,
                     latitude: coords?.lat ?? null,
                     longitude: coords?.long ?? null,
                     region: region ?? "",
                 });
             } else {
-                const existing = schoolMap.get(schoolIdValue);
-                if (existing && !existing.latitude && !existing.longitude) {
-                    const coords = coordsMap.get(schoolIdValue);
+                const existing = schoolMap.get(schoolKey);
+                if (existing) {
+                    if (!existing.latitude && !existing.longitude) {
+                        const coords = coordsMap.get(schoolKey);
+                        if (
+                            coords?.lat &&
+                            coords?.long &&
+                            !coordUpdateMap.has(existing.id)
+                        ) {
+                            coordUpdateMap.set(existing.id, {
+                                lat: coords.lat,
+                                long: coords.long,
+                            });
+                        }
+                    }
+                    const townFromMap = townMap.get(stdSchoolName);
                     if (
-                        coords?.lat &&
-                        coords?.long &&
-                        !coordUpdateMap.has(existing.id)
+                        townFromMap &&
+                        !existing.town &&
+                        !townUpdateMap.has(existing.id)
                     ) {
-                        coordUpdateMap.set(existing.id, {
-                            lat: coords.lat,
-                            long: coords.long,
-                        });
+                        townUpdateMap.set(existing.id, townFromMap);
                     }
                 }
             }
@@ -368,10 +496,13 @@ export async function POST(req: NextRequest) {
                 });
             }
 
-            // Project: accumulate student count
-            if (!projectDataMap.has(projectIdValue)) {
-                projectDataMap.set(projectIdValue, {
-                    schoolIdStr: schoolIdValue,
+            // Project: accumulate student count.
+            // projectIds are only unique within a school, so key by school+projectId
+            // to avoid silently collapsing projects from different schools that share an ID.
+            const projectKey = `${schoolKey}\x00${projectIdValue}`;
+            if (!projectDataMap.has(projectKey)) {
+                projectDataMap.set(projectKey, {
+                    schoolIdStr: schoolKey,
                     teacherIdStr: teacherIdValue,
                     projectId: projectIdValue,
                     title: row[COLUMN_INDICES.title] as string,
@@ -382,14 +513,14 @@ export async function POST(req: NextRequest) {
                     numStudents: 0,
                 });
             }
-            projectDataMap.get(projectIdValue)!.numStudents++;
+            projectDataMap.get(projectKey)!.numStudents++;
 
             // Yearly participations
-            yearlySchoolSet.add(schoolIdValue);
-            const ytKey = `${schoolIdValue}\x00${teacherIdValue}`;
+            yearlySchoolSet.add(schoolKey);
+            const ytKey = `${schoolKey}\x00${teacherIdValue}`;
             if (!yearlyTeacherMap.has(ytKey)) {
                 yearlyTeacherMap.set(ytKey, {
-                    schoolIdStr: schoolIdValue,
+                    schoolKey,
                     teacherIdStr: teacherIdValue,
                 });
             }
@@ -404,20 +535,37 @@ export async function POST(req: NextRequest) {
                     .insert(schools)
                     .values(chunk)
                     .returning();
-                for (const s of inserted) schoolMap.set(s.schoolId, s);
+                for (const s of inserted)
+                    schoolMap.set(
+                        `${s.standardizedName}__${(s.town ?? "").toLowerCase()}`,
+                        s,
+                    );
             }
         }
 
-        // Update coordinates for existing schools missing them (run in parallel per school, not per row)
-        if (coordUpdateMap.size > 0) {
-            await Promise.all(
-                [...coordUpdateMap.entries()].map(([id, { lat, long }]) =>
-                    db
-                        .update(schools)
-                        .set({ latitude: lat, longitude: long })
-                        .where(eq(schools.id, id)),
-                ),
+        // Update coordinates and towns for existing schools (run in parallel per school, not per row)
+        const schoolUpdatePromises: Promise<unknown>[] = [];
+        for (const [id, { lat, long }] of coordUpdateMap) {
+            const town = townUpdateMap.get(id);
+            schoolUpdatePromises.push(
+                db
+                    .update(schools)
+                    .set(
+                        town
+                            ? { latitude: lat, longitude: long, town }
+                            : { latitude: lat, longitude: long },
+                    )
+                    .where(eq(schools.id, id)),
             );
+            townUpdateMap.delete(id);
+        }
+        for (const [id, town] of townUpdateMap) {
+            schoolUpdatePromises.push(
+                db.update(schools).set({ town }).where(eq(schools.id, id)),
+            );
+        }
+        if (schoolUpdatePromises.length > 0) {
+            await Promise.all(schoolUpdatePromises);
         }
 
         currentProgress.progress = 55;
@@ -456,16 +604,29 @@ export async function POST(req: NextRequest) {
         currentProgress.progress = 78;
 
         // Phase 7: Batch insert yearly school participation (all new, year was deleted)
-        const yearlySchoolValues = [...yearlySchoolSet].map((schoolIdStr) => {
-            const school = schoolMap.get(schoolIdStr)!;
-            const info = schoolInfoMap.get(schoolIdStr);
+        // Sum participating students per school from project data for use as fallback
+        const participatingBySchool = new Map<string, number>();
+        for (const p of projectDataMap.values()) {
+            participatingBySchool.set(
+                p.schoolIdStr,
+                (participatingBySchool.get(p.schoolIdStr) ?? 0) + p.numStudents,
+            );
+        }
+
+        const yearlySchoolValues = [...yearlySchoolSet].map((schoolKey) => {
+            const school = schoolMap.get(schoolKey)!;
+            const info = schoolInfoMap.get(schoolKey);
+            const competingStudents =
+                info?.competingStudents ||
+                participatingBySchool.get(schoolKey) ||
+                0;
             return {
                 year,
                 schoolId: school.id,
                 division: info?.division ?? [],
                 implementationModel: info?.implementationModel ?? "",
                 schoolType: info?.schoolType ?? "",
-                competingStudents: info?.competingStudents ?? 0,
+                competingStudents,
             };
         });
 
@@ -477,10 +638,10 @@ export async function POST(req: NextRequest) {
 
         // Phase 8: Batch insert yearly teacher participation (all new, year was deleted)
         const yearlyTeacherValues = [...yearlyTeacherMap.values()].map(
-            ({ schoolIdStr, teacherIdStr }) => ({
+            ({ schoolKey, teacherIdStr }) => ({
                 year,
                 teacherId: teacherMap.get(teacherIdStr)!.id,
-                schoolId: schoolMap.get(schoolIdStr)!.id,
+                schoolId: schoolMap.get(schoolKey)!.id,
             }),
         );
 
@@ -498,6 +659,50 @@ export async function POST(req: NextRequest) {
                 target: yearMetadata.year,
                 set: { uploadedAt: now, lastUpdatedAt: now },
             });
+
+        // Persist conflict resolutions so future uploads skip the dialog.
+        // "use-db": uploaded key → absorbing DB school (different school)
+        // "keep-distinct": uploaded key → the school itself (prevents re-prompting)
+        const aliasValues: {
+            absorbingSchoolId: number;
+            mergedName: string;
+            mergedStandardizedName: string;
+            mergedTown: string;
+        }[] = [];
+
+        for (const r of useDbResolutions) {
+            const [stdName, town] = r.uploadedSchoolKey.split("__");
+            aliasValues.push({
+                absorbingSchoolId: r.dbSchoolId,
+                mergedName: r.uploadedSchoolName,
+                mergedStandardizedName: stdName,
+                mergedTown: town ?? "",
+            });
+        }
+
+        const seenKeys = new Set<string>();
+        for (const r of conflictResolutions.filter(
+            (r) => r.action === "keep-distinct",
+        )) {
+            if (seenKeys.has(r.uploadedSchoolKey)) continue;
+            seenKeys.add(r.uploadedSchoolKey);
+            const school = schoolMap.get(r.uploadedSchoolKey);
+            if (!school) continue;
+            const [stdName, town] = r.uploadedSchoolKey.split("__");
+            aliasValues.push({
+                absorbingSchoolId: school.id,
+                mergedName: r.uploadedSchoolName,
+                mergedStandardizedName: stdName,
+                mergedTown: town ?? "",
+            });
+        }
+
+        if (aliasValues.length > 0) {
+            await db
+                .insert(schoolHistoricNames)
+                .values(aliasValues)
+                .onConflictDoNothing();
+        }
 
         currentProgress.progress = 100;
         currentProgress.complete = true;

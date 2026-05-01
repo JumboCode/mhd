@@ -164,6 +164,8 @@ export default function ChartPage() {
     // All data fetching from single hook
     const {
         allProjects,
+        allSchoolParticipations,
+        allTeacherParticipations,
         gatewaySchools,
         isLoaded,
         projectDataError,
@@ -278,9 +280,17 @@ export default function ChartPage() {
             allProjects,
             filters,
             yearRange,
+            allSchoolParticipations,
+            allTeacherParticipations,
         );
         return datasets;
-    }, [allProjects, filters, yearRange]);
+    }, [
+        allProjects,
+        filters,
+        yearRange,
+        allSchoolParticipations,
+        allTeacherParticipations,
+    ]);
 
     // Cmd+S to open export dialog, Cmd+P to print PDF
     useHotkey(
@@ -540,10 +550,36 @@ export default function ChartPage() {
         [filters.measuredAs, filters.groupBy],
     );
 
-    // Data for filter dropdowns
-    const schools = Array.from(
-        new Set(allProjects.map((p) => p.schoolName)),
-    ).sort();
+    // Data for filter dropdowns — disambiguate schools sharing the same name
+    // by appending the town. Only schools with multiple distinct towns get the
+    // "(Town)" suffix. Value uses \x00 as separator so filter logic can split
+    // it back into name + town without ambiguity.
+    // Use allSchoolParticipations (not allProjects) so schools without projects
+    // are still included and same-name detection works across all participants.
+    const schoolTownSets = new Map<string, Set<string>>();
+    for (const s of allSchoolParticipations) {
+        if (!schoolTownSets.has(s.schoolName))
+            schoolTownSets.set(s.schoolName, new Set());
+        schoolTownSets.get(s.schoolName)!.add(s.schoolTown);
+    }
+    const seenSchoolKeys = new Set<string>();
+    const schools = allSchoolParticipations
+        .flatMap((s) => {
+            const key = `${s.schoolName}\x00${s.schoolTown}`;
+            if (seenSchoolKeys.has(key)) return [];
+            seenSchoolKeys.add(key);
+            const isDup = (schoolTownSets.get(s.schoolName)?.size ?? 0) > 1;
+            return [
+                isDup
+                    ? { label: `${s.schoolName} (${s.schoolTown})`, value: key }
+                    : s.schoolName,
+            ];
+        })
+        .sort((a, b) => {
+            const la = typeof a === "string" ? a : a.label;
+            const lb = typeof b === "string" ? b : b.label;
+            return la.localeCompare(lb);
+        });
     const cities = Array.from(
         new Set(allProjects.map((p) => p.schoolTown)),
     ).sort();

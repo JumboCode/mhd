@@ -27,7 +27,7 @@ interface SpreadsheetEditsProps {
     unmatchedSchools: UploadedSchool[];
     currentSchoolIndex: number;
     onSchoolLocationAssigned: (
-        schoolId: string,
+        schoolKey: string,
         lat: number,
         long: number,
     ) => void;
@@ -79,7 +79,7 @@ export default function SpreadsheetEdits({
 
     const currentSchool = unmatchedSchools[currentSchoolIndex];
     const currentAssignment = currentSchool
-        ? assignedLocations.get(currentSchool.schoolId)
+        ? assignedLocations.get(currentSchool.schoolKey)
         : undefined;
     const remainingCount = totalUnmatched - currentSchoolIndex;
 
@@ -106,7 +106,7 @@ export default function SpreadsheetEdits({
             }
 
             if (validLocation && currentSchool) {
-                onSchoolLocationAssigned(currentSchool.schoolId, lat, long);
+                onSchoolLocationAssigned(currentSchool.schoolKey, lat, long);
             }
         },
         [currentSchool, onSchoolLocationAssigned],

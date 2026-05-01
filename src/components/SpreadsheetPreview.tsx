@@ -17,6 +17,7 @@ import { DataTable } from "./DataTable";
 import { CircleCheck, FileChartColumn } from "lucide-react";
 import type { CellValue, SpreadsheetData } from "@/types/spreadsheet";
 import { studentRequiredColumns } from "@/lib/required-spreadsheet-columns";
+import { standardize } from "@/lib/string-standardize";
 
 type PreviewProps = {
     fileName: string;
@@ -45,7 +46,7 @@ export default function SpreadsheetPreview({
     const [numCols, setNumCols] = useState<number>(0);
 
     const isStudentSpreadsheet =
-        columns.includes("projectId") || columns.includes("teacherId");
+        columns.includes("projectIntId") || columns.includes("teacherId");
 
     useEffect(() => {
         if (!spreadsheetData || spreadsheetData.length === 0) return;
@@ -69,10 +70,10 @@ export default function SpreadsheetPreview({
 
         const schoolNameIdx =
             getColumnIndex("schoolName") ?? getColumnIndex("School name");
-        const schoolIdIdx = getColumnIndex("schoolId");
+        const cityIdx = getColumnIndex("city");
         const teacherIdIdx = getColumnIndex("teacherId");
         const teacherNameIdx = getColumnIndex("teacherName");
-        const projectIdIdx = getColumnIndex("projectId");
+        const projectIdIdx = getColumnIndex("projectIntId");
         const projectTitleIdx = getColumnIndex("title");
 
         if (isStudentSpreadsheet && schoolNameIdx !== undefined) {
@@ -87,10 +88,10 @@ export default function SpreadsheetPreview({
                 const schoolName = String(row[schoolNameIdx] ?? "").trim();
                 if (!schoolName) return;
 
-                const schoolId = String(
-                    schoolIdIdx !== undefined ? (row[schoolIdIdx] ?? "") : "",
+                const city = String(
+                    cityIdx !== undefined ? (row[cityIdx] ?? "") : "",
                 ).trim();
-                const schoolKey = schoolId || schoolName.toLowerCase();
+                const schoolKey = `${standardize(schoolName)}__${city.toLowerCase()}`;
 
                 if (!statsBySchool.has(schoolKey)) {
                     statsBySchool.set(schoolKey, {

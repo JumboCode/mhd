@@ -36,6 +36,7 @@ export async function GET(req: NextRequest) {
             .select({
                 id: schools.id,
                 name: schools.name,
+                town: schools.town,
                 latitude: schools.latitude,
                 longitude: schools.longitude,
             })
@@ -105,6 +106,7 @@ export async function GET(req: NextRequest) {
                     properties: {
                         id: school.id,
                         name: school.name,
+                        town: school.town,
                         Teachers: totalTeachers,
                         Projects: totalProjects,
                         // Legacy key — participating students (row count).

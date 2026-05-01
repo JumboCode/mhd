@@ -16,6 +16,8 @@ import {
     measuredAsLabels,
     groupByLabels,
     type Project,
+    type SchoolParticipation,
+    type TeacherParticipation,
 } from "@/lib/compute-chart-data";
 import { ChartDataset } from "@/components/charts/chartTypes";
 import { renderChartToDataUrl } from "@/lib/render-chart";
@@ -82,18 +84,30 @@ const STORAGE_KEY = "cart";
  * Throws on network/API errors so the caller can handle them.
  */
 async function fetchAndComputeDataset(params: ChartCartParams) {
-    const [projectsRes, gatewayRes] = await Promise.all([
+    const [projectsRes, gatewayRes, schoolRes, teacherRes] = await Promise.all([
         fetch("/api/projects"),
         fetch("/api/schools?gateway=true&list=true"),
+        fetch("/api/school-participations"),
+        fetch("/api/teacher-participations"),
     ]);
 
     if (!projectsRes.ok) throw new Error("Failed to load project data");
     if (!gatewayRes.ok) throw new Error("Failed to load gateway schools");
+    if (!schoolRes.ok)
+        throw new Error("Failed to load school participation data");
+    if (!teacherRes.ok)
+        throw new Error("Failed to load teacher participation data");
 
     const rawProjects: Project[] = await projectsRes.json();
     const gatewaySchools: string[] = (await gatewayRes.json()).map(
         (s: { name: string }) => s.name,
     );
+    const rawSchoolParticipations: (SchoolParticipation & {
+        gateway: boolean;
+    })[] = await schoolRes.json();
+    const rawTeacherParticipations: (TeacherParticipation & {
+        gateway: boolean;
+    })[] = await teacherRes.json();
 
     const projects = rawProjects.map((p) => ({
         ...p,
@@ -102,10 +116,22 @@ async function fetchAndComputeDataset(params: ChartCartParams) {
             : "Non-Gateway",
     }));
 
+    const schoolParticipations = rawSchoolParticipations.map((s) => ({
+        ...s,
+        gatewaySchool: s.gateway ? "Gateway" : "Non-Gateway",
+    }));
+
+    const teacherParticipations = rawTeacherParticipations.map((t) => ({
+        ...t,
+        gatewaySchool: t.gateway ? "Gateway" : "Non-Gateway",
+    }));
+
     return computeGraphDataset(projects, {
         filters: params.filters,
         yearStart: params.yearStart,
         yearEnd: params.yearEnd,
+        schoolParticipations,
+        teacherParticipations,
     });
 }
 

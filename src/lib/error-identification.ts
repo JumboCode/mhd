@@ -92,7 +92,7 @@ export const studentRequiredColumnsDict: Record<string, ColumnType> = {
     teacherName: "string",
     teacherEmail: "string",
     teacherId: "string_or_number",
-    projectId: "number",
+    projectIntId: "number",
     title: "string",
     categoryId: "number",
     categoryName: "string",
@@ -111,6 +111,7 @@ export const studentColumnSpec: ColumnSpec = {
 export const schoolRequiredColumnsDict: Record<string, ColumnType> = {
     "School name": "string",
     "School id": "number",
+    "Town": "string",
     "Division": "string",
     "Implementation Model": "string",
     "School Type": "string",
@@ -123,6 +124,7 @@ export const schoolColumnSpec: ColumnSpec = {
     columnsDict: {
         "School name": "string",
         "School id": "number",
+        "Town": "string",
         "Division": "enum",
         "Implementation Model": "enum",
         "School Type": "enum",
@@ -253,7 +255,7 @@ function trimTrailingAndCheckEmptyRows(
  * @param jsonData - The spreadsheet data.
  */
 function trimTownCommas(jsonData: SpreadsheetData) {
-    const cityColIdx = jsonData[0].indexOf("city");
+    const cityColIdx = jsonData[0].indexOf("town");
 
     for (let row = 1; row < jsonData.length; row++) {
         const currentRow = jsonData[row];

@@ -15,6 +15,20 @@
             "when": 1776733884709,
             "tag": "0001_vengeful_veda",
             "breakpoints": true
+        },
+        {
+            "idx": 2,
+            "version": "7",
+            "when": 1777244403777,
+            "tag": "0002_whole_gamma_corps",
+            "breakpoints": true
+        },
+        {
+            "idx": 3,
+            "version": "7",
+            "when": 1777307810320,
+            "tag": "0003_add_merged_town_to_historic_names",
+            "breakpoints": true
         }
     ]
 }

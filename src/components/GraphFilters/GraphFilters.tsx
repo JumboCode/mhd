@@ -17,6 +17,7 @@ import { useState, useEffect } from "react";
 import { Combobox } from "@/components/Combobox";
 import { AddFilterPopover } from "./AddFilterPopover";
 import { FilterValuePopover } from "./FilterValuePopover";
+import type { FilterOption } from "./FilterValuePopover";
 import { Info, X } from "lucide-react";
 import {
     Select,
@@ -99,7 +100,7 @@ export type Filters = {
 };
 
 type GraphFiltersProps = {
-    schools: string[];
+    schools: FilterOption[];
     cities: string[];
     projectTypes?: string[]; // List of project type options
     divisions?: string[];
@@ -341,12 +342,19 @@ export default function GraphFilters({
         return joined.substring(0, maxLength).trim() + "...";
     };
 
+    const schoolValueToLabel = (v: string): string => {
+        const sep = v.indexOf("\x00");
+        return sep === -1 ? v : `${v.slice(0, sep)} (${v.slice(sep + 1)})`;
+    };
+
     // Get display text for filter chip
     const getFilterDisplayText = (filter: Filter): string => {
         if (filter.value === "school") {
             const count = selectedSchools.length;
             if (count === 0) return filter.label;
-            const truncated = truncateValues(selectedSchools);
+            const truncated = truncateValues(
+                selectedSchools.map(schoolValueToLabel),
+            );
             const label =
                 count > 1 ? `${filter.label} (${count})` : filter.label;
             return `${label}: ${truncated}`;
@@ -506,7 +514,7 @@ export default function GraphFilters({
                                     filter.value as MultiSelectFilterType;
                                 const optionsMap: Record<
                                     MultiSelectFilterType,
-                                    string[]
+                                    FilterOption[]
                                 > = {
                                     "school": schools,
                                     "city": cities,

@@ -149,6 +149,7 @@ export async function POST(req: NextRequest) {
             absorbingSchoolId: baseSchoolId,
             mergedName: mergingSchool[0].name,
             mergedStandardizedName: mergingSchool[0].standardizedName,
+            mergedTown: mergingSchool[0].town,
             mergedExternalSchoolId: mergingSchool[0].schoolId,
         });
 

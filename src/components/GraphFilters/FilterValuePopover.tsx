@@ -20,9 +20,11 @@ import {
 } from "@/components/ui/command";
 import type { MultiSelectFilterType } from "./constants";
 
+export type FilterOption = string | { label: string; value: string };
+
 interface FilterValuePopoverProps {
     filterType: MultiSelectFilterType;
-    options: string[];
+    options: FilterOption[];
     selectedValues: string[];
     gatewayCities?: string[]; // List of gateway city names (only for city filter)
     onFinish: (selectedValues: string[]) => void;
@@ -87,12 +89,12 @@ export function FilterValuePopover({
         }
     }, [open, selectedValues]);
 
-    // Filter out null/undefined values and filter options based on search query
-    const validOptions = (options || []).filter(
-        (option) => option !== null && typeof option === "string",
-    );
-    const filteredOptions = validOptions.filter((option) =>
-        option.toLowerCase().includes(searchQuery.toLowerCase()),
+    // Normalize all options to { label, value } pairs
+    const normalizedOptions = (options || [])
+        .filter((o) => o !== null && o !== undefined)
+        .map((o) => (typeof o === "string" ? { label: o, value: o } : o));
+    const filteredOptions = normalizedOptions.filter((o) =>
+        o.label.toLowerCase().includes(searchQuery.toLowerCase()),
     );
 
     const handleToggle = (value: string) => {
@@ -104,7 +106,7 @@ export function FilterValuePopover({
     };
 
     const handleSelectAll = () => {
-        setTempSelected(filteredOptions);
+        setTempSelected(filteredOptions.map((o) => o.value));
     };
 
     const handleClearAll = () => {
@@ -113,8 +115,9 @@ export function FilterValuePopover({
 
     const handleSelectGatewayCities = () => {
         // Get all gateway cities that are in the options
+        const optionValues = new Set(normalizedOptions.map((o) => o.value));
         const gatewayInOptions = gatewayCities.filter((city) =>
-            validOptions.includes(city),
+            optionValues.has(city),
         );
 
         // Select all gateway cities (merge with existing selections)
@@ -157,7 +160,7 @@ export function FilterValuePopover({
                                 type="button"
                                 onClick={
                                     filteredOptions.every((o) =>
-                                        tempSelected.includes(o),
+                                        tempSelected.includes(o.value),
                                     )
                                         ? handleClearAll
                                         : handleSelectAll
@@ -165,7 +168,7 @@ export function FilterValuePopover({
                                 className="text-sm text-primary hover:underline hover:cursor-pointer"
                             >
                                 {filteredOptions.every((o) =>
-                                    tempSelected.includes(o),
+                                    tempSelected.includes(o.value),
                                 )
                                     ? "Deselect All"
                                     : "Select All"}
@@ -198,27 +201,30 @@ export function FilterValuePopover({
                         <CommandEmpty>No options found.</CommandEmpty>
                         <CommandGroup>
                             {filteredOptions.map((option) => {
-                                const isSelected =
-                                    tempSelected.includes(option);
+                                const isSelected = tempSelected.includes(
+                                    option.value,
+                                );
                                 return (
                                     <CommandItem
-                                        key={option}
-                                        value={option}
-                                        onSelect={() => handleToggle(option)}
+                                        key={option.value}
+                                        value={option.label}
+                                        onSelect={() =>
+                                            handleToggle(option.value)
+                                        }
                                         className={`cursor-pointer ${isSelected ? "text-blue-800" : ""}`}
                                     >
                                         <div className="flex items-center gap-2 w-full">
                                             <Checkbox
                                                 checked={isSelected}
                                                 onCheckedChange={() =>
-                                                    handleToggle(option)
+                                                    handleToggle(option.value)
                                                 }
                                                 onClick={(e) =>
                                                     e.stopPropagation()
                                                 }
                                             />
                                             <span className="flex-1">
-                                                {option}
+                                                {option.label}
                                             </span>
                                         </div>
                                     </CommandItem>
