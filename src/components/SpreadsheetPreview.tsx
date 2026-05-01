@@ -46,7 +46,7 @@ export default function SpreadsheetPreview({
     const [numCols, setNumCols] = useState<number>(0);
 
     const isStudentSpreadsheet =
-        columns.includes("projectId") || columns.includes("teacherId");
+        columns.includes("projectIntId") || columns.includes("teacherId");
 
     useEffect(() => {
         if (!spreadsheetData || spreadsheetData.length === 0) return;
@@ -73,7 +73,7 @@ export default function SpreadsheetPreview({
         const cityIdx = getColumnIndex("city");
         const teacherIdIdx = getColumnIndex("teacherId");
         const teacherNameIdx = getColumnIndex("teacherName");
-        const projectIdIdx = getColumnIndex("projectId");
+        const projectIdIdx = getColumnIndex("projectIntId");
         const projectTitleIdx = getColumnIndex("title");
 
         if (isStudentSpreadsheet && schoolNameIdx !== undefined) {

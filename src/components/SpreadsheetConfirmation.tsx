@@ -109,8 +109,8 @@ export default function SpreadsheetConfirmation({
             setNumTeachers(uniqueTeachersSet.size);
         }
 
-        // Count unique projects using projectId
-        const projectIdIdx = getColumnIndex("projectId");
+        // Count unique projects using projectIntId
+        const projectIdIdx = getColumnIndex("projectIntId");
         if (projectIdIdx !== undefined) {
             const projects = dataRows
                 .map((row) => row[projectIdIdx])

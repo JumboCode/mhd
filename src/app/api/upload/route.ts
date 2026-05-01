@@ -431,7 +431,7 @@ export async function POST(req: NextRequest) {
 
         for (const row of filteredRows) {
             const teacherIdValue = String(row[COLUMN_INDICES.teacherId]);
-            const projectIdValue = String(row[COLUMN_INDICES.projectId]);
+            const projectIdValue = String(row[COLUMN_INDICES.projectIntId]);
 
             // Canonical town from school spreadsheet (keyed by standardized name); fallback to student spreadsheet
             const stdSchoolName = standardize(

@@ -92,7 +92,7 @@ export const studentRequiredColumnsDict: Record<string, ColumnType> = {
     teacherName: "string",
     teacherEmail: "string",
     teacherId: "string_or_number",
-    projectId: "number",
+    projectIntId: "number",
     title: "string",
     categoryId: "number",
     categoryName: "string",

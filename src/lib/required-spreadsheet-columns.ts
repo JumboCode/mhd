@@ -11,7 +11,7 @@ export const studentRequiredColumns = [
     "teacherId",
 
     // Project table required info
-    "projectId",
+    "projectIntId",
     "title",
     "categoryId",
     "categoryName",
