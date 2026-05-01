@@ -44,6 +44,7 @@ export default function MultiLineGraph({
     const mBottom = config?.margin?.bottom ?? 80;
     const strokeWidth = config?.strokeWidth ?? 2;
     const dotRadius = config?.dotRadius ?? 6;
+    const showPointLabels = config?.showPointLabels ?? false;
 
     const allPoints = datasets.flatMap((d) => d.data);
     if (allPoints.length === 0) return null;
@@ -311,6 +312,30 @@ export default function MultiLineGraph({
                         );
                     })()}
                 </svg>
+
+                {/* Point labels (PDF export) — rendered as HTML to avoid
+                    distortion from the SVG's preserveAspectRatio="none" */}
+                {showPointLabels &&
+                    datasets.flatMap((ds, si) =>
+                        ds.data.map((point, pi) => {
+                            const xPct = xScale(Number(point.x));
+                            const yPct = yScale(point.y);
+                            return (
+                                <div
+                                    key={`pt-${si}-${pi}`}
+                                    className="absolute text-xs tabular-nums text-foreground pointer-events-none whitespace-nowrap"
+                                    style={{
+                                        left: `${xPct}%`,
+                                        top: `${yPct}%`,
+                                        transform:
+                                            "translate(-50%, calc(-100% - 6px))",
+                                    }}
+                                >
+                                    {point.y.toLocaleString()}
+                                </div>
+                            );
+                        }),
+                    )}
             </div>
 
             {/* X-axis tick labels — explicitly below chart area */}

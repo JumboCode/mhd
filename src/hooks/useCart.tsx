@@ -6,7 +6,6 @@ import {
     useState,
     useEffect,
     useCallback,
-    useRef,
     ReactNode,
 } from "react";
 import { toast } from "sonner";
@@ -17,13 +16,17 @@ import {
     groupByLabels,
     type Project,
 } from "@/lib/compute-chart-data";
-import { ChartDataset } from "@/components/charts/chartTypes";
-import { renderChartToDataUrl } from "@/lib/render-chart";
-import { type FilterDetail, downloadGraphs } from "@/lib/export-to-pdf";
+import {
+    type FilterDetail,
+    type ChartDocumentItem,
+    downloadGraphs,
+} from "@/lib/export-to-pdf";
 
 /**
- * Chart items store only the filter params — no data.
- * Data is fetched from the API at export time.
+ * Chart items store only the filter params — no data or pre-rendered
+ * preview image. The dataset is fetched and computed on demand
+ * (preview hover, export) and the chart is rendered as true vector
+ * via @react-pdf/renderer.
  */
 export type ChartCartParams = {
     chartType: "bar" | "line";
@@ -42,7 +45,6 @@ export type CartItem =
           filterName: string;
           params: ChartCartParams;
           filterDetails: FilterDetail[];
-          previewDataUrl?: string;
       }
     | {
           type: "map";
@@ -67,9 +69,7 @@ type CartContextValue = {
     removeByName: (filterName: string) => void;
     clearCart: () => void;
     exportAll: () => Promise<void>;
-    ensureChartPreviews: () => Promise<void>;
     isExporting: boolean;
-    isGeneratingPreviews: boolean;
     hasItem: (filterName: string) => boolean;
 };
 
@@ -78,8 +78,8 @@ const CartContext = createContext<CartContextValue | null>(null);
 const STORAGE_KEY = "cart";
 
 /**
- * Fetch projects and gateway schools, then compute the chart dataset.
- * Throws on network/API errors so the caller can handle them.
+ * Fetch projects + gateway-school list, then compute the chart dataset.
+ * Throws on network/API errors.
  */
 async function fetchAndComputeDataset(params: ChartCartParams) {
     const [projectsRes, gatewayRes] = await Promise.all([
@@ -109,30 +109,9 @@ async function fetchAndComputeDataset(params: ChartCartParams) {
     });
 }
 
-async function renderChartToImage(
-    params: ChartCartParams,
-    dataset: ChartDataset[],
-) {
-    const yAxisLabel =
-        measuredAsLabels[params.filters.measuredAs] || "Total Schools";
-    const legendTitle =
-        params.filters.groupBy === "none"
-            ? undefined
-            : groupByLabels[params.filters.groupBy];
-
-    return renderChartToDataUrl(
-        params.chartType,
-        dataset,
-        yAxisLabel,
-        legendTitle,
-    );
-}
-
 export function CartProvider({ children }: { children: ReactNode }) {
     const [items, setItems] = useState<CartItem[]>([]);
     const [isExporting, setIsExporting] = useState(false);
-    const [isGeneratingPreviews, setIsGeneratingPreviews] = useState(false);
-    const isGeneratingPreviewsRef = useRef(false);
 
     // Load from sessionStorage on mount
     useEffect(() => {
@@ -201,111 +180,46 @@ export function CartProvider({ children }: { children: ReactNode }) {
         sessionStorage.removeItem(STORAGE_KEY);
     }, []);
 
-    const ensureChartPreviews = useCallback(async () => {
-        if (isGeneratingPreviewsRef.current) return;
-
-        const chartIndexes = items
-            .map((item, index) => ({ item, index }))
-            .filter(
-                ({ item }) =>
-                    item.type === "chart" && item.previewDataUrl === undefined,
-            );
-
-        if (chartIndexes.length === 0) return;
-
-        isGeneratingPreviewsRef.current = true;
-        setIsGeneratingPreviews(true);
-
-        try {
-            const generated = await Promise.all(
-                chartIndexes.map(async ({ item, index }) => {
-                    if (item.type !== "chart") return null;
-                    const dataset = await fetchAndComputeDataset(item.params);
-                    const previewDataUrl = await renderChartToImage(
-                        item.params,
-                        dataset,
-                    );
-                    return { index, previewDataUrl };
-                }),
-            );
-
-            const generatedByIndex = new Map(
-                generated
-                    .filter(
-                        (
-                            value,
-                        ): value is { index: number; previewDataUrl: string } =>
-                            value !== null,
-                    )
-                    .map(({ index, previewDataUrl }) => [
-                        index,
-                        previewDataUrl,
-                    ]),
-            );
-
-            if (generatedByIndex.size > 0) {
-                setItems((prev) =>
-                    prev.map((item, index) => {
-                        if (
-                            item.type !== "chart" ||
-                            typeof item.previewDataUrl === "string" ||
-                            !generatedByIndex.has(index)
-                        ) {
-                            return item;
-                        }
-                        return {
-                            ...item,
-                            previewDataUrl: generatedByIndex.get(index)!,
-                        };
-                    }),
-                );
-            }
-        } catch {
-            toast.error("Failed to generate one or more chart previews");
-        } finally {
-            isGeneratingPreviewsRef.current = false;
-            setIsGeneratingPreviews(false);
-        }
-    }, [items]);
-
     const exportAll = useCallback(async () => {
-        setIsExporting(true);
-
         if (items.length === 0) {
             toast.error("Cart is empty");
-            setIsExporting(false);
             return;
         }
 
+        setIsExporting(true);
         try {
-            // Generate images for each item
-            const imageDataUrls: string[] = [];
-            for (const item of items) {
-                if (item.type === "map") {
-                    imageDataUrls.push(item.imageDataUrl);
-                } else {
-                    if (item.previewDataUrl) {
-                        imageDataUrls.push(item.previewDataUrl);
-                    } else {
-                        const dataset = await fetchAndComputeDataset(
-                            item.params,
-                        );
-                        const dataUrl = await renderChartToImage(
-                            item.params,
-                            dataset,
-                        );
-                        imageDataUrls.push(dataUrl);
+            const docItems: ChartDocumentItem[] = await Promise.all(
+                items.map(async (item): Promise<ChartDocumentItem> => {
+                    if (item.type === "map") {
+                        return {
+                            type: "map",
+                            title: item.filterName,
+                            imageDataUrl: item.imageDataUrl,
+                            filterDetails: item.filterDetails,
+                        };
                     }
-                }
-            }
-
-            await downloadGraphs(
-                imageDataUrls,
-                items.map((i) => i.filterName),
-                items.map((i) => i.filterDetails ?? []),
-                false,
-                "chart",
+                    const dataset = await fetchAndComputeDataset(item.params);
+                    const yAxisLabel =
+                        measuredAsLabels[item.params.filters.measuredAs] ||
+                        "Total Schools";
+                    const legendTitle =
+                        item.params.filters.groupBy === "none"
+                            ? undefined
+                            : groupByLabels[item.params.filters.groupBy];
+                    return {
+                        type: "chart",
+                        chartType: item.params.chartType,
+                        title: item.filterName,
+                        dataset,
+                        yAxisLabel,
+                        legendTitle,
+                        xAxisLabel: "Year",
+                        filterDetails: item.filterDetails,
+                    };
+                }),
             );
+
+            await downloadGraphs(docItems, false, "chart");
         } catch (err) {
             toast.error(
                 err instanceof Error ? err.message : "Failed to export",
@@ -325,9 +239,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
                 removeByName,
                 clearCart,
                 exportAll,
-                ensureChartPreviews,
                 isExporting,
-                isGeneratingPreviews,
                 hasItem,
             }}
         >
