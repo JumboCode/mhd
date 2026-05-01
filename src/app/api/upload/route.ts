@@ -604,16 +604,29 @@ export async function POST(req: NextRequest) {
         currentProgress.progress = 78;
 
         // Phase 7: Batch insert yearly school participation (all new, year was deleted)
+        // Sum participating students per school from project data for use as fallback
+        const participatingBySchool = new Map<string, number>();
+        for (const p of projectDataMap.values()) {
+            participatingBySchool.set(
+                p.schoolIdStr,
+                (participatingBySchool.get(p.schoolIdStr) ?? 0) + p.numStudents,
+            );
+        }
+
         const yearlySchoolValues = [...yearlySchoolSet].map((schoolKey) => {
             const school = schoolMap.get(schoolKey)!;
             const info = schoolInfoMap.get(schoolKey);
+            const competingStudents =
+                info?.competingStudents ||
+                participatingBySchool.get(schoolKey) ||
+                0;
             return {
                 year,
                 schoolId: school.id,
                 division: info?.division ?? [],
                 implementationModel: info?.implementationModel ?? "",
                 schoolType: info?.schoolType ?? "",
-                competingStudents: info?.competingStudents ?? 0,
+                competingStudents,
             };
         });
 
