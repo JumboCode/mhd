@@ -160,7 +160,7 @@ function CartItemRow({
                 </div>
                 <button
                     onClick={onRemove}
-                    className="text-gray-400 hover:text-red-500 p-1 transition-colors duration-150 ease-in-out shrink-0"
+                    className="cursor-pointer text-gray-400 hover:text-red-500 p-1 transition-colors duration-150 ease-in-out shrink-0"
                 >
                     <Trash2 className="h-4 w-4" />
                 </button>
