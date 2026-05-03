@@ -715,12 +715,8 @@ export default function SpreadsheetState() {
         }
     };
 
-    const isWideTab = tabIndex === STEP_SCHOOL_MATCHING;
-
     return (
-        <div
-            className={`flex flex-col items-center justify-between mx-auto py-8 gap-12 ${isWideTab ? "w-full max-w-[90vw] px-8" : "max-w-2xl"}`}
-        >
+        <div className="flex flex-col items-center justify-between mx-auto py-8 gap-12 max-w-2xl">
             <div className="w-full max-w-md">
                 <div className="mb-2">
                     <SpreadsheetStatusBar
@@ -757,7 +753,7 @@ export default function SpreadsheetState() {
                 </div>
             </div>
 
-            <div className={`flex-1 ${isWideTab ? "w-full" : ""}`}>
+            <div className="w-full">
                 {uploadSuccess ? (
                     <div className="flex flex-col items-center gap-6 mt-8 max-w-lg text-center">
                         <CheckCircle2 className="h-14 w-14 text-green-500" />

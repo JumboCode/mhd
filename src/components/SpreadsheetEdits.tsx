@@ -167,7 +167,7 @@ export default function SpreadsheetEdits({
             )}
 
             {/* Map - styled like mapPlacer */}
-            <div className="relative h-[60vh] w-full rounded-lg overflow-hidden border border-border mt-2">
+            <div className="relative h-96 w-full rounded-lg overflow-hidden border border-border mt-2">
                 <Map
                     center={
                         currentAssignment
@@ -207,9 +207,11 @@ export default function SpreadsheetEdits({
             )}
 
             {/* Click to place pin hint */}
-            <p className="text-xs text-muted-foreground text-center">
-                Click to place pin
-            </p>
+            {!currentAssignment && (
+                <p className="text-xs text-muted-foreground text-center">
+                    Click to place pin
+                </p>
+            )}
         </div>
     );
 }
