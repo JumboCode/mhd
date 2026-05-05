@@ -284,9 +284,19 @@ export async function POST(req: NextRequest) {
                 ),
             ),
         ];
-        const allTeacherIds = [
+        // Teacher IDs are only unique within a school, so composite with schoolKey
+        const allCompositeTeacherIds = [
             ...new Set(
-                filteredRows.map((r) => String(r[COLUMN_INDICES.teacherId])),
+                filteredRows.map((r) => {
+                    const tid = String(r[COLUMN_INDICES.teacherId]);
+                    const stdName = standardize(
+                        String(r[COLUMN_INDICES.schoolName]),
+                    );
+                    const town =
+                        townMap.get(stdName) ??
+                        toTitleCase(r[COLUMN_INDICES.city] as string);
+                    return `${tid}\x00${stdName}__${town.toLowerCase()}`;
+                }),
             ),
         ];
 
@@ -302,11 +312,13 @@ export async function POST(req: NextRequest) {
                           ),
                       )
                 : Promise.resolve([]),
-            allTeacherIds.length > 0
+            allCompositeTeacherIds.length > 0
                 ? db
                       .select()
                       .from(teachers)
-                      .where(inArray(teachers.teacherId, allTeacherIds))
+                      .where(
+                          inArray(teachers.teacherId, allCompositeTeacherIds),
+                      )
                 : Promise.resolve([]),
         ]);
 
@@ -484,13 +496,17 @@ export async function POST(req: NextRequest) {
                 }
             }
 
+            // Teacher IDs are only unique within a school; use composite to avoid
+            // collisions between different schools that share the same teacher ID.
+            const compositeTeacherId = `${teacherIdValue}\x00${schoolKey}`;
+
             // Teacher: collect new ones
             if (
-                !teacherMap.has(teacherIdValue) &&
-                !newTeachersMap.has(teacherIdValue)
+                !teacherMap.has(compositeTeacherId) &&
+                !newTeachersMap.has(compositeTeacherId)
             ) {
-                newTeachersMap.set(teacherIdValue, {
-                    teacherId: teacherIdValue,
+                newTeachersMap.set(compositeTeacherId, {
+                    teacherId: compositeTeacherId,
                     name: row[COLUMN_INDICES.teacherName] as string,
                     email: row[COLUMN_INDICES.teacherEmail] as string,
                 });
@@ -503,7 +519,7 @@ export async function POST(req: NextRequest) {
             if (!projectDataMap.has(projectKey)) {
                 projectDataMap.set(projectKey, {
                     schoolIdStr: schoolKey,
-                    teacherIdStr: teacherIdValue,
+                    teacherIdStr: compositeTeacherId,
                     projectId: projectIdValue,
                     title: row[COLUMN_INDICES.title] as string,
                     division: (schoolInfo?.division ?? []).join(", "),
@@ -517,11 +533,10 @@ export async function POST(req: NextRequest) {
 
             // Yearly participations
             yearlySchoolSet.add(schoolKey);
-            const ytKey = `${schoolKey}\x00${teacherIdValue}`;
-            if (!yearlyTeacherMap.has(ytKey)) {
-                yearlyTeacherMap.set(ytKey, {
+            if (!yearlyTeacherMap.has(compositeTeacherId)) {
+                yearlyTeacherMap.set(compositeTeacherId, {
                     schoolKey,
-                    teacherIdStr: teacherIdValue,
+                    teacherIdStr: compositeTeacherId,
                 });
             }
         }
