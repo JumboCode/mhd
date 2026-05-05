@@ -284,7 +284,8 @@ export async function POST(req: NextRequest) {
                 ),
             ),
         ];
-        // Teacher IDs are only unique within a school, so composite with schoolKey
+        // Teacher IDs are only unique within a school, so composite with schoolKey.
+        // Use "|" separator — \x00 is rejected by PostgreSQL in text values.
         const allCompositeTeacherIds = [
             ...new Set(
                 filteredRows.map((r) => {
@@ -295,7 +296,7 @@ export async function POST(req: NextRequest) {
                     const town =
                         townMap.get(stdName) ??
                         toTitleCase(r[COLUMN_INDICES.city] as string);
-                    return `${tid}\x00${stdName}__${town.toLowerCase()}`;
+                    return `${tid}|${stdName}__${town.toLowerCase()}`;
                 }),
             ),
         ];
@@ -498,7 +499,7 @@ export async function POST(req: NextRequest) {
 
             // Teacher IDs are only unique within a school; use composite to avoid
             // collisions between different schools that share the same teacher ID.
-            const compositeTeacherId = `${teacherIdValue}\x00${schoolKey}`;
+            const compositeTeacherId = `${teacherIdValue}|${schoolKey}`;
 
             // Teacher: collect new ones
             if (
