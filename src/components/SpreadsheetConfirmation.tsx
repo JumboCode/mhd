@@ -99,14 +99,28 @@ export default function SpreadsheetConfirmation({
             setUniqueSchools(new Set(schoolKeys).size);
         }
 
-        // Count unique teachers using teacherId
+        // Count unique teachers using composite teacherId|schoolKey (mirrors upload logic)
         const teacherIdIdx = getColumnIndex("teacherId");
-        if (teacherIdIdx !== undefined) {
-            const teachers = dataRows
-                .map((row) => row[teacherIdIdx])
+        if (teacherIdIdx !== undefined && schoolNameIdx !== undefined) {
+            const townMap = buildSchoolTownMap(schoolInfoData);
+            const teacherKeys = dataRows
+                .map((row) => {
+                    const tid = String(row[teacherIdIdx] ?? "").trim();
+                    if (!tid) return null;
+                    const name = standardize(
+                        String(row[schoolNameIdx] ?? "").trim(),
+                    );
+                    const city =
+                        cityIdx !== undefined
+                            ? String(row[cityIdx] ?? "")
+                                  .toLowerCase()
+                                  .trim()
+                            : "";
+                    const canonicalTown = townMap.get(name) ?? city;
+                    return `${tid}|${name}__${canonicalTown.toLowerCase()}`;
+                })
                 .filter(Boolean);
-            const uniqueTeachersSet = new Set(teachers);
-            setNumTeachers(uniqueTeachersSet.size);
+            setNumTeachers(new Set(teacherKeys).size);
         }
 
         // Count unique projects using projectIntId
