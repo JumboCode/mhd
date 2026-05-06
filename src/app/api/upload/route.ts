@@ -284,19 +284,21 @@ export async function POST(req: NextRequest) {
                 ),
             ),
         ];
-        // Teacher IDs are only unique within a school, so composite with schoolKey.
+        // Identify teachers by email + town — teacher IDs are not globally unique.
         // Use "|" separator — \x00 is rejected by PostgreSQL in text values.
         const allCompositeTeacherIds = [
             ...new Set(
                 filteredRows.map((r) => {
-                    const tid = String(r[COLUMN_INDICES.teacherId]);
+                    const email = String(r[COLUMN_INDICES.teacherEmail] ?? "")
+                        .toLowerCase()
+                        .trim();
                     const stdName = standardize(
                         String(r[COLUMN_INDICES.schoolName]),
                     );
                     const town =
                         townMap.get(stdName) ??
                         toTitleCase(r[COLUMN_INDICES.city] as string);
-                    return `${tid}|${stdName}__${town.toLowerCase()}`;
+                    return `${email}|${town.toLowerCase()}`;
                 }),
             ),
         ];
@@ -443,7 +445,6 @@ export async function POST(req: NextRequest) {
         >();
 
         for (const row of filteredRows) {
-            const teacherIdValue = String(row[COLUMN_INDICES.teacherId]);
             const projectIdValue = String(row[COLUMN_INDICES.projectIntId]);
 
             // Canonical town from school spreadsheet (keyed by standardized name); fallback to student spreadsheet
@@ -497,9 +498,13 @@ export async function POST(req: NextRequest) {
                 }
             }
 
-            // Teacher IDs are only unique within a school; use composite to avoid
-            // collisions between different schools that share the same teacher ID.
-            const compositeTeacherId = `${teacherIdValue}|${schoolKey}`;
+            // Identify teachers by email + town — teacher IDs are not globally unique.
+            const teacherEmailValue = String(
+                row[COLUMN_INDICES.teacherEmail] ?? "",
+            )
+                .toLowerCase()
+                .trim();
+            const compositeTeacherId = `${teacherEmailValue}|${canonicalTown.toLowerCase()}`;
 
             // Teacher: collect new ones
             if (

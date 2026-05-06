@@ -99,14 +99,16 @@ export default function SpreadsheetConfirmation({
             setUniqueSchools(new Set(schoolKeys).size);
         }
 
-        // Count unique teachers using composite teacherId|schoolKey (mirrors upload logic)
-        const teacherIdIdx = getColumnIndex("teacherId");
-        if (teacherIdIdx !== undefined && schoolNameIdx !== undefined) {
+        // Count unique teachers using composite email|town (mirrors upload logic)
+        const teacherEmailIdx = getColumnIndex("teacherEmail");
+        if (teacherEmailIdx !== undefined && schoolNameIdx !== undefined) {
             const townMap = buildSchoolTownMap(schoolInfoData);
             const teacherKeys = dataRows
                 .map((row) => {
-                    const tid = String(row[teacherIdIdx] ?? "").trim();
-                    if (!tid) return null;
+                    const email = String(row[teacherEmailIdx] ?? "")
+                        .toLowerCase()
+                        .trim();
+                    if (!email) return null;
                     const name = standardize(
                         String(row[schoolNameIdx] ?? "").trim(),
                     );
@@ -117,7 +119,7 @@ export default function SpreadsheetConfirmation({
                                   .trim()
                             : "";
                     const canonicalTown = townMap.get(name) ?? city;
-                    return `${tid}|${name}__${canonicalTown.toLowerCase()}`;
+                    return `${email}|${canonicalTown.toLowerCase()}`;
                 })
                 .filter(Boolean);
             setNumTeachers(new Set(teacherKeys).size);
