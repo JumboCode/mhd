@@ -99,27 +99,19 @@ export default function SpreadsheetConfirmation({
             setUniqueSchools(new Set(schoolKeys).size);
         }
 
-        // Count unique teachers using composite email|town (mirrors upload logic)
+        // Count unique teachers using composite email|standardizedSchoolName (mirrors upload logic)
         const teacherEmailIdx = getColumnIndex("teacherEmail");
         if (teacherEmailIdx !== undefined && schoolNameIdx !== undefined) {
-            const townMap = buildSchoolTownMap(schoolInfoData);
             const teacherKeys = dataRows
                 .map((row) => {
                     const email = String(row[teacherEmailIdx] ?? "")
                         .toLowerCase()
                         .trim();
                     if (!email) return null;
-                    const name = standardize(
+                    const stdName = standardize(
                         String(row[schoolNameIdx] ?? "").trim(),
                     );
-                    const city =
-                        cityIdx !== undefined
-                            ? String(row[cityIdx] ?? "")
-                                  .toLowerCase()
-                                  .trim()
-                            : "";
-                    const canonicalTown = townMap.get(name) ?? city;
-                    return `${email}|${canonicalTown.toLowerCase()}`;
+                    return `${email}|${stdName}`;
                 })
                 .filter(Boolean);
             setNumTeachers(new Set(teacherKeys).size);

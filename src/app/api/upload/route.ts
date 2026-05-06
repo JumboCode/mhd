@@ -284,7 +284,7 @@ export async function POST(req: NextRequest) {
                 ),
             ),
         ];
-        // Identify teachers by email + town — teacher IDs are not globally unique.
+        // Identify teachers by email + standardized school name — teacher IDs are not globally unique.
         // Use "|" separator — \x00 is rejected by PostgreSQL in text values.
         const allCompositeTeacherIds = [
             ...new Set(
@@ -295,10 +295,7 @@ export async function POST(req: NextRequest) {
                     const stdName = standardize(
                         String(r[COLUMN_INDICES.schoolName]),
                     );
-                    const town =
-                        townMap.get(stdName) ??
-                        toTitleCase(r[COLUMN_INDICES.city] as string);
-                    return `${email}|${town.toLowerCase()}`;
+                    return `${email}|${stdName}`;
                 }),
             ),
         ];
@@ -504,7 +501,7 @@ export async function POST(req: NextRequest) {
             )
                 .toLowerCase()
                 .trim();
-            const compositeTeacherId = `${teacherEmailValue}|${canonicalTown.toLowerCase()}`;
+            const compositeTeacherId = `${teacherEmailValue}|${stdSchoolName}`;
 
             // Teacher: collect new ones
             if (
