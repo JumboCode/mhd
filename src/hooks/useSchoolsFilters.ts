@@ -19,7 +19,7 @@ export type SchoolsFilters = {
     implementationTypes: string[];
 };
 
-export type UseSchoolsFiltersReturn = {
+type UseSchoolsFiltersReturn = {
     filters: SchoolsFilters;
     setCities: (cities: string[]) => void;
     setRegions: (regions: string[]) => void;

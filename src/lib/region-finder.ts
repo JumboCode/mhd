@@ -23,7 +23,7 @@ import rawData from "@/data/regions.json";
 /**
  * Represents a geographic point.
  */
-export type Coordinate = {
+type Coordinate = {
     lat: number;
     long: number;
 };
@@ -31,7 +31,7 @@ export type Coordinate = {
 /**
  * Represents a named geographic region defined by a polygon boundary.
  */
-export type Region = {
+type Region = {
     name: string;
     fips: string;
     polygon: Array<Coordinate>;

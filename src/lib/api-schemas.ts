@@ -12,10 +12,10 @@ export const yearParamSchema = yearSchema;
 export const idParamSchema = z.coerce.number().int().positive();
 
 /** Latitude must be a finite number. */
-export const latSchema = z.coerce.number().finite();
+const latSchema = z.coerce.number().finite();
 
 /** Longitude must be a finite number. */
-export const longSchema = z.coerce.number().finite();
+const longSchema = z.coerce.number().finite();
 
 // ---------------------------------------------------------------------------
 // Query-param schemas (GET / DELETE routes)
@@ -28,12 +28,6 @@ export const yearQuerySchema = z.object({
 export const latLongQuerySchema = z.object({
     lat: latSchema,
     long: longSchema,
-});
-
-export const schoolsListQuerySchema = z.object({
-    list: z.literal("true").optional(),
-    gateway: z.literal("true").optional(),
-    year: yearParamSchema.optional(),
 });
 
 // ---------------------------------------------------------------------------

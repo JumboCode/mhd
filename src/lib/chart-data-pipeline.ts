@@ -32,9 +32,7 @@ export type YearRange = {
 /**
  * Pre-calculate how many years each teacher has participated.
  */
-export function buildTeacherYearsMap(
-    allProjects: Project[],
-): Map<number, number> {
+function buildTeacherYearsMap(allProjects: Project[]): Map<number, number> {
     const tempMap: Record<number, Set<number>> = {};
     for (const p of allProjects) {
         if (!tempMap[p.teacherId]) tempMap[p.teacherId] = new Set();
@@ -115,7 +113,7 @@ export function computeMetric(
 /**
  * Get school participation records matching a division group.
  */
-export function getSchoolRecordsInDivision(
+function getSchoolRecordsInDivision(
     records: SchoolParticipation[],
     groupName: string,
 ): SchoolParticipation[] {
@@ -129,7 +127,7 @@ export function getSchoolRecordsInDivision(
 /**
  * Get teacher participation records matching a division group.
  */
-export function getTeacherRecordsInDivision(
+function getTeacherRecordsInDivision(
     records: TeacherParticipation[],
     groupName: string,
 ): TeacherParticipation[] {
@@ -146,7 +144,7 @@ export function getTeacherRecordsInDivision(
  * tables for school/city/teacher counts.
  * Pure function - no setState calls.
  */
-export function buildDatasets(
+function buildDatasets(
     groups: string[],
     getProjectsInGroup: (groupName: string) => Project[],
     metric: MeasuredAs,
@@ -224,7 +222,7 @@ export function buildDatasets(
 /**
  * Normalize division names for consistent grouping.
  */
-export function normalizeDivision(d: string): string {
+function normalizeDivision(d: string): string {
     const lower = d.toLowerCase();
     if (lower.startsWith("junior")) return "Junior";
     if (lower.startsWith("senior")) return "Senior";
@@ -235,7 +233,7 @@ export function normalizeDivision(d: string): string {
 /**
  * Get unique division groups from projects.
  */
-export function getDivisionGroups(projects: Project[]): string[] {
+function getDivisionGroups(projects: Project[]): string[] {
     const allDivisionGroups = new Set<string>();
 
     for (const p of projects) {
@@ -257,7 +255,7 @@ export function getDivisionGroups(projects: Project[]): string[] {
 /**
  * Get projects matching a division group.
  */
-export function getProjectsInDivision(
+function getProjectsInDivision(
     projects: Project[],
     groupName: string,
 ): Project[] {
@@ -271,7 +269,7 @@ export function getProjectsInDivision(
 /**
  * Map groupBy value to the Project field key.
  */
-export function getGroupKey(groupBy: GroupBy): keyof Project | null {
+function getGroupKey(groupBy: GroupBy): keyof Project | null {
     switch (groupBy) {
         case "none":
             return null;
@@ -295,7 +293,7 @@ export function getGroupKey(groupBy: GroupBy): keyof Project | null {
 /**
  * Get unique groups from projects based on a field key.
  */
-export function getUniqueGroups(
+function getUniqueGroups(
     projects: Project[],
     groupKey: keyof Project | null,
 ): string[] {
@@ -313,7 +311,7 @@ export function getUniqueGroups(
 /**
  * Get projects matching a group value for a given key.
  */
-export function getProjectsInGroup(
+function getProjectsInGroup(
     projects: Project[],
     groupKey: keyof Project | null,
     groupName: string,

@@ -76,10 +76,3 @@ export const ENTITY_CONFIG = {
         bgClass: "bg-entity-schools-muted",
     },
 } as const;
-
-export type EntityType = keyof typeof ENTITY_CONFIG;
-
-/** Get entity config by type - useful when entity type is dynamic */
-export function getEntityConfig(type: EntityType) {
-    return ENTITY_CONFIG[type];
-}

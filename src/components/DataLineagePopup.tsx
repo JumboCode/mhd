@@ -66,7 +66,7 @@ type DataLineageSection = {
     color: "blue" | "orange";
 };
 
-export interface DataLineagePopupProps {
+interface DataLineagePopupProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     filters: Filters;

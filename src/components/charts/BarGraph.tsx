@@ -10,8 +10,6 @@ import {
     getEntityColorByLabel,
 } from "./chartTypes";
 
-export type { ChartDataset as BarDataset };
-
 type BarGraphProps = {
     dataset: ChartDataset[];
     yAxisLabel: string;

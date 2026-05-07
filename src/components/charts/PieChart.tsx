@@ -9,8 +9,6 @@ import {
     type PieTooltipFormatter,
 } from "./chartTypes";
 
-export type { PieSlice };
-
 type PieSliceResolved = PieSlice & { color: string };
 
 function resolveSlices(slices: PieSlice[]): PieSliceResolved[] {

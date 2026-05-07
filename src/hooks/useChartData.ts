@@ -8,12 +8,12 @@ import {
 } from "@/lib/compute-chart-data";
 import { type YearRange } from "@/lib/chart-data-pipeline";
 
-export type YearMetadata = {
+type YearMetadata = {
     year: number;
     lastUpdatedAt: string | null;
 };
 
-export type UseChartDataReturn = {
+type UseChartDataReturn = {
     allProjects: Project[];
     allSchoolParticipations: SchoolParticipation[];
     allTeacherParticipations: TeacherParticipation[];

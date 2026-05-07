@@ -266,7 +266,7 @@ export const groupByLabels: Record<string, string> = {
 };
 
 /** The subset of Filters + year range needed to compute a chart dataset. */
-export type ChartParams = {
+type ChartParams = {
     filters: Filters;
     yearStart: number;
     yearEnd: number;

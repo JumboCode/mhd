@@ -52,7 +52,7 @@ const chartParsers = {
         .withOptions({ clearOnDefault: false }),
 };
 
-export type UseChartFiltersReturn = {
+type UseChartFiltersReturn = {
     // Year range
     yearRange: YearRange;
     updateYearRange: (

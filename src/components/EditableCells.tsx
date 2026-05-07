@@ -54,7 +54,7 @@ import {
 
 // A single table cell that toggles between read-only display and a text input.
 // Double-click activates edit mode; Enter or blur commits; Escape cancels.
-export interface EditableCellProps {
+interface EditableCellProps {
     value: string | number | boolean;
     columnId: string;
     rowId: string;
@@ -121,7 +121,7 @@ export function EditableCell({
 }
 
 // StringSelectCell renders a <select> from a fixed list of string options; commits on change.
-export interface StringSelectCellProps {
+interface StringSelectCellProps {
     value: string;
     options: string[];
     rowId: string;
@@ -155,93 +155,11 @@ export function StringSelectCell({
     );
 }
 
-/**
- * StringMultiSelectCell renders a multi-select combobox from a fixed list of
- * string options. Commits the full selected array on every change
- */
-export interface StringMultiSelectCellProps {
-    value: string[];
-    options: string[];
-    rowId: string;
-    columnId: string;
-    onCommit: (rowId: string, columnId: string, value: string[]) => void;
-}
-
-export function StringMultiSelectCell({
-    value,
-    options,
-    rowId,
-    columnId,
-    onCommit,
-}: StringMultiSelectCellProps) {
-    const [open, setOpen] = useState(false);
-
-    const toggle = (opt: string) => {
-        const next = value.includes(opt)
-            ? value.filter((v) => v !== opt)
-            : [...value, opt];
-        onCommit(rowId, columnId, next);
-    };
-
-    const label =
-        value.length === 0
-            ? "Select..."
-            : value.length === 1
-              ? value[0]
-              : `${value.length} selected`;
-
-    return (
-        <Popover open={open} onOpenChange={setOpen}>
-            <PopoverTrigger asChild>
-                <button
-                    className="w-full flex items-center justify-between gap-1 px-1 py-0.5 text-sm rounded hover:bg-muted focus:outline-none focus:ring-1 focus:ring-neutral-400 text-left"
-                    title={value.join(", ") || undefined}
-                >
-                    <span
-                        className={cn(
-                            "truncate",
-                            value.length === 0 && "text-muted-foreground",
-                        )}
-                    >
-                        {label}
-                    </span>
-                    <ChevronsUpDown className="h-3 w-3 shrink-0 opacity-50" />
-                </button>
-            </PopoverTrigger>
-            <PopoverContent className="w-56 p-0" align="start">
-                <Command>
-                    <CommandList>
-                        <CommandGroup>
-                            {options.map((opt) => (
-                                <CommandItem
-                                    key={opt}
-                                    onSelect={() => toggle(opt)}
-                                    className="cursor-pointer"
-                                >
-                                    <Check
-                                        className={cn(
-                                            "mr-2 h-4 w-4 shrink-0",
-                                            value.includes(opt)
-                                                ? "opacity-100"
-                                                : "opacity-0",
-                                        )}
-                                    />
-                                    {opt}
-                                </CommandItem>
-                            ))}
-                        </CommandGroup>
-                    </CommandList>
-                </Command>
-            </PopoverContent>
-        </Popover>
-    );
-}
-
 // ---------------------------------------------------------------------------
 // BooleanSelectCell
 // Renders a Yes/No <select> that commits immediately on change.
 // ---------------------------------------------------------------------------
-export interface BooleanSelectCellProps {
+interface BooleanSelectCellProps {
     value: boolean;
     rowId: string;
     columnId: string;
@@ -275,7 +193,7 @@ export function BooleanSelectCell({
 // Renders an inline number input that commits on blur or Enter.
 // Calls onValidationError (if provided) when the input is not a positive integer.
 // ---------------------------------------------------------------------------
-export interface NumberInputCellProps {
+interface NumberInputCellProps {
     value: number;
     rowId: string;
     columnId: string;
@@ -325,14 +243,14 @@ export function NumberInputCell({
 // Floating save/discard bar shown when there are unsaved changes.
 // Can be used standalone outside of EditableTable.
 // ---------------------------------------------------------------------------
-export interface SaveDiscardBarProps {
+interface SaveDiscardBarProps {
     hasChanges: boolean;
     saving: boolean;
     onSave: () => void;
     onDiscard: () => void;
 }
 
-export function SaveDiscardBar({
+function SaveDiscardBar({
     hasChanges,
     saving,
     onSave,
@@ -381,7 +299,7 @@ export function SaveDiscardBar({
 //   isRowChanged   — optional; returns true for rows that should be highlighted
 //   emptyMessage   — text shown when data is empty (default: "No results.")
 // ---------------------------------------------------------------------------
-export interface EditableTableProps<TData> {
+interface EditableTableProps<TData> {
     data: TData[];
     columns: ColumnDef<TData>[];
     hasChanges: boolean;

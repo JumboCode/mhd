@@ -6,7 +6,7 @@ import { measuredAsLabels, groupByLabels } from "@/lib/compute-chart-data";
 
 export { measuredAsLabels, groupByLabels };
 
-export type ActiveFilters = {
+type ActiveFilters = {
     schools: number;
     cities: number;
     projectTypes: number;

@@ -47,7 +47,7 @@ export type SchoolWithCoordinates = {
 /**
  * Result of the matching process
  */
-export type SchoolMatchResult = {
+type SchoolMatchResult = {
     matched: SchoolWithCoordinates[];
     unmatched: UploadedSchool[];
 };

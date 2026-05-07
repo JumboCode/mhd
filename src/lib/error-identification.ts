@@ -31,7 +31,7 @@ export enum ErrorType {
 /**
  * Represents a single spreadsheet error.
  */
-export type CellTypeError = {
+type CellTypeError = {
     coord: string;
     value: string;
     expected: ColumnType;
@@ -58,7 +58,7 @@ export type ErrorReport = {
  * enum validates against a list of allowed values (case/whitespace-insensitive).
  * If no valid values are configured, enum validation is skipped.
  */
-export type ColumnType =
+type ColumnType =
     | "string"
     | "number"
     | "boolean"
@@ -70,7 +70,7 @@ export type ColumnType =
 /**
  * Options to override which columns and types are validated.
  */
-export type ColumnSpec = {
+type ColumnSpec = {
     /** Required column names (matched case/whitespace-insensitively). */
     columns: string[];
     /** Maps column name to expected type. */
@@ -85,7 +85,7 @@ export type ColumnSpec = {
 /**
  * Dictionary mapping required student column names to their expected types.
  */
-export const studentRequiredColumnsDict: Record<string, ColumnType> = {
+const studentRequiredColumnsDict: Record<string, ColumnType> = {
     schoolName: "string",
     city: "string",
     schoolId: "number",
@@ -103,19 +103,6 @@ export const studentRequiredColumnsDict: Record<string, ColumnType> = {
 export const studentColumnSpec: ColumnSpec = {
     columns: studentRequiredColumns,
     columnsDict: studentRequiredColumnsDict,
-};
-
-/**
- * Dictionary mapping required school column names to their expected types.
- */
-export const schoolRequiredColumnsDict: Record<string, ColumnType> = {
-    "School name": "string",
-    "School id": "number",
-    "Town": "string",
-    "Division": "string",
-    "Implementation Model": "string",
-    "School Type": "string",
-    "# students who began project at the school level": "optional_number",
 };
 
 /** Column spec used for the school info spreadsheet. */
