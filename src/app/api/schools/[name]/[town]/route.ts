@@ -24,6 +24,7 @@ import { eq, sql, and, sum } from "drizzle-orm";
 import { findRegionOf } from "@/lib/region-finder";
 import { schoolPatchBodySchema } from "@/lib/api-schemas";
 import { parseOrError, internalError } from "@/lib/api-utils";
+import { standardize } from "@/lib/string-standardize";
 
 type YearlySchoolFields = {
     division?: string[];
@@ -86,7 +87,11 @@ export async function PATCH(
         } = parsed.data;
 
         const schoolResult = await db
-            .select({ id: schools.id })
+            .select({
+                id: schools.id,
+                standardizedName: schools.standardizedName,
+                name: schools.name,
+            })
             .from(schools)
             .where(
                 and(
@@ -103,7 +108,8 @@ export async function PATCH(
             );
         }
 
-        const schoolId = schoolResult[0].id;
+        const schoolRow = schoolResult[0];
+        const schoolId = schoolRow.id;
 
         if (city !== undefined) {
             await db
@@ -114,12 +120,55 @@ export async function PATCH(
         }
 
         if (newName !== undefined) {
+            const trimmed = newName.trim();
+            const newStd = standardize(trimmed);
+            if (!newStd) {
+                return NextResponse.json(
+                    {
+                        error: "That name cannot be used — it normalizes to an empty slug (try adding a location or unique word).",
+                    },
+                    { status: 400 },
+                );
+            }
+
+            const oldStd = schoolRow.standardizedName;
+            if (newStd !== oldStd) {
+                const collision = await db
+                    .select({ id: schools.id })
+                    .from(schools)
+                    .where(eq(schools.standardizedName, newStd))
+                    .limit(1);
+                if (collision.length > 0 && collision[0].id !== schoolId) {
+                    return NextResponse.json(
+                        {
+                            error: "A school with this name already exists",
+                        },
+                        { status: 409 },
+                    );
+                }
+            }
+
             await db
                 .update(schools)
-                .set({ name: newName })
+                .set({ name: trimmed, standardizedName: newStd })
                 .where(eq(schools.id, schoolId));
+
+            if (newStd !== oldStd) {
+                try {
+                    await db.insert(schoolHistoricNames).values({
+                        absorbingSchoolId: schoolId,
+                        mergedName: schoolRow.name,
+                        mergedStandardizedName: oldStd,
+                        mergedExternalSchoolId: null,
+                    });
+                } catch {
+                    /* duplicate historic slug or race — old URL may not redirect */
+                }
+            }
+
             return NextResponse.json({
                 message: "School name updated successfully",
+                standardizedName: newStd,
             });
         }
 
