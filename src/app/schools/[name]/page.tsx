@@ -14,7 +14,7 @@
 import { useParams, useRouter } from "next/navigation";
 import { useQueryState, parseAsInteger } from "nuqs";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { SchoolProfileSkeleton } from "@/components/skeletons/SchoolProfileSkeleton";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -43,6 +43,7 @@ import {
     EllipsisVertical,
     Merge,
     Download,
+    Pencil,
 } from "lucide-react";
 import { exportSchoolToPDF } from "@/lib/school-export";
 import { Button } from "@/components/ui/button";
@@ -53,6 +54,15 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import MergeSchoolDialog from "@/components/MergeSchoolDialog";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { type MeasuredAs } from "@/components/GraphFilters/GraphFilters";
 
@@ -91,9 +101,9 @@ export default function SchoolProfilePage() {
     const [prevYearData, setPrevYearData] = useState<SchoolData | null>(null);
 
     const [projects, setProjects] = useState<ProjectRow[]>([]);
-    const [editingName, setEditingName] = useState(false);
+    const [renameOpen, setRenameOpen] = useState(false);
     const [nameDraft, setNameDraft] = useState("");
-    const nameInputRef = useRef<HTMLInputElement>(null);
+    const [renameSaving, setRenameSaving] = useState(false);
     const [studentYearData, setstudentYearData] = useState<
         { x: string | number; y: number }[]
     >([]);
@@ -219,27 +229,57 @@ export default function SchoolProfilePage() {
         return () => controller.abort();
     }, [schoolName, router, year]);
 
-    const handleNameDoubleClick = () => {
-        setNameDraft(schoolData?.name ?? "");
-        setEditingName(true);
-        setTimeout(() => nameInputRef.current?.select(), 0);
+    const openRenameSchoolDialog = () => {
+        if (!schoolData) return;
+        setNameDraft(schoolData.name);
+        setRenameOpen(true);
     };
 
-    const handleNameCommit = async () => {
-        setEditingName(false);
-        if (!schoolData || nameDraft.trim() === schoolData.name) return;
-        const res = await fetch(`/api/schools/${schoolName}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name: nameDraft.trim() }),
-        });
-        if (res.ok) {
-            setSchoolData((prev) =>
-                prev ? { ...prev, name: nameDraft.trim() } : prev,
-            );
-            toast.success("School name updated.");
-        } else {
-            toast.error("Failed to update school name.");
+    const handleRenameSave = async () => {
+        if (!schoolData) return;
+        const next = nameDraft.trim();
+        if (!next) {
+            toast.error("School name cannot be empty.");
+            return;
+        }
+        if (next === schoolData.name) {
+            setRenameOpen(false);
+            return;
+        }
+        setRenameSaving(true);
+        try {
+            const res = await fetch(`/api/schools/${schoolName}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name: next }),
+            });
+            const data = (await res.json()) as {
+                standardizedName?: string;
+                error?: string;
+            };
+            if (res.ok) {
+                setSchoolData((prev) =>
+                    prev ? { ...prev, name: next } : prev,
+                );
+                setRenameOpen(false);
+                toast.success("School name updated.");
+                const newSlug = data.standardizedName;
+                if (newSlug && newSlug !== schoolName) {
+                    const q =
+                        year !== null && year !== undefined
+                            ? `?year=${year}`
+                            : "";
+                    router.replace(`/schools/${newSlug}${q}`);
+                }
+            } else {
+                toast.error(
+                    typeof data.error === "string"
+                        ? data.error
+                        : "Failed to update school name.",
+                );
+            }
+        } finally {
+            setRenameSaving(false);
         }
     };
 
@@ -364,33 +404,8 @@ export default function SchoolProfilePage() {
     return (
         <div className="w-full bg-background overflow-y-auto flex justify-center">
             <div className="w-full flex flex-col gap-6 py-8 max-w-5xl px-6">
-                {/* Header with school name — double-click to edit */}
                 <div className="flex flex-row items-center w-full">
-                    {editingName ? (
-                        <input
-                            ref={nameInputRef}
-                            className="text-2xl font-bold border-b border-blue-400 outline-none bg-transparent"
-                            value={nameDraft}
-                            onChange={(e) => setNameDraft(e.target.value)}
-                            onBlur={handleNameCommit}
-                            onKeyDown={(e) => {
-                                if (e.key === "Enter") handleNameCommit();
-                                if (e.key === "Escape") {
-                                    setEditingName(false);
-                                    setNameDraft(schoolData.name);
-                                }
-                            }}
-                            autoFocus
-                        />
-                    ) : (
-                        <h1
-                            className="text-2xl font-bold cursor-text"
-                            onDoubleClick={handleNameDoubleClick}
-                            title="Double-click to edit"
-                        >
-                            {schoolData.name}
-                        </h1>
-                    )}
+                    <h1 className="text-2xl font-bold">{schoolData.name}</h1>
                     <div className="ml-auto flex flex-row items-center gap-2">
                         <YearDropdown
                             selectedYear={year}
@@ -414,6 +429,14 @@ export default function SchoolProfilePage() {
                                     <div className="flex items-center gap-2">
                                         <Merge className="h-4 w-4" />
                                         Merge school
+                                    </div>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    onClick={openRenameSchoolDialog}
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <Pencil className="h-4 w-4" />
+                                        Rename school
                                     </div>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
@@ -500,6 +523,59 @@ export default function SchoolProfilePage() {
                     currentSchoolName={schoolData.name}
                     onMergeComplete={() => router.push("/schools")}
                 />
+
+                <Dialog open={renameOpen} onOpenChange={setRenameOpen}>
+                    <DialogContent showCloseButton={!renameSaving}>
+                        <DialogHeader>
+                            <DialogTitle>Rename school</DialogTitle>
+                            <DialogDescription>
+                                Update the display name for this school.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="grid gap-2 py-2">
+                            <label
+                                htmlFor="school-rename"
+                                className="text-sm font-medium leading-none"
+                            >
+                                Name
+                            </label>
+                            <Input
+                                id="school-rename"
+                                value={nameDraft}
+                                onChange={(e) => setNameDraft(e.target.value)}
+                                disabled={renameSaving}
+                                onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                        e.preventDefault();
+                                        void handleRenameSave();
+                                    }
+                                }}
+                                autoComplete="off"
+                            />
+                        </div>
+                        <DialogFooter>
+                            <Button
+                                variant="outline"
+                                type="button"
+                                disabled={renameSaving}
+                                onClick={() => setRenameOpen(false)}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                type="button"
+                                disabled={
+                                    renameSaving ||
+                                    nameDraft.trim() === "" ||
+                                    nameDraft.trim() === schoolData.name
+                                }
+                                onClick={() => void handleRenameSave()}
+                            >
+                                {renameSaving ? "Saving…" : "Save"}
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
 
                 {/* Stats cards */}
                 {showComparisonWarning && showPrevYearWarning && (

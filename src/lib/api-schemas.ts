@@ -53,16 +53,79 @@ export const gatewayPatchBodySchema = z.object({
     gateway: z.boolean(),
 });
 
-export const schoolPatchBodySchema = z.object({
-    latitude: z.number().finite().optional(),
-    longitude: z.number().finite().optional(),
-    name: z.string().trim().min(1).optional(),
-    city: z.string().trim().min(1).optional(),
-    division: z.array(z.string()).optional(),
-    implementationModel: z.string().optional(),
-    schoolType: z.string().optional(),
-    year: yearParamSchema.optional(),
-});
+/** Body for PATCH /api/schools/[name] — exactly one update shape per request. */
+export type SchoolPatchBody = {
+    latitude?: number;
+    longitude?: number;
+    name?: string;
+    city?: string;
+    division?: string[];
+    implementationModel?: string;
+    schoolType?: string;
+    year?: number;
+};
+
+const schoolPatchNameSchema = z
+    .object({ name: z.string().trim().min(1) })
+    .strict();
+
+const schoolPatchCitySchema = z
+    .object({ city: z.string().trim().min(1) })
+    .strict();
+
+const schoolPatchLocationSchema = z
+    .object({ latitude: latSchema, longitude: longSchema })
+    .strict();
+
+const schoolPatchDivisionSchema = z
+    .object({
+        division: z.array(z.string()),
+        year: yearParamSchema,
+    })
+    .strict();
+
+const schoolPatchImplementationModelSchema = z
+    .object({
+        implementationModel: z.string(),
+        year: yearParamSchema,
+    })
+    .strict();
+
+const schoolPatchSchoolTypeSchema = z
+    .object({
+        schoolType: z.string(),
+        year: yearParamSchema,
+    })
+    .strict();
+
+export const schoolPatchBodySchema: z.ZodType<SchoolPatchBody> = z.union([
+    schoolPatchNameSchema.transform((d): SchoolPatchBody => ({ name: d.name })),
+    schoolPatchCitySchema.transform((d): SchoolPatchBody => ({ city: d.city })),
+    schoolPatchLocationSchema.transform(
+        (d): SchoolPatchBody => ({
+            latitude: d.latitude,
+            longitude: d.longitude,
+        }),
+    ),
+    schoolPatchDivisionSchema.transform(
+        (d): SchoolPatchBody => ({
+            division: d.division,
+            year: d.year,
+        }),
+    ),
+    schoolPatchImplementationModelSchema.transform(
+        (d): SchoolPatchBody => ({
+            implementationModel: d.implementationModel,
+            year: d.year,
+        }),
+    ),
+    schoolPatchSchoolTypeSchema.transform(
+        (d): SchoolPatchBody => ({
+            schoolType: d.schoolType,
+            year: d.year,
+        }),
+    ),
+]);
 
 export const projectPatchBodySchema = z
     .object({
