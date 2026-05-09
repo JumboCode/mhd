@@ -54,15 +54,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import MergeSchoolDialog from "@/components/MergeSchoolDialog";
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+import { RenameSchoolDialog } from "@/components/RenameSchoolDialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { type MeasuredAs } from "@/components/GraphFilters/GraphFilters";
 
@@ -103,8 +95,6 @@ export default function SchoolProfilePage() {
 
     const [projects, setProjects] = useState<ProjectRow[]>([]);
     const [renameOpen, setRenameOpen] = useState(false);
-    const [nameDraft, setNameDraft] = useState("");
-    const [renameSaving, setRenameSaving] = useState(false);
     const [studentYearData, setstudentYearData] = useState<
         { x: string | number; y: number }[]
     >([]);
@@ -252,7 +242,7 @@ export default function SchoolProfilePage() {
         }
         setRenameSaving(true);
         try {
-            const res = await fetch(`/api/schools/${schoolName}/${schoolTown}`, {
+            const res = await fetch(`/api/schools/${schoolName}`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ name: next }),
@@ -438,7 +428,7 @@ export default function SchoolProfilePage() {
                                     </div>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
-                                    onClick={openRenameSchoolDialog}
+                                    onClick={() => setRenameOpen(true)}
                                 >
                                     <div className="flex items-center gap-2">
                                         <Pencil className="h-4 w-4" />
@@ -530,58 +520,18 @@ export default function SchoolProfilePage() {
                     onMergeComplete={() => router.push("/schools")}
                 />
 
-                <Dialog open={renameOpen} onOpenChange={setRenameOpen}>
-                    <DialogContent showCloseButton={!renameSaving}>
-                        <DialogHeader>
-                            <DialogTitle>Rename school</DialogTitle>
-                            <DialogDescription>
-                                Update the display name for this school.
-                            </DialogDescription>
-                        </DialogHeader>
-                        <div className="grid gap-2 py-2">
-                            <label
-                                htmlFor="school-rename"
-                                className="text-sm font-medium leading-none"
-                            >
-                                Name
-                            </label>
-                            <Input
-                                id="school-rename"
-                                value={nameDraft}
-                                onChange={(e) => setNameDraft(e.target.value)}
-                                disabled={renameSaving}
-                                onKeyDown={(e) => {
-                                    if (e.key === "Enter") {
-                                        e.preventDefault();
-                                        void handleRenameSave();
-                                    }
-                                }}
-                                autoComplete="off"
-                            />
-                        </div>
-                        <DialogFooter>
-                            <Button
-                                variant="outline"
-                                type="button"
-                                disabled={renameSaving}
-                                onClick={() => setRenameOpen(false)}
-                            >
-                                Cancel
-                            </Button>
-                            <Button
-                                type="button"
-                                disabled={
-                                    renameSaving ||
-                                    nameDraft.trim() === "" ||
-                                    nameDraft.trim() === schoolData.name
-                                }
-                                onClick={() => void handleRenameSave()}
-                            >
-                                {renameSaving ? "Saving…" : "Save"}
-                            </Button>
-                        </DialogFooter>
-                    </DialogContent>
-                </Dialog>
+                <RenameSchoolDialog
+                    open={renameOpen}
+                    onOpenChange={setRenameOpen}
+                    schoolSlug={schoolName}
+                    currentName={schoolData.name}
+                    year={year}
+                    onRenameComplete={(newName) =>
+                        setSchoolData((prev) =>
+                            prev ? { ...prev, name: newName } : prev,
+                        )
+                    }
+                />
 
                 {/* Stats cards */}
                 {showComparisonWarning && showPrevYearWarning && (
