@@ -1,0 +1,28 @@
+name: Sync from upstream
+
+# Pulls the latest changes from jumbocode/mhd into this repo's main branch.
+# Runs daily at 6am UTC, or on demand from the Actions tab.
+# Vercel auto-deploys when main is updated, so the live site stays current
+# without anyone needing to touch git or the command line.
+
+on:
+    schedule:
+        - cron: "0 6 * * *"
+    workflow_dispatch:
+
+jobs:
+    sync:
+        # Skip on the upstream repo itself; only run on clones/forks.
+        if: github.repository != 'jumbocode/mhd'
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write
+        steps:
+            - name: Sync upstream
+              uses: tgymnich/fork-sync@v2
+              with:
+                  owner: jumbocode
+                  base: main
+                  head: main
+                  auto_approve: true
+                  auto_merge: true

@@ -5,6 +5,7 @@
     "scripts": {
         "dev": "next dev",
         "build": "eslint ./src && next build",
+        "vercel-build": "drizzle-kit migrate && next build",
         "start": "next start",
         "lint": "eslint ./src",
         "format": "prettier --write .",

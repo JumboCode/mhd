@@ -30,7 +30,7 @@ export const auth = betterAuth({
                           : "Reset Your Password";
 
                 await resend.emails.send({
-                    from: "mhd@shaynesidman.com", // TO DO: Replace with a different verfified domain in resend bc idk if we should use mine
+                    from: process.env.EMAIL_FROM!,
                     to: email,
                     subject,
                     html: `
