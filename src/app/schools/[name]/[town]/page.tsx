@@ -14,7 +14,7 @@
 import { useParams, useRouter } from "next/navigation";
 import { useQueryState, parseAsInteger } from "nuqs";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { SchoolProfileSkeleton } from "@/components/skeletons/SchoolProfileSkeleton";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -55,8 +55,19 @@ import {
 } from "@/components/ui/dropdown-menu";
 import MergeSchoolDialog from "@/components/MergeSchoolDialog";
 import { RenameSchoolDialog } from "@/components/RenameSchoolDialog";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { type MeasuredAs } from "@/components/GraphFilters/GraphFilters";
+import { useHotkey } from "@/hooks/useHotkey";
 
 // interface such that data can be blank if API is loading
 type SchoolData = {
@@ -101,6 +112,7 @@ export default function SchoolProfilePage() {
     const [allYearsData, setAllYearsData] = useState<SchoolData[]>([]);
     const [showPrevYearWarning, setShowPrevYearWarning] = useState(true);
     const [mergeOpen, setMergeOpen] = useState(false);
+    const [exportDialogOpen, setExportDialogOpen] = useState(false);
     const [graphMetric, setGraphMetric] =
         useState<SchoolProfileGraphMetric>("competing-students");
 
@@ -371,6 +383,79 @@ export default function SchoolProfilePage() {
     const showComparisonWarning =
         isOldestSchoolYearSelected && trendIndicatorsUnavailable;
 
+    const handleExportPDF = useCallback(async () => {
+        if (!schoolData) return;
+        const seriesYears = studentYearData.map((p) => p.x);
+        await exportSchoolToPDF({
+            schoolName: schoolData.name,
+            year,
+            info: {
+                town: schoolData.town,
+                region: schoolData.region,
+                division: schoolData.division,
+                implementationModel: schoolData.implementationModel,
+                firstYear: schoolData.firstYear,
+            },
+            kpis: {
+                projects: {
+                    label: "Total # Projects",
+                    value: schoolData.projectCount,
+                    percentChange: projectsPercentChange,
+                },
+                teachers: {
+                    label: "Total # Teachers",
+                    value: schoolData.teacherCount,
+                    percentChange: teachersPercentChange,
+                },
+                competing: {
+                    label: "Total # Competing",
+                    value: schoolData.competingStudents ?? "—",
+                    percentChange: competingStudentsPercentChange,
+                },
+                participating: {
+                    label: "Total # Participating",
+                    value: schoolData.studentCount,
+                    percentChange: participatingStudentsPercentChange,
+                },
+            },
+            seriesYears,
+            series: {
+                competing: competingStudentsSparkline,
+                participating: participatingStudentsSparkline,
+                teachers: teachersSparkline,
+                projects: projectsSparkline,
+            },
+            pieSlices: projectCategoryDistribution(projects),
+            teamProjects: {
+                teamCount: projects.filter((p) => p.teamProject).length,
+                totalCount: projects.length,
+            },
+        });
+    }, [
+        schoolData,
+        studentYearData,
+        year,
+        projectsPercentChange,
+        teachersPercentChange,
+        competingStudentsPercentChange,
+        participatingStudentsPercentChange,
+        competingStudentsSparkline,
+        participatingStudentsSparkline,
+        teachersSparkline,
+        projectsSparkline,
+        projects,
+    ]);
+
+    // Cmd+S to export PDF
+    // Cmd+S to open export dialog
+    useHotkey(
+        "s",
+        () => {
+            if (!exportDialogOpen) setExportDialogOpen(true);
+        },
+        { meta: true },
+    );
+
     if (!schoolData) {
         return (
             <div className="w-full bg-background overflow-y-auto flex justify-center">
@@ -383,6 +468,7 @@ export default function SchoolProfilePage() {
                                 onYearChange={handleYearChange}
                                 showDataIndicator={false}
                                 school={schoolName}
+                                enableArrowHotkeys
                                 town={schoolTown}
                             />
                             <Button variant="ghost" size="icon">
@@ -407,6 +493,7 @@ export default function SchoolProfilePage() {
                             onYearChange={handleYearChange}
                             showDataIndicator={false}
                             school={schoolName}
+                            enableArrowHotkeys
                             town={schoolTown}
                         />
                         <DropdownMenu>
@@ -436,71 +523,7 @@ export default function SchoolProfilePage() {
                                     </div>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
-                                    onClick={async () => {
-                                        if (!schoolData) return;
-                                        const seriesYears = studentYearData.map(
-                                            (p) => p.x,
-                                        );
-                                        await exportSchoolToPDF({
-                                            schoolName: schoolData.name,
-                                            year,
-                                            info: {
-                                                town: schoolData.town,
-                                                region: schoolData.region,
-                                                division: schoolData.division,
-                                                implementationModel:
-                                                    schoolData.implementationModel,
-                                                firstYear: schoolData.firstYear,
-                                            },
-                                            kpis: {
-                                                projects: {
-                                                    label: "Total # Projects",
-                                                    value: schoolData.projectCount,
-                                                    percentChange:
-                                                        projectsPercentChange,
-                                                },
-                                                teachers: {
-                                                    label: "Total # Teachers",
-                                                    value: schoolData.teacherCount,
-                                                    percentChange:
-                                                        teachersPercentChange,
-                                                },
-                                                competing: {
-                                                    label: "Total # Competing",
-                                                    value:
-                                                        schoolData.competingStudents ??
-                                                        "—",
-                                                    percentChange:
-                                                        competingStudentsPercentChange,
-                                                },
-                                                participating: {
-                                                    label: "Total # Participating",
-                                                    value: schoolData.studentCount,
-                                                    percentChange:
-                                                        participatingStudentsPercentChange,
-                                                },
-                                            },
-                                            seriesYears,
-                                            series: {
-                                                competing:
-                                                    competingStudentsSparkline,
-                                                participating:
-                                                    participatingStudentsSparkline,
-                                                teachers: teachersSparkline,
-                                                projects: projectsSparkline,
-                                            },
-                                            pieSlices:
-                                                projectCategoryDistribution(
-                                                    projects,
-                                                ),
-                                            teamProjects: {
-                                                teamCount: projects.filter(
-                                                    (p) => p.teamProject,
-                                                ).length,
-                                                totalCount: projects.length,
-                                            },
-                                        });
-                                    }}
+                                    onClick={() => setExportDialogOpen(true)}
                                 >
                                     <div className="flex items-center gap-2">
                                         <Download className="h-4 w-4" />
@@ -532,6 +555,29 @@ export default function SchoolProfilePage() {
                         )
                     }
                 />
+
+                <AlertDialog
+                    open={exportDialogOpen}
+                    onOpenChange={setExportDialogOpen}
+                >
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>
+                                Export school profile to PDF?
+                            </AlertDialogTitle>
+                            <AlertDialogDescription>
+                                This will download a PDF of the current school
+                                profile to your computer.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleExportPDF}>
+                                Download
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
 
                 {/* Stats cards */}
                 {showComparisonWarning && showPrevYearWarning && (
