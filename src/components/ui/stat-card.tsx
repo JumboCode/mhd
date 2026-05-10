@@ -192,18 +192,8 @@ export function StatCard({
         className,
     );
 
-    const Wrapper = href
-        ? (props: { children: React.ReactNode }) => (
-              <NextLink href={href} className={sharedClassName}>
-                  {props.children}
-              </NextLink>
-          )
-        : (props: { children: React.ReactNode }) => (
-              <div className={sharedClassName}>{props.children}</div>
-          );
-
-    return (
-        <Wrapper>
+    const content = (
+        <>
             <div className="relative flex flex-col items-center gap-2">
                 {/* Label */}
                 <span
@@ -244,6 +234,14 @@ export function StatCard({
                     fillColor={sparklineFill}
                 />
             )}
-        </Wrapper>
+        </>
+    );
+
+    return href ? (
+        <NextLink href={href} className={sharedClassName}>
+            {content}
+        </NextLink>
+    ) : (
+        <div className={sharedClassName}>{content}</div>
     );
 }
