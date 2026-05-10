@@ -6,9 +6,14 @@
  *         Date: 2/1/2025
  *
  *         Modified by Steven on 3/24/26
+ *         Migrated to @react-pdf/renderer (vector PDFs).
  *
- *        Summary: Displays cart of images to export when
- *                 hovering over cart button
+ *        Summary: Displays cart of items to export when
+ *                 hovering over cart button. Map items keep
+ *                 a raster preview thumbnail; chart items
+ *                 render as true vector at export time, so
+ *                 the cart only shows a typed placeholder.
+ *
  **************************************************************/
 
 import {
@@ -38,18 +43,28 @@ function getFilterCount(item: CartItem): number {
     return count;
 }
 
+function ChartPreviewPlaceholder({ item }: { item: CartItem }) {
+    if (item.type !== "chart") return null;
+    const Icon = item.params.chartType === "bar" ? ChartColumn : LineChart;
+    return (
+        <div className="h-32 flex flex-col items-center justify-center gap-2 bg-muted/40 text-muted-foreground">
+            <Icon className="h-8 w-8 stroke-1" />
+            <p className="text-xs">
+                {item.params.chartType === "bar" ? "Bar chart" : "Line chart"}{" "}
+                ready to export
+            </p>
+        </div>
+    );
+}
+
 function CartItemRow({
     item,
     onRemove,
-    isGeneratingPreviews,
 }: {
     item: CartItem;
     onRemove: () => void;
-    isGeneratingPreviews: boolean;
 }) {
     const filterCount = getFilterCount(item);
-    const previewSrc =
-        item.type === "chart" ? item.previewDataUrl : item.imageDataUrl;
     const [hoverRect, setHoverRect] = useState<DOMRect | null>(null);
     const [previewVisible, setPreviewVisible] = useState(false);
     const fadeInTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -182,22 +197,17 @@ function CartItemRow({
                             }`}
                             onTransitionEnd={handlePreviewTransitionEnd}
                         >
-                            {previewSrc ? (
+                            {item.type === "map" ? (
                                 <Image
-                                    src={previewSrc}
+                                    src={item.imageDataUrl}
                                     alt={`${item.filterName} preview`}
                                     width={288}
                                     height={180}
                                     unoptimized
-                                    className={`w-full h-auto block ${item.type === "chart" && "pt-4"}`}
+                                    className="w-full h-auto block"
                                 />
                             ) : (
-                                <div className="h-24 flex items-center justify-center text-xs text-muted-foreground gap-2">
-                                    {isGeneratingPreviews ? (
-                                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                    ) : null}
-                                    Generating preview...
-                                </div>
+                                <ChartPreviewPlaceholder item={item} />
                             )}
                         </div>
                     </div>,
@@ -208,23 +218,7 @@ function CartItemRow({
 }
 
 export function Cart() {
-    const {
-        items,
-        removeItem,
-        clearCart,
-        exportAll,
-        ensureChartPreviews,
-        isExporting,
-        isGeneratingPreviews,
-    } = useCart();
-
-    useEffect(() => {
-        if (
-            items.some((item) => item.type === "chart" && !item.previewDataUrl)
-        ) {
-            void ensureChartPreviews();
-        }
-    }, [items, ensureChartPreviews]);
+    const { items, removeItem, clearCart, exportAll, isExporting } = useCart();
 
     return (
         <div className="flex flex-col justify-between h-full gap-2 pt-2 pb-6">
@@ -246,7 +240,6 @@ export function Cart() {
                             key={index}
                             item={item}
                             onRemove={() => removeItem(index)}
-                            isGeneratingPreviews={isGeneratingPreviews}
                         />
                     ))
                 )}

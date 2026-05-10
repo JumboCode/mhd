@@ -14,7 +14,7 @@
 import { useParams, useRouter } from "next/navigation";
 import { useQueryState, parseAsInteger } from "nuqs";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { SchoolProfileSkeleton } from "@/components/skeletons/SchoolProfileSkeleton";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -36,7 +36,16 @@ import {
 } from "@/components/EditableProjectsTable";
 import PieChart from "@/components/charts/PieChart";
 import { projectCategoryDistribution } from "@/lib/utils";
-import { AlertCircle, X, Users, EllipsisVertical, Merge } from "lucide-react";
+import {
+    AlertCircle,
+    X,
+    Users,
+    EllipsisVertical,
+    Merge,
+    Download,
+    Pencil,
+} from "lucide-react";
+import { exportSchoolToPDF } from "@/lib/school-export";
 import { Button } from "@/components/ui/button";
 import {
     DropdownMenu,
@@ -45,8 +54,20 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import MergeSchoolDialog from "@/components/MergeSchoolDialog";
+import { RenameSchoolDialog } from "@/components/RenameSchoolDialog";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { type MeasuredAs } from "@/components/GraphFilters/GraphFilters";
+import { useHotkey } from "@/hooks/useHotkey";
 
 // interface such that data can be blank if API is loading
 type SchoolData = {
@@ -84,15 +105,14 @@ export default function SchoolProfilePage() {
     const [prevYearData, setPrevYearData] = useState<SchoolData | null>(null);
 
     const [projects, setProjects] = useState<ProjectRow[]>([]);
-    const [editingName, setEditingName] = useState(false);
-    const [nameDraft, setNameDraft] = useState("");
-    const nameInputRef = useRef<HTMLInputElement>(null);
+    const [renameOpen, setRenameOpen] = useState(false);
     const [studentYearData, setstudentYearData] = useState<
         { x: string | number; y: number }[]
     >([]);
     const [allYearsData, setAllYearsData] = useState<SchoolData[]>([]);
     const [showPrevYearWarning, setShowPrevYearWarning] = useState(true);
     const [mergeOpen, setMergeOpen] = useState(false);
+    const [exportDialogOpen, setExportDialogOpen] = useState(false);
     const [graphMetric, setGraphMetric] =
         useState<SchoolProfileGraphMetric>("competing-students");
 
@@ -215,30 +235,6 @@ export default function SchoolProfilePage() {
         return () => controller.abort();
     }, [schoolName, router, year]);
 
-    const handleNameDoubleClick = () => {
-        setNameDraft(schoolData?.name ?? "");
-        setEditingName(true);
-        setTimeout(() => nameInputRef.current?.select(), 0);
-    };
-
-    const handleNameCommit = async () => {
-        setEditingName(false);
-        if (!schoolData || nameDraft.trim() === schoolData.name) return;
-        const res = await fetch(`/api/schools/${schoolName}/${schoolTown}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name: nameDraft.trim() }),
-        });
-        if (res.ok) {
-            setSchoolData((prev) =>
-                prev ? { ...prev, name: nameDraft.trim() } : prev,
-            );
-            toast.success("School name updated.");
-        } else {
-            toast.error("Failed to update school name.");
-        }
-    };
-
     const graphSeries = useMemo(() => {
         if (allYearsData.length === 0) return [];
         return allYearsData.map((d, i) => ({
@@ -333,6 +329,79 @@ export default function SchoolProfilePage() {
     const showComparisonWarning =
         isOldestSchoolYearSelected && trendIndicatorsUnavailable;
 
+    const handleExportPDF = useCallback(async () => {
+        if (!schoolData) return;
+        const seriesYears = studentYearData.map((p) => p.x);
+        await exportSchoolToPDF({
+            schoolName: schoolData.name,
+            year,
+            info: {
+                town: schoolData.town,
+                region: schoolData.region,
+                division: schoolData.division,
+                implementationModel: schoolData.implementationModel,
+                firstYear: schoolData.firstYear,
+            },
+            kpis: {
+                projects: {
+                    label: "Total # Projects",
+                    value: schoolData.projectCount,
+                    percentChange: projectsPercentChange,
+                },
+                teachers: {
+                    label: "Total # Teachers",
+                    value: schoolData.teacherCount,
+                    percentChange: teachersPercentChange,
+                },
+                competing: {
+                    label: "Total # Competing",
+                    value: schoolData.competingStudents ?? "—",
+                    percentChange: competingStudentsPercentChange,
+                },
+                participating: {
+                    label: "Total # Participating",
+                    value: schoolData.studentCount,
+                    percentChange: participatingStudentsPercentChange,
+                },
+            },
+            seriesYears,
+            series: {
+                competing: competingStudentsSparkline,
+                participating: participatingStudentsSparkline,
+                teachers: teachersSparkline,
+                projects: projectsSparkline,
+            },
+            pieSlices: projectCategoryDistribution(projects),
+            teamProjects: {
+                teamCount: projects.filter((p) => p.teamProject).length,
+                totalCount: projects.length,
+            },
+        });
+    }, [
+        schoolData,
+        studentYearData,
+        year,
+        projectsPercentChange,
+        teachersPercentChange,
+        competingStudentsPercentChange,
+        participatingStudentsPercentChange,
+        competingStudentsSparkline,
+        participatingStudentsSparkline,
+        teachersSparkline,
+        projectsSparkline,
+        projects,
+    ]);
+
+    // Cmd+S to export PDF
+    // Cmd+S to open export dialog
+    useHotkey(
+        "s",
+        () => {
+            if (!exportDialogOpen) setExportDialogOpen(true);
+        },
+        { meta: true },
+    );
+
     if (!schoolData) {
         return (
             <div className="w-full bg-background overflow-y-auto flex justify-center">
@@ -345,6 +414,7 @@ export default function SchoolProfilePage() {
                                 onYearChange={handleYearChange}
                                 showDataIndicator={false}
                                 school={schoolName}
+                                enableArrowHotkeys
                                 town={schoolTown}
                             />
                             <Button variant="ghost" size="icon">
@@ -361,39 +431,15 @@ export default function SchoolProfilePage() {
     return (
         <div className="w-full bg-background overflow-y-auto flex justify-center">
             <div className="w-full flex flex-col gap-6 py-8 max-w-5xl px-6">
-                {/* Header with school name — double-click to edit */}
                 <div className="flex flex-row items-center w-full">
-                    {editingName ? (
-                        <input
-                            ref={nameInputRef}
-                            className="text-2xl font-bold border-b border-blue-400 outline-none bg-transparent"
-                            value={nameDraft}
-                            onChange={(e) => setNameDraft(e.target.value)}
-                            onBlur={handleNameCommit}
-                            onKeyDown={(e) => {
-                                if (e.key === "Enter") handleNameCommit();
-                                if (e.key === "Escape") {
-                                    setEditingName(false);
-                                    setNameDraft(schoolData.name);
-                                }
-                            }}
-                            autoFocus
-                        />
-                    ) : (
-                        <h1
-                            className="text-2xl font-bold cursor-text"
-                            onDoubleClick={handleNameDoubleClick}
-                            title="Double-click to edit"
-                        >
-                            {schoolData.name}
-                        </h1>
-                    )}
+                    <h1 className="text-2xl font-bold">{schoolData.name}</h1>
                     <div className="ml-auto flex flex-row items-center gap-2">
                         <YearDropdown
                             selectedYear={year}
                             onYearChange={handleYearChange}
                             showDataIndicator={false}
                             school={schoolName}
+                            enableArrowHotkeys
                             town={schoolTown}
                         />
                         <DropdownMenu>
@@ -414,6 +460,22 @@ export default function SchoolProfilePage() {
                                         Merge school
                                     </div>
                                 </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    onClick={() => setRenameOpen(true)}
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <Pencil className="h-4 w-4" />
+                                        Rename school
+                                    </div>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    onClick={() => setExportDialogOpen(true)}
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <Download className="h-4 w-4" />
+                                        Export to PDF
+                                    </div>
+                                </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
                     </div>
@@ -426,6 +488,42 @@ export default function SchoolProfilePage() {
                     currentSchoolName={schoolData.name}
                     onMergeComplete={() => router.push("/schools")}
                 />
+
+                <RenameSchoolDialog
+                    open={renameOpen}
+                    onOpenChange={setRenameOpen}
+                    schoolSlug={schoolName}
+                    currentName={schoolData.name}
+                    year={year}
+                    onRenameComplete={(newName) =>
+                        setSchoolData((prev) =>
+                            prev ? { ...prev, name: newName } : prev,
+                        )
+                    }
+                />
+
+                <AlertDialog
+                    open={exportDialogOpen}
+                    onOpenChange={setExportDialogOpen}
+                >
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>
+                                Export school profile to PDF?
+                            </AlertDialogTitle>
+                            <AlertDialogDescription>
+                                This will download a PDF of the current school
+                                profile to your computer.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleExportPDF}>
+                                Download
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
 
                 {/* Stats cards */}
                 {showComparisonWarning && showPrevYearWarning && (
