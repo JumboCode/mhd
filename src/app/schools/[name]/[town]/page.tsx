@@ -235,60 +235,6 @@ export default function SchoolProfilePage() {
         return () => controller.abort();
     }, [schoolName, router, year]);
 
-    const openRenameSchoolDialog = () => {
-        if (!schoolData) return;
-        setNameDraft(schoolData.name);
-        setRenameOpen(true);
-    };
-
-    const handleRenameSave = async () => {
-        if (!schoolData) return;
-        const next = nameDraft.trim();
-        if (!next) {
-            toast.error("School name cannot be empty.");
-            return;
-        }
-        if (next === schoolData.name) {
-            setRenameOpen(false);
-            return;
-        }
-        setRenameSaving(true);
-        try {
-            const res = await fetch(`/api/schools/${schoolName}`, {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name: next }),
-            });
-            const data = (await res.json()) as {
-                standardizedName?: string;
-                error?: string;
-            };
-            if (res.ok) {
-                setSchoolData((prev) =>
-                    prev ? { ...prev, name: next } : prev,
-                );
-                setRenameOpen(false);
-                toast.success("School name updated.");
-                const newSlug = data.standardizedName;
-                if (newSlug && newSlug !== schoolName) {
-                    const q =
-                        year !== null && year !== undefined
-                            ? `?year=${year}`
-                            : "";
-                    router.replace(`/schools/${newSlug}${q}`);
-                }
-            } else {
-                toast.error(
-                    typeof data.error === "string"
-                        ? data.error
-                        : "Failed to update school name.",
-                );
-            }
-        } finally {
-            setRenameSaving(false);
-        }
-    };
-
     const graphSeries = useMemo(() => {
         if (allYearsData.length === 0) return [];
         return allYearsData.map((d, i) => ({
