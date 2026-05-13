@@ -43,16 +43,17 @@ function getFilterCount(item: CartItem): number {
     return count;
 }
 
-function ChartPreviewPlaceholder({ item }: { item: CartItem }) {
-    if (item.type !== "chart") return null;
-    const Icon = item.params.chartType === "bar" ? ChartColumn : LineChart;
+function ChartPreviewPlaceholder({
+    isGeneratingPreviews,
+}: {
+    isGeneratingPreviews: boolean;
+}) {
     return (
-        <div className="h-32 flex flex-col items-center justify-center gap-2 bg-muted/40 text-muted-foreground">
-            <Icon className="h-8 w-8 stroke-1" />
-            <p className="text-xs">
-                {item.params.chartType === "bar" ? "Bar chart" : "Line chart"}{" "}
-                ready to export
-            </p>
+        <div className="h-24 flex items-center justify-center text-xs text-muted-foreground gap-2">
+            {isGeneratingPreviews && (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            )}
+            Generating preview...
         </div>
     );
 }
@@ -60,9 +61,11 @@ function ChartPreviewPlaceholder({ item }: { item: CartItem }) {
 function CartItemRow({
     item,
     onRemove,
+    isGeneratingPreviews,
 }: {
     item: CartItem;
     onRemove: () => void;
+    isGeneratingPreviews: boolean;
 }) {
     const filterCount = getFilterCount(item);
     const [hoverRect, setHoverRect] = useState<DOMRect | null>(null);
@@ -206,8 +209,18 @@ function CartItemRow({
                                     unoptimized
                                     className="w-full h-auto block"
                                 />
+                            ) : item.previewDataUrl ? (
+                                <div className="overflow-hidden h-36 px-2 pt-2">
+                                    <img
+                                        src={item.previewDataUrl}
+                                        alt={`${item.filterName} preview`}
+                                        className="w-full h-auto block"
+                                    />
+                                </div>
                             ) : (
-                                <ChartPreviewPlaceholder item={item} />
+                                <ChartPreviewPlaceholder
+                                    isGeneratingPreviews={isGeneratingPreviews}
+                                />
                             )}
                         </div>
                     </div>,
@@ -218,7 +231,23 @@ function CartItemRow({
 }
 
 export function Cart() {
-    const { items, removeItem, clearCart, exportAll, isExporting } = useCart();
+    const {
+        items,
+        removeItem,
+        clearCart,
+        exportAll,
+        isExporting,
+        ensureChartPreviews,
+        isGeneratingPreviews,
+    } = useCart();
+
+    useEffect(() => {
+        if (
+            items.some((item) => item.type === "chart" && !item.previewDataUrl)
+        ) {
+            void ensureChartPreviews();
+        }
+    }, [items, ensureChartPreviews]);
 
     return (
         <div className="flex flex-col justify-between h-full gap-2 pt-2 pb-6">
@@ -240,6 +269,7 @@ export function Cart() {
                             key={index}
                             item={item}
                             onRemove={() => removeItem(index)}
+                            isGeneratingPreviews={isGeneratingPreviews}
                         />
                     ))
                 )}
