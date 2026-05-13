@@ -278,7 +278,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
             .map((item, index) => ({ item, index }))
             .filter(
                 ({ item }) =>
-                    item.type === "chart" && item.previewDataUrl == null,
+                    item.type === "chart" && item.previewDataUrl === null,
             );
 
         if (chartIndexes.length === 0) return;
@@ -316,7 +316,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
                     prev.map((item, index) => {
                         if (
                             item.type !== "chart" ||
-                            item.previewDataUrl != null ||
+                            item.previewDataUrl !== null ||
                             !generatedByIndex.has(index)
                         )
                             return item;

@@ -211,7 +211,7 @@ function CartItemRow({
                                 />
                             ) : item.previewDataUrl ? (
                                 <div className="overflow-hidden h-36 px-2 pt-2">
-                                    <img
+                                    <Image
                                         src={item.previewDataUrl}
                                         alt={`${item.filterName} preview`}
                                         className="w-full h-auto block"
