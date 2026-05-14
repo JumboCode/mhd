@@ -44,14 +44,34 @@ export default function AuthForm({ redirectTo }: { redirectTo?: string }) {
     async function handleSendCode(e: React.FormEvent) {
         e.preventDefault();
         setIsLoading(true);
-        setError(""); // TO DO: Change error handling to toast
+        setError("");
         try {
-            await authClient.emailOtp.sendVerificationOtp({
+            const check = await fetch("/api/check-email", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email }),
+            });
+            if (!check.ok) {
+                const data = await check.json();
+                setError(
+                    data.error ??
+                        "This email is not authorized to access this application.",
+                );
+                return;
+            }
+            const { error } = await authClient.emailOtp.sendVerificationOtp({
                 email,
                 type: "sign-in",
             });
+            if (error) {
+                setError(
+                    error.message ??
+                        "Failed to send verification code. Please try again.",
+                );
+                return;
+            }
             setStep("otp");
-        } catch (error) {
+        } catch {
             setError("Failed to send verification code. Please try again.");
         } finally {
             setIsLoading(false);
@@ -77,12 +97,18 @@ export default function AuthForm({ redirectTo }: { redirectTo?: string }) {
         setIsLoading(true);
         setError("");
         try {
-            await authClient.emailOtp.sendVerificationOtp({
+            const { error } = await authClient.emailOtp.sendVerificationOtp({
                 email,
                 type: "sign-in",
             });
+            if (error) {
+                setError(
+                    error.message ?? "Failed to resend code. Please try again.",
+                );
+                return;
+            }
             setOtp("");
-        } catch (err) {
+        } catch {
             setError("Failed to resend code. Please try again.");
         } finally {
             setIsLoading(false);

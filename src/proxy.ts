@@ -60,6 +60,6 @@ export const config = {
          * - /*.* (files with extensions like favicon.ico, images, etc.)
          * Note: signin IS matched so we can redirect to / when already signed in
          */
-        "/((?!api/auth|_next/static|_next/image|favicon.ico|.*\\.png$|.*\\.jpg$|.*\\.jpeg$|.*\\.svg$).*)",
+        "/((?!api/auth|api/check-email|_next/static|_next/image|favicon.ico|.*\\.png$|.*\\.jpg$|.*\\.jpeg$|.*\\.svg$).*)",
     ],
 };
