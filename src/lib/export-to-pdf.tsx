@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { type ChartDataset } from "@/components/charts/chartTypes";
 import ChartDocument, {
     type ChartDocumentItem,
+    type ChartItem,
 } from "./pdf/documents/ChartDocument";
 import { type FilterDetail } from "./pdf/components/FiltersBox";
 import { ensurePdfFontsRegistered } from "./pdf/theme";
@@ -56,6 +57,7 @@ export async function downloadSingleGraph(
     legendTitle: string | undefined,
     filterName: string,
     filterDetails: FilterDetail[] = [],
+    tableData?: ChartItem["tableData"],
     print = false,
 ): Promise<void> {
     const item: ChartDocumentItem = {
@@ -67,6 +69,7 @@ export async function downloadSingleGraph(
         legendTitle,
         xAxisLabel: "Year",
         filterDetails,
+        tableData,
     };
     await downloadGraphs([item], print, filterName);
 }

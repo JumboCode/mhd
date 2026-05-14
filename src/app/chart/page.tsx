@@ -312,6 +312,7 @@ export default function ChartPage() {
                     : groupByLabels[filters.groupBy],
                 filterName,
                 filterDetails,
+                { cols, rows },
                 true,
             );
         },
@@ -856,6 +857,7 @@ export default function ChartPage() {
                                                               ],
                                                         filterName,
                                                         filterDetails,
+                                                        { cols, rows },
                                                     );
                                                     setIsExporting(false);
                                                     toast.success(

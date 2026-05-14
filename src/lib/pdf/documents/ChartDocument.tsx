@@ -8,12 +8,20 @@
  *
  **************************************************************/
 
-import { Document, Image, Page, StyleSheet, View } from "@react-pdf/renderer";
+import {
+    Document,
+    Image,
+    Page,
+    StyleSheet,
+    Text,
+    View,
+} from "@react-pdf/renderer";
 import { type ChartDataset } from "@/components/charts/chartTypes";
 import { Header } from "../components/Header";
 import { Footer } from "../components/Footer";
 import { Title } from "../components/Title";
 import { FiltersBox, type FilterDetail } from "../components/FiltersBox";
+import { COLORS } from "../theme";
 import BarChartPdf from "../charts/BarChartPdf";
 import LineChartPdf from "../charts/LineChartPdf";
 
@@ -26,6 +34,10 @@ export type ChartItem = {
     xAxisLabel?: string;
     legendTitle?: string;
     filterDetails?: FilterDetail[];
+    tableData?: {
+        cols: { header: string; accessorKey: string }[];
+        rows: Record<string, unknown>[];
+    };
 };
 
 export type MapItem = {
@@ -42,6 +54,92 @@ const PADDING_TOP = 36;
 const PADDING_BOTTOM = 50;
 const PADDING_HORIZONTAL = 36;
 const CONTENT_WIDTH = PAGE_WIDTH - PADDING_HORIZONTAL * 2;
+
+const tableStyles = StyleSheet.create({
+    wrap: {
+        marginTop: 10,
+    },
+    heading: {
+        fontFamily: "DM Sans",
+        fontSize: 12,
+        color: COLORS.TEXT_PRIMARY,
+        marginBottom: 4,
+    },
+    card: {
+        backgroundColor: COLORS.FILTER_BOX_BG,
+        borderColor: COLORS.LIGHT_GRAY,
+        borderWidth: 0.6,
+        borderRadius: 3,
+        overflow: "hidden",
+    },
+    headerRow: {
+        flexDirection: "row",
+        borderBottomColor: COLORS.LIGHT_GRAY,
+        borderBottomWidth: 0.6,
+        paddingVertical: 4,
+        paddingHorizontal: 8,
+    },
+    headerCell: {
+        fontFamily: "DM Sans",
+        fontSize: 10,
+        color: COLORS.TEXT_PRIMARY,
+        flex: 1,
+    },
+    row: {
+        flexDirection: "row",
+        borderBottomColor: COLORS.LIGHT_GRAY,
+        borderBottomWidth: 0.6,
+        paddingVertical: 4,
+        paddingHorizontal: 8,
+    },
+    cell: {
+        fontFamily: "DM Sans",
+        fontSize: 10,
+        color: COLORS.TEXT_SECONDARY,
+        flex: 1,
+    },
+});
+
+function DataTablePdf({
+    cols,
+    rows,
+}: {
+    cols: { header: string; accessorKey: string }[];
+    rows: Record<string, unknown>[];
+}) {
+    if (!cols.length || !rows.length) return null;
+    return (
+        <View style={tableStyles.wrap}>
+            <Text style={tableStyles.heading}>Data</Text>
+            <View style={tableStyles.card}>
+                <View style={tableStyles.headerRow} wrap={false}>
+                    {cols.map((col, i) => (
+                        <Text key={i} style={tableStyles.headerCell}>
+                            {col.header}
+                        </Text>
+                    ))}
+                </View>
+                {rows.map((row, i) => (
+                    <View
+                        key={i}
+                        style={
+                            i === rows.length - 1
+                                ? { ...tableStyles.row, borderBottomWidth: 0 }
+                                : tableStyles.row
+                        }
+                        wrap={false}
+                    >
+                        {cols.map((col, j) => (
+                            <Text key={j} style={tableStyles.cell}>
+                                {String(row[col.accessorKey] ?? "")}
+                            </Text>
+                        ))}
+                    </View>
+                ))}
+            </View>
+        </View>
+    );
+}
 
 const styles = StyleSheet.create({
     page: {
@@ -88,6 +186,12 @@ function ChartItemPage({ item }: { item: ChartItem }) {
                 )}
             </View>
             <FiltersBox filters={item.filterDetails ?? []} />
+            {item.tableData && (
+                <DataTablePdf
+                    cols={item.tableData.cols}
+                    rows={item.tableData.rows}
+                />
+            )}
         </>
     );
 }

@@ -386,6 +386,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
                         legendTitle,
                         xAxisLabel: "Year",
                         filterDetails: item.filterDetails,
+                        tableData: item.params.tableData,
                     };
                 }),
             );
