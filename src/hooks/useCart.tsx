@@ -194,6 +194,9 @@ async function renderChartToImage(
                 height: 500,
                 useCORS: true,
                 allowTaint: true,
+                onclone: (_doc, el) => {
+                    el.style.fontFamily = "sans-serif";
+                },
             }),
             new Promise<never>((_, reject) =>
                 setTimeout(
