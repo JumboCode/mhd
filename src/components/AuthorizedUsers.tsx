@@ -77,83 +77,85 @@ export default function AuthorizedUsers() {
 
     return (
         <>
-            <div className="border border-gray-200 rounded-lg overflow-hidden w-full shadow-[0_1px_2px_rgba(0,0,0,0.04),0_1px_4px_rgba(0,0,0,0.04)]">
-                <table className="w-full">
-                    <thead className="bg-gray-50 border-b border-gray-200">
-                        <tr>
-                            <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide">
-                                Email
-                            </th>
-                            <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide w-[200px]">
-                                Added
-                            </th>
-                            <th className="text-right px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide w-[80px]">
-                                <span className="sr-only">Actions</span>
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200 bg-white">
-                        {loading ? (
+            <div className="flex flex-col gap-3">
+                <div className="border border-gray-200 rounded-lg overflow-hidden w-full shadow-[0_1px_2px_rgba(0,0,0,0.04),0_1px_4px_rgba(0,0,0,0.04)]">
+                    <table className="w-full">
+                        <thead className="bg-gray-50 border-b border-gray-200">
                             <tr>
-                                <td
-                                    colSpan={3}
-                                    className="px-4 py-6 text-sm text-gray-400 text-center"
-                                >
-                                    Loading…
-                                </td>
+                                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide">
+                                    Email
+                                </th>
+                                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide w-[200px]">
+                                    Added
+                                </th>
+                                <th className="text-right px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide w-[80px]">
+                                    <span className="sr-only">Actions</span>
+                                </th>
                             </tr>
-                        ) : entries.length === 0 ? (
-                            <tr>
-                                <td
-                                    colSpan={3}
-                                    className="px-4 py-6 text-sm text-gray-400 text-center"
-                                >
-                                    No authorized users yet.
-                                </td>
-                            </tr>
-                        ) : (
-                            entries.map((entry) => (
-                                <tr
-                                    key={entry.id}
-                                    className="hover:bg-gray-50 transition-colors duration-150"
-                                >
-                                    <td className="px-4 py-3 text-sm">
-                                        {entry.email}
-                                    </td>
-                                    <td className="px-4 py-3 text-sm text-gray-600 tabular-nums">
-                                        {new Date(
-                                            entry.createdAt,
-                                        ).toLocaleString(undefined, {
-                                            dateStyle: "medium",
-                                            timeStyle: "short",
-                                        })}
-                                    </td>
-                                    <td className="px-2 py-2 text-right">
-                                        <button
-                                            onClick={() => handleRemove(entry)}
-                                            className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs text-red-500 hover:bg-red-50 hover:text-red-700 transition-colors"
-                                            aria-label={`Remove ${entry.email}`}
-                                        >
-                                            <Trash2 className="w-3.5 h-3.5" />
-                                            Remove
-                                        </button>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200 bg-white">
+                            {loading ? (
+                                <tr>
+                                    <td
+                                        colSpan={3}
+                                        className="px-4 py-6 text-sm text-gray-400 text-center"
+                                    >
+                                        Loading…
                                     </td>
                                 </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
-                <div className="px-4 py-3 border-t border-gray-200 bg-gray-50 flex justify-end">
-                    <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setDialogOpen(true)}
-                        className="flex items-center gap-2"
-                    >
-                        <UserPlus className="w-4 h-4" />
-                        Add user
-                    </Button>
+                            ) : entries.length === 0 ? (
+                                <tr>
+                                    <td
+                                        colSpan={3}
+                                        className="px-4 py-6 text-sm text-gray-400 text-center"
+                                    >
+                                        No authorized users yet.
+                                    </td>
+                                </tr>
+                            ) : (
+                                entries.map((entry) => (
+                                    <tr
+                                        key={entry.id}
+                                        className="hover:bg-gray-50 transition-colors duration-150"
+                                    >
+                                        <td className="px-4 py-3 text-sm">
+                                            {entry.email}
+                                        </td>
+                                        <td className="px-4 py-3 text-sm text-gray-600 tabular-nums">
+                                            {new Date(
+                                                entry.createdAt,
+                                            ).toLocaleString(undefined, {
+                                                dateStyle: "medium",
+                                                timeStyle: "short",
+                                            })}
+                                        </td>
+                                        <td className="px-2 py-2 text-right">
+                                            <button
+                                                onClick={() =>
+                                                    handleRemove(entry)
+                                                }
+                                                className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs text-red-500 hover:bg-red-50 hover:text-red-700 transition-colors"
+                                                aria-label={`Remove ${entry.email}`}
+                                            >
+                                                <Trash2 className="w-3.5 h-3.5" />
+                                                Remove
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
                 </div>
+                <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setDialogOpen(true)}
+                    className="self-end w-32 flex items-center gap-2"
+                >
+                    <UserPlus className="w-4 h-4" />
+                    Add user
+                </Button>
             </div>
 
             <Dialog
