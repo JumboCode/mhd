@@ -109,10 +109,10 @@ export async function GET(req: NextRequest) {
                         town: school.town,
                         Teachers: totalTeachers,
                         Projects: totalProjects,
-                        // Legacy key — participating students (row count).
+                        // Legacy key — competing students (project submitters).
                         Students: totalStudents,
-                        Participating: totalStudents,
-                        Competing: competingMap.get(school.id) ?? 0,
+                        Competing: totalStudents,
+                        Participating: competingMap.get(school.id) ?? 0,
                     },
                 });
             }
