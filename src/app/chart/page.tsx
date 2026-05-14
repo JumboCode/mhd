@@ -300,25 +300,6 @@ export default function ChartPage() {
         },
         { meta: true },
     );
-    useHotkey(
-        "p",
-        () => {
-            downloadSingleGraph(
-                chartType as "bar" | "line",
-                graphDataset,
-                measuredAsLabels[filters.measuredAs],
-                filters.groupBy === "none"
-                    ? undefined
-                    : groupByLabels[filters.groupBy],
-                filterName,
-                filterDetails,
-                { cols, rows },
-                true,
-            );
-        },
-        { meta: true },
-    );
-
     // Sync tempYearRange with yearRange when the popover opens
     useEffect(() => {
         if (yearRangeOpen) {
@@ -521,6 +502,25 @@ export default function ChartPage() {
 
         return { cols, rows };
     }, [graphDataset, filters.measuredAs, filters.groupBy]);
+
+    useHotkey(
+        "p",
+        () => {
+            downloadSingleGraph(
+                chartType as "bar" | "line",
+                graphDataset,
+                measuredAsLabels[filters.measuredAs],
+                filters.groupBy === "none"
+                    ? undefined
+                    : groupByLabels[filters.groupBy],
+                filterName,
+                filterDetails,
+                { cols, rows },
+                true,
+            );
+        },
+        { meta: true },
+    );
 
     // Calculate filtered count (based on selected 'measured by' category)
     const filteredProjectCount = useMemo(() => {
