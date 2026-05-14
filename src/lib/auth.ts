@@ -1,10 +1,11 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "./db";
-import { schema } from "./schema";
+import { schema, allowedEmails } from "./schema";
 import { emailOTP } from "better-auth/plugins";
 import { nextCookies } from "better-auth/next-js";
 import { Resend } from "resend";
+import { eq } from "drizzle-orm";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -22,6 +23,16 @@ export const auth = betterAuth({
         nextCookies(),
         emailOTP({
             async sendVerificationOTP({ email, otp, type }) {
+                const allowed = await db
+                    .select({ id: allowedEmails.id })
+                    .from(allowedEmails)
+                    .where(eq(allowedEmails.email, email))
+                    .limit(1);
+                if (allowed.length === 0) {
+                    throw new Error(
+                        "This email is not authorized to access this application.",
+                    );
+                }
                 const subject =
                     type === "sign-in"
                         ? "Your Sign-In Code"

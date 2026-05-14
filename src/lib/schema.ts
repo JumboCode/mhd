@@ -121,6 +121,13 @@ export const schoolHistoricNames = pgTable(
     ],
 );
 
+// Allowlist of emails permitted to sign in
+export const allowedEmails = pgTable("allowed_emails", {
+    id: serial("id").primaryKey(),
+    email: text("email").notNull().unique(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Better-Auth generated Schema below
 export const user = pgTable("user", {
     id: text("id").primaryKey(),

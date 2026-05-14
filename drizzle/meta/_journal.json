@@ -29,6 +29,13 @@
             "when": 1777307810320,
             "tag": "0003_add_merged_town_to_historic_names",
             "breakpoints": true
+        },
+        {
+            "idx": 4,
+            "version": "7",
+            "when": 1778723997127,
+            "tag": "0004_wild_zzzax",
+            "breakpoints": true
         }
     ]
 }

@@ -23,6 +23,7 @@ import {
 } from "@/components/SchoolLocationEditor";
 import { useRouter } from "next/navigation";
 import { useUnsavedChanges } from "@/components/UnsavedChangesContext";
+import AuthorizedUsers from "@/components/AuthorizedUsers";
 import {
     Dialog,
     DialogContent,
@@ -179,6 +180,21 @@ export default function Settings() {
                                 setYearsHasChanges(false)
                             }
                         />
+                    </div>
+                </section>
+
+                <section className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-x-12 gap-y-4 py-10">
+                    <div>
+                        <h2 className="font-semibold text-balance">
+                            Authorized Users
+                        </h2>
+                        <p className="mt-1 text-sm text-muted-foreground text-pretty">
+                            Manage which email addresses are allowed to sign in
+                            to the application.
+                        </p>
+                    </div>
+                    <div>
+                        <AuthorizedUsers />
                     </div>
                 </section>
             </div>
