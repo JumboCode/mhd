@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { allowedEmails } from "@/lib/schema";
+import { allowedEmails, user, session } from "@/lib/schema";
 import { eq } from "drizzle-orm";
 
 export async function GET() {
@@ -62,7 +62,24 @@ export async function DELETE(req: NextRequest) {
         const id = Number(searchParams.get("id"));
         if (!id)
             return NextResponse.json({ error: "Missing id" }, { status: 400 });
-        await db.delete(allowedEmails).where(eq(allowedEmails.id, id));
+        const [removed] = await db
+            .delete(allowedEmails)
+            .where(eq(allowedEmails.id, id))
+            .returning({ email: allowedEmails.email });
+
+        if (removed) {
+            const [matchedUser] = await db
+                .select({ id: user.id })
+                .from(user)
+                .where(eq(user.email, removed.email))
+                .limit(1);
+            if (matchedUser) {
+                await db
+                    .delete(session)
+                    .where(eq(session.userId, matchedUser.id));
+            }
+        }
+
         return new NextResponse(null, { status: 204 });
     } catch {
         return NextResponse.json(
