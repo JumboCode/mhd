@@ -214,6 +214,9 @@ function CartItemRow({
                                     <Image
                                         src={item.previewDataUrl}
                                         alt={`${item.filterName} preview`}
+                                        width={288}
+                                        height={180}
+                                        unoptimized
                                         className="w-full h-auto block"
                                     />
                                 </div>
