@@ -83,11 +83,19 @@ export default function AuthForm({ redirectTo }: { redirectTo?: string }) {
         setIsLoading(true);
         setError("");
         try {
-            await authClient.signIn.emailOtp({
+            const { error } = await authClient.signIn.emailOtp({
                 email,
                 otp,
             });
+            if (error) {
+                setError(
+                    "Invalid or expired code. Please try again or request a new one.",
+                );
+                return;
+            }
             router.push(destination);
+        } catch {
+            setError("Something went wrong. Please try again.");
         } finally {
             setIsLoading(false);
         }
@@ -172,11 +180,6 @@ export default function AuthForm({ redirectTo }: { redirectTo?: string }) {
                                         required
                                     />
                                 </div>
-                                {error && (
-                                    <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded">
-                                        {error}
-                                    </div>
-                                )}
                                 <Button
                                     type="submit"
                                     className="w-full bg-[#1447E6]"
@@ -184,6 +187,11 @@ export default function AuthForm({ redirectTo }: { redirectTo?: string }) {
                                 >
                                     {isLoading ? "Sending..." : "Sign in"}
                                 </Button>
+                                {error && (
+                                    <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded">
+                                        {error}
+                                    </div>
+                                )}
                             </form>
                         ) : (
                             <div className="space-y-4">
@@ -246,6 +254,11 @@ export default function AuthForm({ redirectTo }: { redirectTo?: string }) {
                                         Change Email
                                     </Button>
                                 </div>
+                                {error && (
+                                    <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded">
+                                        {error}
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>
