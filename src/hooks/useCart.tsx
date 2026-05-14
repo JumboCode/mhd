@@ -182,18 +182,31 @@ async function renderChartToImage(
 
     await new Promise((resolve) => setTimeout(resolve, 100));
 
-    const canvas = await html2canvas(container, {
-        backgroundColor: "#fff",
-        scale: 2,
-        x: 0,
-        y: 0,
-        width: 800,
-        height: 500,
-    });
-    const dataUrl = canvas.toDataURL();
-
-    root.unmount();
-    document.body.removeChild(container);
+    let dataUrl: string;
+    try {
+        const canvas = await Promise.race([
+            html2canvas(container, {
+                backgroundColor: "#fff",
+                scale: 2,
+                x: 0,
+                y: 0,
+                width: 800,
+                height: 500,
+                useCORS: true,
+                allowTaint: true,
+            }),
+            new Promise<never>((_, reject) =>
+                setTimeout(
+                    () => reject(new Error("html2canvas timeout")),
+                    5000,
+                ),
+            ),
+        ]);
+        dataUrl = canvas.toDataURL();
+    } finally {
+        root.unmount();
+        document.body.removeChild(container);
+    }
 
     return dataUrl;
 }

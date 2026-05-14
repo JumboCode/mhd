@@ -43,17 +43,16 @@ function getFilterCount(item: CartItem): number {
     return count;
 }
 
-function ChartPreviewPlaceholder({
-    isGeneratingPreviews,
-}: {
-    isGeneratingPreviews: boolean;
-}) {
+function ChartPreviewPlaceholder({ item }: { item: CartItem }) {
+    if (item.type !== "chart") return null;
+    const Icon = item.params.chartType === "bar" ? ChartColumn : LineChart;
     return (
-        <div className="h-24 flex items-center justify-center text-xs text-muted-foreground gap-2">
-            {isGeneratingPreviews && (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            )}
-            Generating preview...
+        <div className="h-32 flex flex-col items-center justify-center gap-2 bg-muted/40 text-muted-foreground">
+            <Icon className="h-8 w-8 stroke-1" />
+            <p className="text-xs">
+                {item.params.chartType === "bar" ? "Bar chart" : "Line chart"}{" "}
+                ready to export
+            </p>
         </div>
     );
 }
@@ -61,11 +60,9 @@ function ChartPreviewPlaceholder({
 function CartItemRow({
     item,
     onRemove,
-    isGeneratingPreviews,
 }: {
     item: CartItem;
     onRemove: () => void;
-    isGeneratingPreviews: boolean;
 }) {
     const filterCount = getFilterCount(item);
     const [hoverRect, setHoverRect] = useState<DOMRect | null>(null);
@@ -221,9 +218,7 @@ function CartItemRow({
                                     />
                                 </div>
                             ) : (
-                                <ChartPreviewPlaceholder
-                                    isGeneratingPreviews={isGeneratingPreviews}
-                                />
+                                <ChartPreviewPlaceholder item={item} />
                             )}
                         </div>
                     </div>,
@@ -241,7 +236,6 @@ export function Cart() {
         exportAll,
         isExporting,
         ensureChartPreviews,
-        isGeneratingPreviews,
     } = useCart();
 
     useEffect(() => {
@@ -272,7 +266,6 @@ export function Cart() {
                             key={index}
                             item={item}
                             onRemove={() => removeItem(index)}
-                            isGeneratingPreviews={isGeneratingPreviews}
                         />
                     ))
                 )}
