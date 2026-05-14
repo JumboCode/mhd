@@ -35,8 +35,11 @@ const words_to_remove: string[] = [
     ".",
 ];
 
-export function standardize(name: string): string {
-    const words = name.trim().toLowerCase().split(" ");
+export function standardize(name: string | null | undefined): string {
+    const words = String(name ?? "")
+        .trim()
+        .toLowerCase()
+        .split(" ");
     const filtered = words.filter((w) => !words_to_remove.includes(w));
     return filtered
         .join("-")
@@ -47,8 +50,8 @@ export function standardize(name: string): string {
 }
 
 // Normalize school name formatting in table
-export function toTitleCase(str: string) {
-    return str
+export function toTitleCase(str: string | null | undefined): string {
+    return String(str ?? "")
         .toLowerCase()
         .split(" ")
         .map((word) => word.charAt(0).toUpperCase() + word.slice(1))

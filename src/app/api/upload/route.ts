@@ -82,7 +82,10 @@ function buildSchoolInfoMap(rawData: RowData[]): {
     const townMap = new Map<string, string>();
     if (!rawData || rawData.length === 0) return { infoMap, townMap };
 
-    const normalize = (s: string) => s.toLowerCase().replace(/\s+/g, "");
+    const normalize = (s: string | null | undefined) =>
+        String(s ?? "")
+            .toLowerCase()
+            .replace(/\s+/g, "");
 
     const headers = rawData[0] as string[];
     const headerMap = new Map<string, number>();
@@ -229,8 +232,10 @@ export async function POST(req: NextRequest) {
         }
 
         const headers = rawData[0] as string[];
-        const normalizeColumnName = (name: string): string =>
-            name.toLowerCase().replace(/\s+/g, "");
+        const normalizeColumnName = (name: string | null | undefined): string =>
+            String(name ?? "")
+                .toLowerCase()
+                .replace(/\s+/g, "");
 
         const headerMap = new Map<string, number>();
         headers.forEach((header, index) => {
