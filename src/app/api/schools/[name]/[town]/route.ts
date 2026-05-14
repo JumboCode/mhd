@@ -383,9 +383,10 @@ export async function GET(
             ),
         });
 
-        const participatingStudentCount = studentCount[0]?.total
+        const competingStudentCount = studentCount[0]?.total
             ? Number(studentCount[0].total)
             : 0;
+        const participatingStudentCount = yearlyData?.competingStudents ?? 0;
 
         return NextResponse.json({
             id: school.id,
@@ -396,7 +397,7 @@ export async function GET(
             longitude: school.longitude,
             studentCount: participatingStudentCount,
             participatingStudentCount,
-            competingStudents: yearlyData?.competingStudents ?? null,
+            competingStudents: competingStudentCount,
             teacherCount: teacherCount[0]?.count ?? 0,
             projectCount: projectCount[0]?.count ?? 0,
             firstYear: firstYearData ?? null,

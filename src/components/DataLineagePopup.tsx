@@ -109,9 +109,9 @@ const METRIC_DESCRIPTION: Record<MeasuredAs, string> = {
     "total-student-count":
         "Sums the number of students across all projects each year.",
     "total-participating-student-count":
-        "Sums the number of students across all projects each year.",
+        "Sums the number of students who participated at the school level each year.",
     "total-competing-student-count":
-        "Sums the number of students who competed at the school level each year.",
+        "Sums the number of students across all projects each year.",
     "total-city-count":
         "Counts distinct cities/towns with at least one participating school each year.",
     "school-return-rate":
@@ -133,18 +133,6 @@ const DATA_ORIGIN_STEPS: Record<MeasuredAs, DataLineageItem[]> = {
     ],
     "total-participating-student-count": [
         {
-            title: 'CSV "numStudents" field',
-            description:
-                "Each project row in the CSV declares how many students worked on it.",
-        },
-        {
-            title: "Projects table stores numStudents",
-            description:
-                "The student count is stored directly on the project record and summed at query time.",
-        },
-    ],
-    "total-competing-student-count": [
-        {
             title: 'School info spreadsheet "# students who began project at the school level"',
             description:
                 "Uploaded separately via the school info spreadsheet. Defaults to sum of numStudents if not provided.",
@@ -153,6 +141,18 @@ const DATA_ORIGIN_STEPS: Record<MeasuredAs, DataLineageItem[]> = {
             title: "yearlySchoolParticipation.competingStudents",
             description:
                 "Stored on the yearly school participation record and summed across schools per year.",
+        },
+    ],
+    "total-competing-student-count": [
+        {
+            title: 'CSV "numStudents" field',
+            description:
+                "Each project row in the CSV declares how many students worked on it.",
+        },
+        {
+            title: "Projects table stores numStudents",
+            description:
+                "The student count is stored directly on the project record and summed at query time.",
         },
     ],
     "total-school-count": [
@@ -242,9 +242,9 @@ const COUNT_STEP_TITLE: Record<MeasuredAs, string> = {
     "total-school-count": "COUNT(DISTINCT schoolId) per year",
     "total-teacher-count": "COUNT(DISTINCT teacherId) per year",
     "total-student-count": "SUM(numStudents) per year",
-    "total-participating-student-count": "SUM(numStudents) per year",
-    "total-competing-student-count":
+    "total-participating-student-count":
         "SUM(competingStudents) per school per year",
+    "total-competing-student-count": "SUM(numStudents) per year",
     "total-city-count": "COUNT(DISTINCT schoolTown) per year",
     "school-return-rate": "returningSchools / totalSchools per year",
 };
@@ -259,9 +259,9 @@ const COUNT_STEP_DESCRIPTION: Record<MeasuredAs, string> = {
     "total-student-count":
         "Sum of numStudents across all projects that year, before filters.",
     "total-participating-student-count":
-        "Sum of numStudents across all projects that year, before filters.",
-    "total-competing-student-count":
         "Sum of competingStudents from yearlySchoolParticipation records that year, before filters.",
+    "total-competing-student-count":
+        "Sum of numStudents across all projects that year, before filters.",
     "total-city-count":
         "Distinct school towns with at least one project that year, before filters.",
     "school-return-rate":

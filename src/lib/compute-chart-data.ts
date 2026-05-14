@@ -533,12 +533,12 @@ export function computeGraphDataset(
                     return new Set(schoolRecords.map((s) => s.schoolId)).size;
                 return new Set(projects.map((p) => p.schoolId)).size;
             case "total-student-count":
-            case "total-participating-student-count":
+            case "total-competing-student-count":
                 return projects.reduce(
                     (sum, p) => sum + (p.numStudents || 0),
                     0,
                 );
-            case "total-competing-student-count": {
+            case "total-participating-student-count": {
                 const seen = new Set<string>();
                 let total = 0;
                 for (const p of projects) {

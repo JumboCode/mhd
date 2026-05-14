@@ -30,7 +30,7 @@ async function getSchoolCountByYear(): Promise<Map<number, number>> {
     return new Map(rows.map((r) => [r.year, r.total] as const));
 }
 
-async function getCompetingStudentsByYear(): Promise<Map<number, number>> {
+async function getParticipatingStudentsByYear(): Promise<Map<number, number>> {
     const rows = await db
         .select({
             year: yearlySchoolParticipation.year,
@@ -50,7 +50,7 @@ export async function getYearlyStats(year: number) {
         .from(yearlySchoolParticipation)
         .where(eq(yearlySchoolParticipation.year, year));
 
-    const [[teacherRow], [result], [competingRow]] = await Promise.all([
+    const [[teacherRow], [result], [participatingRow]] = await Promise.all([
         db
             .select({
                 total_teachers: countDistinct(
@@ -62,7 +62,7 @@ export async function getYearlyStats(year: number) {
         db
             .select({
                 total_projects: count(projects.id),
-                total_participating_students: sum(projects.numStudents),
+                total_competing_students: sum(projects.numStudents),
             })
             .from(projects)
             .where(eq(projects.year, year)),
@@ -74,7 +74,7 @@ export async function getYearlyStats(year: number) {
             .where(eq(yearlySchoolParticipation.year, year)),
     ]);
 
-    const total_competing_students = Number(competingRow?.total);
+    const total_participating_students = Number(participatingRow?.total);
     const total_schools = schoolRow?.total_schools ?? 0;
     const total_teachers = teacherRow?.total_teachers ?? 0;
 
@@ -85,8 +85,8 @@ export async function getYearlyStats(year: number) {
                 total_schools,
                 total_teachers,
                 total_projects: 0,
-                total_competing_students,
-                total_participating_students: 0,
+                total_competing_students: 0,
+                total_participating_students,
             },
         };
     }
@@ -95,10 +95,8 @@ export async function getYearlyStats(year: number) {
         total_schools,
         total_teachers,
         total_projects: result.total_projects || 0,
-        total_competing_students,
-        total_participating_students: Number(
-            result.total_participating_students,
-        ),
+        total_competing_students: Number(result.total_competing_students),
+        total_participating_students,
     };
 
     return { year, totals };
@@ -108,20 +106,20 @@ export async function getYearlyStats(year: number) {
  * Get stats for all years - used for sparkline historical data
  */
 export async function getAllYearsStats() {
-    const [results, schoolCountByYear, teacherCountByYear, competingByYear] =
+    const [results, schoolCountByYear, teacherCountByYear, participatingByYear] =
         await Promise.all([
             db
                 .select({
                     year: projects.year,
                     total_projects: count(projects.id),
-                    total_participating_students: sum(projects.numStudents),
+                    total_competing_students: sum(projects.numStudents),
                 })
                 .from(projects)
                 .groupBy(projects.year)
                 .orderBy(asc(projects.year)),
             getSchoolCountByYear(),
             getTeacherCountByYear(),
-            getCompetingStudentsByYear(),
+            getParticipatingStudentsByYear(),
         ]);
 
     return results.map((row) => ({
@@ -129,7 +127,7 @@ export async function getAllYearsStats() {
         total_schools: schoolCountByYear.get(row.year) ?? 0,
         total_teachers: teacherCountByYear.get(row.year) ?? 0,
         total_projects: row.total_projects || 0,
-        total_competing_students: competingByYear.get(row.year) ?? 0,
-        total_participating_students: Number(row.total_participating_students),
+        total_competing_students: Number(row.total_competing_students),
+        total_participating_students: participatingByYear.get(row.year) ?? 0,
     }));
 }
