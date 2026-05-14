@@ -167,6 +167,21 @@ function HeatMapPage() {
         parseAsBoolean.withDefault(true),
     );
 
+    const heatmapLegend = showHeatmap
+        ? {
+              colors: [
+                  "rgba(255,255,204,0)",
+                  "rgb(255,237,160)",
+                  "rgb(254,178,76)",
+                  "rgb(253,141,60)",
+                  "rgb(227,74,51)",
+                  "rgb(175,39,47)",
+              ],
+              startLabel: "Low",
+              endLabel: "High",
+          }
+        : undefined;
+
     const [showRegions, setShowRegions] = useQueryState(
         "showRegions",
         parseAsBoolean.withDefault(true),
@@ -370,7 +385,13 @@ function HeatMapPage() {
         () => {
             const map = mapRef.current;
             if (!map) return;
-            exportMapToPDF(map, filterName, currentFilterDetails, true);
+            exportMapToPDF(
+                map,
+                filterName,
+                currentFilterDetails,
+                heatmapLegend,
+                true,
+            );
         },
         { meta: true },
     );
@@ -417,6 +438,7 @@ function HeatMapPage() {
                                             mapCurrent,
                                             filterName,
                                             currentFilterDetails,
+                                            heatmapLegend,
                                         );
                                     }}
                                 >
@@ -442,6 +464,7 @@ function HeatMapPage() {
                                     filterName,
                                     mapImageData,
                                     currentFilterDetails,
+                                    heatmapLegend,
                                 );
                             }
                         }}
@@ -516,6 +539,7 @@ function HeatMapPage() {
                                         mapCurrent,
                                         filterName,
                                         currentFilterDetails,
+                                        heatmapLegend,
                                     );
                                     if (exported) {
                                         toast.success(
@@ -544,6 +568,7 @@ function HeatMapPage() {
                                             filterName,
                                             mapImageData,
                                             currentFilterDetails,
+                                            heatmapLegend,
                                         );
                                     }
                                 }}

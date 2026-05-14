@@ -22,6 +22,10 @@ import { Footer } from "../components/Footer";
 import { Title } from "../components/Title";
 import { FiltersBox, type FilterDetail } from "../components/FiltersBox";
 import { COLORS } from "../theme";
+import {
+    HeatmapLegendPdf,
+    type HeatmapLegendData,
+} from "../components/HeatmapLegendPdf";
 import BarChartPdf from "../charts/BarChartPdf";
 import LineChartPdf from "../charts/LineChartPdf";
 
@@ -45,6 +49,7 @@ export type MapItem = {
     title: string;
     imageDataUrl: string;
     filterDetails?: FilterDetail[];
+    legend?: HeatmapLegendData;
 };
 
 export type ChartDocumentItem = ChartItem | MapItem;
@@ -203,6 +208,7 @@ function MapItemPage({ item }: { item: MapItem }) {
             {/* eslint-disable-next-line jsx-a11y/alt-text -- @react-pdf Image, not HTML */}
             <Image src={item.imageDataUrl} style={styles.mapImage} />
             <FiltersBox filters={item.filterDetails ?? []} />
+            {item.legend && <HeatmapLegendPdf legend={item.legend} />}
         </>
     );
 }

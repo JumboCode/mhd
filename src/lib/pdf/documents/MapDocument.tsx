@@ -12,6 +12,12 @@ import { Header } from "../components/Header";
 import { Footer } from "../components/Footer";
 import { Title } from "../components/Title";
 import { FiltersBox, type FilterDetail } from "../components/FiltersBox";
+import {
+    HeatmapLegendPdf,
+    type HeatmapLegendData,
+} from "../components/HeatmapLegendPdf";
+
+export type { HeatmapLegendData };
 
 const styles = StyleSheet.create({
     page: {
@@ -31,10 +37,12 @@ export default function MapDocument({
     title,
     imageDataUrl,
     filterDetails,
+    legend,
 }: {
     title: string;
     imageDataUrl: string;
     filterDetails?: FilterDetail[];
+    legend?: HeatmapLegendData;
 }) {
     return (
         <Document>
@@ -44,6 +52,7 @@ export default function MapDocument({
                 {/* eslint-disable-next-line jsx-a11y/alt-text -- @react-pdf Image, not HTML */}
                 <Image src={imageDataUrl} style={styles.image} />
                 <FiltersBox filters={filterDetails ?? []} />
+                {legend && <HeatmapLegendPdf legend={legend} />}
                 <Footer />
             </Page>
         </Document>

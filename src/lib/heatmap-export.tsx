@@ -10,7 +10,9 @@
 import { pdf } from "@react-pdf/renderer";
 import { toast } from "sonner";
 import { Map } from "maplibre-gl";
-import MapDocument from "./pdf/documents/MapDocument";
+import MapDocument, {
+    type HeatmapLegendData,
+} from "./pdf/documents/MapDocument";
 import { type FilterDetail } from "./pdf/components/FiltersBox";
 import { ensurePdfFontsRegistered } from "./pdf/theme";
 import { deliverPdf } from "./pdf/output";
@@ -19,6 +21,7 @@ export async function exportMapToPDF(
     map: Map | null,
     title: string | null,
     filterDetails: FilterDetail[] = [],
+    legend?: HeatmapLegendData,
     print = false,
 ): Promise<boolean> {
     if (!map) {
@@ -37,6 +40,7 @@ export async function exportMapToPDF(
                 title={safeTitle}
                 imageDataUrl={dataURL}
                 filterDetails={filterDetails}
+                legend={legend}
             />,
         ).toBlob();
         deliverPdf(blob, safeTitle, print);

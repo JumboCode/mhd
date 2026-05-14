@@ -29,6 +29,7 @@ import {
     type ChartDocumentItem,
     downloadGraphs,
 } from "@/lib/export-to-pdf";
+import { type HeatmapLegendData } from "@/lib/pdf/components/HeatmapLegendPdf";
 
 export type ChartCartParams = {
     chartType: "bar" | "line";
@@ -54,6 +55,7 @@ export type CartItem =
           filterName: string;
           imageDataUrl: string;
           filterDetails: FilterDetail[];
+          legend?: HeatmapLegendData;
       };
 
 type CartContextValue = {
@@ -67,6 +69,7 @@ type CartContextValue = {
         filterName: string,
         imageDataUrl: string,
         filterDetails?: FilterDetail[],
+        legend?: HeatmapLegendData,
     ) => void;
     removeItem: (index: number) => void;
     removeByName: (filterName: string) => void;
@@ -260,10 +263,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
             filterName: string,
             imageDataUrl: string,
             filterDetails: FilterDetail[] = [],
+            legend?: HeatmapLegendData,
         ) => {
             setItems((prev) => [
                 ...prev,
-                { type: "map", filterName, imageDataUrl, filterDetails },
+                {
+                    type: "map",
+                    filterName,
+                    imageDataUrl,
+                    filterDetails,
+                    legend,
+                },
             ]);
         },
         [],
@@ -367,6 +377,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
                             title: item.filterName,
                             imageDataUrl: item.imageDataUrl,
                             filterDetails: item.filterDetails,
+                            legend: item.legend,
                         };
                     }
                     const dataset = await fetchAndComputeDataset(item.params);
