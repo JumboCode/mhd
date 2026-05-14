@@ -779,7 +779,7 @@ export default function SpreadsheetState() {
                         </div>
                     </div>
                 ) : (
-                    <>
+                    <div className="flex flex-col items-center justify-center">
                         {tabIndex === STEP_CONFIRM ? (
                             <SpreadsheetConfirmation
                                 spreadsheetData={spreadsheetData}
@@ -805,7 +805,7 @@ export default function SpreadsheetState() {
                                 </p>
                             </div>
                         )}
-                    </>
+                    </div>
                 )}
             </div>
 
