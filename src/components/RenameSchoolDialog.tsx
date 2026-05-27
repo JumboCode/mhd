@@ -18,6 +18,7 @@ interface RenameSchoolDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     schoolSlug: string;
+    schoolTown: string;
     currentName: string;
     year: number | null;
     onRenameComplete: (newName: string) => void;
@@ -27,6 +28,7 @@ export function RenameSchoolDialog({
     open,
     onOpenChange,
     schoolSlug,
+    schoolTown,
     currentName,
     year,
     onRenameComplete,
@@ -55,11 +57,14 @@ export function RenameSchoolDialog({
         }
         setSaving(true);
         try {
-            const res = await fetch(`/api/schools/${schoolSlug}`, {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name: next }),
-            });
+            const res = await fetch(
+                `/api/schools/${schoolSlug}/${schoolTown}`,
+                {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name: next }),
+                },
+            );
             const data = (await res.json()) as {
                 standardizedName?: string;
                 error?: string;
@@ -71,7 +76,7 @@ export function RenameSchoolDialog({
                 const newSlug = data.standardizedName;
                 if (newSlug && newSlug !== schoolSlug) {
                     const q = year !== null ? `?year=${year}` : "";
-                    router.replace(`/schools/${newSlug}${q}`);
+                    router.replace(`/schools/${newSlug}/${schoolTown}${q}`);
                 }
             } else {
                 toast.error(

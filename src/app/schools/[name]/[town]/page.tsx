@@ -493,6 +493,7 @@ export default function SchoolProfilePage() {
                     open={renameOpen}
                     onOpenChange={setRenameOpen}
                     schoolSlug={schoolName}
+                    schoolTown={schoolTown}
                     currentName={schoolData.name}
                     year={year}
                     onRenameComplete={(newName) =>
