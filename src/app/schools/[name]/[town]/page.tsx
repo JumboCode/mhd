@@ -55,6 +55,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import MergeSchoolDialog from "@/components/MergeSchoolDialog";
 import { RenameSchoolDialog } from "@/components/RenameSchoolDialog";
+import { ChangeTownDialog } from "@/components/ChangeTownDialog";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -106,6 +107,7 @@ export default function SchoolProfilePage() {
 
     const [projects, setProjects] = useState<ProjectRow[]>([]);
     const [renameOpen, setRenameOpen] = useState(false);
+    const [changeTownOpen, setChangeTownOpen] = useState(false);
     const [studentYearData, setstudentYearData] = useState<
         { x: string | number; y: number }[]
     >([]);
@@ -469,6 +471,14 @@ export default function SchoolProfilePage() {
                                     </div>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
+                                    onClick={() => setChangeTownOpen(true)}
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <Pencil className="h-4 w-4" />
+                                        Change town
+                                    </div>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
                                     onClick={() => setExportDialogOpen(true)}
                                 >
                                     <div className="flex items-center gap-2">
@@ -499,6 +509,20 @@ export default function SchoolProfilePage() {
                     onRenameComplete={(newName) =>
                         setSchoolData((prev) =>
                             prev ? { ...prev, name: newName } : prev,
+                        )
+                    }
+                />
+
+                <ChangeTownDialog
+                    open={changeTownOpen}
+                    onOpenChange={setChangeTownOpen}
+                    schoolSlug={schoolName}
+                    schoolTown={schoolTown}
+                    currentTown={schoolData.town}
+                    year={year}
+                    onChangeTownComplete={(newTown) =>
+                        setSchoolData((prev) =>
+                            prev ? { ...prev, town: newTown } : prev,
                         )
                     }
                 />
