@@ -42,6 +42,8 @@ let currentProgress = {
 };
 
 type SchoolInfoEntry = {
+    name: string;
+    town: string;
     division: string[];
     implementationModel: string;
     schoolType: string;
@@ -163,6 +165,8 @@ function buildSchoolInfoMap(rawData: RowData[]): {
             }
         } else {
             infoMap.set(schoolKey, {
+                name: schoolName,
+                town: toTitleCase(town),
                 division: divisions,
                 implementationModel,
                 schoolType,
@@ -547,6 +551,28 @@ export async function POST(req: NextRequest) {
                     teacherIdStr: compositeTeacherId,
                 });
             }
+        }
+
+        // Schools that appear only in the school spreadsheet have no student rows,
+        // so they were never added during the loop above. Insert them so they
+        // appear in the schools table and yearlySchoolParticipation.
+        // competingStudents falls back to 0 since participatingBySchool won't
+        // have an entry for them (no project rows).
+        for (const [schoolKey, info] of schoolInfoMap) {
+            if (schoolMap.has(schoolKey) || newSchoolsMap.has(schoolKey))
+                continue;
+            const stdName = schoolKey.split("__")[0];
+            const coords = coordsMap.get(schoolKey);
+            const region = findRegionOf(coords?.lat, coords?.long);
+            newSchoolsMap.set(schoolKey, {
+                name: info.name,
+                standardizedName: stdName,
+                town: info.town,
+                latitude: coords?.lat ?? null,
+                longitude: coords?.long ?? null,
+                region: region ?? "",
+            });
+            yearlySchoolSet.add(schoolKey);
         }
 
         currentProgress.progress = 40;
