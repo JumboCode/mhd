@@ -16,7 +16,10 @@ import { useEffect, useState } from "react";
 import { Checkbox } from "@/components/Checkbox";
 import type { SpreadsheetData, CellValue } from "@/types/spreadsheet";
 import { standardize } from "@/lib/string-standardize";
-import { buildSchoolTownMap } from "@/lib/school-matching";
+import {
+    buildSchoolTownMap,
+    extractSchoolsFromSchoolInfoSpreadsheet,
+} from "@/lib/school-matching";
 
 type ConfirmationProps = {
     year?: number | null;
@@ -81,22 +84,34 @@ export default function SpreadsheetConfirmation({
         const cityIdx = getColumnIndex("city");
         if (schoolNameIdx !== undefined) {
             const townMap = buildSchoolTownMap(schoolInfoData);
-            const schoolKeys = dataRows
-                .map((row) => {
-                    const name = standardize(
-                        String(row[schoolNameIdx] ?? "").trim(),
-                    );
-                    const city =
-                        cityIdx !== undefined
-                            ? String(row[cityIdx] ?? "")
-                                  .toLowerCase()
-                                  .trim()
-                            : "";
-                    const canonicalTown = townMap.get(name) ?? city;
-                    return `${name}__${canonicalTown.toLowerCase()}`;
-                })
-                .filter((key) => key !== "__");
-            setUniqueSchools(new Set(schoolKeys).size);
+            const schoolKeySet = new Set(
+                dataRows
+                    .map((row) => {
+                        const name = standardize(
+                            String(row[schoolNameIdx] ?? "").trim(),
+                        );
+                        const city =
+                            cityIdx !== undefined
+                                ? String(row[cityIdx] ?? "")
+                                      .toLowerCase()
+                                      .trim()
+                                : "";
+                        const canonicalTown = townMap.get(name) ?? city;
+                        return `${name}__${canonicalTown.toLowerCase()}`;
+                    })
+                    .filter((key) => key !== "__"),
+            );
+
+            // Also count schools that appear only in the school info spreadsheet
+            const studentStdNames = new Set(
+                [...schoolKeySet].map((k) => k.split("__")[0]),
+            );
+            const infoOnlyCount = extractSchoolsFromSchoolInfoSpreadsheet(
+                schoolInfoData,
+                studentStdNames,
+            ).length;
+
+            setUniqueSchools(schoolKeySet.size + infoOnlyCount);
         }
 
         // Count unique teachers using composite email|standardizedSchoolName (mirrors upload logic)
@@ -126,7 +141,7 @@ export default function SpreadsheetConfirmation({
             const uniqueProjectsSet = new Set(projects);
             setNumProjects(uniqueProjectsSet.size);
         }
-    }, [spreadsheetData]);
+    }, [spreadsheetData, schoolInfoData]);
 
     return (
         <div className="flex flex-col items-left justify-left max-w-lg">
