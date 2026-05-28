@@ -191,8 +191,8 @@ export default function SpreadsheetPreview({
 
     return (
         <>
-            <div className="flex flex-col items-center gap-12">
-                <div className="flex flex-col items-center">
+            <div className="w-full flex flex-col items-center gap-12">
+                <div className="w-full flex flex-col items-center">
                     <CircleCheck className="w-16 h-16 text-primary" />
                     <h2 className="text-xl font-bold mt-5">
                         Your file looks good
@@ -231,7 +231,7 @@ export default function SpreadsheetPreview({
                         </p>
                     </div>
                 </div>
-                <div className="whitespace-nowrap overflow-x-auto max-w-2xl mb-10">
+                <div className="w-full whitespace-nowrap overflow-x-auto max-w-2xl mb-10">
                     <DataTable data={rows} columns={cols} />
                 </div>
             </div>
