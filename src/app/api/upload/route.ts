@@ -159,10 +159,7 @@ function buildSchoolInfoMap(rawData: RowData[]): {
                     existing.division.push(div);
                 }
             }
-            // Take the first non-zero competingStudents value
-            if (existing.competingStudents === 0 && competingStudents > 0) {
-                existing.competingStudents = competingStudents;
-            }
+            existing.competingStudents += competingStudents;
         } else {
             infoMap.set(schoolKey, {
                 name: schoolName,
