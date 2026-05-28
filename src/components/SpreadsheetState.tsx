@@ -55,6 +55,7 @@ import {
     type UploadedSchool,
     buildSchoolTownMap,
     extractSchoolsFromSpreadsheet,
+    extractSchoolsFromSchoolInfoSpreadsheet,
     getSchoolColumnIndices,
     matchSchools,
 } from "@/lib/school-matching";
@@ -655,10 +656,25 @@ export default function SpreadsheetState() {
                         townMap,
                     );
 
+                    // Also include schools that appear only in the school info
+                    // spreadsheet — they need map placement to get coordinates.
+                    const studentStdNames = new Set(
+                        uploadedSchools.map((s) => s.schoolKey.split("__")[0]),
+                    );
+                    const infoOnlySchools =
+                        extractSchoolsFromSchoolInfoSpreadsheet(
+                            schoolInfoData,
+                            studentStdNames,
+                        );
+                    const allUploadedSchools = [
+                        ...uploadedSchools,
+                        ...infoOnlySchools,
+                    ];
+
                     // Schools auto-remapped via schoolHistoricNames are
                     // already in the DB — exclude them from matching so they
                     // don't appear as unmatched and force coordinate placement.
-                    let schoolsForMatching = uploadedSchools;
+                    let schoolsForMatching = allUploadedSchools;
 
                     try {
                         const res = await fetch(
@@ -667,7 +683,7 @@ export default function SpreadsheetState() {
                                 method: "POST",
                                 headers: { "Content-Type": "application/json" },
                                 body: JSON.stringify({
-                                    schools: uploadedSchools.map((s) => ({
+                                    schools: allUploadedSchools.map((s) => ({
                                         name: s.name,
                                         town: s.city,
                                         schoolKey: s.schoolKey,
@@ -681,7 +697,7 @@ export default function SpreadsheetState() {
                         const autoRemappedKeySet = new Set<string>(
                             data.autoRemappedKeys ?? [],
                         );
-                        schoolsForMatching = uploadedSchools.filter(
+                        schoolsForMatching = allUploadedSchools.filter(
                             (s) => !autoRemappedKeySet.has(s.schoolKey),
                         );
 

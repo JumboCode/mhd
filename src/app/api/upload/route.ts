@@ -558,21 +558,62 @@ export async function POST(req: NextRequest) {
         // appear in the schools table and yearlySchoolParticipation.
         // competingStudents falls back to 0 since participatingBySchool won't
         // have an entry for them (no project rows).
+
+        // Build a set of stdNames already covered by student-spreadsheet rows to
+        // avoid duplicate yearlySchoolParticipation entries when the school
+        // appears under a different town key in the two spreadsheets.
+        const yearlyStdNames = new Set(
+            [...yearlySchoolSet].map((k) => k.split("__")[0]),
+        );
+
+        // Collect candidates whose stdName has no student-spreadsheet coverage yet.
+        const infoOnlyCandidates: Array<[string, SchoolInfoEntry]> = [];
         for (const [schoolKey, info] of schoolInfoMap) {
-            if (schoolMap.has(schoolKey) || newSchoolsMap.has(schoolKey))
-                continue;
             const stdName = schoolKey.split("__")[0];
-            const coords = coordsMap.get(schoolKey);
-            const region = findRegionOf(coords?.lat, coords?.long);
-            newSchoolsMap.set(schoolKey, {
-                name: info.name,
-                standardizedName: stdName,
-                town: info.town,
-                latitude: coords?.lat ?? null,
-                longitude: coords?.long ?? null,
-                region: region ?? "",
-            });
-            yearlySchoolSet.add(schoolKey);
+            if (yearlyStdNames.has(stdName) || newSchoolsMap.has(schoolKey))
+                continue;
+            infoOnlyCandidates.push([schoolKey, info]);
+        }
+
+        if (infoOnlyCandidates.length > 0) {
+            // Phase 2 only pre-fetched schools referenced by student rows, so
+            // school-info-only schools may already exist in the DB under a
+            // different town. Fetch by standardized name to avoid re-inserting
+            // them and hitting the unique constraint.
+            const infoOnlyStdNames = [
+                ...new Set(infoOnlyCandidates.map(([k]) => k.split("__")[0])),
+            ];
+            const existingInfoSchools = await db
+                .select()
+                .from(schools)
+                .where(inArray(schools.standardizedName, infoOnlyStdNames));
+            const existingByStdName = new Map(
+                existingInfoSchools.map((s) => [s.standardizedName, s]),
+            );
+
+            for (const [schoolKey, info] of infoOnlyCandidates) {
+                const stdName = schoolKey.split("__")[0];
+                const existing = existingByStdName.get(stdName);
+                if (existing) {
+                    // Reuse the existing DB record — register under the info-map
+                    // key so Phase 7 can look it up for yearlySchoolParticipation.
+                    schoolMap.set(schoolKey, existing);
+                } else {
+                    // Genuinely new school. The frontend now includes school-info-only
+                    // schools in the map-placement step, so coordinates are available.
+                    const coords = coordsMap.get(schoolKey);
+                    const region = findRegionOf(coords?.lat, coords?.long);
+                    newSchoolsMap.set(schoolKey, {
+                        name: info.name,
+                        standardizedName: stdName,
+                        town: info.town,
+                        latitude: coords?.lat ?? null,
+                        longitude: coords?.long ?? null,
+                        region: region ?? "",
+                    });
+                }
+                yearlySchoolSet.add(schoolKey);
+            }
         }
 
         currentProgress.progress = 40;

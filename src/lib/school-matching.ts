@@ -209,6 +209,60 @@ export function matchSchools(
 }
 
 /**
+ * Extracts unique schools from the school info spreadsheet that are not
+ * already present in the student spreadsheet. These schools need to go
+ * through the same map-placement step to satisfy the coordinates invariant.
+ */
+export function extractSchoolsFromSchoolInfoSpreadsheet(
+    schoolInfoData: (string | number | boolean | null | undefined)[][],
+    studentStdNames: Set<string>,
+): UploadedSchool[] {
+    if (!schoolInfoData || schoolInfoData.length === 0) return [];
+
+    const normalize = (s: string) => s.toLowerCase().replace(/\s+/g, "");
+    const headers = schoolInfoData[0];
+    const headerMap = new Map<string, number>();
+    headers.forEach((h, i) => headerMap.set(normalize(String(h ?? "")), i));
+
+    const schoolNameIdx =
+        headerMap.get(normalize("School name")) ??
+        headerMap.get(normalize("schoolName"));
+    const townIdx =
+        headerMap.get(normalize("Town")) ?? headerMap.get(normalize("town"));
+
+    if (schoolNameIdx === undefined || townIdx === undefined) return [];
+
+    const schoolMap = new Map<string, UploadedSchool>();
+
+    for (let i = 1; i < schoolInfoData.length; i++) {
+        const row = schoolInfoData[i];
+        if (!row) continue;
+        const name = String(row[schoolNameIdx] ?? "").trim();
+        const town = String(row[townIdx] ?? "")
+            .trim()
+            .replace(/, ma/i, "")
+            .trim();
+
+        if (!name || !town) continue;
+
+        const stdName = standardize(name);
+        if (studentStdNames.has(stdName)) continue;
+
+        const schoolKey = `${stdName}__${town.toLowerCase()}`;
+        if (!schoolMap.has(schoolKey)) {
+            schoolMap.set(schoolKey, {
+                name,
+                city: town,
+                schoolKey,
+                rowIndices: [],
+            });
+        }
+    }
+
+    return Array.from(schoolMap.values());
+}
+
+/**
  * Gets column indices from spreadsheet headers
  */
 export function getSchoolColumnIndices(
