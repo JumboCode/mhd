@@ -2,11 +2,28 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "./db";
 import { schema } from "./schema";
+import { allowedEmails } from "./schema";
 import { emailOTP } from "better-auth/plugins";
 import { nextCookies } from "better-auth/next-js";
+import { APIError, createAuthMiddleware } from "better-auth/api";
+import { eq } from "drizzle-orm";
 import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
+
+const GATED_EMAIL_OTP_PATHS = new Set([
+    "/email-otp/send-verification-otp",
+    "/sign-in/email-otp",
+]);
+
+async function isEmailAllowed(email: string): Promise<boolean> {
+    const [row] = await db
+        .select({ id: allowedEmails.id })
+        .from(allowedEmails)
+        .where(eq(allowedEmails.email, email.trim().toLowerCase()))
+        .limit(1);
+    return Boolean(row);
+}
 
 export const auth = betterAuth({
     emailAndPassword: {
@@ -17,6 +34,20 @@ export const auth = betterAuth({
         provider: "pg",
         schema,
     }),
+
+    hooks: {
+        before: createAuthMiddleware(async (ctx) => {
+            if (!GATED_EMAIL_OTP_PATHS.has(ctx.path)) return;
+            const email = ctx.body?.email;
+            if (typeof email !== "string") return;
+            if (!(await isEmailAllowed(email))) {
+                throw new APIError("FORBIDDEN", {
+                    message:
+                        "This email hasn't been granted access. Ask an existing administrator to add you.",
+                });
+            }
+        }),
+    },
 
     plugins: [
         nextCookies(),
