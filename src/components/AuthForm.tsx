@@ -6,14 +6,6 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { authClient } from "@/lib/auth-client";
-import { DEV_BYPASS, DEV_BYPASS_COOKIE } from "@/lib/dev-config"; // TO DO - REMOVE: dev auth bypass
-import { ArrowRightIcon } from "lucide-react";
-
-// TO DO - REMOVE: dev auth bypass
-function getDevBypassCookie(): boolean {
-    if (typeof document === "undefined") return false;
-    return document.cookie.includes(`${DEV_BYPASS_COOKIE}=1`);
-}
 
 export default function AuthForm({ redirectTo }: { redirectTo?: string }) {
     const [step, setStep] = useState<"email" | "otp">("email");
@@ -28,13 +20,11 @@ export default function AuthForm({ redirectTo }: { redirectTo?: string }) {
             ? redirectTo
             : "/";
 
-    // TO DO - REMOVE: dev auth bypass - redirect if already signed in
     useEffect(() => {
         const checkAndRedirect = async () => {
             const sessionResult = await authClient.getSession();
             const session = sessionResult?.data ?? null;
-            const isDevBypass = DEV_BYPASS && getDevBypassCookie();
-            if (session || isDevBypass) {
+            if (session) {
                 router.replace(destination);
             }
         };
@@ -55,7 +45,7 @@ export default function AuthForm({ redirectTo }: { redirectTo?: string }) {
                 const data = await check.json();
                 setError(
                     data.error ??
-                        "This email is not authorized to access this application.",
+                        "This email hasn't been granted access. Ask an existing administrator to add you.",
                 );
                 return;
             }
@@ -123,14 +113,6 @@ export default function AuthForm({ redirectTo }: { redirectTo?: string }) {
         }
     }
 
-    // TO DO - REMOVE: dev auth bypass
-    function handleDevBypass() {
-        // Set cookie so Sidebar and redirect logic know we're in dev mode
-        document.cookie = `${DEV_BYPASS_COOKIE}=1; path=/; max-age=86400`;
-        router.push(destination);
-        router.refresh();
-    }
-
     return (
         <div className="w-full md:w-1/2 h-full flex flex-col items-center p-6 overflow-y-auto">
             {/* Logo at top */}
@@ -150,9 +132,10 @@ export default function AuthForm({ redirectTo }: { redirectTo?: string }) {
                     <div className="flex flex-col gap-2">
                         <h1 className="text-3xl font-bold">Sign In</h1>
                         <p className="text-[#646464]">
-                            Enter your email and a one time password will be
-                            sent to you. If you do not have an account yet,
-                            speak to an appropriate administrator at MHD.
+                            This site is for administrators only. Enter your
+                            email and we&apos;ll send you a one-time code to
+                            sign in. If you don&apos;t have access yet, ask an
+                            existing administrator to add you.
                         </p>
                     </div>
 
@@ -262,21 +245,6 @@ export default function AuthForm({ redirectTo }: { redirectTo?: string }) {
                             </div>
                         )}
                     </div>
-
-                    {/* TO DO - REMOVE: dev auth bypass */}
-                    {DEV_BYPASS && (
-                        <div className="border border-dashed border-amber-400 rounded-lg p-4 bg-amber-50 flex flex-col gap-2">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={handleDevBypass}
-                                className="border-amber-400 bg-amber-400 hover:bg-amber-500 text-black text-sm"
-                            >
-                                Enter DEV MODE{" "}
-                                <ArrowRightIcon className="w-4 h-4" />
-                            </Button>
-                        </div>
-                    )}
                 </div>
             </div>
 

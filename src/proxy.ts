@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-// import { headers } from "next/headers";
-// import { auth } from "@/lib/auth";
 import { getSessionCookie } from "better-auth/cookies";
 import { getSession } from "@/lib/auth-session";
-import { DEV_BYPASS } from "@/lib/dev-config"; // TO DO - REMOVE: dev auth bypass
 
 function safeRedirectTarget(redirect: string | null): string {
     if (redirect && redirect.startsWith("/") && !redirect.startsWith("//")) {
@@ -13,11 +10,10 @@ function safeRedirectTarget(redirect: string | null): string {
 }
 
 export async function proxy(request: NextRequest) {
-    const session = await getSession(request);
+    const session = await getSession();
 
     const pathname = request.nextUrl.pathname;
 
-    // TO DO - REMOVE: dev auth bypass - redirect to landing if already signed in
     if (pathname === "/signin") {
         if (session) {
             const redirect = request.nextUrl.searchParams.get("redirect");
@@ -25,7 +21,7 @@ export async function proxy(request: NextRequest) {
                 new URL(safeRedirectTarget(redirect), request.url),
             );
         }
-        return NextResponse.next(); // allow through to signin page
+        return NextResponse.next();
     }
 
     if (!session) {
@@ -35,16 +31,12 @@ export async function proxy(request: NextRequest) {
         return NextResponse.redirect(signinUrl);
     }
 
-    // TO DO - REMOVE: dev auth bypass - skip cookie check when in dev mode
-    if (process.env.NODE_ENV !== "development" || !DEV_BYPASS) {
-        const sessionCookie = getSessionCookie(request);
-        if (!sessionCookie) {
-            const signinUrl = new URL("/signin", request.url);
-            const originalPath =
-                request.nextUrl.pathname + request.nextUrl.search;
-            signinUrl.searchParams.set("redirect", originalPath);
-            return NextResponse.redirect(signinUrl);
-        }
+    const sessionCookie = getSessionCookie(request);
+    if (!sessionCookie) {
+        const signinUrl = new URL("/signin", request.url);
+        const originalPath = request.nextUrl.pathname + request.nextUrl.search;
+        signinUrl.searchParams.set("redirect", originalPath);
+        return NextResponse.redirect(signinUrl);
     }
 
     return NextResponse.next();
