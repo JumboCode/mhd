@@ -48,6 +48,16 @@ export default function SchoolsPage() {
         setRetryTrigger((prev) => prev + 1);
     }, []);
 
+    // /api/schools always returns every school (left-joined against the
+    // requested year), even when that year has no participation data at
+    // all — so "no data this year" has to be detected by filtering, not by
+    // the request failing.
+    const hasParticipation = (s: Schools) =>
+        s.numStudents > 0 ||
+        (s.competingStudents ?? 0) > 0 ||
+        s.numTeachers > 0 ||
+        s.numProjects > 0;
+
     useEffect(() => {
         if (!year) return;
 
@@ -62,14 +72,7 @@ export default function SchoolsPage() {
                 return response.json();
             })
             .then((data) => {
-                const filtered = data.filter(
-                    (s: Schools) =>
-                        s.numStudents > 0 ||
-                        (s.competingStudents ?? 0) > 0 ||
-                        s.numTeachers > 0 ||
-                        s.numProjects > 0,
-                );
-                setSchoolInfo(filtered);
+                setSchoolInfo(data.filter(hasParticipation));
                 setSchoolDataError(null);
             })
             .catch(() => {
@@ -94,8 +97,13 @@ export default function SchoolsPage() {
                 return response.json();
             })
             .then((data) => {
-                setPrevYearSchoolInfo(data);
-                setPrevYearError(null);
+                const filtered = data.filter(hasParticipation);
+                setPrevYearSchoolInfo(filtered);
+                setPrevYearError(
+                    filtered.length === 0
+                        ? "This is the earliest year of available data — year-over-year comparisons are not available."
+                        : null,
+                );
             })
             .catch(() => {
                 setPrevYearError(
