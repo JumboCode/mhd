@@ -414,7 +414,7 @@ export default function SchoolProfilePage() {
                             <YearDropdown
                                 selectedYear={year}
                                 onYearChange={handleYearChange}
-                                showDataIndicator={false}
+                                showDataIndicator={true}
                                 school={schoolName}
                                 enableArrowHotkeys
                                 town={schoolTown}
@@ -439,7 +439,7 @@ export default function SchoolProfilePage() {
                         <YearDropdown
                             selectedYear={year}
                             onYearChange={handleYearChange}
-                            showDataIndicator={false}
+                            showDataIndicator={true}
                             school={schoolName}
                             enableArrowHotkeys
                             town={schoolTown}
