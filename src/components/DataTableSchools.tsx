@@ -50,19 +50,22 @@ interface DataTableProps<TData, TValue> {
     selectedYear?: number | null;
 }
 
-const METRIC_BY_COL_INDEX: Record<number, string> = {
-    6: "total-student-count", // numStudents
-    7: "total-teacher-count", // numTeachers
-    8: "total-project-count", // numProjects
+// Keyed by the column's accessorKey (Columns.tsx), not its position, so
+// inserting/reordering columns can't silently point these at the wrong metric.
+const METRIC_BY_COL_ID: Record<string, string> = {
+    competingStudents: "total-competing-student-count",
+    numStudents: "total-participating-student-count",
+    numTeachers: "total-teacher-count",
+    numProjects: "total-project-count",
 };
 
 function buildChartUrl(
     schoolName: string,
-    colIndex: number,
+    colId: string,
     selectedYear: number,
 ): string {
     const params = new URLSearchParams({
-        measuredAs: METRIC_BY_COL_INDEX[colIndex],
+        measuredAs: METRIC_BY_COL_ID[colId],
         startYear: String(selectedYear - 4),
         endYear: String(selectedYear),
         schools: schoolName,
@@ -126,12 +129,9 @@ export function SchoolsDataTable<TData, TValue>({
     }, [prevData]);
 
     function yoyChange(cell: Cell<TData, number>, row: Row<TData>): ReactNode {
-        // Check if it is in students/teachers/projects column
-        if (
-            cell.column.getIndex() !== 5 &&
-            cell.column.getIndex() !== 6 &&
-            cell.column.getIndex() !== 7
-        ) {
+        // Only the competing/participating/teachers/projects columns have a
+        // year-over-year trend to show.
+        if (METRIC_BY_COL_ID[cell.column.id] === undefined) {
             return <></>;
         }
 
@@ -275,8 +275,8 @@ export function SchoolsDataTable<TData, TValue>({
                                                 cell.column.getIndex() === 0
                                                     ? "text-left sticky left-0 z-20 bg-muted border-r border-b overflow-hidden"
                                                     : selectedYear &&
-                                                        METRIC_BY_COL_INDEX[
-                                                            cell.column.getIndex()
+                                                        METRIC_BY_COL_ID[
+                                                            cell.column.id
                                                         ] !== undefined
                                                       ? "text-left z-0 border-b overflow-hidden p-0"
                                                       : "text-left z-0 border-b overflow-hidden"
@@ -302,8 +302,8 @@ export function SchoolsDataTable<TData, TValue>({
                                                     )}
                                                 </Link>
                                             ) : selectedYear &&
-                                              METRIC_BY_COL_INDEX[
-                                                  cell.column.getIndex()
+                                              METRIC_BY_COL_ID[
+                                                  cell.column.id
                                               ] !== undefined ? (
                                                 <Link
                                                     href={buildChartUrl(
@@ -313,7 +313,7 @@ export function SchoolsDataTable<TData, TValue>({
                                                                 unknown
                                                             >
                                                         ).name as string,
-                                                        cell.column.getIndex(),
+                                                        cell.column.id,
                                                         selectedYear,
                                                     )}
                                                     className="flex items-center h-12 w-full group"
