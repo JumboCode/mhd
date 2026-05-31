@@ -164,6 +164,7 @@ export default function Sidebar() {
                                     alt="MHD Logo"
                                     width={125}
                                     height={125}
+                                    className="w-[125px] h-[125px]"
                                     priority
                                 />
                             </Link>
