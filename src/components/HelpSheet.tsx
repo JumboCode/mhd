@@ -97,7 +97,7 @@ const pages: Page[] = [
                 <GreenDot /> filled green dot next to a year means data is
                 available for that year.
             </>,
-            "View total counts for students, projects, teachers, and schools.",
+            "View total counts for projects, teachers, competing students, participating students, and schools.",
             <>
                 Each stat card shows a percentage change from the prior year:
                 <TrendLegend />
@@ -113,7 +113,7 @@ const pages: Page[] = [
         description:
             "An interactive heatmap of participating schools across Massachusetts.",
         features: [
-            "Switch the Counts dropdown between Students, Projects, and Teachers to change what the heatmap visualizes.",
+            "Switch the Counts dropdown between Competing Students, Participating Students, Projects, and Teachers to change what the heatmap visualizes.",
             <>
                 In the Year dropdown, a <GreenDot /> filled green dot next to a
                 year means data is available for that year.
@@ -154,7 +154,8 @@ const pages: Page[] = [
                 collected — click it to open the cart and initiate a bulk
                 export.
             </>,
-            "Keyboard: ⌘S opens the export dialog, ⌘P downloads a PDF directly, B switches to bar chart, L switches to line chart.",
+            'Click "Where does this data come from?" in the bottom right to open the Data Lineage popup, which explains exactly which spreadsheet field each number came from and how your active filters changed the count.',
+            "Keyboard: ⌘S opens the export dialog, ⌘P downloads a PDF directly, B switches to bar chart, L switches to line chart, ? opens the Data Lineage popup.",
             "Certain combinations of chart customizations do not make sense. For example, measuring total school count grouped by project type is such a combination. Such charts may yield nonsensical data or no data at all.",
         ],
     },
@@ -169,15 +170,18 @@ const pages: Page[] = [
                 In the Year dropdown, a <GreenDot /> filled green dot means data
                 is available for that year.
             </>,
-            "Search by school name, city, or region using the search bar.",
+            "Search across school name, city, region, division, school type, and implementation model using the search bar.",
+            "Open Filters to narrow the table down by City, Region, Division, School Type, or Implementation Model. Applied filters appear as removable chips below the header.",
+            "Columns: Name, City, Region, Division, Implementation Model, School Type, # Competing, # Participating, # Teachers, and # Projects.",
             <>
-                The # Students, # Teachers, and # Projects columns show
-                year-over-year change:
+                The # Competing, # Participating, # Teachers, and # Projects
+                columns show year-over-year change:
                 <TrendLegend />
             </>,
+            "Click a value in the # Competing, # Participating, # Teachers, or # Projects columns to open the Chart page filtered to that school and metric.",
             "Use the ‹ or › arrow keys to switch between available years.",
             "Click any school name to open that school's detailed profile page.",
-            "Click column headers to sort the table by that metric in ascending or descending order.",
+            "Click column headers to sort the table by that metric — click once to sort ascending, again for descending, and a third time to return to the default order.",
         ],
     },
     {
@@ -193,16 +197,16 @@ const pages: Page[] = [
                 data exists for that year but the school did not participate.
             </>,
             <>
-                The three stat cards show projects, teachers, and students for
-                the selected year with year-over-year trend indicators:
+                The four stat cards show projects, teachers, competing students,
+                and participating students for the selected year with
+                year-over-year trend indicators:
                 <TrendLegend />
             </>,
             "The student count line graph shows enrollment history over the past 5 years. Click it to open the Chart page filtered to this school.",
             "The project type distribution pie chart breaks down projects by category for the selected year.",
             "School Location shows the school's pin on a map. Click anywhere on the map to update its coordinates. Regions are automatically updated based on the new coordinates.",
             "The View and Edit Data table lists all project records for the selected year. Double-click any cell to edit it. Teacher changes apply globally across all of that teacher's projects.",
-            "Double-click the school name at the top of the page to rename the school.",
-            "Use the ⋮ menu to access Merge School, which combines this school's records with another school.",
+            "Use the ⋮ menu next to the school name for Merge School (combine this school's records with another school), Rename School, Change Town, and Export to PDF.",
         ],
     },
     {
@@ -230,7 +234,8 @@ const pages: Page[] = [
             "Gateway Schools: add or remove schools designated as schools representing students from gateway cities.",
             "School Locations: edit the map coordinates for individual schools. Regions are automatically updated based on the new coordinates.",
             "Years of Data: delete or upload years of participation data across the app.",
-            "Changes are not saved automatically — click Save to apply all edits.",
+            "Gateway Schools, School Locations, and Years of Data changes are not saved automatically — click Save at the bottom of the page to apply all edits at once.",
+            "Authorized Users: add or remove the email addresses allowed to sign in as an administrator. Unlike the rest of this page, these changes save immediately — there is no Save step and no undo.",
         ],
     },
 ];
