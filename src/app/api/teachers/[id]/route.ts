@@ -14,7 +14,7 @@
  **************************************************************/
 
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { getDb } from "@/lib/db";
 import { teachers, projects, yearMetadata } from "@/lib/schema";
 import { eq, inArray } from "drizzle-orm";
 import { idParamSchema, teacherPatchBodySchema } from "@/lib/api-schemas";
@@ -33,6 +33,7 @@ export async function PATCH(
         const parsed = parseOrError(teacherPatchBodySchema, body);
         if (!parsed.success) return parsed.response;
 
+        const db = getDb();
         const result = await db
             .update(teachers)
             .set(parsed.data)

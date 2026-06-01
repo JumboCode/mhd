@@ -1,4 +1,4 @@
-import { db } from "@/lib/db";
+import { getDb } from "@/lib/db";
 import {
     projects,
     yearlySchoolParticipation,
@@ -7,6 +7,7 @@ import {
 import { eq, count, sum, countDistinct, asc } from "drizzle-orm";
 
 async function getTeacherCountByYear(): Promise<Map<number, number>> {
+    const db = getDb();
     const rows = await db
         .select({
             year: yearlyTeacherParticipation.year,
@@ -19,6 +20,7 @@ async function getTeacherCountByYear(): Promise<Map<number, number>> {
 }
 
 async function getSchoolCountByYear(): Promise<Map<number, number>> {
+    const db = getDb();
     const rows = await db
         .select({
             year: yearlySchoolParticipation.year,
@@ -31,6 +33,7 @@ async function getSchoolCountByYear(): Promise<Map<number, number>> {
 }
 
 async function getParticipatingStudentsByYear(): Promise<Map<number, number>> {
+    const db = getDb();
     const rows = await db
         .select({
             year: yearlySchoolParticipation.year,
@@ -43,6 +46,7 @@ async function getParticipatingStudentsByYear(): Promise<Map<number, number>> {
 }
 
 export async function getYearlyStats(year: number) {
+    const db = getDb();
     const [schoolRow] = await db
         .select({
             total_schools: countDistinct(yearlySchoolParticipation.schoolId),
@@ -106,21 +110,26 @@ export async function getYearlyStats(year: number) {
  * Get stats for all years - used for sparkline historical data
  */
 export async function getAllYearsStats() {
-    const [results, schoolCountByYear, teacherCountByYear, participatingByYear] =
-        await Promise.all([
-            db
-                .select({
-                    year: projects.year,
-                    total_projects: count(projects.id),
-                    total_competing_students: sum(projects.numStudents),
-                })
-                .from(projects)
-                .groupBy(projects.year)
-                .orderBy(asc(projects.year)),
-            getSchoolCountByYear(),
-            getTeacherCountByYear(),
-            getParticipatingStudentsByYear(),
-        ]);
+    const db = getDb();
+    const [
+        results,
+        schoolCountByYear,
+        teacherCountByYear,
+        participatingByYear,
+    ] = await Promise.all([
+        db
+            .select({
+                year: projects.year,
+                total_projects: count(projects.id),
+                total_competing_students: sum(projects.numStudents),
+            })
+            .from(projects)
+            .groupBy(projects.year)
+            .orderBy(asc(projects.year)),
+        getSchoolCountByYear(),
+        getTeacherCountByYear(),
+        getParticipatingStudentsByYear(),
+    ]);
 
     return results.map((row) => ({
         year: row.year,

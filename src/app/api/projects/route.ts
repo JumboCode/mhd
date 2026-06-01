@@ -10,7 +10,7 @@
  **************************************************************/
 
 import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { getDb } from "@/lib/db";
 import {
     projects,
     schools,
@@ -22,6 +22,7 @@ import { internalError } from "@/lib/api-utils";
 
 export async function GET() {
     try {
+        const db = getDb();
         const allProjects = await db
             .select({
                 id: projects.id,

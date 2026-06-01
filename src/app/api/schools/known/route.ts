@@ -16,7 +16,7 @@ import { NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
 import { parse } from "csv-parse/sync";
-import { db } from "@/lib/db";
+import { getDb } from "@/lib/db";
 import { schools } from "@/lib/schema";
 import { type KnownSchool } from "@/lib/school-matching";
 import { isNotNull } from "drizzle-orm";
@@ -24,6 +24,7 @@ import { internalError } from "@/lib/api-utils";
 
 export async function GET() {
     try {
+        const db = getDb();
         // Fetch DB schools that already have coordinates
         const dbSchools = await db
             .select({

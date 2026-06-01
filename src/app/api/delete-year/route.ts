@@ -10,7 +10,7 @@
  **************************************************************/
 
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { getDb } from "@/lib/db";
 import {
     projects,
     yearlySchoolParticipation,
@@ -31,6 +31,7 @@ export async function DELETE(req: NextRequest) {
         if (!parsed.success) return parsed.response;
 
         const { year } = parsed.data;
+        const db = getDb();
 
         await db.delete(projects).where(eq(projects.year, year));
         await db

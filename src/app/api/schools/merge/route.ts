@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { getDb } from "@/lib/db";
 import {
     schools,
     schoolHistoricNames,
@@ -18,6 +18,7 @@ export async function POST(req: NextRequest) {
         if (!parsed.success) return parsed.response;
 
         const { baseSchoolId, mergingSchoolId } = parsed.data;
+        const db = getDb();
 
         const [baseSchool, mergingSchool] = await Promise.all([
             db

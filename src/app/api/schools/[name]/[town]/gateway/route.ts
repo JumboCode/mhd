@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { getDb } from "@/lib/db";
 import { schools } from "@/lib/schema";
 import { eq, and, sql } from "drizzle-orm";
 import { gatewayPatchBodySchema } from "@/lib/api-schemas";
@@ -16,6 +16,7 @@ export async function GET(
     try {
         const { name, town } = await params;
         const townQuery = decodeTownSegment(town);
+        const db = getDb();
 
         const schoolResult = await db
             .select({ id: schools.id, gateway: schools.gateway })
@@ -54,6 +55,7 @@ export async function PATCH(
         if (!parsed.success) return parsed.response;
 
         const { gateway } = parsed.data;
+        const db = getDb();
 
         const schoolResult = await db
             .select({ id: schools.id })

@@ -10,13 +10,14 @@
  ***************************************************************/
 
 import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { getDb } from "@/lib/db";
 import { yearlySchoolParticipation, yearMetadata, schools } from "@/lib/schema";
 import { eq, and, sql } from "drizzle-orm";
 import { internalError } from "@/lib/api-utils";
 
 export async function GET(req: Request) {
     try {
+        const db = getDb();
         const { searchParams } = new URL(req.url);
         const schoolParam = searchParams.get("school");
 

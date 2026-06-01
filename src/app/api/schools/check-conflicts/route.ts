@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { getDb } from "@/lib/db";
 import { schools, schoolHistoricNames } from "@/lib/schema";
 import { inArray } from "drizzle-orm";
 import { internalError } from "@/lib/api-utils";
@@ -38,6 +38,7 @@ export async function POST(req: NextRequest) {
             ...new Set(uploadedSchools.map((s) => s.schoolKey.split("__")[0])),
         ];
 
+        const db = getDb();
         const [dbSchools, existingAliases] = await Promise.all([
             db
                 .select({

@@ -10,7 +10,7 @@
  **************************************************************/
 
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { getDb } from "@/lib/db";
 import {
     projects,
     schools,
@@ -27,6 +27,7 @@ function percentageChange(curr: number, past: number) {
 
 export async function GET(req: NextRequest) {
     try {
+        const db = getDb();
         const { searchParams } = new URL(req.url);
 
         // Lightweight list mode: school info for all schools

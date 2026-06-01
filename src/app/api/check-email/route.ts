@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { getDb } from "@/lib/db";
 import { allowedEmails } from "@/lib/schema";
 import { eq } from "drizzle-orm";
 
@@ -13,6 +13,7 @@ export async function POST(req: NextRequest) {
             );
         }
         const normalized = email.trim().toLowerCase();
+        const db = getDb();
         const allowed = await db
             .select({ id: allowedEmails.id })
             .from(allowedEmails)

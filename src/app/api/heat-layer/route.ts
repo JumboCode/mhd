@@ -10,7 +10,7 @@
  **************************************************************/
 
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { getDb } from "@/lib/db";
 import {
     schools,
     projects,
@@ -31,6 +31,7 @@ export async function GET(req: NextRequest) {
         if (!parsed.success) return parsed.response;
 
         const { year } = parsed.data;
+        const db = getDb();
 
         const schoolsPerYear = await db
             .select({

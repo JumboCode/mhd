@@ -12,7 +12,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { eq, inArray } from "drizzle-orm";
-import { db } from "@/lib/db";
+import { getDb } from "@/lib/db";
 import {
     schools,
     teachers,
@@ -186,6 +186,7 @@ function chunkArray<T>(arr: T[], size: number): T[][] {
 export async function POST(req: NextRequest) {
     currentProgress = { progress: 0, complete: false };
     try {
+        const db = getDb();
         const jsonReq = await req.json();
         const yearResult = yearSchema.safeParse(jsonReq.formYear);
         if (!yearResult.success) {
